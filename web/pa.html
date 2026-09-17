@@ -430,6 +430,9 @@ let state = { mode:'chat', threads:[], activeThread:null };
       写 `#modeHint` 又会被 setMode 重画覆盖 ⇒ 用户看不到）。
    **不推断**：只报可从数据算出的数（字节、归档条数）；**不写「还能撑几天」**这类估算。 */
 const PA_QUOTA_GUARD_BYTES = 4 * 1024 * 1024;   /* 4 MiB：浏览器 ~5 MB 上限之前提前告警 */
+/* W-09 按条数提示阈值（唯一常量）。老板/DS 2026-09-18 拍：**维持 100**
+   （早提示更安全 / 零行为变化 / 已提为常量便于调）。
+   ⚠ 口径：**主判据是字节**（PA_QUOTA_GUARD_BYTES），条数与字节**不对应** ⇒ 本条只是**辅助**提示。 */
 const PA_ARCHIVE_HINT_COUNT = 100;              /* W-09 按条数提示：归档到这条线就在横幅里提醒（**只提示**，不裁剪） */
 let PA_LAST_SAVE_BYTES = null;                  /* 上次写盘的字节数（模块变量：**不进 state**，不给存档增重） */
 function paQuotaBytes(raw){
