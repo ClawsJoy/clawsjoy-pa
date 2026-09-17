@@ -83,6 +83,11 @@ body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Seg
 .pa-write-card button[data-act="approve"]{background:#238636}
 .pa-write-card button[data-act="always"]{background:#1f6feb}
 .pa-write-card button[data-act="reject"]{background:#da3633}
+/* M2-A · Step 2：统一卡片容器（三张卡共用出口；**不散挂 #thread** —— 批221：写 #thread 会被 renderThread 重画覆盖） */
+.pa-cards{flex-shrink:0;max-height:46vh;overflow-y:auto;padding:0 0 4px}
+.pa-cards:empty{display:none}
+.pa-card-hint{display:none;margin:0 14px 6px;font-size:10.5px;color:var(--sub);opacity:.85}
+.pa-card-hint.show{display:block}
 .composer{flex-shrink:0;border-top:1px solid var(--border);padding:9px 16px 12px;background:var(--card)}
 .composer .box{display:flex;gap:7px;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:5px 5px 5px 12px;align-items:flex-end}
 .composer textarea{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13.5px;resize:none;height:38px;line-height:19px;font-family:inherit;padding-top:9px}
@@ -323,6 +328,9 @@ body.hide-top .left.drawer-open,body.hide-top .side.drawer-open{top:0}
     <!-- 批176 · 副指标 A：知识库 ↔ 沙箱映射（默认折叠；只读接口）-->
     <div id="kbPanel" class="kbpanel"></div>
     <div class="thread-view" id="thread"></div>
+    <!-- M2-A · Step 2：统一卡片出口（三张卡共用）——**不散挂 #thread**（批221：写 #thread 会被 renderThread 重画覆盖） -->
+    <div id="paCards" class="pa-cards" aria-live="polite"></div>
+    <div id="paCardsHint" class="pa-card-hint">ⓘ 卡片不持久化：只反映本次页面会话收到的事实；刷新后清空，不凭历史消息重造。</div>
     <div class="composer">
       <div class="box">
         <textarea id="input" placeholder="和 PA 说点什么…（Enter 发送 / Shift+Enter 换行）"></textarea>
@@ -1756,28 +1764,117 @@ async function readSSE(resp){
 /* 批153 · R2：写确认卡（PA 页）—— 三选项与工作台卡片统一：仅本次 / 一直允许 / 不允许。
    判据(体检项 114 检测清单 C1-C4)：结论必须由 HTTP 状态码 + 后端回执 + 产物共同支撑，
    前端文案只作待验证信号。always = 照做并写 grants.yaml（下次同场景免问）。 */
+/* ---- M2-A · Step 2：统一展示出口 paRenderCard（三张卡共用）----------------------------
+   设计稿 codex/2026-09-17-v9pes-m2a-visibility-closure-design.md §2.4 / §6 Step 2。
+   三条纪律（不靠自觉，靠判据）：
+   1. **只认白名单**：kind ∈ {approval, artifact, block}，每类只认自己的字段白名单。
+      未知 kind ⇒ 不渲染；未知字段 ⇒ **丢弃 + console.warn**（不静默、不塞进 DOM）。
+   2. **挂固定容器 #paCards**：**不散挂 #thread** —— 批221 现场：写 #thread 会被 renderThread 重画覆盖
+      （同类事故见体检库 #8：降级提示被 setMode/renderThread 覆盖 ⇒ 静默降级）。
+   3. **不代填**：只做字符串化与「未记录 / 未核验」文案；**卡片字段一律不参与时间计算**
+      —— 倒计时/耗时只能由后端给（设计稿 §2.1 revoke_window 纪律）。
+      本模块**禁止 Date.now()/new Date()/setInterval()**，有静态反例测试钉死
+      （tests/pes/test_m2a_frontend_outlet.py）。
+   **卡片不持久化**（老板 2026-09-18 拍板：不持久化但必须标注）：本容器只反映本次页面会话
+   收到的事实，刷新即清空；**不凭历史消息重造卡片**（防「假成交」：把旧正文重渲染成新证据）。 */
+const PA_CARD_DEF = {
+  approval: {cls:'pa-write-card',    required:['id'],       fields:['id','tool','target','reason','is_batch','items','expires_in_s','decisions','revoke_window']},
+  artifact: {cls:'pa-artifact-card', required:['path'],     fields:['path','exists','sha256','bytes','verified_by','done_when_status','verdict','reported_source']},
+  block:    {cls:'pa-block-card',    required:['block_id'], fields:['block_id','blocked_at','layer','reason','blocked_action','evidence_ref','unblock_hint','state_map_key']}
+};
+/* 纯函数（node 可直接跑）：白名单过滤 + 未知字段清单 + 必填校验。**无 DOM、无时间。** */
+function paCardFilter(kind, payload){
+  const def = PA_CARD_DEF[kind];
+  if(!def) return {ok:false, reason:'未知卡片类型 '+kind, data:null, unknown:[]};
+  const src = (payload && typeof payload==='object') ? payload : {};
+  const data={}, unknown=[];
+  Object.keys(src).forEach(function(k){ if(def.fields.indexOf(k)>=0){ data[k]=src[k]; } else { unknown.push(k); } });
+  for(let i=0;i<def.required.length;i++){
+    const rk=def.required[i];
+    if(data[rk]===undefined || data[rk]===null || data[rk]===''){
+      return {ok:false, reason:'缺必填字段 '+rk, data:null, unknown:unknown};
+    }
+  }
+  return {ok:true, reason:'', data:data, unknown:unknown};
+}
+/* 决策按钮文案 = **常量**（不由后端文本拼）；未知决策串一律不渲染 */
+const PA_CARD_ACTS={approve:'✅ 仅本次', always:'♾️ 一直允许', reject:'❌ 不允许'};
+const PA_CARD_BODY={
+  approval:function(d){
+    const cmd=(d.target==null)?'':String(d.target);
+    const why=(d.reason==null||String(d.reason).trim()==='')?('等待老板确认：'+cmd.slice(0,80)):String(d.reason).trim();
+    const acts=(Array.isArray(d.decisions)?d.decisions:Object.keys(PA_CARD_ACTS)).filter(function(a){ return !!PA_CARD_ACTS[a]; });
+    /* expires_in_s / revoke_window / is_batch / items：白名单已声明，渲染留 Step 3（审批卡接线）。
+       **本步不渲染 ≠ 可以本地估算**：后端没给就不显示（不许前端造倒计时 / 撤销窗口）。 */
+    return '<div class="pwc-head">⏳ Agent 请求写入（需确认）</div>'+
+      '<div class="pwc-reason" id="paWriteReason">⚠️ '+esc(why)+'</div>'+
+      (cmd?'<div class="pwc-cmd">'+esc(cmd.slice(0,220))+'</div>':'')+
+      '<div class="pwc-btns">'+acts.map(function(a){ return '<button data-act="'+esc(a)+'">'+PA_CARD_ACTS[a]+'</button>'; }).join('')+'</div>';
+  },
+  artifact:function(){ return ''; },   /* Step 3 接线（产物卡）：本步不渲染 */
+  block:function(){ return ''; }       /* Step 3 接线（阻断卡）：本步不渲染 */
+};
+/* 每个 kind 的按钮绑定（DOM 侧；与 body 分开，便于纯函数单测） */
+const PA_CARD_BIND={
+  approval:function(card,d){
+    card.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ paWriteDecide(d.id,b.getAttribute('data-act'),card); });
+    });
+  },
+  artifact:function(){}, block:function(){}
+};
+function paSyncCardsHint(){
+  try{
+    const host=document.getElementById('paCards'), hint=document.getElementById('paCardsHint');
+    if(hint) hint.classList.toggle('show', !!(host && host.children.length));
+  }catch(e){}
+}
+function paDismissCard(card){
+  try{ if(card&&card.parentNode) card.parentNode.removeChild(card); }catch(e){}
+  paSyncCardsHint();
+}
+/* 唯一渲染出口：卡片只经这里进 DOM（三张卡共用）。返回卡片元素；被拒时返回 null 并 warn。 */
+function paRenderCard(kind, payload){
+  const r=paCardFilter(kind,payload);
+  if(!r.ok){ console.warn('[PA][CARD] 拒绝渲染 kind='+kind+'：'+r.reason); return null; }
+  if(r.unknown.length) console.warn('[PA][CARD] kind='+kind+' 丢弃未知字段：'+r.unknown.join(', '));
+  const host=document.getElementById('paCards');
+  if(!host){ console.warn('[PA][CARD] 缺容器 #paCards ⇒ 卡片未渲染（不回落 #thread：会被 renderThread 覆盖）'); return null; }
+  const def=PA_CARD_DEF[kind];
+  const key=String(r.data[def.required[0]]);
+  let card=null;
+  for(let i=0;i<host.children.length;i++){
+    const ch=host.children[i];
+    if(ch.getAttribute('data-card-kind')===kind && ch.getAttribute('data-card-key')===key){ card=ch; break; }
+  }
+  if(!card){
+    card=document.createElement('div');
+    card.className=def.cls; card.setAttribute('data-card-kind',kind); card.setAttribute('data-card-key',key);
+    if(kind==='approval') card.id='paWriteCard_'+key;   /* 兼容旧 id（批153 起沿用） */
+    host.appendChild(card);
+  }
+  card.innerHTML=PA_CARD_BODY[kind](r.data);
+  PA_CARD_BIND[kind](card,r.data);
+  paSyncCardsHint();
+  try{ if(card.scrollIntoView) card.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){}
+  return card;
+}
+
 function renderPaWriteCard(pw, note){
-  const host=document.getElementById('thread'); if(!host||!pw) return;
-  const cid='paWriteCard_'+(pw.id||'anon');
-  let card=document.getElementById(cid);
-  if(!card){ card=document.createElement('div'); card.id=cid; card.className='pa-write-card'; host.appendChild(card); }
-  else { card.innerHTML=''; }
+  if(!pw) return null;
   const _cmd=String(pw.command||pw.path||'');
   const _why=(note&&String(note).trim())?String(note).trim():('等待老板确认：'+_cmd.slice(0,80));
-  card.innerHTML='<div class="pwc-head">⏳ Agent 请求写入（需确认）</div>'+
-    '<div class="pwc-reason" id="paWriteReason">⚠️ '+esc(_why)+'</div>'+
-    (_cmd?'<div class="pwc-cmd">'+esc(_cmd.slice(0,220))+'</div>':'')+
-    '<div class="pwc-btns">'+
-      '<button data-act="approve">✅ 仅本次</button>'+
-      '<button data-act="always">♾️ 一直允许</button>'+
-      '<button data-act="reject">❌ 不允许</button>'+
-    '</div>';
-  card.querySelectorAll('button').forEach(function(b){
-    b.addEventListener('click',function(){ paWriteDecide(pw.id,b.getAttribute('data-act'),card); });
-  });
-  host.scrollTop=host.scrollHeight;
+  /* M2-A · Step 2：DOM 迁到统一出口 paRenderCard('approval', ...)，只传白名单字段。
+     expires_in_s / revoke_window 后端尚未上报 ⇒ **显式 null**（未知即未知；禁止本地估算倒计时）。 */
+  const _payload={ id:pw.id, tool:pw.tool, target:_cmd, reason:_why,
+                   expires_in_s:null, revoke_window:null, decisions:['approve','always','reject'] };
+  if(pw.batch!==undefined) _payload.is_batch=pw.batch;
+  if(pw.items!==undefined) _payload.items=pw.items;
+  const card=paRenderCard('approval', _payload);
+  if(!card) return null;
   paFlashApproval(card);   /* 批193：自动滚到卡片 + 高亮描边（口径 A：审批在中栏）*/
   receipt('⏳ 有写入等待你拍板','warn');
+  return card;
 }
 async function paWriteDecide(id, action, card){
   if(card) card.querySelectorAll('button').forEach(function(b){ b.disabled=true; });
@@ -1793,14 +1890,14 @@ async function paWriteDecide(id, action, card){
       const _err=(d.tool_result&&d.tool_result.error)?('：'+d.tool_result.error):'';
       addLog((ok?'✅ ':'❌ ')+'写入'+(ok?'已执行':'失败'+_err), ok?'ok':'err', true);
       receipt(ok?'✅ 写入已执行':'❌ 写入失败', ok?'ok':'err');
-      if(card&&card.parentNode) card.parentNode.removeChild(card);
+      paDismissCard(card);
       if(action==='always') addLog('♾️ 已记住该场景（grants.yaml），下次免问','ok',true);
       if(d.continue_messages&&d.continue_messages.length){
         window.__paSendMessages=d.continue_messages; await sendAgent(activeThread());
       }
     } else if(d.status==='write_rejected'){
       addLog('↩ 已拒绝，Agent 将调整方案','warn',true); receipt('已拒绝该写入','rev');
-      if(card&&card.parentNode) card.parentNode.removeChild(card);
+      paDismissCard(card);
     } else {
       addLog('⚠️ 确认未生效：'+(d.message||d.error||'未知响应'),'err',true);
       receipt('确认未生效（后端未确认）','err');
