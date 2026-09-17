@@ -1,0 +1,118 @@
+.env
+*.bak
+logs/
+data/
+__pycache__/
+*.pyc
+memory/
+backups/
+models/
+client/
+exports/
+.vscode/
+*.swp
+nohup.out
+tests/tests/
+works/
+tenants/
+data.vector_kb/
+
+.venv/
+.pytest_cache/
+*.sqlite3
+*.mp3
+*.mp4
+exports/
+memory/
+old/
+tools/archive/
+*.bin
+*.pickle
+
+events_*.jsonl
+*.session
+data/projects/*/session_*/
+
+# 运行态数据（live agent 自动提交时不得卷入；由网关运行时生成/重建）
+.agent_state.json
+data/skill_registry_v2.json
+data/v8/billing_default.jsonl
+data/v8/user_messages/
+data/v8/audit/
+data/vector_kb/
+data/dependency_graph.json
+
+# --- 运行期状态（2026-09-13 批62）：每次运行都会被覆盖写，不进版本库 ---
+goals/
+.agent_state.json
+# --- 运行期状态（2026-09-13 批72，体检项 29/41）：filter_net.json 由运行期自学习写 ---
+core/lib/filter_net.json
+
+# --- 批125（2026-09-14）：第三方依赖 + 运行态产物 + 凭证，不进版本库 ---
+# ① tools 下自建工具各自的依赖目录（live 侧实测 79,559 条未跟踪，全是 node_modules）
+tools/**/node_modules/
+# ② 运行期生成的 PPT 缩略图（前端按 url_base 取，重新生成即可）
+web/ppt_thumbs/
+# ③ 运行态产物 / 探针残留（体积大、非源码；由任务脚本临时生成）
+kw_*.txt
+# 注意：不要用 zhihu_* 通配 —— 会误伤 docs/reports/zhihu_publish_sop.md（真文档），故按扩展名限定
+zhihu_*.png
+zhihu_*.json
+zhihu_*.html
+zhihu_*.txt
+xhs_*.png
+_e2e*.txt
+_p0e2e.txt
+_diag5.txt
+_reg_er.txt
+_test_write.md
+_gate_json_probe.json
+_gate_md_probe.md
+probe_readfile_marker.txt
+analysis_tmp.txt
+block_tmp.txt
+sales.csv
+.bridge_final.json
+# ④ 凭证类：绝不进仓（zhihu_cookies.txt 已于批125 从索引移除，真身在 ~/.dsh/secrets/）
+zhihu_cookies.txt
+# 批126：.env 见文件第 1 行规则（无斜杠的 .env 匹配任意层级，含 config/.env）；
+# 这里补 secrets，并保留 *.example 模板可进仓
+secrets.yaml
+config/secrets/*.yaml
+
+# 例外：模板/示例文件应当进仓
+!config/secrets/youtube_credentials.yaml.example
+.env
+config/.env
+config/secrets.yaml
+
+# ===== 运行态产物 =====
+_probe*.md
+_gate_*.json
+_gate_*.md
+session_vfy9/
+archive/
+sandbox/
+goals/
+data/sync_state/
+
+# ===== 大文件 / 第三方 =====
+client/dist/
+tools/KubeezCut/
+tools/LightX2V/
+tools/iris.c/
+tools/lingji-cut/
+tools/ComfyUI/
+*.snap
+*.AppImage
+
+# ===== 凭证 =====
+.env
+config/.env
+config/secrets.yaml
+zhihu_cookies.txt
+*_cookies.txt
+
+# ===== 日志 =====
+*.log
+logs/

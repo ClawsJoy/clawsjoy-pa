@@ -1,0 +1,14 @@
+capable_of:
+- 真实环境
+- 生产环境
+- 实际部署
+- 上线
+class: RealAgentAgent
+description: real_agent 智能体
+enabled: true
+name: real_agent
+priority: 15
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

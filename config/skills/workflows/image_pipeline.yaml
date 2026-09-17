@@ -1,0 +1,23 @@
+# 图像处理工作流 - 技能链示例
+name: image_pipeline
+description: 图像处理流水线
+
+steps:
+  - skill: vision
+    params:
+      image_path: "{input_image}"
+      prompt: "识别图片中的物体"
+    output: recognition_result
+
+  - skill: translate  
+    params:
+      text: "{recognition_result.result}"
+      target: "zh"
+    output: translated_result
+
+  - skill: to_string
+    params:
+      value: "{translated_result.translated}"
+    output: final_output
+
+output: final_output

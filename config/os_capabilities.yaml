@@ -1,0 +1,183 @@
+# config/os_capabilities.yaml
+# OS 能力注册表 — 唯一真理源
+# 新增能力只需加一条记录，不需要改代码
+
+capabilities:
+  # ── 文件操作 ──
+  - id: "read_file"
+    type: "file_read"
+    domain: "code"
+    description: "读取文件内容"
+    since: "V5"
+    status: "active"
+
+  - id: "write_file"
+    type: "file_write"
+    domain: "code"
+    description: "写入文件"
+    since: "V5"
+    status: "active"
+
+  - id: "list_dir"
+    type: "file_read"
+    domain: "code"
+    description: "列出目录"
+    since: "V5"
+    status: "active"
+
+  - id: "search_files"
+    type: "file_read"
+    domain: "code"
+    description: "按文件名搜索"
+    since: "V9"
+    status: "active"
+
+  # ── 命令执行 ──
+  - id: "execute_command"
+    type: "command"
+    domain: "code"
+    description: "执行 shell 命令"
+    since: "V5"
+    status: "active"
+    constraints:
+      - "白名单命令直接放行"
+      - "不在白名单但读命令 → 拦截引导"
+      - "写命令 → 沙箱拦截"
+
+  # ── 知识检索 ──
+  - id: "query_index"
+    type: "knowledge"
+    domain: "code"
+    description: "SAG 知识图谱查询"
+    since: "V9"
+    status: "active"
+
+  # ── OS 层拦截 ──
+  - id: "path_auto_correct"
+    type: "os_intercept"
+    domain: "code"
+    description: "路径自动纠正（双重前缀、连字符）"
+    event_type: "auto_fix"
+    reason: "path_confusion"
+    since: "V9"
+    status: "active"
+
+  - id: "read_command_block"
+    type: "os_intercept"
+    domain: "code"
+    description: "拦截非白名单读命令，引导使用工具"
+    event_type: "intercept"
+    reason: "command_not_allowed"
+    since: "V9"
+    status: "active"
+
+  - id: "sandbox_path_check"
+    type: "os_intercept"
+    domain: "code"
+    description: "沙箱路径越权检测"
+    event_type: "intercept"
+    reason: "path_blocked"
+    since: "V9"
+    status: "active"
+
+  - id: "heredoc_mtime_check"
+    type: "os_intercept"
+    domain: "code"
+    description: "heredoc 执行后 mtime 变化检测"
+    event_type: "intercept"
+    reason: "write_failed"
+    since: "V9"
+    status: "active"
+
+  - id: "write_file_truncation_guard"
+    type: "os_intercept"
+    domain: "code"
+    description: "写入截断保护"
+    event_type: "intercept"
+    reason: "truncation_risk"
+    since: "V9"
+    status: "active"
+
+  - id: "read_quota_limit"
+    type: "os_intercept"
+    domain: "code"
+    description: "读取配额硬限制"
+    event_type: "intercept"
+    reason: "quota_exceeded"
+    since: "V9"
+    status: "active"
+
+  # ── LLM 降级 ──
+  - id: "llm_degrade_ollama"
+    type: "os_auto_fix"
+    domain: "llm"
+    description: "DeepSeek key 为空时降级到 Ollama"
+    event_type: "degrade"
+    reason: "llm_unavailable"
+    since: "V9"
+    status: "active"
+
+  # ── 元认知 ──
+  - id: "metacognition_reflect"
+    type: "analysis"
+    domain: "meta"
+    description: "元认知分析 Agent 行为"
+    since: "V9"
+    status: "active"
+
+  - id: "os_event_write"
+    type: "os_event"
+    domain: "meta"
+    description: "OS 事件写入"
+    since: "V9"
+    status: "active"
+
+  - id: "os_event_monitor"
+    type: "os_event"
+    domain: "meta"
+    description: "OS 事件定时监控 + 花名册模型探活"
+    since: "V9"
+    status: "active"
+
+  # ── 精准投喂 ──
+  - id: "precision_feed"
+    type: "context"
+    domain: "meta"
+    description: "按任务类型精准注入数据资产"
+    since: "V9"
+    status: "active"
+
+  # ── 上下文管理 ──
+  - id: "cleanup_task_context"
+    type: "context"
+    domain: "meta"
+    description: "三层上下文清理（任务边界 + 步骤摘要 + 历史警告）"
+    since: "V9"
+    status: "active"
+
+  # ── V8 频道 ──
+  - id: "v8_roster_routing"
+    type: "routing"
+    domain: "v8"
+    description: "V8 花名册 @ 路由"
+    since: "V8"
+    status: "active"
+
+  - id: "v8_plan_discussion"
+    type: "routing"
+    domain: "v8"
+    description: "V8 编排 Agent 多轮讨论"
+    since: "V9"
+    status: "active"
+
+# ── 能力分组（元认知 + 精准投喂使用） ──
+groups:
+  file_operations: ["read_file", "write_file", "list_dir", "search_files"]
+  command_execution: ["execute_command"]
+  knowledge_retrieval: ["query_index"]
+  os_intercepts: ["path_auto_correct", "read_command_block", "sandbox_path_check", "heredoc_mtime_check", "write_file_truncation_guard", "read_quota_limit"]
+  llm_fallback: ["llm_degrade_ollama"]
+  metacognition: ["metacognition_reflect", "os_event_write", "os_event_monitor"]
+  precision_feeds: ["precision_feed"]
+  context_management: ["cleanup_task_context"]
+  v8_channel: ["v8_roster_routing", "v8_plan_discussion"]

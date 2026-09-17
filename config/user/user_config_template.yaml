@@ -1,0 +1,57 @@
+# 用户自定义配置模板
+# 复制到 data/users/{用户名}/config.yaml 并修改
+
+# ========== 基础信息 ==========
+user:
+  name: "用户名"
+  preference: "default"
+
+# ========== 已安装的技能配置 ==========
+installed_skills:
+  language_master:
+    enabled: true
+    config:
+      translation_style: "concise"  # concise, detailed, technical
+      custom_vocab:
+        漫剧: "manga_drama"
+        视频: "video"
+        制作: "create"
+      auto_learn: true
+  
+  video_maker:
+    enabled: true
+    config:
+      output_format: "mp4"
+      resolution: "1920x1080"
+      fps: 30
+      default_duration: 5
+  
+  image_processor:
+    enabled: true
+    config:
+      default_width: 512
+      default_height: 512
+      style: "anime"  # anime, realistic, artistic
+
+# ========== 已安装的 Agent 配置 ==========
+installed_agents:
+  code_assistant:
+    enabled: true
+    config:
+      language_preference: "python"
+      code_style: "pep8"
+      auto_review: true
+  
+  personal_butler:
+    enabled: true
+    config:
+      greeting_style: "warm"
+      response_style: "concise"
+      memory_retention_days: 30
+
+# ========== 全局偏好 ==========
+global:
+  language: "zh-CN"
+  theme: "dark"
+  notification_enabled: true
+  auto_update: true

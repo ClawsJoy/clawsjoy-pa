@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ClawsJoy 智能仪表板</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', monospace;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #7c3aed; margin-bottom: 20px; font-size: 28px; }
+        h2 { color: #a78bfa; margin: 20px 0 15px 0; font-size: 20px; border-left: 3px solid #7c3aed; padding-left: 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .card {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #2d2d3d;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .card h3 { color: #c4b5fd; margin-bottom: 15px; font-size: 16px; }
+        .stat { font-size: 32px; font-weight: bold; color: #a78bfa; }
+        .stat-label { font-size: 12px; color: #888; margin-top: 5px; }
+        .status-ok { color: #4ade80; }
+        .status-warn { color: #fbbf24; }
+        .status-bad { color: #f87171; }
+        .service-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .service-badge {
+            background: #2d2d3d;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .service-badge.ok { border-left: 3px solid #4ade80; }
+        .service-badge.bad { border-left: 3px solid #f87171; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #2d2d3d; }
+        th { color: #a78bfa; }
+        .refresh-btn {
+            background: #7c3aed;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover { background: #6d28d9; }
+        .timestamp { color: #666; font-size: 12px; margin-top: 20px; text-align: center; }
+        .success-rate { font-size: 48px; font-weight: bold; }
+        .success-rate.high { color: #4ade80; }
+        .success-rate.medium { color: #fbbf24; }
+        .success-rate.low { color: #f87171; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>🧠 ClawsJoy 智能监控仪表板</h1>
+        <button class="refresh-btn" onclick="refreshAll()">🔄 刷新数据</button>
+    </div>
+    
+    <div class="grid">
+        <!-- 系统状态卡片 -->
+        <div class="card">
+            <h3>📡 系统状态</h3>
+            <div id="services" class="service-list">加载中...</div>
+        </div>
+        
+        <!-- 记忆统计卡片 -->
+    <!-- 技能统计卡片 -->
+    <div class="card">
+        <h3>🔧 技能统计</h3>
+        <div id="skills-stats">加载中...</div>
+    </div>
+        <div class="card">
+            <h3>💾 记忆统计</h3>
+            <div id="memoryStats">加载中...</div>
+        </div>
+        
+        <!-- 成功率卡片 -->
+        <div class="card">
+            <h3>📊 任务成功率</h3>
+            <div id="successRate" style="text-align: center;">加载中...</div>
+        </div>
+    </div>
+    
+    <!-- 最新分析报告 -->
+    <div class="card">
+        <h3>🔍 最新分析报告</h3>
+        <div id="latestAnalysis">加载中...</div>
+    </div>
+    
+    <!-- 最近分析历史 -->
+    <div class="card">
+        <h3>📈 分析历史</h3>
+        <table id="analysisHistory">
+            <thead><tr><th>时间</th><th>总任务</th><th>成功率</th><th>错误知识</th></tr></thead>
+            <tbody><tr><td colspan="4">加载中...</td></tr></tbody>
+        </table>
+    </div>
+    
+    <!-- 最近任务 -->
+    <div class="card">
+        <h3>📋 最近任务</h3>
+        <table id="recentTasks">
+            <thead><tr><th>任务</th><th>状态</th></tr></thead>
+            <tbody><tr><td colspan="2">加载中...</td></tr></tbody>
+        </table>
+    </div>
+    
+    <div class="timestamp" id="timestamp">最后更新: --</div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:5021';
+    
+    async function fetchJSON(url) {
+        try {
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            return await resp.json();
+        } catch (e) {
+            console.error(`Fetch error: ${url}`, e);
+            return null;
+        }
+    }
+    
+    async function refreshAll() {
+        const timestamp = new Date().toLocaleTimeString();
+        document.getElementById('timestamp').innerHTML = `最后更新: ${timestamp}`;
+        
+        // 获取仪表板数据
+        const data = await fetchJSON(`${API_BASE}/api/monitoring/dashboard`);
+        if (data) {
+            renderServices(data.status);
+            renderMemoryStats(data.memory_stats);
+            renderLatestAnalysis(data.latest_analysis);
+            renderAnalysisHistory(data.recent_analyses);
+        }
+        
+        // 获取任务记录
+        const tasks = await fetchJSON(`${API_BASE}/api/monitoring/tasks?limit=10`);
+        if (tasks) {
+            renderRecentTasks(tasks);
+        }
+    }
+    
+    function renderServices(services) {
+        if (!services) {
+            document.getElementById('services').innerHTML = '<span class="status-bad">无法获取</span>';
+            return;
+        }
+        const html = Object.entries(services).map(([name, svc]) => 
+            `<div class="service-badge ok">✅ ${name}:${svc.port}</div>`
+        ).join('');
+        document.getElementById('services').innerHTML = html || '<span>无服务</span>';
+    }
+    
+    function renderMemoryStats(stats) {
+        if (!stats) {
+            document.getElementById('memoryStats').innerHTML = '<span>无法获取</span>';
+            return;
+        }
+        const categories = ['workflow_outcome', 'error_knowledge', 'executed_decisions', 'intelligence_analysis'];
+        const html = categories.map(cat => 
+            `<div><span style="color:#888">${cat}:</span> <span style="color:#a78bfa">${stats[cat] || 0}</span></div>`
+        ).join('');
+        document.getElementById('memoryStats').innerHTML = html;
+    }
+    
+    function renderLatestAnalysis(analysis) {
+        if (!analysis || !analysis.success_rate) {
+            document.getElementById('latestAnalysis').innerHTML = '<span>暂无分析数据</span>';
+            return;
+        }
+        const rate = analysis.success_rate;
+        const rateClass = rate >= 70 ? 'high' : (rate >= 50 ? 'medium' : 'low');
+        document.getElementById('successRate').innerHTML = `
+            <div class="success-rate ${rateClass}">${rate}%</div>
+            <div class="stat-label">总任务: ${analysis.total_tasks || 0}</div>
+        `;
+        
+        document.getElementById('latestAnalysis').innerHTML = `
+            <div><strong>时间:</strong> ${analysis.timestamp}</div>
+            <div><strong>总任务:</strong> ${analysis.total_tasks || 0}</div>
+            <div><strong>成功数:</strong> ${analysis.success_count || 0}</div>
+            <div><strong>成功率:</strong> <span class="${rateClass}">${rate}%</span></div>
+            <div><strong>错误知识:</strong> ${analysis.error_count || 0}</div>
+            <div><strong>决策记录:</strong> ${analysis.decision_count || 0}</div>
+        `;
+    }
+    
+    function renderAnalysisHistory(analyses) {
+        if (!analyses || analyses.length === 0) {
+            document.querySelector('#analysisHistory tbody').innerHTML = '<tr><td colspan="4">暂无数据</td></tr>';
+            return;
+        }
+        const html = analyses.slice().reverse().map(a => `
+            <tr>
+                <td>${a.timestamp?.slice(0, 19) || '-'}</td>
+                <td>${a.total_tasks || 0}</td>
+                <td class="${a.success_rate >= 70 ? 'status-ok' : (a.success_rate >= 50 ? 'status-warn' : 'status-bad')}">${a.success_rate || 0}%</td>
+                <td>${a.error_count || 0}</td>
+            </tr>
+        `).join('');
+        document.querySelector('#analysisHistory tbody').innerHTML = html;
+    }
+    
+    function renderRecentTasks(tasks) {
+        if (!tasks || tasks.length === 0) {
+            document.querySelector('#recentTasks tbody').innerHTML = '<tr><td colspan="2">暂无任务</td></tr>';
+            return;
+        }
+        const html = tasks.slice().reverse().slice(0, 10).map(t => `
+            <tr>
+                <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis;">${t.raw || '-'}</td>
+                <td class="${t.success ? 'status-ok' : 'status-bad'}">${t.success ? '✅ 成功' : '❌ 失败'}</td>
+            </tr>
+        `).join('');
+        document.querySelector('#recentTasks tbody').innerHTML = html;
+    }
+    
+    // 自动刷新（每30秒）
+    refreshAll();
+    setInterval(refreshAll, 30000);
+</script>
+</body>
+</html>

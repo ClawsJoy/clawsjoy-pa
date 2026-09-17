@@ -1,0 +1,48 @@
+# 用户画像引擎配置
+
+version: "1.0.0"
+
+engine:
+  name: profile
+  enabled: true
+  auto_save: true
+  save_interval: 60  # 自动保存间隔(秒)
+
+# 存储配置
+storage:
+  type: json  # json, redis, database
+  path: data/user_profiles.json
+  backup_enabled: true
+
+# 记忆配置
+memory:
+  max_memories_per_user: 100  # 每个用户最大记忆数
+  ttl_days: 30                 # 记忆过期天数
+
+# 画像字段
+fields:
+  - name: name
+    type: string
+    persistent: true
+    
+  - name: preferences
+    type: list
+    persistent: true
+    
+  - name: habits
+    type: list
+    persistent: true
+    
+  - name: interaction_count
+    type: int
+    default: 0
+    
+  - name: success_rate
+    type: float
+    default: 0.0
+
+# 学习配置
+learning:
+  enabled: true
+  learn_from_conversation: true
+  auto_update_preferences: true

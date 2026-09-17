@@ -1,0 +1,127 @@
+intents:
+  analysis:
+    keywords:
+    - 核实
+    - 证实
+    - 验证
+    - 分析
+    - 确认
+    - 判断
+    - 评估
+    priority: 15
+    use_llm: true
+  calculate:
+    keywords:
+    - 计算
+    - 等于
+    - 多少
+    - 求和
+    patterns:
+    - \d+[\+\-\*/]\d+
+    - \d+\s*[加减乘除]\s*\d+
+    priority: 10
+    use_llm: true
+  chat:
+    keywords: []
+    priority: 1
+  code:
+    keywords:
+    - 实现
+    - 编程
+    - Python
+    - 函数
+    - 写代码
+    - 快速排序
+    - 对象
+    - Java
+    - 斐波那契
+    - 递归
+    - C\+\+
+    - 闭包
+    - JavaScript
+    - 二叉树
+    - 生成器
+    - 写一个.*函数
+    - def
+    - 冒泡排序
+    - 迭代器
+    - 装饰器
+    - 算法
+    - 类
+    - 写一个.*方法
+    patterns:
+    - def\s+\w+
+    - function\s+\w+
+    - class\s+\w+
+    priority: 100
+  farewell:
+    keywords:
+    - 再见
+    - 拜拜
+    - bye
+    - 回头见
+    priority: 5
+  greeting:
+    keywords:
+    - 你好
+    - 您好
+    - hi
+    - hello
+    - 在吗
+    - 早上好
+    - 晚上好
+    priority: 6
+  long_task:
+    keywords:
+    - 然后
+    - 接着
+    - 最后
+    - 并且
+    min_length: 20
+    priority: 3
+    use_agent: orchestrator
+  story:
+    keywords:
+    - 故事
+    - 小说
+    - 童话
+    - 寓言
+    - 讲个
+    min_length: 100
+    priority: 3
+    require_keyword: true
+    use_llm: true
+  thanks:
+    keywords:
+    - 谢谢
+    - 感谢
+    - 多谢
+    priority: 5
+  translate:
+    keywords:
+    - 翻译
+    - Translate
+    - translation
+    - 译成
+    - 怎么说
+    - 的中文
+    - 的英文
+    - 的意思
+    - hello的中文
+    - hello中文
+    patterns:
+    - .*的中文
+    - .*的英文
+    - hello.*中文
+    priority: 9
+    use_llm: true
+  weather:
+    keywords:
+    - 天气
+    - 气温
+    - 预报
+    - 温度
+    - 下雨
+    - 晴天
+    priority: 7
+    use_agent: weather_skill

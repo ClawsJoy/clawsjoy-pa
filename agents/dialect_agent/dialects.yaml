@@ -1,0 +1,29 @@
+# 方言配置 - 可扩展
+version: "1.0.0"
+
+supported_dialects:
+  - name: "普通话"
+    code: "zh-cn"
+    enabled: true
+  - name: "粤语"
+    code: "yue"
+    enabled: true
+  - name: "闽南语"
+    code: "nan"
+    enabled: true
+  - name: "吴语"
+    code: "wuu"
+    enabled: true
+  - name: "四川话"
+    code: "sc"
+    enabled: true
+  - name: "东北话"
+    code: "db"
+    enabled: true
+  - name: "宁波话"
+    code: "nb"
+    enabled: true
+
+learning:
+  storage: "data/dialect_mappings.json"
+  profile_dir: "data/users/{user_id}/dialect_profile.json"

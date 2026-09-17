@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Skill 市场 - ClawsJoy</title>
+    <style>
+        body { background: #1a1a2e; color: #eee; font-family: sans-serif; padding: 20px; }
+        .skill-card { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin: 10px 0; }
+        button { background: gold; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>📦 Skill 市场</h1>
+    <div id="skills"></div>
+    <script>
+        fetch('/api/skills/list')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('skills').innerHTML = data.skills.map(s =>
+                    `<div class="skill-card"><b>${s.name}</b><br>${s.description}</div>`
+                ).join('');
+            });
+    </script>
+</body>
+</html>

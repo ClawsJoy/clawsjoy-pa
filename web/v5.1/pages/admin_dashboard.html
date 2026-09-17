@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <title>管理中心 | ClawsJoy</title>
+    <link rel="stylesheet" href="../css/themes.css">
+    <style>
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 68, 68, 0.3);
+            padding: 30px 20px;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #ccc;
+        }
+        
+        .menu-item:hover, .menu-item.active {
+            background: rgba(255, 68, 68, 0.15);
+            color: #ff4444;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .pending-list {
+            margin-top: 20px;
+        }
+        
+        .pending-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .btn-approve { background: #44ff44; color: #000; }
+        .btn-reject { background: #ff4444; }
+    </style>
+</head>
+<body>
+    <div id="three-canvas"></div>
+    <div class="admin-layout">
+        <div class="sidebar">
+            <div style="font-size: 24px; text-align: center; margin-bottom: 30px;">👑 ClawsJoy Admin</div>
+            <div class="menu-item active" onclick="showAdminPanel('pending')">⏳ 待审核</div>
+            <div class="menu-item" onclick="showAdminPanel('users')">👥 用户管理</div>
+            <div class="menu-item" onclick="showAdminPanel('products')">📦 商品管理</div>
+            <div class="menu-item" onclick="showAdminPanel('system')">⚙️ 系统监控</div>
+            <div class="menu-item" onclick="location.href='../index_root.html'">🚪 退出</div>
+        </div>
+        
+        <div class="main-content">
+            <h1 id="admin-title">⏳ 待审核商品</h1>
+            
+            <div id="admin-pending">
+                <div class="pending-list" id="pending-list">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+            
+            <div id="admin-users" style="display: none;">
+                <h2>用户管理</h2>
+                <div class="glass-card" style="padding: 20px;">
+                    <table style="width:100%; border-collapse: collapse;">
+                        <tr style="border-bottom:1px solid #333;"><th>用户</th><th>角色</th><th>状态</th><th>操作</th></tr>
+                        <tr><td>john</td><td>普通用户</td><td>🟢 正常</td><td><button class="btn-neon" style="background:#ff4444;">禁用</button></td></tr>
+                        <tr><td>developer1</td><td>开发者</td><td>🟢 正常</td><td><button class="btn-neon" style="background:#ff4444;">禁用</button></td></tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="admin-system" style="display: none;">
+                <h2>系统监控</h2>
+                <div class="stats-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
+                    <div class="glass-card" style="padding:20px;"><div style="font-size:32px; color:#00f3ff;">14</div><div>产品总数</div></div>
+                    <div class="glass-card" style="padding:20px;"><div style="font-size:32px; color:#44ff44;">3</div><div>在线Agent</div></div>
+                    <div class="glass-card" style="padding:20px;"><div style="font-size:32px; color:#ffaa44;">128</div><div>今日请求</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 3D背景暂时禁用 -->
+    <script>
+        const API_BASE = 'http://localhost:5002';
+        
+        async function loadPending() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/pending`);
+                const data = await res.json();
+                const container = document.getElementById('pending-list');
+                if (data.pending && data.pending.length > 0) {
+                    container.innerHTML = data.pending.map(p => `
+                        <div class="pending-item glass-card">
+                            <div>
+                                <strong>${p.agent_name}</strong><br>
+                                <span style="font-size:12px;">开发者: ${p.developer_id} | v${p.version}</span>
+                            </div>
+                            <div>
+                                <button class="btn-neon btn-approve" onclick="approve('${p.package_id}')">✅ 通过</button>
+                                <button class="btn-neon btn-reject" onclick="reject('${p.package_id}')">❌ 拒绝</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="glass-card" style="padding:20px; text-align:center;">暂无待审核商品</div>';
+                }
+            } catch(e) {
+                document.getElementById('pending-list').innerHTML = '<div>加载失败</div>';
+            }
+        }
+        
+        async function approve(packageId) {
+            const res = await fetch(`${API_BASE}/api/admin/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ package_id: packageId })
+            });
+            if (res.ok) {
+                alert('审核通过');
+                loadPending();
+            }
+        }
+        
+        async function reject(packageId) {
+            const res = await fetch(`${API_BASE}/api/admin/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ package_id: packageId })
+            });
+            if (res.ok) {
+                alert('已拒绝');
+                loadPending();
+            }
+        }
+        
+        function showAdminPanel(panel) {
+            const panels = ['pending', 'users', 'products', 'system'];
+            panels.forEach(p => {
+                const el = document.getElementById(`admin-${p}`);
+                if (el) el.style.display = 'none';
+            });
+            document.getElementById(`admin-${panel}`).style.display = 'block';
+            
+            const titles = { pending: '⏳ 待审核商品', users: '👥 用户管理', products: '📦 商品管理', system: '⚙️ 系统监控' };
+            document.getElementById('admin-title').innerHTML = titles[panel];
+            
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.menu-item').classList.add('active');
+            
+            if (panel === 'pending') loadPending();
+        }
+        
+        loadPending();
+    </script>
+</body>
+</html>

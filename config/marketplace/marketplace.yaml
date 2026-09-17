@@ -1,0 +1,63 @@
+# ============================================
+# 市场配置 - ClawsJoy 配置驱动
+# ============================================
+version: "1.0.0"
+
+# 市场基本信息
+info:
+  name: "ClawsJoy Agent Market"
+  description: "Agent和技能市场"
+  version: "1.0.0"
+
+# 功能开关
+features:
+  enabled: true
+  allow_developer_upload: true
+  require_review: true
+  auto_sanitize: true
+
+# 分类
+categories:
+  - id: "agent"
+    name: "Agent"
+    icon: "🤖"
+    description: "智能Agent"
+  - id: "skill"
+    name: "技能"
+    icon: "⚡"
+    description: "可复用技能"
+  - id: "skin"
+    name: "皮肤"
+    icon: "🎨"
+    description: "界面皮肤"
+  - id: "voice"
+    name: "语音"
+    icon: "🎤"
+    description: "语音包"
+
+# 定价配置
+pricing:
+  default_currency: "free"
+  support_payment: false
+  price_tiers:
+    - name: "free"
+      display: "免费"
+
+# 审核配置
+review:
+  enabled: true
+  auto_approve_trusted: false
+  max_pending_days: 7
+
+# 存储配置
+storage:
+  products_dir: "data/marketplace"
+  pending_dir: "data/marketplace/pending"
+  user_agents_dir: "data/users/{user_id}/agents"
+
+# API端点配置（配置驱动）
+endpoints:
+  list: "/api/marketplace/list"
+  install: "/api/marketplace/install"
+  uninstall: "/api/marketplace/uninstall"
+  installed: "/api/marketplace/installed"

@@ -1,0 +1,8 @@
+actions:
+- compose
+- 合成
+description: comic_compositor 技能
+enabled: true
+name: comic_compositor
+type: skill
+version: 1.0.0

@@ -1,0 +1,13 @@
+position: 视频编辑
+description: 视频制作、剪辑、预览图生成
+model: ollama
+budget: 8
+permissions:
+  read: /shared
+  write: /exports
+  execute: false
+  network: true
+constraints:
+  - 最终稿需人工确认
+review_prompt: "你是视频审查员。审查以下视频方案，直接给出意见："
+agent_mapping: video_agent

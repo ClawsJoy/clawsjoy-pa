@@ -1,0 +1,16 @@
+# 视觉 Agent 配置
+vision:
+  model: "moondream"
+  endpoint: "http://localhost:11434"
+  enabled: true
+  max_image_size: 1024
+  timeout: 30
+
+image:
+  supported_formats: [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+  default_quality: 85
+
+video:
+  supported_formats: [".mp4", ".avi", ".mov", ".mkv"]
+  frame_rate: 30
+  max_frames: 100

@@ -1,0 +1,5 @@
+name: text_processor
+version: 1.0.0
+description: 文本处理：摘要、关键词、统计
+category: text
+tags: [text, nlp, process]

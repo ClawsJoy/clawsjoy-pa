@@ -1,0 +1,31 @@
+# Blender 渲染工作流
+name: blender_render
+description: Blender 高质量渲染流程
+version: 1.0.0
+
+steps:
+  - name: setup
+    agent: blender_skill
+    prompt: "设置场景: {shape} 尺寸: {size}"
+    output: scene
+  
+  - name: material
+    agent: blender_skill
+    prompt: "应用材质: {scene} 材质类型: {material_type}"
+    output: with_material
+  
+  - name: lighting
+    agent: blender_skill
+    prompt: "设置灯光: {with_material} 灯光类型: {light_type}"
+    output: lit
+  
+  - name: render
+    agent: blender_skill
+    prompt: "渲染: {lit} 分辨率: {resolution} 采样: {samples}"
+    output: image
+
+output:
+  - scene
+  - with_material
+  - lit
+  - image

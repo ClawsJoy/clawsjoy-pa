@@ -1,0 +1,62 @@
+# 硬编码配置统一管理
+# 所有硬编码值迁移到此文件
+
+# 服务端点配置
+endpoints:
+  ollama:
+    host: "127.0.0.1"
+    port: 11434
+    url: "http://127.0.0.1:11434"
+  gateway:
+    host: "0.0.0.0"
+    port: 5002
+  comfyui:
+    host: "127.0.0.1"
+    port: 8188
+
+# 路径配置
+paths:
+  root: "."
+  data: "./data"
+  logs: "./logs"
+  output: "./output"
+  skills: "./skills"
+  models: "./models"
+
+# Agent 配置
+agents:
+  default_user: "john"
+  max_history: 10
+  heartbeat_interval: 30
+
+# 技能配置
+skills:
+  auto_discover: true
+  cache_enabled: true
+  max_retry: 3
+
+# 通信配置
+communication:
+  message_timeout: 30
+  max_queue_size: 1000
+  retry_interval: 5
+
+# 服务端口扩展
+endpoints:
+  web_learner:
+    host: "localhost"
+    port: 5011
+  user_preference:
+    host: "localhost"
+    port: 5445
+  auth:
+    host: "localhost"
+    port: 5444
+
+# 忽略的文件（不需要修改）
+ignore_paths:
+  - "deprecated/"
+  - "scripts/"
+  - "tools/ComfyUI/"
+  - "tests/"
+  - "__pycache__/"

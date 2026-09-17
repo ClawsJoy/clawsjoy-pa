@@ -1,0 +1,10 @@
+actions:
+- video-understand
+capabilities:
+- description: video-understand skill
+  name: video-understand
+description: video-understand skill
+enabled: true
+name: video-understand
+type: skill
+version: 1.0.0

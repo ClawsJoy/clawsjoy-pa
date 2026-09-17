@@ -1,0 +1,18 @@
+actions:
+- 读取文件
+- 写入文件
+- 文件操作
+capabilities:
+- description: 读取文件内容
+  name: read_file
+- description: 写入文件内容
+  name: write_file
+- description: 列出目录文件
+  name: list_files
+- description: 删除文件
+  name: delete_file
+- description: 搜索文件
+  name: search_files
+description: 文件操作工具集
+name: file_tools
+type: tool

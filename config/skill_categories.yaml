@@ -1,0 +1,115 @@
+categories:
+  ai: Ai
+  audio: 音频处理
+  auto_generated: 自动生成
+  auto_test_skill: Auto Test Skill
+  brand: 品牌管理
+  calculator: 计算器
+  cartoon_images: Cartoon Images
+  childcare: 儿童陪护
+  cinematic_render: Cinematic Render
+  clean_script: Clean Script
+  clean_script_v2: Clean Script V2
+  comic_generator: Comic Generator
+  content_writer: Content Writer
+  convert: 单位换算
+  core: 核心调度
+  course: 课程学习
+  crm: 客户管理
+  data: 数据处理
+  data_merger: Data Merger
+  development: 开发工具
+  digital_employee: 数字员工
+  docker: Docker
+  document: 文档管理
+  dual_script_writer: Dual Script Writer
+  education: 儿童教育
+  email: 邮件服务
+  entertainment: 家庭娱乐
+  exam: 考试准备
+  expert_script_writer: Expert Script Writer
+  extract_content: Extract Content
+  extract_content_v2: Extract Content V2
+  extracurricular: 课外拓展
+  file: 文件操作
+  finance: 投资理财
+  focus: 专注训练
+  food: 美食餐饮
+  game: 娱乐游戏
+  gpu_safe: Gpu Safe
+  health: 健康监测
+  home: 家庭生活
+  hr: 人力资源
+  image: 图像处理
+  image_scheduler: Image Scheduler
+  integration:
+    description: 外部服务集成和通知
+    name: 集成
+  long_script_gen: Long Script Gen
+  long_voice_writer: Long Voice Writer
+  marketing: 市场分析
+  math: 数学计算
+  math_basic: 数学基础
+  media:
+    description: 图像、视频、音频处理技能
+    name: 媒体处理
+  meeting: 会议管理
+  memory_integration: Memory Integration
+  network_basic: 网络请求
+  news: 新闻资讯
+  note: 笔记管理
+  opengl: Opengl
+  ops_skills: Ops Skills
+  panorama: Panorama
+  pro_script_3min: Pro Script 3Min
+  pro_script_writer: Pro Script Writer
+  random: 随机生成
+  reading: 读书学习
+  reminder: 提醒服务
+  safety: 家庭安全
+  sales: 销售管理
+  schedule: 日程管理
+  school: 家校沟通
+  sd_image_gen: Sd Image Gen
+  security: 安全工具
+  sequential_script: Sequential Script
+  series_manager: Series Manager
+  shopping: 购物消费
+  simple_script: Simple Script
+  social: 社交沟通
+  sports: 健康运动
+  state_manager: State Manager
+  storyteller: Storyteller
+  study_plan: 学习计划
+  svg: Svg
+  system: 系统信息
+  text: 文本处理
+  text_basic: 文本处理基础
+  text_to_image: Text To Image
+  three_d: Three D
+  threejs: Threejs
+  time: 时间日期
+  todo: 待办事项
+  tools: 工具集
+  translate: 翻译服务
+  travel: 旅游出行
+  tutoring: 作业辅导
+  url_discovery: Url Discovery
+  video: 视频制作
+  vision: Vision
+  voice_script_writer: Voice Script Writer
+  weather: 天气查询
+  weather_skill: Weather Skill
+  webhook_notify: Webhook Notify
+  website: 网站维护
+  workflow:
+    description: 工作流引擎和状态管理
+    name: 工作流
+  workflow_engine: Workflow Engine
+  workflow_engine_v2: Workflow Engine V2
+  writing:
+    description: 脚本、文章、故事写作技能
+    name: 内容创作
+skills: {}
+updated_at: '2026-06-04'
+version: 2.0.0

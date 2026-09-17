@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - ClawsJoy 私人管家</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .login-card h1 {
+            text-align: center;
+            margin-bottom: 24px;
+            color: #333;
+        }
+        .login-card input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+        .login-card button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .login-card button:active { transform: scale(0.98); }
+        .error { color: red; text-align: center; margin-top: 12px; font-size: 14px; }
+        .register-link { text-align: center; margin-top: 16px; color: #666; }
+        .register-link a { color: #667eea; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>🤖 私人管家</h1>
+        <input type="text" id="username" placeholder="用户名" autocomplete="off">
+        <input type="password" id="password" placeholder="密码">
+        <button onclick="login()">登录</button>
+        <div class="register-link">
+            还没有账号？ <a href="#" onclick="showRegister()">立即注册</a>
+        </div>
+        <div id="errorMsg" class="error"></div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        
+        async function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                document.getElementById('errorMsg').innerText = '请输入用户名和密码';
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user_id', data.user_id);
+                    window.location.href = '/mobile/chat.html';
+                } else {
+                    document.getElementById('errorMsg').innerText = data.error || '登录失败';
+                }
+            } catch(e) {
+                document.getElementById('errorMsg').innerText = '网络错误';
+            }
+        }
+        
+        function showRegister() {
+            window.location.href = '/mobile/register.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+"""Agent 灵魂加载器 - 为 Agent 注入人格"""
+
+import yaml
+from pathlib import Path
+from typing import Dict, Any, Optional
+
+class AgentSoul:
+    """Agent 灵魂 - 人格、价值观、沟通风格"""
+    
+    def __init__(self, agent_name: str):
+        self.agent_name = agent_name
+        self.soul_config = self._load_soul()
+        self.personality_template = self._load_personality_template()
+        
+    def _load_soul(self) -> Dict:
+        """加载 Agent 灵魂配置"""
+        soul_file = Path("config/agents_soul.yaml")
+        if not soul_file.exists():
+            return {}
+        
+        with open(soul_file, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        agents = config.get('agents', {})
+        return agents.get(self.agent_name, {})
+    
+    def _load_personality_template(self) -> Dict:
+        """加载人格模板"""
+        soul_file = Path("config/agents_soul.yaml")
+        if not soul_file.exists():
+            return {}
+        
+        with open(soul_file, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        templates = config.get('personality_templates', {})
+        persona_type = self.soul_config.get('persona', 'professional')
+        return templates.get(persona_type, {})
+    
+    def get_greeting(self) -> str:
+        """获取问候语"""
+        comm = self.soul_config.get('communication', {})
+        return comm.get('greeting', f'你好！我是 {self.agent_name}')
+    
+    def get_farewell(self) -> str:
+        """获取告别语"""
+        comm = self.soul_config.get('communication', {})
+        return comm.get('farewell', '再见！')
+    
+    def get_tone(self) -> str:
+        """获取语气"""
+        comm = self.soul_config.get('communication', {})
+        return comm.get('tone', '友好专业')
+    
+    def get_personality_traits(self) -> list:
+        """获取性格特质"""
+        personality = self.soul_config.get('personality', {})
+        return personality.get('primary_traits', [])
+    
+    def get_values(self) -> list:
+        """获取价值观"""
+        return self.soul_config.get('values', [])
+    
+    def get_motto(self) -> str:
+        """获取座右铭"""
+        identity = self.soul_config.get('identity', {})
+        return identity.get('motto', '')
+    
+    def get_visual(self) -> Dict:
+        """获取视觉风格"""
+        return self.soul_config.get('visual', {})
+    
+    def get_temperature(self) -> float:
+        """获取 LLM temperature 参数"""
+        return self.personality_template.get('temperature', 0.5)
+    
+    def get_communication_style(self) -> str:
+        """获取沟通风格"""
+        return self.personality_template.get('communication_style', '友好专业')
+    
+    def enhance_prompt(self, base_prompt: str) -> str:
+        """增强提示词 - 注入人格"""
+        personality_traits = ', '.join(self.get_personality_traits())
+        tone = self.get_tone()
+        
+        enhanced = f"""【角色设定】
+        def get_system_prompt_with_name(self, name: str = None) -> str:
+            """获取带名称的系统提示词"""
+            system_prompt = self.soul_config.get('system_prompt', '')
+            current_name = name or self.soul_config.get('name', '小管')
+            return system_prompt.replace('{{name}}', current_name)
+        def validate_custom_name(self, name: str) -> tuple:
+            """验证自定义名称"""
+            for field in self.get_customizable_fields():
+                if field.get('field') == 'name':
+                    import re
+                    pattern = field.get('pattern', r'^[\u4e00-\u9fa5a-zA-Z0-9]{1,10}$')
+                    if re.match(pattern, name):
+                        return True, None
+                    return False, field.get('message', '名称格式无效')
+            return True, None
+        def get_rename_response(self) -> str:
+            """获取改名回复模板"""
+            return self.soul_config.get('communication', {}).get(
+                'rename_response', '好的，以后请叫我 {new_name}'
+            )
+        def get_rename_patterns(self) -> list:
+            """获取改名触发模式"""
+            return self.soul_config.get('rename_patterns', [])
+你是 {self.agent_name}，{self.get_motto()}
+你的性格特质：{personality_traits}
+你的沟通语气：{tone}
+你的价值观：{', '.join(self.get_values())}
+
+{base_prompt}
+
+请按照你的角色设定回复用户。"""
+        
+        return enhanced
+    
+    def get_soul_summary(self) -> Dict:
+        """获取灵魂摘要"""
+        return {
+            "name": self.agent_name,
+            "greeting": self.get_greeting(),
+            "personality": self.get_personality_traits(),
+            "values": self.get_values(),
+            "motto": self.get_motto(),
+            "tone": self.get_tone(),
+            "temperature": self.get_temperature(),
+            "visual": self.get_visual()
+        }
+
+
+def get_agent_soul(agent_name: str) -> AgentSoul:
+    """获取 Agent 灵魂实例"""
+    return AgentSoul(agent_name)
+
+    def validate_custom_name(self, name: str) -> tuple:
+        """验证自定义名称"""
+        for field in self.get_customizable_fields():
+            if field.get('field') == 'name':
+                import re
+                pattern = field.get('pattern', r'^[\u4e00-\u9fa5a-zA-Z0-9]{1,10}$')
+    def get_system_prompt_with_name(self, name: str = None) -> str:
+        """获取带名称的系统提示词"""
+        system_prompt = self.soul_config.get('system_prompt', '')
+        current_name = name or self.soul_config.get('name', '小管')
+        return system_prompt.replace('{{name}}', current_name)

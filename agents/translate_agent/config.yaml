@@ -1,0 +1,40 @@
+agent:
+  capabilities:
+  - 翻译文本
+  - translate text
+  - language conversion
+  - 中译英
+  - 英译中
+  - 日文翻译
+  - 韩文翻译
+  - 法文翻译
+  - 德文翻译
+  display_name: 翻译官
+  enabled: true
+  keywords:
+  - 翻译
+  - 译成
+  - translate
+  - 怎么翻译
+  - 翻译成
+  llm:
+    max_tokens: 1024
+    model: qwen2.5:7b
+    provider: ollama
+    temperature: 0.3
+  name: translate_agent
+  role:
+    alias: 语言桥
+    responsibilities:
+    - 多语言文本翻译
+    - 语言自动检测
+    - 专业术语翻译
+    title: 翻译官
+  supported_languages:
+  - 中文
+  - 英文
+  - 日文
+  - 韩文
+  - 法文
+  - 德文
+  type: builtin

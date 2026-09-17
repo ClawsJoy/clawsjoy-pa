@@ -1,0 +1,42 @@
+agent:
+  name: collaboration_agent
+  display_name: 协作助手
+  type: builtin
+  enabled: true
+  role:
+    title: "协作师"
+    alias: "协调员"
+    level: 2
+    responsibilities:
+      - "多 Agent 协作"
+      - "任务分发"
+      - "结果汇总"
+    permissions:
+      - "collaborate"
+      - "distribute"
+
+routing:
+  rules:
+    - intent: ["计算", "数学"]
+      target: executor_agent
+    - intent: ["代码", "编程"]
+      target: code_agent
+  default_target: chat_agent
+
+memory:
+  enabled: true
+  path: memory/
+
+  # LLM 配置 - 协作需要较强推理
+  llm:
+    provider: ollama
+    model: qwen2.5:7b
+    temperature: 0.3
+    max_tokens: 2048
+    timeout: 90
+
+  # 能力声明
+  capabilities:
+    - task_decomposition
+    - multi_agent_coordination
+    - result_aggregation

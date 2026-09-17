@@ -1,0 +1,60 @@
+# 技能名称映射配置
+version: "1.0.0"
+description: "查询词到技能的映射表"
+
+# 直接映射
+mappings:
+  计算: calculate
+  加法: calculate
+  减法: calculate
+  乘法: calculate
+  除法: calculate
+  算术: calculate
+  算数: calculate
+  计算器: calculator
+  
+  翻译: translate
+  译: translate
+  中译英: translate
+  英译中: translate
+  翻译器: translator
+  
+  天气: get_weather
+  温度: get_weather
+  气温: get_weather
+  预报: forecast
+  气象: weather
+  
+  文件: read_file
+  读取: read_file
+  读文件: read_file
+  打开文件: read_file
+  写文件: write_file
+  保存文件: write_file
+  列出文件: list_files
+  
+  聊天: chat
+  对话: chat
+  交谈: chat
+  问答: qa
+  
+  搜索: search
+  查找: search
+  查询: search
+  
+  帮助: help
+  指南: guide
+  
+  设置: setting
+  配置: config
+
+# 分类映射（用于模糊匹配）
+category_mappings:
+  数学: calculate
+  语言: translate
+  气候: get_weather
+  文件操作: read_file
+  交流: chat
+  图像识别: image_recognition
+  看图: image_recognition
+  图片分析: image_recognition

@@ -1,0 +1,14 @@
+actions:
+- 网络请求
+- 下载文件
+- API调用
+capabilities:
+- description: 发送 HTTP GET 请求
+  name: http_get
+- description: 发送 HTTP POST 请求
+  name: http_post
+- description: 下载文件
+  name: download_file
+description: 网络请求工具集
+name: network_tools
+type: tool

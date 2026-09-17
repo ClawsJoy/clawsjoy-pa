@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <title>技能工厂 | ClawsJoy 开发者平台</title>
+    <link rel="stylesheet" href="../css/themes.css">
+    <style>
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .factory-layout {
+            display: flex;
+            gap: 20px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+            padding: 20px;
+        }
+        
+        .editor-panel {
+            flex: 2;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 170, 68, 0.3);
+        }
+        
+        .preview-panel {
+            flex: 1;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 170, 68, 0.3);
+        }
+        
+        .skill-editor {
+            width: 100%;
+            min-height: 400px;
+            background: #0a0a1a;
+            border: 1px solid #ffaa44;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            color: #00f3ff;
+            resize: vertical;
+        }
+        
+        .skill-meta {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0a0a1a;
+            border-radius: 12px;
+        }
+        
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0a0a1a;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow: auto;
+        }
+        
+        .template-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .template-btn {
+            background: rgba(255, 170, 68, 0.1);
+            border: 1px solid #ffaa44;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .template-btn:hover {
+            background: #ffaa44;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="three-canvas"></div>
+    <div class="factory-layout">
+        <div class="editor-panel">
+            <h2 style="color:#ffaa44;">🏭 技能工厂 - 在线编码</h2>
+            
+            <div class="template-selector">
+                <span style="color:#aaa;">模板:</span>
+                <button class="template-btn" onclick="loadTemplate('weather')">🌤️ 天气查询</button>
+                <button class="template-btn" onclick="loadTemplate('calculator')">🧮 计算器</button>
+                <button class="template-btn" onclick="loadTemplate('translate')">🌐 翻译</button>
+                <button class="template-btn" onclick="loadTemplate('empty')">📄 空白技能</button>
+            </div>
+            
+            <div class="skill-meta">
+                <input type="text" id="skill-name" placeholder="技能名称" class="param-input" style="width: 100%;">
+                <textarea id="skill-desc" placeholder="技能描述" class="param-input" style="width: 100%; rows: 2;"></textarea>
+            </div>
+            
+            <textarea id="skill-code" class="skill-editor" placeholder="编写技能代码..."></textarea>
+            
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="btn-neon" onclick="testSkill()">🧪 测试运行</button>
+                <button class="btn-neon" style="background:#ffaa44;" onclick="publishSkill()">📤 发布上架</button>
+                <button class="btn-neon" onclick="saveSkill()">💾 保存草稿</button>
+            </div>
+        </div>
+        
+        <div class="preview-panel">
+            <h3 style="color:#ffaa44;">🧪 测试面板</h3>
+            <div>
+                <label>测试输入</label>
+                <textarea id="test-input" class="param-input" rows="3" placeholder='{"city": "北京"}'></textarea>
+            </div>
+            <button class="btn-neon" onclick="runTest()" style="margin-top: 10px;">▶️ 执行测试</button>
+            
+            <div class="test-result" id="test-result">
+                等待测试...
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h4>📦 我的技能</h4>
+                <div id="my-skills-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 3D背景暂时禁用 -->
+    <script>
+        const API_BASE = 'http://localhost:5002';
+        
+        const templates = {
+            weather: `// 天气查询技能
+async function execute(params) {
+    const { city } = params;
+    // 模拟天气查询
+    const weatherData = {
+        city: city || "北京",
+        temperature: Math.floor(Math.random() * 20) + 10,
+        condition: ["晴", "多云", "小雨"][Math.floor(Math.random() * 3)]
+    };
+    return {
+        success: true,
+        result: \`\${weatherData.city}天气: \${weatherData.condition}, 温度 \${weatherData.temperature}°C\`
+    };
+}`,
+            calculator: `// 计算器技能
+async function execute(params) {
+    const { expression, a, b, operation } = params;
+    if (expression) {
+        const result = eval(expression);
+        return { success: true, result: \`\${expression} = \${result}\` };
+    }
+    if (operation && a !== undefined && b !== undefined) {
+        let result;
+        switch(operation) {
+            case 'add': result = a + b; break;
+            case 'sub': result = a - b; break;
+            case 'mul': result = a * b; break;
+            case 'div': result = a / b; break;
+            default: result = 0;
+        }
+        return { success: true, result };
+    }
+    return { success: false, error: "缺少参数" };
+}`,
+            translate: `// 翻译技能
+async function execute(params) {
+    const { text, from = "auto", to = "zh" } = params;
+    // 模拟翻译
+    const translations = {
+        "hello": "你好",
+        "world": "世界",
+        "你好": "Hello"
+    };
+    const result = translations[text] || \`[模拟翻译] \${text}\`;
+    return { success: true, result };
+}`,
+            empty: `// 自定义技能
+async function execute(params) {
+    // 在此编写您的技能逻辑
+    const { input } = params;
+    
+    // 处理输入
+    const result = \`收到输入: \${input}\`;
+    
+    return {
+        success: true,
+        result: result,
+        data: { processed: true }
+    };
+}`
+        };
+        
+        function loadTemplate(type) {
+            document.getElementById('skill-code').value = templates[type];
+            if (type === 'weather') {
+                document.getElementById('skill-name').value = '天气查询';
+                document.getElementById('skill-desc').value = '查询实时天气信息';
+                document.getElementById('test-input').value = '{"city": "上海"}';
+            } else if (type === 'calculator') {
+                document.getElementById('skill-name').value = '智能计算器';
+                document.getElementById('skill-desc').value = '数学计算和表达式求值';
+                document.getElementById('test-input').value = '{"a": 10, "b": 20, "operation": "add"}';
+            } else if (type === 'translate') {
+                document.getElementById('skill-name').value = '语言翻译';
+                document.getElementById('skill-desc').value = '多语言翻译服务';
+                document.getElementById('test-input').value = '{"text": "hello", "to": "zh"}';
+            }
+        }
+        
+        async function runTest() {
+            const code = document.getElementById('skill-code').value;
+            const testInput = document.getElementById('test-input').value;
+            
+            try {
+                const input = JSON.parse(testInput);
+                // 动态执行技能代码
+                const skillFunction = new Function('params', code + '\n return execute(params);');
+                const result = await skillFunction(input);
+                document.getElementById('test-result').innerHTML = JSON.stringify(result, null, 2);
+            } catch(e) {
+                document.getElementById('test-result').innerHTML = '❌ 执行错误: ' + e.message;
+            }
+        }
+        
+        async function testSkill() {
+            await runTest();
+        }
+        
+        async function publishSkill() {
+            const name = document.getElementById('skill-name').value;
+            const desc = document.getElementById('skill-desc').value;
+            const code = document.getElementById('skill-code').value;
+            
+            if (!name) {
+                alert('请输入技能名称');
+                return;
+            }
+            
+            // 保存到本地存储
+            const skills = JSON.parse(localStorage.getItem('developer_skills') || '[]');
+            skills.push({
+                name: name,
+                description: desc,
+                code: code,
+                created_at: new Date().toISOString(),
+                status: 'pending'
+            });
+            localStorage.setItem('developer_skills', JSON.stringify(skills));
+            
+            alert(`技能 "${name}" 已提交审核，将在市场中出现`);
+            loadMySkills();
+        }
+        
+        function saveSkill() {
+            const name = document.getElementById('skill-name').value;
+            if (!name) {
+                alert('请输入技能名称');
+                return;
+            }
+            localStorage.setItem(`skill_draft_${name}`, document.getElementById('skill-code').value);
+            alert('草稿已保存');
+        }
+        
+        function loadMySkills() {
+            const skills = JSON.parse(localStorage.getItem('developer_skills') || '[]');
+            const container = document.getElementById('my-skills-list');
+            if (skills.length === 0) {
+                container.innerHTML = '<div style="color:#666;">暂无技能，创建第一个吧</div>';
+            } else {
+                container.innerHTML = skills.map(s => `
+                    <div style="padding: 8px; margin: 5px 0; background: #0a0a1a; border-radius: 8px;">
+                        <div style="font-weight:bold;">${s.name}</div>
+                        <div style="font-size:11px; color:#888;">${s.status === 'pending' ? '⏳ 审核中' : '✅ 已发布'}</div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        loadMySkills();
+        loadTemplate('empty');
+    </script>
+</body>
+</html>

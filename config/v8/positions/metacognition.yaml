@@ -1,0 +1,14 @@
+position: 元认知Agent
+description: 分析AI员工行为、识别系统问题、生成优化建议
+model: glm-5.2
+budget: 2
+permissions:
+  read: /shared
+  write: /shared
+  execute: false
+  network: true
+constraints:
+  - 只分析不执行
+  - 优化建议需人工审核
+review_prompt: "你是元认知审查员。审查系统分析报告的准确性，直接给出意见："
+agent_mapping: metacognitive_agent

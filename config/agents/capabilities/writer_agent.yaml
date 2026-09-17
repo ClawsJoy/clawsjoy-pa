@@ -1,0 +1,23 @@
+actions:
+- write
+- identity
+- chat
+capabilities:
+- description: 创作文章、邮件、报告等
+  name: write
+- description: 润色文本
+  name: polish
+- description: 续写文章
+  name: continue_writing
+- description: 转换写作风格
+  name: change_style
+- description: 总结文本
+  name: summarize
+description: 写作专家，擅长创作、润色和风格转换
+examples:
+- input: 写一篇关于春天的文章
+  output: 春天的文章内容...
+- input: 润色：今天天气很好
+  output: 今日阳光明媚，心情愉悦
+name: writer_agent
+type: agent

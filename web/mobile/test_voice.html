@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语音测试</title>
+</head>
+<body>
+    <h1>语音识别测试</h1>
+    <button id="voiceBtn">🎤 点击说话</button>
+    <p id="result"></p>
+    <p id="status"></p>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        const voiceBtn = document.getElementById('voiceBtn');
+        
+        // 检查支持
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            statusDiv.innerHTML = '❌ 浏览器不支持语音识别';
+            voiceBtn.disabled = true;
+        } else {
+            statusDiv.innerHTML = '✅ 浏览器支持语音识别';
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            
+            recognition.onstart = () => {
+                statusDiv.innerHTML = '🎙️ 录音中... 请说话';
+                voiceBtn.style.background = 'red';
+                voiceBtn.style.color = 'white';
+            };
+            
+            recognition.onend = () => {
+                statusDiv.innerHTML = '✅ 录音结束';
+                voiceBtn.style.background = '';
+                voiceBtn.style.color = '';
+            };
+            
+            recognition.onresult = (event) => {
+                let final = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        final = event.results[i][0].transcript;
+                    }
+                }
+                if (final) {
+                    resultDiv.innerHTML = '识别结果：' + final;
+                    statusDiv.innerHTML = '✅ 识别成功';
+                } else {
+                    resultDiv.innerHTML = '识别中...';
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                statusDiv.innerHTML = '❌ 错误：' + event.error;
+                console.error(event);
+            };
+            
+            voiceBtn.onclick = () => {
+                try {
+                    recognition.start();
+                } catch(e) {
+                    statusDiv.innerHTML = '❌ 启动失败：' + e.message;
+                }
+            };
+        }
+    </script>
+</body>
+</html>

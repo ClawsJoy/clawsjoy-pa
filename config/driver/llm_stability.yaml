@@ -1,0 +1,27 @@
+# LLM 稳定性配置 v1.0.0
+
+# 输出过滤
+output_filter:
+  enabled: true
+  patterns:
+    - pattern: "^(Reasoning|Let me|I will).*$"
+      action: strip
+
+# 参数提取
+param_extraction:
+  enabled: true
+  rules:
+    ai-image-gen:
+      - field: prompt
+        source: user_input
+        fallback: "默认图像"
+
+# 重试策略
+retry:
+  max_attempts: 3
+  backoff_seconds: 1
+
+# 缓存
+cache:
+  enabled: true
+  ttl_seconds: 3600

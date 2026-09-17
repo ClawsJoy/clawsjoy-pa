@@ -1,0 +1,29 @@
+agent:
+  actions:
+  - youtube
+  - search
+  - analyze
+  - 下载
+  - download
+  - 下载视频
+  capabilities:
+  - description: 下载YouTube视频
+    name: youtube
+  - description: 下载YouTube视频
+    name: download_video
+  - description: 获取YouTube视频信息
+    name: get_video_info
+  - description: 搜索YouTube视频
+    name: search_video
+  - description: 分析YouTube频道
+    name: analyze_channel
+  - description: 生成视频标题
+    name: generate_title
+  - description: SEO优化建议
+    name: optimize_seo
+  description: YouTube 视频专家，搜索、下载、分析频道
+  examples:
+  - input: 下载 https://youtu.be/xxx
+    output: 请提供 YouTube 链接
+  name: youtube_agent
+type: agent

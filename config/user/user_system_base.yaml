@@ -1,0 +1,113 @@
+# 系统基础能力配置（只读，用户不可修改）
+# 所有用户共享此基础能力
+
+version: "4.0.0"
+
+system_skills:
+  language_master:
+    base_config:
+      translation_style: "concise"
+      auto_learn: true
+    readonly: true
+    description: "系统级翻译能力，不可修改"
+  
+  video_maker:
+    base_config:
+      output_format: "mp4"
+      resolution: "1920x1080"
+      fps: 30
+    readonly: true
+  
+  image_processor:
+    base_config:
+      default_width: 512
+      default_height: 512
+    readonly: true
+
+system_agents:
+  personal_butler:
+    base_config:
+      greeting_style: "warm"
+      response_style: "concise"
+      memory_retention_days: 30
+    readonly: true
+  
+  chat_agent:
+    base_config:
+      max_history: 10
+      ttl: 300
+    readonly: true
+
+security:
+  max_custom_vocab: 100
+  max_installed_skills: 50
+  max_private_memory: 10000
+
+features:
+  auto_learn: true
+  vector_search: false
+  offline_mode: true
+
+# ========== Agent 商品化配置 ==========
+agent_market:
+  available_agents:
+    personal_butler:
+      name: "私人管家"
+      base_price: "free"
+      skins:
+        default:
+          name: "经典管家"
+          avatar: "🤵"
+          color: "#00f3ff"
+          glow: "blue"
+          price: "free"
+        maid:
+          name: "女仆管家"
+          avatar: "👩‍🍳"
+          color: "#ff69b4"
+          glow: "pink"
+          price: "$4.99"
+        butler_premium:
+          name: "执事管家"
+          avatar: "🕴️"
+          color: "#gold"
+          glow: "golden"
+          price: "$9.99"
+        sci_fi:
+          name: "科幻管家"
+          avatar: "🤖"
+          color: "#b000ff"
+          glow: "purple"
+          price: "$4.99"
+      
+    code_agent:
+      name: "代码助手"
+      base_price: "free"
+      skins:
+        default:
+          name: "经典代码"
+          avatar: "💻"
+          color: "#00ff88"
+          price: "free"
+        hacker:
+          name: "黑客风格"
+          avatar: "👾"
+          color: "#00ff00"
+          glow: "green"
+          price: "$4.99"
+
+    translate_agent:
+      name: "语言大师"
+      base_price: "free"
+      skins:
+        default:
+          name: "经典翻译"
+          avatar: "🔤"
+          color: "#00f3ff"
+          price: "free"
+        scholar:
+          name: "学者风格"
+          avatar: "📚"
+          color: "#8B4513"
+          glow: "brown"
+          price: "$4.99"

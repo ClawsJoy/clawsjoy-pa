@@ -1,0 +1,12 @@
+# 默认路径配置
+root: "."
+data: "./data"
+logs: "./logs"
+output: "./output"
+config: "./config"
+
+# 子路径
+subpaths:
+  vector_kb: "data/vector_kb"
+  users: "data/users"
+  exchange: "data/exchange"

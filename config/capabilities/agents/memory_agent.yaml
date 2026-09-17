@@ -1,0 +1,22 @@
+name: memory_agent
+description: 记忆管理专家，存储和检索信息
+capabilities:
+  - name: remember
+    description: 记住信息
+  - name: recall
+    description: 回忆信息
+  - name: forget
+    description: 忘记信息
+  - name: list_memories
+    description: 列出所有记忆
+  - name: natural_remember
+    description: 自然语言记忆（"我叫张三"、"我喜欢蓝色"）
+  - name: natural_recall
+    description: 自然语言回忆（"我叫什么名字"、"我喜欢什么"）
+examples:
+  - input: "记住 名字=张三"
+    output: "✅ 已记住：名字 = 张三"
+  - input: "我喜欢蓝色"
+    output: "✅ 已记住：喜欢 = 蓝色"
+  - input: "回忆 名字"
+    output: "📖 名字 = 张三"

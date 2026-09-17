@@ -1,0 +1,16 @@
+# ClawsJoy v5.0 系统配置
+version: "5.0.0"
+
+system:
+  name: "ClawsJoy"
+  description: "智能体AI操作系统"
+  api_version: "v5"
+
+server:
+  host: "0.0.0.0"
+  port: 5002
+  debug: false
+
+logging:
+  level: "INFO"
+  output: "logs/v5/"

@@ -1,0 +1,21 @@
+# 定时任务配置
+version: "1.0.0"
+
+tasks:
+  # 健康检查
+  health_check:
+    schedule: "*/30"
+    command: "curl -s http://localhost:5002/api/health > /dev/null"
+    enabled: true
+  
+  # 待办提醒
+  todo_reminder:
+    schedule: "0 9"
+    command: "echo '早安提醒'"
+    enabled: true
+  
+  # 数据备份
+  backup:
+    schedule: "0 3"
+    command: "./scripts/backup.sh"
+    enabled: false

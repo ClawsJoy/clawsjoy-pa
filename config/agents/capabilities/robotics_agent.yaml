@@ -1,0 +1,14 @@
+name: robotics_agent
+type: agent
+actions:
+  - fetch
+  - patrol
+  - cleanup
+  - 拿
+  - 取
+  - 帮我拿
+  - 巡逻
+  - 整理
+  - 收拾
+  - robotics
+description: 机器人认知引擎 - 执行物理世界任务

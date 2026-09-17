@@ -1,0 +1,62 @@
+# 引擎四层 + 横切层配置
+
+expression_layer:
+  name: "表达层"
+  engines:
+    - semantic
+    - emotion
+    - dialogue
+  primary_agent: chat_agent
+  description: "用户意图理解、情感识别、对话生成"
+
+decision_layer:
+  name: "决策层"
+  engines:
+    - reasoning
+    - causal
+    - recommend
+  primary_agent: decision_agent
+  description: "逻辑推理、因果分析、综合决策"
+
+orchestration_layer:
+  name: "编排层"
+  engines:
+    - planning
+    - knowledge
+    - memory
+  primary_agent: orchestrator
+  description: "任务分解、知识检索、记忆调用"
+
+execution_layer:
+  name: "执行层"
+  engines:
+    - skill_matrix
+    - workflow
+  primary_agent: executor_agent
+  description: "执行具体任务、调用技能"
+
+# 横切层（贯穿所有层级）
+cross_cutting_layer:
+  name: "横切层"
+  engines:
+    - security
+    - audit
+    - hook
+    - event
+    - proactive
+    - ratelimit
+  description: "安全检查、审计日志、钩子管理、事件驱动、主动服务、限流"
+  scope: "all_layers"
+
+# 引擎优先级（数值越小优先级越高）
+engine_priority:
+  security: 0    # 最高优先级，最先执行
+  audit: 1
+  hook: 2
+  ratelimit: 3
+  semantic: 4
+  reasoning: 5
+  planning: 6
+  skill_matrix: 7
+  event: 8
+  proactive: 9

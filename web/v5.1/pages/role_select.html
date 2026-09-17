@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <title>选择您的角色 | ClawsJoy</title>
+    <link rel="stylesheet" href="../css/themes.css">
+    <style>
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .role-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+            padding: 40px;
+        }
+        
+        .role-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .role-title h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #00f3ff, #7b2ff7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .role-cards {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .role-card {
+            width: 300px;
+            padding: 40px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .role-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--theme-primary);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .role-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .role-name {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .role-desc {
+            color: #aaa;
+            font-size: 13px;
+            margin: 15px 0;
+        }
+        
+        .role-features {
+            text-align: left;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .role-features li {
+            list-style: none;
+            padding: 6px 0;
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        .role-features li::before {
+            content: "✦ ";
+            color: inherit;
+        }
+        
+        .user-role .role-name { color: #44ff44; }
+        .user-role .role-features li::before { color: #44ff44; }
+        
+        .developer-role .role-name { color: #ffaa44; }
+        .developer-role .role-features li::before { color: #ffaa44; }
+        
+        .admin-role .role-name { color: #ff4444; }
+        .admin-role .role-features li::before { color: #ff4444; }
+        
+        .back-link {
+            margin-top: 50px;
+            color: #666;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .back-link:hover { color: #00f3ff; }
+        
+        .btn-role {
+            margin-top: 25px;
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid currentColor;
+            border-radius: 30px;
+            color: inherit;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-role:hover {
+            background: currentColor;
+            color: #0a0a1a;
+        }
+    </style>
+</head>
+<body>
+    <div id="three-canvas"></div>
+    <div class="role-container">
+        <div class="role-title">
+            <h1>⚡ 选择您的身份</h1>
+            <p style="color: #888;">不同的角色，不同的智能体验</p>
+        </div>
+        
+        <div class="role-cards">
+            <!-- 普通用户 -->
+            <div class="role-card glass-card user-role" onclick="selectRole('user')">
+                <div class="role-icon">👤</div>
+                <div class="role-name">普通用户</div>
+                <div class="role-desc">享受智能助手服务</div>
+                <ul class="role-features">
+                    <li>私人管家悬浮窗</li>
+                    <li>工作流编辑器</li>
+                    <li>代码审核工具</li>
+                    <li>技能库访问</li>
+                </ul>
+                <button class="btn-role">🚀 进入工作区 →</button>
+            </div>
+            
+            <!-- 开发者 -->
+            <div class="role-card glass-card developer-role" onclick="selectRole('developer')">
+                <div class="role-icon">👨‍💻</div>
+                <div class="role-name">社区开发者</div>
+                <div class="role-desc">创作Agent，创造价值</div>
+                <ul class="role-features">
+                    <li>创意工坊</li>
+                    <li>技能工厂在线编码</li>
+                    <li>发布上架市场</li>
+                    <li>收益中心 + 创业学院</li>
+                </ul>
+                <button class="btn-role">🎨 进入开发者平台 →</button>
+            </div>
+            
+            <!-- 管理员 -->
+            <div class="role-card glass-card admin-role" onclick="selectRole('admin')">
+                <div class="role-icon">👑</div>
+                <div class="role-name">系统管理员</div>
+                <div class="role-desc">管理平台，审核内容</div>
+                <ul class="role-features">
+                    <li>待审核商品管理</li>
+                    <li>用户管理与监控</li>
+                    <li>系统健康检查</li>
+                    <li>价格策略配置</li>
+                </ul>
+                <button class="btn-role">⚙️ 进入管理中心 →</button>
+            </div>
+        </div>
+        
+        <a class="back-link" href="../index_root.html">← 返回门户首页</a>
+    </div>
+    
+    <!-- 3D背景暂时禁用 -->
+    <script>
+        function selectRole(role) {
+            // 保存角色选择
+            localStorage.setItem('clawsjoy_role', role);
+            
+            // 应用角色主题
+            const colors = {
+                user: '#44ff44',
+                developer: '#ffaa44',
+                admin: '#ff4444'
+            };
+            document.documentElement.style.setProperty('--theme-primary', colors[role]);
+            
+            // 根据角色跳转
+            const roleUrls = {
+                'user': 'user_dashboard.html',
+                'developer': 'developer_dashboard.html',
+                'admin': 'admin_dashboard.html'
+            };
+            
+            if (roleUrls[role]) {
+                window.location.href = roleUrls[role];
+            }
+        }
+    </script>
+</body>
+</html>

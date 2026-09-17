@@ -1,0 +1,17 @@
+# config/v9/message_routing.yaml
+core_layer:
+  max_steps: 1              # 当前步骤上下文
+  max_chars: 3000           # 比 V8 大，因为包含代码
+
+summary_layer:
+  max_steps: 5              # 已完成步骤摘要
+  max_chars: 500
+  source: steps_summary     # 从 steps_summary 表取
+
+retrieval_layer:
+  max_per_step: 3           # 每步最多查 3 次
+  sources: [sag, jsonl, context_snapshots]
+
+execution_layer:            # V9 特有：工具执行日志
+  max_chars: 2000
+  source: agent_actions

@@ -1,0 +1,15 @@
+actions:
+- 安装插件
+- 插件管理
+capabilities:
+- description: 列出可用插件
+  name: list_plugins
+- description: 安装插件
+  name: install_plugin
+- description: 卸载插件
+  name: uninstall_plugin
+- description: 搜索插件
+  name: search_plugins
+description: 插件市场
+name: marketplace
+type: plugin

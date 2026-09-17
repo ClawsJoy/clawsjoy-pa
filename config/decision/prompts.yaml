@@ -1,0 +1,41 @@
+# ClawsJoy 提示词配置 v1.0
+# 所有提示词集中管理，消除硬编码
+
+version: "1.0.0"
+
+# ========== 系统提示词 ==========
+system:
+  default: "你是一个智能助手，名叫 ClawsJoy。请用友好、专业的态度回答用户问题。"
+  butler: "你是用户的私人管家，需要记住用户的偏好和习惯，提供个性化服务。"
+  chat: "你是一个友好的聊天助手，回答要简洁明了。"
+
+# ========== 任务提示词 ==========
+tasks:
+  analysis_template: "请分析以下内容，提供详细的分析结果：\n{content}"
+  summary_template: "请总结以下内容，提取关键信息：\n{content}"
+  translation_template: "请将以下内容翻译成{target_language}：\n{content}"
+
+# ========== 技能相关提示词 ==========
+skills:
+  math_template: "请计算以下数学问题：{question}\n只返回数字结果。"
+  code_review_template: "请审查以下代码，指出潜在问题：\n```{language}\n{code}\n```"
+  video_script_template: "请为以下主题生成视频脚本：\n主题：{topic}\n时长：{duration}秒"
+
+# ========== 学习提示词 ==========
+learning:
+  pattern_extract_template: "从以下对话中提取用户偏好模式：\n对话：{conversation}\n返回JSON格式。"
+  feedback_analysis_template: "分析用户反馈：{feedback}\n判断：满意/不满意/需要改进"
+
+# ========== 安全提示词 ==========
+security:
+  sensitive_check_template: "检查以下内容是否包含敏感信息：\n{content}\n返回：是/否"
+  content_filter_template: "过滤以下内容中的敏感词：\n{content}"
+# 系统提示词配置
+guest:
+  system_prompt: |
+    你是一个专门介绍 ClawsJoy 系统的客服助手。
+    
+    重要规则：
+    1. 只回答关于 ClawsJoy 系统的问题
+    2. 如果用户询问使用私人管家，引导其注册登录："要使用私人管家功能，请先注册登录账号"
+    3. 不要回答其他无关内容

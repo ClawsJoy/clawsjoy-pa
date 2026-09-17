@@ -1,0 +1,43 @@
+# V8 频道审计规则 — 所有审计参数统一在此管理
+
+discussion:
+  max_rounds: 20            # 最大讨论轮次，超限自动确认
+  timeout_minutes: 30       # 讨论空闲超时，超限归档
+  max_history_items: 50     # _discussion 数组最大条数
+  duplicate_detection: true # 启用重复消息检测
+  auto_confirm_on_timeout: true
+
+agent_discussion:
+  max_rounds: 8
+  consensus_threshold: 0.5
+  model_timeout_seconds: 30
+  max_silent_rounds: 2
+  max_error_count: 3
+
+token_budget:
+  per_session: 50000        # 单次会话 token 消耗上限
+  per_channel: 200000       # 单频道每日 token 上限
+  per_day: 0               # 全局每日 token 上限（0=不限制，只统计）
+  warn_at: 0.8              # 达到上限 80% 时触发告警
+
+review_loop:
+  max_cycles: 3             # review 不通过 → 返工的最大循环次数
+  timeout_minutes: 60       # review 阶段超时
+
+archive:
+  discussion_ttl_hours: 72  # 讨论分支超过 72 小时未活跃自动归档
+  orchestration_ttl_days: 7 # orchestrations 记录保留 7 天后归档
+
+monitoring:
+  os_event_interval_seconds: 3600
+
+# ===== 工具预设模式（P1-1）=====
+# minimal：简单/写任务只用核心工具，避免 Agent 过度探索
+# full：分析/排查类任务开放全部工具
+# 网络工具(只读): fetch_web/browse_web/browser_local minimal+full 都开放(只读安全);
+# browser_local(本地浏览器调研, Manus 模式) minimal 也开放 — 只读浏览/提取/截图/滚动安全;
+# playwright_browser(沙箱浏览器自动化)仅 full。
+# list_dir 只读安全, minimal 保留(Agent 需要目录探索); search_files/query_index 仍仅 full。
+modes:
+  minimal: [read_file, write_file, execute_command, list_dir, search_files, fetch_web, browse_web, web_search, browser_local, obsidian_knowledge, table_extract, lingxi, pa_audit, file_center]
+  full: [read_file, write_file, execute_command, list_dir, search_files, query_index, fetch_web, browse_web, web_search, playwright_browser, browser_local, obsidian_knowledge, table_extract, lingxi, wps_office, pa_audit, file_center]

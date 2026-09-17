@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Version Registry V1.0.05 20260524 - Version Registry V1.0.05 20260524 模块
+
+@version: 5.0.0
+@author: ClawsJoy
+@date: 2026-5-31
+"""
+
+from core.lib.unified_config import unified_config
+
+"""版本注册中心 v1.0.05 - 配置驱动改造完成版"""
+
+import json
+import os
+import re
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Optional
+
+try:
+    import yaml
+
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+
+
+class VersionRegistry:
+    """版本注册中心 v1.0.05 - 配置驱动改造完成"""
+
+    VERSION = "1.0.05"
+
+    def __init__(self, root_path: Optional[Path] = None):
+        self.root = Path(root_path) if root_path else Path(__file__).parent.parent
+        self.json_file = self.root / "config" / "version_registry.json"
+        self.yaml_file = self.root / "config" / "version_registry.yaml"
+        self.system_version_file = self.root / "VERSION"
+        self.registry = self._load_registry()
+
+    def _load_registry(self) -> Dict:
+        if self.json_file.exists():
+            with open(self.json_file, "r") as f:
+                return json.load(f)
+        return {
+            "version": self.VERSION,
+            "system_version": self._get_system_version(),
+            "modules": {},
+            "created_at": datetime.now().isoformat(),
+            "last_updated": None,
+            "format": "json",
+        }
+
+    def _save_registry(self):
+        self.registry["last_updated"] = datetime.now().isoformat()
+        self.registry["system_version"] = self._get_system_version()
+        with open(self.json_file, "w") as f:
+            json.dump(self.registry, f, indent=2, ensure_ascii=False)
+        self._export_yaml()
+
+    def _export_yaml(self):
+        if not YAML_AVAILABLE:
+            return
+        try:
+            with open(self.yaml_file, "w") as f:
+                yaml.dump(self.registry, f, default_flow_style=False, allow_unicode=True)
+        except Exception:
+            pass
+
+    def _get_system_version(self) -> str:
+        if self.system_version_file.exists():
+            return self.system_version_file.read_text().strip()
+        return "5.0.0"
+
+    def register_module(self, module_name: str, module_path: str, module_type: str = "core") -> Dict:
+        """注册模块"""
+        version = f"v1.0.05_20260524"
+        self.registry["modules"][module_name] = {
+            "path": module_path,
+            "type": module_type,
+            "version": version,
+            "registered_at": datetime.now().isoformat(),
+            "status": "active",
+        }
+        self._save_registry()
+        return self.registry["modules"][module_name]
+
+    def get_version(self, module_name: str) -> Optional[str]:
+        if module_name in self.registry["modules"]:
+            return self.registry["modules"][module_name]["version"]
+        return None
+
+
+# 注册配置驱动改造的模块
+version_registry = VersionRegistry()
+
+# 注册所有改造的模块
+modules_to_register = [
+    ("unified_config", "core/lib/unified_config.py", "core"),
+    ("route_registry", "core/lib/route_registry.py", "core"),
+    ("agent_soul", "core/lib/agent_soul.py", "core"),
+    ("personal_butler_v2", "core/agents/personal_butler_v2.py", "core"),
+    ("smart_adapter", "lib/smart_adapter.py", "core"),
+    ("chat_agent", "core/agents/chat_agent.py", "core"),
+    ("butler_memory", "core/lib/butler_memory.py", "core"),
+]
+
+for name, path, typ in modules_to_register:
+    try:
+        version_registry.register_module(name, path, typ)
+        print(f"✅ 注册: {name}")
+    except Exception as e:
+        print(f"❌ 注册失败 {name}: {e}")
+
+print(f"\n[版本注册中心] v{version_registry.VERSION} 已加载")
+print(f"已注册 {len(version_registry.registry['modules'])} 个模块")

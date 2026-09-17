@@ -1,0 +1,6 @@
+# LLM 配置示例（请复制为 llm_config.yaml 并填写真实值）
+llm:
+  provider: "ollama"  # 或 openai, anthropic
+  endpoint: "http://localhost:11434"
+  model: "qwen2.5:7b-instruct-q4_0-gpu"
+  api_key: "your-api-key-here"  # 仅云端 API 需要

@@ -1,0 +1,158 @@
+# ClawsJoy 闭环配置
+version: "2.0.0"
+
+# 健康度计算
+health_scoring:
+  base_score: 85
+  max_penalty: 30
+  thresholds:
+    cpu_high: 80
+    memory_high: 80
+    error_critical: 5
+    health_warning: 70
+    health_critical: 50
+
+# 告警配置
+alerting:
+  enabled: true
+  levels:
+    info:
+      color: "green"
+      webhook: ""
+    warning:
+      color: "yellow"
+      webhook: ""
+    critical:
+      color: "red"
+      webhook: ""
+  conditions:
+    - name: "health_low"
+      metric: "health_score"
+      threshold: 70
+      level: "warning"
+      message: "系统健康度低于 {value}/100"
+    - name: "health_critical"
+      metric: "health_score"
+      threshold: 50
+      level: "critical"
+      message: "系统健康度严重下降 {value}/100"
+    - name: "error_high"
+      metric: "error_count"
+      threshold: 10
+      level: "warning"
+      message: "错误数量过多: {value} 条"
+  cooldown: 300
+  storage: "memory_vector"
+
+# 技能路由
+skill_routing:
+  default: "ai-image-gen"
+  rules:
+    - keywords: ["调度", "定时", "计划"]
+      skill: "scheduler"
+    - keywords: ["视频", "剪辑", "制作"]
+      skill: "video_composer"
+    - keywords: ["分析", "统计", "报告"]
+      skill: "analysis_agent"
+    - keywords: ["聊天", "对话", "你好"]
+      skill: "chat_agent"
+
+# 决策配置
+decision:
+  sleep_interval: 0.5
+  max_queue_size: 100
+  auto_execute: true
+
+# 主动学习
+active_learning:
+  enabled: true
+  interval: 300
+  max_insights: 3
+
+# 数据源
+data_sources:
+  logs:
+    max_lines: 1000
+  metrics:
+    timeout: 5
+
+# 私人管家名字提取规则
+agents:
+  personal_butler:
+    name_extraction:
+      patterns:
+        - regex: "(?:我叫|我是|本名|名叫|可以叫我|在下|区区|鄙人)\\s*([^\\s，。！？]{2,})"
+          priority: 1
+      exclude_patterns:
+        - "叫什么名字"
+        - "我叫什么"
+        - "我是谁"
+        - "名字是什么"
+        - "你知道我名字"
+        - "怎么称呼"
+      exclude_words:
+        - "什么"
+        - "哪个"
+        - "谁"
+        - "啥"
+        - "名字"
+        - "称呼"
+
+# 私人管家配置
+personal_butler:
+  # 待办关键词
+  todo_keywords:
+    - "记住"
+    - "提醒"
+    - "todo"
+    - "待办"
+    - "添加待办"
+  
+  # 待办查询关键词
+  todo_query_keywords:
+    - "待办"
+    - "todo"
+    - "任务"
+    - "做什么"
+  
+  # 偏好关键词
+  preference_pattern: "喜欢\\s*([^\\s，。]+)"
+  
+  # 情绪关键词
+  emotions:
+    happy: ["开心", "高兴", "棒", "太好了", "nice", "好棒", "完美"]
+    sad: ["难过", "伤心", "郁闷", "烦", "糟糕", "失落", "沮丧"]
+    angry: ["生气", "愤怒", "讨厌", "烦死了", "可恶", "恼火"]
+    neutral: []
+  
+  # 主动问候
+  greetings:
+    morning: "🌅 早安！今天有什么我可以帮您的吗？"
+    afternoon: "☀️ 下午好！需要我做点什么吗？"
+    evening: "🌙 晚上好！有什么可以帮您的？"
+
+# 名字提取配置
+name_extraction:
+  patterns:
+    - regex: '我叫(.+?)(?:$|，|。| )'
+    - regex: '我是(.+?)(?:$|，|。| )'
+    - regex: '以后叫我(.+?)(?:$|，|。| )'
+    - regex: '以后叫(.+?)(?:$|，|。| )'
+    - regex: '请叫我(.+?)(?:$|，|。| )'
+    - regex: '叫我(.+?)(?:$|，|。| )'
+  exclude_patterns: ['什么', '谁', '怎么', '为什么']
+  exclude_words: ['你', '我', '他', '她', '它']
+
+# 反馈学习配置
+feedback:
+  enabled: true
+  success_rate_threshold: 0.7
+  satisfaction_threshold: 60
+  learning_interval: 3600
+
+# 主动服务配置
+proactive:
+  enabled: true
+  check_interval: 300
+  morning_greeting_hour: 9
+  idle_threshold: 1800

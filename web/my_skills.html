@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>我的技能 - ClawsJoy</title>
+    <style>
+        body { font-family: Arial; background: #1e1e2e; color: #fff; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: #2a2a3e; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        h1 { color: #667eea; }
+        .score { font-size: 48px; font-weight: bold; color: #10b981; }
+        button { background: #667eea; border: none; padding: 10px 20px; color: white; border-radius: 5px; cursor: pointer; }
+        textarea, input { width: 100%; background: #3a3a4e; border: none; padding: 10px; color: white; border-radius: 5px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 我的技能成熟度</h1>
+        <div class="card">
+            <div class="score" id="score">--</div>
+            <p id="canList"></p>
+        </div>
+        
+        <div class="card">
+            <h2>📝 申请上架技能链</h2>
+            <input type="text" id="skillName" placeholder="技能名称">
+            <textarea id="skillDesc" rows="2" placeholder="技能描述"></textarea>
+            <textarea id="skillChain" rows="3" placeholder='{"steps": ["image_collector", "script_writer"]}'></textarea>
+            <button onclick="submitListing()">提交上架申请</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+    <script>
+        async function loadMaturity() {
+            const res = await fetch('/api/marketplace/my/maturity?user_id=alice');
+            const data = await res.json();
+            document.getElementById('score').innerHTML = (data.maturity_score || 0).toFixed(0);
+            document.getElementById('canList').innerHTML = data.can_list ? '✅ 可以申请上架' : '❌ 成熟度不足，继续使用吧';
+        }
+        
+        async function submitListing() {
+            const skillChain = {
+                name: document.getElementById('skillName').value,
+                description: document.getElementById('skillDesc').value,
+                steps: JSON.parse(document.getElementById('skillChain').value || '[]')
+            };
+            const res = await fetch('/api/marketplace/submit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: 'alice', skill_chain: skillChain})
+            });
+            const data = await res.json();
+            document.getElementById('result').innerHTML = `<div class="card">✅ 申请已提交！ID: ${data.listing_id}<br>成熟度: ${data.maturity_score}</div>`;
+        }
+        
+        loadMaturity();
+    </script>
+</body>
+</html>

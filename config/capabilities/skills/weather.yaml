@@ -1,0 +1,8 @@
+actions:
+- weather
+- 天气
+description: weather 技能
+enabled: true
+name: weather
+type: skill
+version: 1.0.0

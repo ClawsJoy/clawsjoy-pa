@@ -1,0 +1,13 @@
+# 主动优化配置 v1.0.01
+enable_quality_scoring: true      # 启用质量预评分
+enable_error_knowledge: true      # 启用错误知识库
+enable_priority_adjust: true      # 启用优先级调整
+enable_resource_throttle: true    # 启用资源限流
+enable_smart_scheduling: true     # 启用智能调度
+enable_dynamic_threshold: true    # 启用动态阈值调整
+enable_versioning: true           # 启用版本化
+skip_on_low_quality: true         # 低质量任务自动跳过
+skip_on_repeated_failure: true    # 重复失败自动跳过
+auto_learn_failures: true         # 自动学习失败
+history_window_size: 1000         # 历史任务窗口大小
+prediction_window_size: 100       # 预测窗口大小

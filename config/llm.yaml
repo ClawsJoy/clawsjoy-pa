@@ -1,0 +1,3 @@
+llm:
+  fast_model: phi3:mini
+  endpoint: http://localhost:11434

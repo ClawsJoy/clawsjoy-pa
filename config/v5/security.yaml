@@ -1,0 +1,7 @@
+# 安全配置
+enabled: true
+rate_limit:
+  enabled: true
+  requests_per_minute: 60
+input_validation: true
+output_sanitization: true

@@ -1,0 +1,13 @@
+{
+  "version": "3.1",
+  "services": {
+    "chat_api": {"port": 18109, "auto_restart": true},
+    "promo_api": {"port": 8108, "auto_restart": true},
+    "web": {"port": 18083}
+  },
+  "learning": {
+    "feedback_enabled": true,
+    "auto_improve_interval": 3600
+  },
+  "backup": {"enabled": true, "keep_days": 30}
+}

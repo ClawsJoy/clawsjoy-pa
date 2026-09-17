@@ -1,0 +1,45 @@
+# 自调优配置
+version: "1.0.0"
+
+# 调优目标
+objectives:
+  - name: "response_time"
+    target: "< 1s"
+    weight: 0.3
+  - name: "success_rate"
+    target: "> 0.95"
+    weight: 0.4
+  - name: "accuracy"
+    target: "> 0.90"
+    weight: 0.3
+
+# 可调参数
+tunable_params:
+  - path: "llm.temperature"
+    range: [0.1, 0.9]
+    default: 0.3
+    step: 0.05
+  - path: "llm.max_tokens"
+    range: [100, 2000]
+    default: 500
+    step: 100
+  - path: "memory.dedup_threshold"
+    range: [0.8, 0.99]
+    default: 0.95
+    step: 0.01
+  - path: "decision.risk.threshold"
+    range: [0.3, 0.7]
+    default: 0.5
+    step: 0.05
+
+# 调优策略
+strategy:
+  algorithm: "bayesian"  # bayesian, grid, random
+  exploration: 0.2
+  max_iterations: 50
+  convergence_threshold: 0.01
+
+# 评估周期
+schedule:
+  interval: 3600  # 1小时
+  min_samples: 100

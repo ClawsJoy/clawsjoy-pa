@@ -1,0 +1,20 @@
+name: butler_agent
+description: 私人管家，管理待办、提醒和日程
+capabilities:
+  - name: add_todo
+    description: 添加待办事项
+  - name: list_todos
+    description: 列出待办事项
+  - name: complete_todo
+    description: 完成待办事项
+  - name: delete_todo
+    description: 删除待办事项
+  - name: set_reminder
+    description: 设置提醒
+  - name: list_reminders
+    description: 列出提醒
+examples:
+  - input: "添加待办 买牛奶"
+    output: "✅ 已添加待办：买牛奶"
+  - input: "我的待办"
+    output: "📋 待办列表：1. 买牛奶"

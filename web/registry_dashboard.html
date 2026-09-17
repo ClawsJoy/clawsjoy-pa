@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawsJoy 注册中心 - 服务治理平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        /* 头部 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .header p { color: #888; margin-top: 8px; }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #2d2d3d;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-2px); border-color: #7c3aed; }
+        .stat-value { font-size: 36px; font-weight: bold; color: #a78bfa; }
+        .stat-label { font-size: 14px; color: #888; margin-top: 8px; }
+        
+        /* 主内容区 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: #1e1e2e;
+            border-radius: 12px;
+            border: 1px solid #2d2d3d;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 15px 20px;
+            background: #2d2d3d;
+            border-bottom: 1px solid #3d3d4d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: #3d3d4d;
+        }
+        .badge.active { background: #10b981; color: #fff; }
+        .badge.inactive { background: #ef4444; color: #fff; }
+        .badge.warning { background: #f59e0b; color: #fff; }
+        
+        .card-content {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* 服务/技能/Agent 项 */
+        .item {
+            background: #2d2d3d;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .item:hover { background: #3d3d4d; }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .item-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .item-name .online { color: #10b981; }
+        .item-name .offline { color: #ef4444; }
+        .item-version {
+            font-size: 11px;
+            color: #888;
+            font-family: monospace;
+        }
+        .item-detail {
+            font-size: 12px;
+            color: #888;
+            margin-top: 6px;
+        }
+        .item-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .tag {
+            background: #1e1e2e;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            color: #a78bfa;
+        }
+        
+        /* 操作按钮 */
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-sm { background: #3d3d4d; color: #e0e0e0; }
+        .btn-sm:hover { background: #7c3aed; }
+        
+        /* 刷新按钮 */
+        .refresh-btn {
+            background: #7c3aed;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .refresh-btn:hover { background: #6d28d9; }
+        
+        /* 时间戳 */
+        .timestamp {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+        }
+        
+        /* 状态指示器 */
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-dot.green { background: #10b981; box-shadow: 0 0 5px #10b981; }
+        .status-dot.red { background: #ef4444; box-shadow: 0 0 5px #ef4444; }
+        .status-dot.yellow { background: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
+        
+        /* 搜索框 */
+        .search-box {
+            width: 100%;
+            padding: 8px 12px;
+            background: #2d2d3d;
+            border: 1px solid #3d3d4d;
+            border-radius: 8px;
+            color: #e0e0e0;
+            margin-bottom: 15px;
+        }
+        .search-box:focus { outline: none; border-color: #7c3aed; }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1e1e2e; }
+        ::-webkit-scrollbar-thumb { background: #3d3d4d; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📋 ClawsJoy 统一注册中心</h1>
+        <p>服务治理 · 技能管理 · Agent 调度</p>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-value" id="serviceCount">-</div><div class="stat-label">服务总数</div></div>
+        <div class="stat-card"><div class="stat-value" id="activeServiceCount">-</div><div class="stat-label">活跃服务</div></div>
+        <div class="stat-card"><div class="stat-value" id="skillCount">-</div><div class="stat-label">技能总数</div></div>
+        <div class="stat-card"><div class="stat-value" id="agentCount">-</div><div class="stat-label">Agent 总数</div></div>
+    </div>
+    
+    <!-- 主内容 -->
+    <div class="main-grid">
+        <!-- 服务列表 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🖥️ 服务注册</h3>
+                <button class="refresh-btn" onclick="refreshAll()" style="padding:4px 12px; font-size:12px;">🔄 刷新</button>
+            </div>
+            <div class="card-content">
+                <input type="text" class="search-box" id="serviceSearch" placeholder="搜索服务..." onkeyup="filterServices()">
+                <div id="serviceList">加载中...</div>
+            </div>
+        </div>
+        
+        <!-- 技能列表 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🔧 技能注册</h3>
+                <span class="badge" id="skillCountBadge">0</span>
+            </div>
+            <div class="card-content">
+                <input type="text" class="search-box" id="skillSearch" placeholder="搜索技能..." onkeyup="filterSkills()">
+                <div id="skillList">加载中...</div>
+            </div>
+        </div>
+        
+        <!-- Agent 列表 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🤖 Agent 注册</h3>
+                <span class="badge" id="agentCountBadge">0</span>
+            </div>
+            <div class="card-content">
+                <input type="text" class="search-box" id="agentSearch" placeholder="搜索 Agent..." onkeyup="filterAgents()">
+                <div id="agentList">加载中...</div>
+            </div>
+        </div>
+        
+        <!-- 操作面板 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>⚡ 操作面板</h3>
+                <span class="badge">管理</span>
+            </div>
+            <div class="card-content">
+                <div style="margin-bottom: 15px;">
+                    <div style="font-size:13px; margin-bottom:8px;">路由测试</div>
+                    <div style="display:flex; gap:10px;">
+                        <select id="capabilitySelect" style="flex:1; background:#2d2d3d; border:1px solid #3d3d4d; border-radius:6px; padding:8px; color:#e0e0e0;">
+                            <option value="video_creation">视频制作</option>
+                            <option value="code_generation">代码生成</option>
+                            <option value="youtube_analyze">YouTube分析</option>
+                        </select>
+                        <button class="btn-sm" onclick="testRoute()" style="padding:8px 16px;">路由</button>
+                    </div>
+                    <div id="routeResult" style="margin-top:10px; font-size:12px; color:#888;"></div>
+                </div>
+                <div style="border-top:1px solid #2d2d3d; padding-top:15px;">
+                    <div style="font-size:13px; margin-bottom:8px;">健康检查</div>
+                    <button class="btn-sm" onclick="checkAllHealth()" style="width:100%; padding:8px;">检查所有服务健康状态</button>
+                    <div id="healthResult" style="margin-top:10px; font-size:12px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="timestamp" id="timestamp">最后更新: --</div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:5022';
+    let servicesData = [];
+    let skillsData = [];
+    let agentsData = [];
+    
+    async function fetchJSON(url) {
+        try {
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            return await resp.json();
+        } catch(e) {
+            console.error(e);
+            return null;
+        }
+    }
+    
+    async function loadDashboard() {
+        const data = await fetchJSON(`${API_BASE}/api/registry/dashboard`);
+        if (data) {
+            // 更新统计
+            document.getElementById('serviceCount').innerText = data.services?.total || 0;
+            document.getElementById('activeServiceCount').innerText = data.services?.active || 0;
+            document.getElementById('skillCount').innerText = data.skills?.total || 0;
+            document.getElementById('agentCount').innerText = data.agents?.total || 0;
+            document.getElementById('skillCountBadge').innerText = data.skills?.total || 0;
+            document.getElementById('agentCountBadge').innerText = data.agents?.total || 0;
+            
+            // 保存原始数据
+            servicesData = Object.values(data.services?.services || {});
+            skillsData = Object.values(data.skills?.by_category || {});
+            agentsData = Object.values(data.agents?.agents || {});
+            
+            renderServices();
+            renderSkills();
+            renderAgents();
+        }
+    }
+    
+    async function loadServices() {
+        const data = await fetchJSON(`${API_BASE}/api/registry/services`);
+        if (data) {
+            servicesData = Object.values(data.services || {});
+            renderServices();
+        }
+    }
+    
+    async function loadSkills() {
+        const data = await fetchJSON(`${API_BASE}/api/registry/skills/stats`);
+        if (data) {
+            document.getElementById('skillCount').innerText = data.total || 0;
+            document.getElementById('skillCountBadge').innerText = data.total || 0;
+        }
+        const skillsList = await fetchJSON(`${API_BASE}/api/registry/skills`);
+        if (skillsList) {
+            renderSkillsList(skillsList.skills || []);
+        }
+    }
+    
+    async function loadAgents() {
+        const data = await fetchJSON(`${API_BASE}/api/registry/agents`);
+        if (data) {
+            document.getElementById('agentCount').innerText = data.total || 0;
+            document.getElementById('agentCountBadge').innerText = data.total || 0;
+            agentsData = Object.values(data.agents || {});
+            renderAgents();
+        }
+    }
+    
+    function renderServices() {
+        const searchTerm = document.getElementById('serviceSearch')?.value.toLowerCase() || '';
+        const filtered = servicesData.filter(s => s.name.toLowerCase().includes(searchTerm));
+        
+        if (filtered.length === 0) {
+            document.getElementById('serviceList').innerHTML = '<div style="text-align:center; color:#666; padding:20px;">暂无服务</div>';
+            return;
+        }
+        
+        document.getElementById('serviceList').innerHTML = filtered.map(s => `
+            <div class="item">
+                <div class="item-header">
+                    <div class="item-name">
+                        <span class="status-dot ${s.status === 'active' ? 'green' : (s.status === 'inactive' ? 'red' : 'yellow')}"></span>
+                        ${s.name}
+                    </div>
+                    <div class="item-version">v${s.version || '1.0'}</div>
+                </div>
+                <div class="item-detail">📍 ${s.host}:${s.port}</div>
+                <div class="item-detail">🔗 ${s.url}</div>
+                <div class="item-detail">📅 ${s.registered_at?.slice(0, 19) || '-'}</div>
+                <div class="item-tags">
+                    <span class="tag">健康检查: ${s.health_check_count || 0}次</span>
+                    <span class="tag">失败: ${s.fail_count || 0}次</span>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function renderSkills() {
+        const searchTerm = document.getElementById('skillSearch')?.value.toLowerCase() || '';
+        
+        if (Object.keys(skillsData).length === 0) {
+            document.getElementById('skillList').innerHTML = '<div style="text-align:center; color:#666; padding:20px;">暂无技能</div>';
+            return;
+        }
+        
+        let html = '';
+        for (const [cat, count] of Object.entries(skillsData)) {
+            if (cat.toLowerCase().includes(searchTerm)) {
+                html += `
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-name">📁 ${cat}</div>
+                            <div class="item-version">${count} 个技能</div>
+                        </div>
+                        <div class="item-detail">技能分类</div>
+                    </div>
+                `;
+            }
+        }
+        document.getElementById('skillList').innerHTML = html || '<div style="text-align:center; color:#666; padding:20px;">无匹配结果</div>';
+    }
+    
+    function renderSkillsList(skills) {
+        const searchTerm = document.getElementById('skillSearch')?.value.toLowerCase() || '';
+        const filtered = skills.filter(s => s.toLowerCase().includes(searchTerm));
+        
+        if (filtered.length === 0) {
+            document.getElementById('skillList').innerHTML = '<div style="text-align:center; color:#666; padding:20px;">暂无技能</div>';
+            return;
+        }
+        
+        document.getElementById('skillList').innerHTML = filtered.slice(0, 30).map(s => `
+            <div class="item">
+                <div class="item-header">
+                    <div class="item-name">🔧 ${s}</div>
+                    <button class="btn-sm" onclick="testSkill('${s}')" style="font-size:10px;">测试</button>
+                </div>
+            </div>
+        `).join('');
+        if (filtered.length > 30) {
+            document.getElementById('skillList').innerHTML += `<div style="text-align:center; padding:10px; color:#666;">还有 ${filtered.length - 30} 个技能...</div>`;
+        }
+    }
+    
+    function renderAgents() {
+        const searchTerm = document.getElementById('agentSearch')?.value.toLowerCase() || '';
+        const filtered = agentsData.filter(a => a.name?.toLowerCase().includes(searchTerm));
+        
+        if (filtered.length === 0) {
+            document.getElementById('agentList').innerHTML = '<div style="text-align:center; color:#666; padding:20px;">暂无 Agent</div>';
+            return;
+        }
+        
+        document.getElementById('agentList').innerHTML = filtered.map(a => `
+            <div class="item">
+                <div class="item-header">
+                    <div class="item-name">
+                        <span class="status-dot ${a.status === 'active' ? 'green' : 'red'}"></span>
+                        ${a.name}
+                    </div>
+                    <div class="item-version">v${a.version || '1.0'}</div>
+                </div>
+                <div class="item-detail">🎯 能力: ${(a.capabilities || []).join(', ')}</div>
+                <div class="item-detail">🔧 技能: ${(a.skills || []).slice(0, 3).join(', ')}${(a.skills || []).length > 3 ? '...' : ''}</div>
+                <div class="item-tags">
+                    ${(a.tags || []).map(t => `<span class="tag">#${t}</span>`).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    async function testSkill(skillName) {
+        try {
+            const resp = await fetch(`http://localhost:5002/api/skills/execute`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({skill: skillName, params: {}})
+            });
+            const result = await resp.json();
+            alert(`技能 ${skillName} 测试结果: ${result.success ? '成功' : '失败'}`);
+        } catch(e) {
+            alert(`测试失败: ${e.message}`);
+        }
+    }
+    
+    async function testRoute() {
+        const capability = document.getElementById('capabilitySelect').value;
+        const resp = await fetch(`${API_BASE}/api/registry/agents/route`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({capability})
+        });
+        const result = await resp.json();
+        document.getElementById('routeResult').innerHTML = `🎯 ${capability} → ${result.routed_to || '无可用 Agent'}`;
+    }
+    
+    async function checkAllHealth() {
+        const services = servicesData;
+        let results = [];
+        for (const s of services) {
+            try {
+                const resp = await fetch(`${API_BASE}/api/registry/services/${s.name}/health`);
+                const data = await resp.json();
+                results.push(`${s.name}: ${data.healthy ? '✅' : '❌'}`);
+            } catch(e) {
+                results.push(`${s.name}: ❌`);
+            }
+        }
+        document.getElementById('healthResult').innerHTML = results.join(' · ');
+    }
+    
+    function filterServices() { renderServices(); }
+    function filterSkills() { loadSkills(); }
+    function filterAgents() { renderAgents(); }
+    
+    async function refreshAll() {
+        document.getElementById('timestamp').innerHTML = '最后更新: 刷新中...';
+        await Promise.all([loadDashboard(), loadServices(), loadSkills(), loadAgents()]);
+        document.getElementById('timestamp').innerHTML = `最后更新: ${new Date().toLocaleTimeString()}`;
+    }
+    
+    // 自动刷新（每30秒）
+    refreshAll();
+    setInterval(refreshAll, 30000);
+</script>
+</body>
+</html>

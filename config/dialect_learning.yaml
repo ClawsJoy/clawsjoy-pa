@@ -1,0 +1,146 @@
+# 中国方言完整配置
+version: "2.0.0"
+
+# 方言体系
+dialects:
+  东北官话:
+    region: ["黑龙江", "吉林", "辽宁", "内蒙古东部"]
+    cities: ["哈尔滨", "长春", "沈阳", "大连"]
+    features: ["卷舌音重", "语调上扬"]
+    common_words:
+      - dialect: "俺们"
+        standard: "我们"
+      - dialect: "咋地"
+        standard: "怎么"
+      - dialect: "干啥子"
+        standard: "做什么"
+
+  北京官话:
+    region: ["北京", "河北北部"]
+    cities: ["北京"]
+    features: ["儿化音多"]
+    common_words:
+      - dialect: "丫"
+        standard: "他"
+      - dialect: "甭"
+        standard: "不用"
+      - dialect: "遛弯儿"
+        standard: "散步"
+
+  西南官话:
+    region: ["四川", "重庆", "贵州", "云南"]
+    cities: ["成都", "重庆", "贵阳", "昆明"]
+    features: ["平舌音"]
+    common_words:
+      - dialect: "啥子"
+        standard: "什么"
+      - dialect: "咋子"
+        standard: "怎么"
+      - dialect: "要得"
+        standard: "可以"
+
+  粤语:
+    region: ["广东", "香港", "澳门"]
+    cities: ["广州", "香港", "澳门"]
+    features: ["九声六调"]
+    common_words:
+      - dialect: "我哋"
+        standard: "我们"
+      - dialect: "咩"
+        standard: "什么"
+      - dialect: "唔该"
+        standard: "谢谢"
+
+  闽南语:
+    region: ["福建南部", "台湾"]
+    cities: ["厦门", "泉州", "台北"]
+    features: ["保留古音"]
+    common_words:
+      - dialect: "阮"
+        standard: "我们"
+      - dialect: "恁"
+        standard: "你们"
+      - dialect: "呷"
+        standard: "吃"
+
+  湘语:
+    region: ["湖南"]
+    cities: ["长沙"]
+    features: ["保留浊音"]
+    common_words:
+      - dialect: "咯里"
+        standard: "这里"
+
+# 省级映射
+province_mapping:
+  黑龙江: "东北官话"
+  吉林: "东北官话"
+  辽宁: "东北官话"
+  北京: "北京官话"
+  四川: "西南官话"
+  重庆: "西南官话"
+  贵州: "西南官话"
+  云南: "西南官话"
+  广东: "粤语"
+  香港: "粤语"
+  澳门: "粤语"
+  福建: "闽南语"
+  台湾: "闽南语"
+  湖南: "湘语"
+
+# 学习规则
+learning:
+  triggers:
+    - type: "location"
+      weight: 10
+    - type: "explicit"
+      weight: 8
+    - type: "auto"
+      weight: 5
+  confidence:
+    min_to_learn: 0.7
+    min_to_apply: 0.5
+
+  宁波话:
+    region: ["宁波", "镇海", "北仑", "鄞州", "奉化", "余姚", "慈溪", "宁海", "象山"]
+    cities: ["宁波", "镇海"]
+    features: ["吴语太湖片", "甬江小片"]
+    common_words:
+      - dialect: "阿拉"
+        standard: "我们"
+      - dialect: "侬"
+        standard: "你"
+      - dialect: "其拉"
+        standard: "他们"
+      - dialect: "捺"
+        standard: "你们"
+      - dialect: "屋里"
+        standard: "家"
+      - dialect: "来东"
+        standard: "在"
+      - dialect: "晓得"
+        standard: "知道"
+      - dialect: "呒没"
+        standard: "没有"
+      - dialect: "咋啦"
+        standard: "怎么了"
+      - dialect: "交关"
+        standard: "很"
+
+  宁波话:
+    region: ["宁波", "镇海", "北仑", "鄞州"]
+    cities: ["宁波", "镇海"]
+    features: ["吴语太湖片"]
+    common_words:
+      - dialect: "阿拉"
+        standard: "我们"
+      - dialect: "侬"
+        standard: "你"
+      - dialect: "其拉"
+        standard: "他们"
+      - dialect: "捺"
+        standard: "你们"
+      - dialect: "屋里"
+        standard: "家"
+      - dialect: "来东"
+        standard: "在"

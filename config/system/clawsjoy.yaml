@@ -1,0 +1,135 @@
+# ClawsJoy 统一配置 v4.0.0
+version: "4.0.0"
+
+system:
+  name: "ClawsJoy"
+  description: "智能体系统"
+  environment: "production"
+
+paths:
+  root: "."
+  data: "./data"
+  logs: "./logs"
+  config: "./config"
+
+ports:
+  gateway: 5002
+  ollama: 11434
+  comfyui: 8188
+
+# 服务配置
+services:
+  gateway:
+    host: "0.0.0.0"
+    port: 5002
+    debug: false
+  ollama:
+    host: "127.0.0.1"
+    port: 11434
+
+# LLM 配置
+llm:
+  default_model: "qwen2.5:7b-instruct-q4_0-gpu
+  fallback_model: "qwen2.5:7b-instruct-q4_0-gpu"
+  temperature: 0.3
+  max_tokens: 2000
+
+# 闭环配置
+closed_loop:
+  enabled: true
+  health_scoring:
+    base_score: 85
+    max_penalty: 30
+    thresholds:
+      cpu_high: 80
+      memory_high: 80
+      error_critical: 5
+  suggestions:
+    auto_execute: true
+    auto_execute_levels: ["critical", "warning"]
+    max_suggestions: 5
+  active_learning:
+    enabled: true
+    interval: 300
+    max_insights: 3
+
+# 数据源配置
+data_sources:
+  logs:
+    enabled: true
+    max_lines: 1000
+  memory:
+    enabled: true
+    max_results: 100
+  knowledge:
+    enabled: true
+  errors:
+    enabled: true
+  metrics:
+    enabled: true
+    timeout: 5
+  feedback:
+    enabled: true
+
+# 记忆配置
+memory:
+  vector:
+    enabled: true
+    collection: "memory_vectors"
+    embedding_model: "nomic-embed-text"
+  dedup_threshold: 0.99
+  auto_archive_days: 30
+
+# 技能配置
+skills:
+  auto_discover: true
+  categories:
+    - core
+    - memory
+    - video
+    - audio
+    - network
+    - tools
+
+# Agent 配置
+agents:
+  analysis_agent:
+    enabled: true
+    personality: analytical
+    capabilities:
+      - data_analysis
+      - optimization_suggestion
+      - health_assessment
+  chat_agent:
+    enabled: true
+    personality: friendly
+  decision_agent:
+    enabled: true
+    personality: professional
+  memory_manager:
+    enabled: true
+    personality: analytical
+  orchestrator:
+    enabled: true
+    personality: professional
+  personal_butler:
+    enabled: true
+    personality: warm
+  security_agent:
+    enabled: true
+    personality: professional
+  code_agent:
+    enabled: true
+    personality: technical
+  video_agent:
+    enabled: true
+    personality: creative
+  youtube_agent:
+    enabled: true
+    personality: analytical
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  output: "logs/clawsjoy.log"

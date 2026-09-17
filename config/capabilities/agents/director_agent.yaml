@@ -1,0 +1,59 @@
+actions:
+- 创作电影
+- 制作视频
+- 编剧
+- 电影制作
+- 导演
+- 拍电影
+capabilities:
+- description: 创建电影项目，设定标题和类型
+  examples:
+  - input: 创作一部《AI崛起》科幻电影
+    output: 电影项目创建成功
+  name: create_film
+- description: 创作电影剧本，包含三幕结构
+  examples:
+  - input: 写剧本
+    output: 剧本创作完成
+  name: develop_script
+- description: 设计电影角色（主角、配角、反派）
+  examples:
+  - input: 设定角色
+    output: 角色设定完成
+  name: develop_characters
+- description: 设计电影场景和分镜
+  examples:
+  - input: 设计场景
+    output: 场景设计完成
+  name: design_scenes
+- description: 执行电影制作，调用子 Agent
+  examples:
+  - input: 开始制作
+    output: 制作执行完成
+  name: execute_production
+- description: 后期制作（剪辑、特效、字幕）
+  examples:
+  - input: 后期制作
+    output: 后期制作完成
+  name: post_production
+- description: 发布电影
+  examples:
+  - input: 发布电影
+    output: 电影发布完成
+  name: release_film
+- description: 获取当前项目状态
+  examples:
+  - input: 项目状态
+    output: 显示项目进度
+  name: get_status
+description: 电影制作导演，完整电影制作流程管理
+examples:
+- input: 创作一部《AI崛起》科幻电影
+  output: 项目创建 → 剧本 → 角色 → 场景 → 制作 → 后期 → 发布
+- input: 写剧本
+  output: 生成三幕结构剧本
+- input: 项目状态
+  output: 显示当前进度和待办事项
+name: director_agent
+type: agent
+version: 5.0.0

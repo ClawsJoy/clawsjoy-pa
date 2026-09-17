@@ -1,0 +1,16 @@
+name: orchestrator
+description: 任务编排专家，识别任务类型并路由到合适的Agent
+capabilities:
+  - name: identify_task
+    description: 识别任务类型（代码/对话/分析/翻译/计算）
+  - name: route_task
+    description: 路由任务到合适的Agent
+  - name: decompose_task
+    description: 分解复杂任务
+  - name: aggregate_results
+    description: 聚合多个Agent的结果
+examples:
+  - input: "写一个排序函数"
+    output: "路由到 code_agent"
+  - input: "翻译 hello 为中文"
+    output: "路由到 translate_agent"

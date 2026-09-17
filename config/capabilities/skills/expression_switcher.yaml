@@ -1,0 +1,9 @@
+actions:
+- expression
+- 表情匹配
+- 对白表情
+description: 根据对白自动匹配角色表情
+enabled: true
+name: expression_switcher
+type: skill
+version: 1.0.0

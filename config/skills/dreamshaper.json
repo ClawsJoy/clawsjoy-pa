@@ -1,0 +1,100 @@
+{
+  "name": "dreamshaper_text2img",
+  "type": "atomic",
+  "version": "1.0.0",
+  "description": "基于 DreamShaper XL 的高质量文本生成图像原子技能，支持中文文案成图",
+  "category": "image",
+  "author": "ClawsJoy",
+  "compatible_with": ["openclaw", "clawsjoy"],
+  "tags": ["image-generation", "text-to-image", "dreamshaper", "stable-diffusion", "ai-art"],
+  "input_schema": {
+    "prompt": {
+      "type": "string",
+      "required": true,
+      "description": "图像描述提示词（支持中英文）",
+      "example": "A beautiful sunset over mountains, digital art, 4k"
+    },
+    "negative_prompt": {
+      "type": "string",
+      "required": false,
+      "default": "low quality, blurry, ugly",
+      "description": "负面提示词，避免生成的内容"
+    },
+    "steps": {
+      "type": "integer",
+      "required": false,
+      "default": 15,
+      "minimum": 1,
+      "maximum": 50,
+      "description": "推理步数，步数越多质量越高但速度越慢"
+    },
+    "width": {
+      "type": "integer",
+      "required": false,
+      "default": 768,
+      "minimum": 512,
+      "maximum": 1024,
+      "description": "输出图像宽度"
+    },
+    "height": {
+      "type": "integer",
+      "required": false,
+      "default": 768,
+      "minimum": 512,
+      "maximum": 1024,
+      "description": "输出图像高度"
+    },
+    "cfg": {
+      "type": "number",
+      "required": false,
+      "default": 7.5,
+      "minimum": 1.0,
+      "maximum": 15.0,
+      "description": "提示词引导系数，值越高越贴近提示词"
+    }
+  },
+  "output_schema": {
+    "success": {
+      "type": "boolean",
+      "description": "是否生成成功"
+    },
+    "image_path": {
+      "type": "string",
+      "description": "生成的图片文件路径"
+    },
+    "elapsed_time": {
+      "type": "number",
+      "description": "生成耗时（秒）"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "使用的提示词"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "使用的生成参数"
+    }
+  },
+  "examples": [
+    {
+      "input": {
+        "prompt": "A beautiful sunset over mountains",
+        "steps": 15
+      },
+      "description": "生成日落风景图"
+    },
+    {
+      "input": {
+        "prompt": "一只可爱的猫咪戴着侦探帽",
+        "width": 1024,
+        "height": 768
+      },
+      "description": "生成可爱猫咪图（中文提示词）"
+    }
+  ],
+  "execution": {
+    "runtime": "python3",
+    "entry": "/home/flybo/clawsjoy_clean/tools/dreamshaper_skill.py",
+    "command_template": "python3 {entry} --prompt '{input.prompt}' --steps {input.steps} --width {input.width} --height {input.height} --cfg {input.cfg} --json"
+  }
+}

@@ -1,0 +1,44 @@
+# Agent 业务指导规范
+
+chat_agent:
+  role: "对话入口"
+  context_window: 20
+  summary_interval: 100
+  llm_fallback: true
+  delegate_keywords:
+    - "分析"
+    - "推荐"
+    - "生成"
+    - "写"
+    - "计算"
+    - "翻译"
+
+analysis_agent:
+  role: "分析师"
+  input: "任务描述 + 上下文"
+  output: "分析报告 + 建议"
+  tools: ["memory_master", "collector_agent"]
+
+decision_agent:
+  role: "决策师"
+  input: "分析报告"
+  output: "决策结果"
+  action_types:
+    A: "返回聊天"      # 继续对话
+    B: "简单执行"      # do_anything
+    C: "复杂编排"      # orchestrator
+
+orchestrator:
+  role: "任务编排器"
+  input: "复杂任务"
+  output: "子任务执行结果"
+
+memory_master:
+  role: "记忆大师"
+  interval: 30          # 主动服务间隔(秒)
+  summary_interval: 100 # 摘要触发阈值
+  context_window: 20    # 注入窗口
+
+collector_agent:
+  role: "采集器"
+  sources: ["youtube", "news", "trends"]

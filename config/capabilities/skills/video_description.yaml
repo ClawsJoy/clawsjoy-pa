@@ -1,0 +1,8 @@
+actions:
+- video
+- 视频
+description: video-description 技能
+enabled: true
+name: video-description
+type: skill
+version: 1.0.0

@@ -1,0 +1,6 @@
+# 版本注册中心配置
+version: "4.0.0"
+modules:
+  memory_vector: "2.0.0"
+  skill_loader_v3: "3.2.1"
+  agent_registry: "1.0.0"

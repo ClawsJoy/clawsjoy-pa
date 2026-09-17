@@ -1,0 +1,34 @@
+# 数据库配置 - PostgreSQL 版本
+
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: 10
+  host: localhost
+  port: 5432
+  username: clawsjoy
+  password: clawsjoy_local
+
+development:
+  <<: *default
+  database: clawsjoy_auth
+
+auth:
+  <<: *default
+  database: clawsjoy_auth
+
+billing:
+  <<: *default
+  database: clawsjoy_billing
+
+conversation:
+  <<: *default
+  database: clawsjoy_conversation
+
+memory:
+  <<: *default
+  database: clawsjoy_memory
+
+learning:
+  <<: *default
+  database: clawsjoy_learning

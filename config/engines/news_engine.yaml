@@ -1,0 +1,56 @@
+# 新闻引擎独立配置
+name: news_engine
+version: 1.0.0
+enabled: true
+type: info
+description: 新闻资讯引擎，提供热搜、科技、AI等资讯
+
+# 数据源配置
+sources:
+  hot:
+    name: 全网热搜
+    url: https://api.hotsearch.com/list
+    method: GET
+    timeout: 10
+    response_path: result.list
+    
+  trending:
+    name: 头条热搜
+    url: https://api.trending.com/list
+    method: GET
+    timeout: 10
+    response_path: result.list
+    
+  internet:
+    name: 互联网资讯
+    url: https://api.163.com/internet
+    method: GET
+    timeout: 10
+    response_path: result.newslist
+    
+  tech:
+    name: 科技资讯
+    url: https://api.163.com/tech
+    method: GET
+    timeout: 10
+    response_path: result.newslist
+    
+  ai:
+    name: AI资讯
+    url: https://api.ithome.com/ai
+    method: GET
+    timeout: 10
+    response_path: result.newslist
+    
+  science:
+    name: 科学探索
+    url: https://api.ithome.com/science
+    method: GET
+    timeout: 10
+    response_path: result.newslist
+
+# API 认证
+auth:
+  type: bearer
+  key_source: env
+  key_name: NEWS_API_KEY

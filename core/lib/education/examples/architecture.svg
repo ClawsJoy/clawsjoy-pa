@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#1a1a2e"/>
+  <text x="400" y="40" text-anchor="middle" fill="#00d4ff" font-size="22" font-weight="bold">系统架构图</text>
+  <rect x="250" y="70" width="300" height="45" rx="8" fill="#2ecc71" opacity="0.9"/>
+  <text x="400" y="98" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">用户层</text>
+  <line x1="400" y1="115" x2="400" y2="145" stroke="#888" stroke-width="2"/>
+  <rect x="250" y="145" width="300" height="45" rx="8" fill="#e74c3c" opacity="0.9"/>
+  <text x="400" y="173" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">安全层</text>
+  <line x1="400" y1="190" x2="400" y2="220" stroke="#888" stroke-width="2"/>
+  <rect x="150" y="220" width="500" height="100" rx="10" fill="#0d1b2a" stroke="#3498db" stroke-width="2"/>
+  <text x="400" y="248" text-anchor="middle" fill="#3498db" font-size="15" font-weight="bold">Agent 层</text>
+  <text x="220" y="280" text-anchor="middle" fill="#aaa" font-size="12">决策Agent</text>
+  <text x="340" y="280" text-anchor="middle" fill="#aaa" font-size="12">执行Agent</text>
+  <text x="460" y="280" text-anchor="middle" fill="#aaa" font-size="12">分析Agent</text>
+  <text x="580" y="280" text-anchor="middle" fill="#aaa" font-size="12">安全Agent</text>
+  <line x1="400" y1="320" x2="400" y2="350" stroke="#888" stroke-width="2"/>
+  <rect x="200" y="350" width="400" height="45" rx="8" fill="#0d1b2a" stroke="#f39c12" stroke-width="2"/>
+  <text x="400" y="378" text-anchor="middle" fill="#f39c12" font-size="14" font-weight="bold">技能层（20+原子技能）</text>
+  <line x1="400" y1="395" x2="400" y2="420" stroke="#888" stroke-width="2"/>
+  <rect x="200" y="420" width="400" height="45" rx="8" fill="#0d1b2a" stroke="#9b59b6" stroke-width="2"/>
+  <text x="400" y="448" text-anchor="middle" fill="#9b59b6" font-size="14" font-weight="bold">记忆层（L0-L4）</text>
+</svg>

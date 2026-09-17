@@ -1,0 +1,10 @@
+actions:
+- video-public
+capabilities:
+- description: video-public skill
+  name: video-public
+description: video-public skill
+enabled: true
+name: video-public
+type: skill
+version: 1.0.0

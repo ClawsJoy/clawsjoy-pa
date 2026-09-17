@@ -1,0 +1,13 @@
+actions:
+- 搜索代码
+- 搜索文件
+capabilities:
+- description: 代码搜索
+  name: grep_search
+- description: 文件搜索
+  name: file_search
+- description: 语义搜索
+  name: semantic_search
+description: 搜索工具集
+name: search_tools
+type: tool

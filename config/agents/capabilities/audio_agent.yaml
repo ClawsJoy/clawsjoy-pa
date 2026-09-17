@@ -1,0 +1,22 @@
+actions:
+- transcribe
+- text_to_speech
+- convert_format
+- analyze_audio
+capabilities:
+- description: 语音转文字（Whisper API）
+  name: transcribe
+- description: 文字转语音（TTS）
+  name: text_to_speech
+- description: 转换音频格式（mp3, wav, m4a, flac）
+  name: convert_format
+- description: 分析音频内容
+  name: analyze_audio
+description: 音频处理专家，处理音频转换、语音识别和合成
+examples:
+- input: 转换音频格式 meeting_audio.mp3
+  output: ✅ 音频格式已转换
+- input: 转文字 meeting_audio.mp3
+  output: 会议记录文字内容...
+name: audio_agent
+type: agent

@@ -1,0 +1,31 @@
+capable_of:
+- 你好
+- 您好
+- 在吗
+- 早上好
+- 晚上好
+- 下午好
+- 谢谢
+- 感谢
+- 再见
+- 拜拜
+- 记住
+- 我叫
+- 我是
+- 我的名字
+- 我叫什么
+- 我是谁
+- 做什么工作
+- 我的职业
+- 记得我吗
+- 之前说过
+- 我是
+class: ChatAgent
+description: chat_agent 智能体
+enabled: true
+name: chat_agent
+priority: 10
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

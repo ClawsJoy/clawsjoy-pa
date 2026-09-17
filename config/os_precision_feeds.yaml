@@ -1,0 +1,135 @@
+feeds:
+- id: panorama
+  keywords:
+  - 盘点
+  - 项目状态
+  - 分析报告
+  - 项目结构
+  agent_positions:
+  - 分析师
+  - 设计师
+  - 作家
+  - 视频编辑
+  - 翻译员
+  - 文件管理
+  - 决策审查
+  - 元认知Agent
+  inject:
+  - source: os_capabilities
+    max_chars: 2000
+  - source: system_hypothesis
+    max_items: 5
+  task_types:
+  - analysis
+  status: active
+- id: code_modify
+  keywords:
+  - 修改
+  - 创建
+  - 修复
+  - 添加
+  - 实现
+  - 重构
+  agent_positions:
+  - 程序员
+  inject:
+  - source: world_model
+    max_chars: 3000
+  - source: dependency_graph
+    format: tree_text
+    max_chars: 2000
+  task_types:
+  - modification
+  status: active
+- id: troubleshoot
+  keywords:
+  - 报错
+  - 失败
+  - bug
+  - 排查
+  - 为什么
+  - 不行
+  agent_positions:
+  - 程序员
+  - 分析师
+  - 元认知Agent
+  inject:
+  - source: os_events
+    max_lines: 20
+  - source: system_hypothesis
+    max_items: 5
+  task_types:
+  - troubleshooting
+  status: active
+- id: billing_review
+  keywords:
+  - 账单
+  - 费用
+  - token
+  - 花费
+  agent_positions:
+  - 决策审查
+  - 元认知Agent
+  inject:
+  - source: billing_summary
+    max_chars: 1500
+  task_types:
+  - analysis
+  status: active
+- id: plan_discussion
+  keywords:
+  - '@计划经理'
+  - 讨论
+  - 方案
+  agent_positions:
+  - 编排Agent
+  inject:
+  - source: current_plan_discussion
+    max_chars: 2000
+  task_types:
+  - discussion
+  status: active
+- id: capability_audit
+  keywords:
+  - 能力
+  - capability
+  - OS 能力
+  agent_positions:
+  - 元认知Agent
+  - 编排Agent
+  task_scoped: false
+  inject:
+  - source: os_capabilities
+    max_chars: 3000
+  task_types:
+  - analysis
+  status: active
+- id: sag_chain_inject
+  keywords:
+  - 实现
+  - 修改
+  - 修复
+  - 创建
+  - 重构
+  - 优化
+  - 编写
+  - 添加
+  - 完善
+  agent_positions:
+  - 程序员
+  - 分析师
+  - 编排Agent
+  - 元认知Agent
+  inject:
+  - source: sag_dependency_chain
+    params:
+      chain:
+      - task
+      - plan
+      - hypothesis
+      - capability
+      max_items: 5
+      max_chars: 1500
+  task_types:
+  - modification
+  status: active

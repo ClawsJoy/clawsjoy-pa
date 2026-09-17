@@ -1,0 +1,33 @@
+{
+  "version": "1.0.05",
+  "modules": {
+    "proactive_service": {
+      "path": "core/lib/proactive_service.py",
+      "type": "intelligence",
+      "version": "v1.0.06",
+      "registered_at": "2026-05-24T07:35:28.924720",
+      "status": "active"
+    },
+    "smart_active_service": {
+      "path": "core/lib/smart_active_service.py",
+      "type": "intelligence",
+      "version": "v1.0.06",
+      "registered_at": "2026-05-24T07:35:28.924889",
+      "status": "active"
+    },
+    "performance_predictor": {
+      "path": "core/agents/core/performance_predictor.py",
+      "type": "intelligence",
+      "version": "v1.0.06",
+      "registered_at": "2026-05-24T07:35:28.935211",
+      "status": "active"
+    },
+    "adaptive_optimizer": {
+      "path": "core/intelligence/adaptive_optimizer.py",
+      "type": "intelligence",
+      "version": "v1.0.06",
+      "registered_at": "2026-05-24T07:35:28.935662",
+      "status": "active"
+    }
+  }
+}

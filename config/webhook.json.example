@@ -1,0 +1,7 @@
+{
+    "webhooks": {
+        "wechat": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=你的企业微信机器人key",
+        "dingtalk": "https://oapi.dingtalk.com/robot/send?access_token=你的钉钉机器人token",
+        "feishu": "https://open.feishu.cn/open-apis/bot/v2/hook/你的飞书机器人hook"
+    }
+}

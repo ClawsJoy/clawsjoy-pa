@@ -1,0 +1,172 @@
+last_updated: '2026-05-23T07:44:35.852345'
+memory_vector:
+  author: ClawsJoy
+  changelog: 配置驱动化，移除硬编码
+  date: '2026-05-19'
+  path: lib/memory_vector.py
+  status: active
+  version: 2.0.0
+modules:
+  active_runner:
+    path: bin/active_runner.py
+    registered_at: '2026-05-17T13:21:49.002808'
+    status: active
+    type: core
+    version: v0.0.00_unknown
+  agent_communication:
+    path: lib/agent_communication_v1.1.00_20260519.py
+    registered_at: '2026-05-19T16:01:17.313203'
+    status: active
+    type: core
+    version: v1.1.00_20260519
+  agent_lifecycle_config:
+    path: lib/agent_lifecycle_config_v1.0.00_20260519.py
+    registered_at: '2026-05-19T16:01:17.316210'
+    status: active
+    type: config
+    version: v1.0.00_20260519
+  agent_lifecycle_loader:
+    author: ClawsJoy
+    changelog: Agent 生命周期配置加载器
+    date: '2026-05-19'
+    path: lib/agent_lifecycle_config.py
+    status: active
+    type: core
+    version: 1.0.0
+  brain_rules:
+    path: lib/brain_rules_v1.0.00_20260519.py
+    registered_at: '2026-05-19T16:01:17.310587'
+    status: active
+    type: core
+    version: v1.0.00_20260519
+  memory_vector:
+    path: lib/memory_vector_v2.0.00_20260519.py
+    registered_at: '2026-05-19T16:01:17.299957'
+    status: active
+    type: core
+    version: v2.0.00_20260519
+  memory_writer:
+    path: lib/memory_writer_v1.0.01_20260517.py
+    registered_at: '2026-05-17T13:21:48.922490'
+    status: active
+    type: core
+    version: v1.0.01_20260517
+  skill_loader_v3:
+    path: lib/skill_loader_v3_v3.2.01_20260519.py
+    registered_at: '2026-05-19T16:01:17.305086'
+    status: active
+    type: core
+    version: v3.2.01_20260519
+  smart_adapter:
+    path: core/lib/smart_adapter_v1.1.00_20260519.py
+    registered_at: '2026-05-19T16:01:17.307902'
+    status: active
+    type: core
+    version: v1.1.00_20260519
+  success_monitor:
+    path: intelligence/success_monitor_v1.0.01_20260517.py
+    registered_at: '2026-05-17T13:21:48.763139'
+    status: active
+    type: monitor
+    version: v1.0.01_20260517
+  version_manager:
+    path: lib/version_manager_v1.0.01_20260517.py
+    registered_at: '2026-05-17T13:21:48.843949'
+    status: active
+    type: core
+    version: v1.0.01_20260517
+  web_dashboard:
+    path: web_dashboard.py
+    registered_at: '2026-05-17T13:21:49.295985'
+    status: active
+    type: web
+    version: v0.0.00_20260517_nogit
+system_version: 5.0.0
+components:
+  personal_butler:
+    version: 2.0.0
+    path: core/agents/personal_butler_v2.py
+    type: agent
+    status: active
+    author: ClawsJoy
+    date: '2026-05-23'
+    changelog: 私人管家V2，配置驱动，改名持久化
+  agent_gateway_web:
+    version: 4.0.0
+    path: agent_gateway_web.py
+    type: service
+    status: active
+    author: ClawsJoy
+    date: '2026-05-23'
+    changelog: 主网关服务
+  auth_service:
+    version: 1.0.0
+    path: auth_service.py
+    type: service
+    status: active
+    author: ClawsJoy
+    date: '2026-05-23'
+    changelog: 认证服务
+  route_handlers:
+    version: 2.0.0
+    path: lib/route_handlers.py
+    type: core
+    status: active
+    author: ClawsJoy
+    date: '2026-05-23'
+    changelog: 配置驱动路由处理器
+  chat_agent:
+    version: 2.0.0
+    path: core/agents/chat_agent.py
+    type: agent
+    status: active
+  code_agent:
+    version: 2.0.0
+    path: core/agents/code_agent.py
+    type: agent
+    status: active
+  video_agent:
+    version: 2.0.0
+    path: core/agents/video_agent.py
+    type: agent
+    status: active
+  analysis_agent:
+    version: 2.0.0
+    path: core/agents/analysis_agent.py
+    type: agent
+    status: active
+  orchestrator:
+    version: 2.0.0
+    path: core/agents/orchestrator.py
+    type: agent
+    status: active
+  memory_manager:
+    version: 2.0.0
+    path: core/agents/memory_manager.py
+    type: agent
+    status: active
+  translate_agent:
+    version: 2.0.0
+    path: core/agents/translate_agent.py
+    type: agent
+    status: active
+  youtube_agent:
+    version: 2.0.0
+    path: core/agents/youtube_agent.py
+    type: agent
+    status: active
+  security_agent:
+    version: 2.0.0
+    path: core/agents/security_agent.py
+    type: agent
+    status: active
+  decision_agent:
+    version: 2.0.0
+    path: core/agents/decision_agent.py
+    type: agent
+    status: active
+personal_butler:
+  version: 2.0.0
+  path: core/agents/personal_butler_v2.py
+  status: active
+  registered_at: '2026-05-23T06:50:36.513178'

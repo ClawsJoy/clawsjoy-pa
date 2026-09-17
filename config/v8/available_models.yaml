@@ -1,0 +1,14 @@
+models:
+  - value: "deepseek-v4-flash"
+    label: "DeepSeek V4（需 Key）"
+    context_window: 65536
+  - value: "deepseek-v4-pro"
+    label: "DeepSeek V4 Pro（需 Key）"
+  - value: "glm-5.2"
+    label: "GLM 5.2（智谱 · 需 Key）"
+  - value: "claude-4"
+    label: "Claude 4 API（需 Key）"
+  - value: "claude-agent"
+    label: "Claude Agent SDK（需安装）"
+  - value: "codex"
+    label: "Codex CLI（需安装）"

@@ -1,0 +1,44 @@
+# 原子引擎自学习配置
+
+version: "1.0.0"
+
+# 自学习开关
+self_learning:
+  enabled: true
+  
+  # 关键词学习
+  keyword_learning:
+    enabled: true
+    threshold: 3  # 出现3次自动学习
+    max_keywords_per_skill: 20
+    
+  # 向量同步
+  vector_sync:
+    enabled: true
+    auto_sync: true
+    sync_interval: 3600  # 秒
+    
+  # 模式发现
+  pattern_discovery:
+    enabled: true
+    min_occurrences: 3
+    time_window_hours: 24
+
+# 自增量触发条件
+triggers:
+  - type: "low_confidence"
+    threshold: 0.5
+    action: "learn_keywords"
+    
+  - type: "repeated_query"
+    min_count: 3
+    action: "add_keyword"
+    
+  - type: "user_feedback"
+    action: "reinforce"
+
+# 学习成果应用
+application:
+  auto_apply: true  # 自动应用到引擎
+  require_confirmation: false  # 是否需要确认
+  hot_reload: true  # 热重载生效

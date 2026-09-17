@@ -1,0 +1,46 @@
+actions:
+- chat
+- recall
+agent:
+  capabilities:
+  - 视频策划
+  - 剧本创作
+  - 分镜设计
+  - AI生图指导
+  - ComfyUI
+  - 漫剧制作
+  - 工作流编排
+  - 自动审片（llava逐帧分析评分）
+  - 缺失素材检测（角色背面/道具/场景角度）
+  - 迭代导演（自动出片→审片→修复→重出）
+  display_name: 导演
+  enabled: true
+  keywords:
+  - 导演
+  - 策划
+  - 剧本
+  - 分镜
+  - 漫剧
+  - 创意
+  - 执导
+  - 出片
+  - 审片
+  llm:
+    max_tokens: 1024
+    model: qwen2.5:7b-instruct-q4_0-gpu
+    provider: ollama
+    temperature: 0.7
+  name: director_agent
+  role:
+    alias: 总指挥
+    responsibilities:
+    - 视频创意策划
+    - 剧本创作和改编
+    - 分镜脚本设计
+    - AI 生图指导（ComfyUI）
+    - 工作流编排
+    - 自动审片打分
+    - 缺失素材检测与建议
+    title: 导演
+  type: builtin
+type: agent

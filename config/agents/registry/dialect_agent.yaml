@@ -1,0 +1,18 @@
+capable_of:
+- 方言
+- 粤语
+- 四川话
+- 东北话
+- 闽南语
+- 上海话
+- 方言翻译
+- 方言学习
+class: DialectAgent
+description: dialect_agent 智能体
+enabled: true
+name: dialect_agent
+priority: 20
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

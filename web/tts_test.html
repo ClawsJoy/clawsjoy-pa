@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>文案生成 + TTS 音色测试 - ClawsJoy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0f1a, #03060c);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #0ff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #0ff;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: rgba(10,20,30,0.8);
+            border: 1px solid #0ff3;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .card h3 {
+            color: #0ff;
+            margin-bottom: 15px;
+            border-left: 3px solid #0ff;
+            padding-left: 12px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0f0f1a;
+            border: 1px solid #0ff;
+            border-radius: 8px;
+            color: #0ff;
+            font-size: 14px;
+        }
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(135deg, #0f2a3a, #0a1a2a);
+            border: 1px solid #0ff;
+            border-radius: 30px;
+            padding: 10px 24px;
+            color: #0ff;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #1a3a5a;
+            box-shadow: 0 0 10px #0ff;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0f3a4a, #0a2a3a);
+            border-color: #0ff;
+            box-shadow: 0 0 5px #0ff;
+        }
+        .audio-player {
+            margin-top: 15px;
+            padding: 10px;
+            background: #0a0a14;
+            border-radius: 8px;
+        }
+        audio {
+            width: 100%;
+        }
+        .status {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .loading { color: #ff0; }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .row > * {
+            flex: 1;
+        }
+        .quick-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .quick-btns button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎤 ClawsJoy 智能配音工坊</h1>
+    <div class="subtitle">AI 生成文案 → TTS 语音合成 → 一键试听</div>
+    
+    <!-- 第一步：生成文案 -->
+    <div class="card">
+        <h3>📝 第一步：生成视频文案</h3>
+        <div class="row">
+            <div class="input-group">
+                <label>🏙️ 城市/主题</label>
+                <input type="text" id="topic" value="香港" placeholder="输入城市或主题">
+            </div>
+            <div class="input-group">
+                <label>🎨 风格</label>
+                <select id="style">
+                    <option value="科技">科技风格</option>
+                    <option value="人文">人文风格</option>
+                    <option value="旅游">旅游风格</option>
+                    <option value="商业">商业风格</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>⏱️ 时长</label>
+                <select id="duration">
+                    <option value="30">30秒 (约75字)</option>
+                    <option value="60">1分钟 (约150字)</option>
+                    <option value="120">2分钟 (约300字)</option>
+                    <option value="180" selected>3分钟 (约450字)</option>
+                </select>
+            </div>
+        </div>
+        <div class="quick-btns">
+            <span style="color:#888; font-size:12px;">快速主题：</span>
+            <button onclick="setTopic('香港')">🇭🇰 香港</button>
+            <button onclick="setTopic('上海')">🇨🇳 上海</button>
+            <button onclick="setTopic('北京')">🏛️ 北京</button>
+            <button onclick="setTopic('深圳')">🚀 深圳</button>
+            <button onclick="setTopic('杭州')">🌸 杭州</button>
+        </div>
+        <div style="margin-top: 15px;">
+            <button class="btn-primary" onclick="generateScript()">✨ AI 生成文案</button>
+            <button onclick="clearScript()">🗑️ 清空</button>
+        </div>
+    </div>
+    
+    <!-- 第二步：编辑文案 -->
+    <div class="card">
+        <h3>✏️ 第二步：编辑文案（可手动修改）</h3>
+        <textarea id="scriptText" placeholder="AI 生成的文案将显示在这里，您可以手动编辑修改..."></textarea>
+        <div class="quick-btns">
+            <button onclick="insertTemplate('科技')">🔬 科技模板</button>
+            <button onclick="insertTemplate('人文')">🏛️ 人文模板</button>
+            <button onclick="insertTemplate('旅游')">✈️ 旅游模板</button>
+            <button onclick="insertTemplate('商业')">💼 商业模板</button>
+        </div>
+    </div>
+    
+    <!-- 第三步：TTS 设置 -->
+    <div class="card">
+        <h3>🎙️ 第三步：选择音色并合成</h3>
+        <div class="row">
+            <div class="input-group">
+                <label>🎤 音色选择</label>
+                <select id="voiceSelect">
+                    <option value="zh-CN-XiaoxiaoNeural">👩 晓晓 - 女声 (自然，推荐)</option>
+                    <option value="zh-CN-XiaoyiNeural">👩 晓伊 - 女声 (活泼)</option>
+                    <option value="zh-CN-YunjianNeural">👨 云健 - 男声 (新闻)</option>
+                    <option value="zh-CN-YunxiNeural">👨 云希 - 男声 (年轻)</option>
+                    <option value="zh-CN-YunxiaNeural">👩 云夏 - 女声 (温柔)</option>
+                    <option value="zh-CN-YunyangNeural">👨 云扬 - 男声 (深沉)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>🔊 语速</label>
+                <select id="rate">
+                    <option value="-20">慢速 (-20%)</option>
+                    <option value="-10">较慢 (-10%)</option>
+                    <option value="0" selected>正常 (0%)</option>
+                    <option value="10">较快 (+10%)</option>
+                    <option value="20">快速 (+20%)</option>
+                </select>
+            </div>
+        </div>
+        <div>
+            <button class="btn-primary" onclick="generateAudio()">🎵 生成并试听</button>
+            <button onclick="stopAudio()">⏹️ 停止</button>
+        </div>
+        <div id="status" class="status"></div>
+        <div id="audioPlayer" class="audio-player"></div>
+    </div>
+    
+    <!-- 第四步：导出 -->
+    <div class="card">
+        <h3>💾 第四步：导出使用</h3>
+        <button onclick="copyToClipboard()">📋 复制文案</button>
+        <button onclick="downloadAudio()">⬇️ 下载音频</button>
+        <button onclick="makeVideo()">🎬 生成完整视频</button>
+    </div>
+</div>
+
+<script>
+let currentAudioUrl = null;
+let currentAudioBlob = null;
+
+async function generateScript() {
+    const topic = document.getElementById('topic').value;
+    const style = document.getElementById('style').value;
+    const duration = document.getElementById('duration').value;
+    const minutes = Math.round(duration / 60);
+    
+    showStatus('🤖 AI 正在生成文案...', 'loading');
+    document.getElementById('scriptText').value = '';
+    
+    const prompt = `为${topic}写一段${minutes}分钟的${style}风格宣传片文案，约${Math.round(duration * 2.5)}字，适合配音朗读。`;
+    
+    try {
+        const response = await fetch('http://localhost:18106/api/agent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: prompt })
+        });
+        const data = await response.json();
+        if (data.message) {
+            document.getElementById('scriptText').value = data.message;
+            showStatus('✅ 文案生成成功！可以编辑修改', 'success');
+        } else {
+            showStatus('❌ 文案生成失败', 'error');
+        }
+    } catch (e) {
+        showStatus('❌ 请求失败: ' + e.message, 'error');
+    }
+}
+
+async function generateAudio() {
+    const text = document.getElementById('scriptText').value;
+    const voice = document.getElementById('voiceSelect').value;
+    const rate = document.getElementById('rate').value;
+    
+    if (!text.trim()) {
+        showStatus('请先生成或输入文案', 'error');
+        return;
+    }
+    
+    showStatus('🔄 正在合成语音，请稍候...', 'loading');
+    
+    try {
+        const response = await fetch('http://localhost:9000/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text, voice: voice, rate: rate })
+        });
+        
+        if (response.ok) {
+            currentAudioBlob = await response.blob();
+            if (currentAudioUrl) {
+                URL.revokeObjectURL(currentAudioUrl);
+            }
+            currentAudioUrl = URL.createObjectURL(currentAudioBlob);
+            
+            document.getElementById('audioPlayer').innerHTML = `
+                <audio controls autoplay style="width: 100%">
+                    <source src="${currentAudioUrl}" type="audio/mpeg">
+                    您的浏览器不支持音频播放
+                </audio>
+            `;
+            showStatus(`✅ 语音合成成功！时长: ${(currentAudioBlob.size / 1024).toFixed(1)} KB`, 'success');
+        } else {
+            showStatus('❌ 语音合成失败: ' + response.status, 'error');
+        }
+    } catch (e) {
+        showStatus('❌ 请求失败: ' + e.message, 'error');
+    }
+}
+
+function stopAudio() {
+    const audio = document.querySelector('#audioPlayer audio');
+    if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+    }
+}
+
+function downloadAudio() {
+    if (currentAudioUrl) {
+        const a = document.createElement('a');
+        a.href = currentAudioUrl;
+        a.download = `clawsjoy_tts_${Date.now()}.mp3`;
+        a.click();
+    } else {
+        showStatus('请先生成音频', 'error');
+    }
+}
+
+function copyToClipboard() {
+    const text = document.getElementById('scriptText').value;
+    if (text) {
+        navigator.clipboard.writeText(text);
+        showStatus('✅ 文案已复制到剪贴板', 'success');
+    } else {
+        showStatus('没有文案可复制', 'error');
+    }
+}
+
+function clearScript() {
+    document.getElementById('scriptText').value = '';
+}
+
+function setTopic(city) {
+    document.getElementById('topic').value = city;
+    generateScript();
+}
+
+function insertTemplate(type) {
+    const templates = {
+        '科技': `这是一座充满科技感的城市。人工智能、大数据、云计算在这里蓬勃发展，创新企业汇聚，年轻人才云集。未来已来，科技改变生活。`,
+        '人文': `这里承载着悠久的历史文化，传统与现代在此交融。古老的建筑诉说着故事，现代的艺术展现着活力。人文底蕴深厚，生活气息浓郁。`,
+        '旅游': `欢迎来到这座美丽的城市！这里有迷人的风景、独特的美食、热情的居民。无论是自然风光还是都市繁华，都让人流连忘返。`,
+        '商业': `这里是商业的沃土，机遇的天堂。完善的营商环境，便捷的交通网络，丰富的资源配套，为企业家提供无限可能。`
+    };
+    document.getElementById('scriptText').value = templates[type] || templates['科技'];
+}
+
+async function makeVideo() {
+    const topic = document.getElementById('topic').value;
+    const style = document.getElementById('style').value;
+    const duration = parseInt(document.getElementById('duration').value);
+    const script = document.getElementById('scriptText').value;
+    
+    showStatus('🎬 正在生成视频，请稍候（约1-2分钟）...', 'loading');
+    
+    try {
+        const response = await fetch('http://localhost:18108/api/promo/make', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                topic: topic, 
+                style: style, 
+                duration: duration,
+                script: script 
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showStatus(`✅ 视频生成成功！`, 'success');
+            window.open(`http://localhost:18083${data.video_url}`, '_blank');
+        } else {
+            showStatus('❌ 视频生成失败', 'error');
+        }
+    } catch (e) {
+        showStatus('❌ 请求失败: ' + e.message, 'error');
+    }
+}
+
+function showStatus(msg, type) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.innerHTML = msg;
+    statusDiv.className = 'status ' + type;
+    setTimeout(() => {
+        if (statusDiv.innerHTML === msg) {
+            statusDiv.innerHTML = '';
+        }
+    }, 5000);
+}
+</script>
+</body>
+</html>
+<!-- 添加模型选择 -->
+<div class="input-group">
+    <label>🤖 AI 模型</label>
+    <select id="modelSelect">
+        <option value="qwen2.5:3b">通义千问 3B (推荐)</option>
+        <option value="qwen2.5:0.5b">通义千问 0.5B (快速)</option>
+        <option value="llama3.2:3b">Llama 3.2 3B (英文强)</option>
+    </select>
+</div>
+
+<script>
+// 修改 generateScript 函数，使用本地模型
+async function generateScriptLocal() {
+    const model = document.getElementById('modelSelect').value;
+    // 直接调用本地 Ollama
+    const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: model,
+            prompt: prompt,
+            stream: false,
+            options: { num_predict: 500 }
+        })
+    });
+    const data = await response.json();
+    return data.response;
+}
+</script>

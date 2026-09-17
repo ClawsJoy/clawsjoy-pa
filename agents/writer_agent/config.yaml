@@ -1,0 +1,52 @@
+agent:
+  capabilities:
+  - 写文章
+  - 写故事
+  - 写小说
+  - 写剧本
+  - 写脚本
+  - 写文案
+  - 写标题
+  - 写描述
+  - 润色
+  - 改写
+  - 扩写
+  - 缩写
+  display_name: 作家
+  enabled: true
+  keywords:
+  - 写
+  - 文章
+  - 故事
+  - 小说
+  - 剧本
+  - 脚本
+  - 文案
+  - 标题
+  - 创作
+  - 写作
+  - 润色
+  llm:
+    max_tokens: 2048
+    model: qwen2.5:7b
+    provider: ollama
+    temperature: 0.7
+  name: writer_agent
+  output_formats:
+  - markdown
+  - 纯文本
+  - html
+  - json
+  role:
+    alias: 笔杆子
+    responsibilities:
+    - 文章写作
+    - 故事创作
+    - 小说连载
+    - 剧本创作
+    - 漫画脚本
+    - 广告文案
+    - 标题优化
+    - 内容润色
+    title: 作家
+  type: builtin

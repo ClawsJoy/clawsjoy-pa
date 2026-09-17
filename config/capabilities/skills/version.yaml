@@ -1,0 +1,8 @@
+actions:
+- version
+- 版本
+description: version 技能
+enabled: true
+name: version
+type: skill
+version: 1.0.0

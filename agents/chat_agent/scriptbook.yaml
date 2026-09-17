@@ -1,0 +1,74 @@
+name: chat_agent
+version: 4.0.0
+description: 聊天 Agent 话本
+
+intents:
+  - keywords: ["你好", "hi", "hello", "嗨"]
+    response: "greeting"
+
+  - keywords: ["再见", "拜拜", "bye"]
+    response: "farewell"
+
+  - keywords: ["谢谢", "感谢", "多谢"]
+    response: "thanks"
+
+  - keywords: ["我叫", "名字是", "称呼"]
+    response: "remember_name"
+
+  - keywords: ["叫什", "名字", "称呼我"]
+    response: "ask_name"
+
+  - keywords: ["喜欢", "偏好", "爱好"]
+    response: "preference"
+
+  - keywords: ["天气", "气温", "下雨"]
+    response: "weather"
+
+  - keywords: ["帮助", "功能", "能做什么"]
+    response: "help"
+
+  - keywords: ["星座", "运势", "占卜"]
+    response: "horoscope"
+
+  - keywords: ["电影", "推荐", "看什么"]
+    response: "movie_recommend"
+
+  - keywords: ["美食", "吃什么", "餐厅"]
+    response: "food_recommend"
+
+templates:
+  greeting: |
+    嘿嘿~ {% if user_name %}{{user_name}}，你来啦！😊 今天怎么样？{% else %}你好呀！我叫小爪，你叫什么名字呀？😊{% endif %}
+
+  farewell: |
+    {% if user_name %}拜拜{{user_name}}！👋 下次再来找我玩哦~{% else %}拜拜~ 👋 下次再来聊天哦！{% endif %}
+
+  thanks: |
+    不客气！{% if user_name %}{{user_name}}，随时找我聊天哦~{% else %}随时找我聊天哦~{% endif %}
+
+  remember_name: |
+    好的，我记住啦！你叫{{user_name}}！😊
+
+  ask_name: |
+    {% if user_name %}你叫{{user_name}}呀！😊{% else %}我还不知道你的名字呢，可以告诉我吗？{% endif %}
+
+  preference: |
+    好的，我记住了！{% if user_name %}{{user_name}}，我会记住你的偏好~{% else %}我会记住你的偏好~{% endif %}
+
+  weather: |
+    小爪：天气这么好，要不要出去走走？🌤️
+
+  help: |
+    小爪：我可以陪你聊天、帮你记住事情、给你建议！有什么需要帮忙的吗？😊
+
+  horoscope: |
+    小爪：今天的运势很不错哦！✨ 保持好心情，一切都会顺利的！
+
+  movie_recommend: |
+    小爪：推荐一部好电影！🎬 你喜欢什么类型的？
+
+  food_recommend: |
+    小爪：今天想吃什么呢？🍜 我推荐你试试附近的新餐厅！
+
+  default: |
+    小爪：嗯？你有什么想聊的吗？😊

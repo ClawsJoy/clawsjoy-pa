@@ -1,0 +1,6 @@
+# 采集白名单 - 安全的采集源
+info.gov.hk
+edb.gov.hk
+immd.gov.hk
+labour.gov.hk
+ha.org.hk

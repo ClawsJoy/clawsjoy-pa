@@ -1,0 +1,31 @@
+# 平台发布配置 — 选择器以实测 DOM 为准(2026-08-23, 知乎文章编辑器)
+# 探测方法: playwright 打开编辑器列出 textarea/input/contenteditable/button 类名
+platforms:
+  zhihu:
+    name: 知乎
+    publish:
+      editor_url: "https://zhuanlan.zhihu.com/write"
+      # 标题输入框: <textarea placeholder="请输入标题（最多 100 个字）">
+      #   实测类名: Input i7cW1UcwT6ThdhTakqFm (哈希类, 勿依赖)
+      title_selector: 'textarea[placeholder*="请输入标题"]'
+      # 正文编辑器: Draft.js contenteditable
+      #   实测类名: notranslate public-DraftEditor-content
+      #   备选: [contenteditable=true] (页面唯一可见可编辑区)
+      body_selector: '[contenteditable=true].public-DraftEditor-content'
+      # 预览按钮: Button--secondary
+      preview_selector: 'button:has-text("预览")'
+      # 发布按钮: Button--primary
+      publish_selector: 'button:has-text("发布")'
+      # 草稿: 知乎编辑器自动保存(无显式"存草稿"按钮)
+      #   草稿链接形态: https://zhuanlan.zhihu.com/p/{article_id}/edit
+      auto_save: true
+      # 配图上传: 隐藏的图片 file input
+      image_input_selector: 'input[type=file][accept*="image"]'
+      # 工具栏图片按钮(备选, 触发 file chooser)
+      toolbar_image_button: 'button:has-text("图片")'
+      # 草稿箱入口
+      draft_list_url: "https://www.zhihu.com/creator/manage/creation/all"
+    notes:
+      - "标题框是 textarea 而非 input[placeholder=标题] — 用 placeholder* 前缀匹配"
+      - "正文必须点击 [contenteditable=true] 后键盘输入(Draft.js 不支持 fill 直接赋值)"
+      - "图片经隐藏 file input set_input_files 直传, 插入位置=当前光标"

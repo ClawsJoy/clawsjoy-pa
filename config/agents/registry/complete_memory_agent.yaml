@@ -1,0 +1,17 @@
+capable_of:
+- 对话记忆
+- 会话历史
+- 上下文记忆
+- 短期记忆
+- 刚才说的
+- 对话历史
+- 会话
+class: CompleteMemoryAgentAgent
+description: complete_memory_agent 智能体
+enabled: true
+name: complete_memory_agent
+priority: 20
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

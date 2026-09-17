@@ -1,0 +1,25 @@
+# version: 1.0.0 - 光影引擎
+name: lighting
+description: 光影处理工作流 - 光线调整→色彩校正→特效应用
+version: 1.0.0
+
+steps:
+  - name: adjust_lighting
+    agent: light_agent
+    prompt: "调整光线: {image_path} 亮度: {brightness}"
+    output: lighting_result
+  
+  - name: adjust_color
+    agent: light_agent
+    prompt: "色彩校正: {lighting_result}"
+    output: color_result
+  
+  - name: apply_effect
+    agent: light_agent
+    prompt: "应用特效: {color_result} 风格: {style}"
+    output: final_result
+
+output:
+  - lighting_result
+  - color_result
+  - final_result

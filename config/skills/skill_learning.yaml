@@ -1,0 +1,17 @@
+# 技能学习配置
+version: "1.0.0"
+
+skill_auto_trigger:
+  learning:
+    min_success_count: 3        # 成功3次后自动生成
+    auto_generate: true         # 自动生成开关
+    min_confidence: 0.7         # 最低置信度
+
+  tracking:
+    enabled: true
+    track_combinations: true
+    max_combos: 100
+
+  generation:
+    template: "skills/templates/combo_skill.py"
+    output_dir: "skills/auto_generated"

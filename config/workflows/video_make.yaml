@@ -1,0 +1,30 @@
+# version: 1.0.0 - 光影引擎
+name: video_make
+description: 视频制作工作流 - 脚本→素材→合成→字幕
+version: 1.0.0
+
+steps:
+  - name: script
+    agent: writer_agent
+    prompt: "生成视频脚本: {topic}"
+    output: script
+  
+  - name: materials
+    agent: vision_agent
+    prompt: "搜索素材: {script}"
+    output: materials
+  
+  - name: compose
+    agent: video_agent
+    prompt: "合成视频: {script} 素材: {materials}"
+    output: video
+  
+  - name: subtitle
+    agent: video_agent
+    prompt: "添加字幕: {video}"
+    output: video_with_subtitle
+
+output:
+  - script
+  - video
+  - video_with_subtitle

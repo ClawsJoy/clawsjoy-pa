@@ -1,0 +1,23 @@
+name: math
+version: 1.0.0
+description: 数学运算技能，支持加减乘除
+category: math
+tags:
+  - math
+  - calculator
+  - basic
+input_schema:
+  a:
+    type: number
+    required: true
+  b:
+    type: number
+    required: true
+  operation:
+    type: string
+    required: false
+    default: add
+output_schema:
+  success: boolean
+  result: number
+author: ClawsJoy

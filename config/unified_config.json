@@ -1,0 +1,36 @@
+{
+  "version": "3.0",
+  "last_update": "2026-05-10T19:03:18.001321",
+  "components": {
+    "agent": {
+      "port": 5002,
+      "debug": false,
+      "auto_reload": true
+    },
+    "brain": {
+      "experience_file": "knowledge/experiences.json",
+      "max_experiences": 1000,
+      "learning_rate": 0.1
+    },
+    "vector": {
+      "embedding_model": "nomic-embed-text",
+      "chunk_size": 500,
+      "chunk_overlap": 50,
+      "top_k": 5,
+      "similarity_threshold": 0.7,
+      "cache_enabled": true,
+      "cache_ttl": 3600
+    },
+    "skills": {
+      "enabled": true,
+      "timeout": 30,
+      "retry_count": 3,
+      "chain_support": true
+    },
+    "keywords": {
+      "auto_discover": true,
+      "min_frequency": 5,
+      "threshold_adjust": "dynamic"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+capable_of:
+- 机器学习
+- 训练模型
+- 学习算法
+- 强化学习
+- 深度学习
+class: LearningAgentAgent
+description: learning_agent 智能体
+enabled: true
+name: learning_agent
+priority: 15
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

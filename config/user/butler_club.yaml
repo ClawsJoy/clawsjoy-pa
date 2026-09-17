@@ -1,0 +1,28 @@
+# 私人管家俱乐部配置
+version: "1.0.0"
+
+butler_club:
+  enabled: true
+  name: "私人管家俱乐部"
+  description: "用户私人管家的专属俱乐部"
+  
+  # 会员等级
+  membership_levels:
+    - name: "bronze"
+      min_interactions: 0
+      features: ["rename", "chat"]
+    - name: "silver"
+      min_interactions: 100
+      features: ["rename", "chat", "evolution"]
+    - name: "gold"
+      min_interactions: 500
+      features: ["rename", "chat", "evolution", "export"]
+    - name: "diamond"
+      min_interactions: 1000
+      features: ["rename", "chat", "evolution", "export", "multi_butler"]
+  
+  # 数据存储
+  data:
+    root: "data/butler_club"
+    members: "data/butler_club/members/{user_id}/profile.json"
+    stats: "data/butler_club/stats.json"

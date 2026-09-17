@@ -1,0 +1,17 @@
+capable_of:
+- 任务
+- 待办
+- 提醒
+- 日程
+- 计划
+- 安排
+- todo
+class: TaskAwareAgentAgent
+description: task_aware_agent 智能体
+enabled: true
+name: task_aware_agent
+priority: 20
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

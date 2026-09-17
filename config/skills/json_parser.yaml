@@ -1,0 +1,5 @@
+name: json_parser
+version: 1.0.0
+description: 解析和处理 JSON 数据
+category: data
+tags: [json, data, parse]

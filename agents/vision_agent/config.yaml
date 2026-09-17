@@ -1,0 +1,26 @@
+agent:
+  llm:
+    max_tokens: 1024
+    temperature: 0.8
+image:
+  default_quality: 85
+  supported_formats:
+  - .png
+  - .jpg
+  - .jpeg
+  - .gif
+  - .webp
+video:
+  frame_rate: 30
+  max_frames: 100
+  supported_formats:
+  - .mp4
+  - .avi
+  - .mov
+  - .mkv
+vision:
+  enabled: true
+  endpoint: http://localhost:11434
+  max_image_size: 1024
+  model: moondream
+  timeout: 30

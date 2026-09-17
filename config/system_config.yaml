@@ -1,0 +1,5 @@
+system:
+  env_file_path: "config/.env"
+  project_base_path: "."
+  database_url: "postgresql://user:pass@localhost:5432/clawsjoy"
+  redis_url: "redis://localhost:6379/0"

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <title>ClawsJoy 市场 | Agent & 技能</title>
+    <link rel="stylesheet" href="../css/themes.css">
+    <style>
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .market-layout {
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+            padding: 20px 30px;
+        }
+        
+        .market-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .user-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 20px;
+            border-radius: 40px;
+        }
+        
+        .user-bar input {
+            background: #0a0a1a;
+            border: 1px solid #00f3ff;
+            border-radius: 20px;
+            padding: 6px 12px;
+            color: white;
+            width: 120px;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            padding: 8px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn.active, .filter-btn:hover {
+            background: linear-gradient(135deg, #00f3ff20, #7b2ff720);
+            border-color: #00f3ff;
+            color: #00f3ff;
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .product-card {
+            padding: 20px;
+            cursor: pointer;
+        }
+        
+        .product-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        .product-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .installed-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .installed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .installed-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+        }
+        
+        .btn-install {
+            background: linear-gradient(135deg, #00f3ff, #7b2ff7);
+        }
+        
+        .btn-installed {
+            background: rgba(0, 243, 255, 0.2);
+            color: #00f3ff;
+            cursor: default;
+        }
+        
+        .btn-uninstall {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+        }
+        
+        .stats-bar {
+            display: flex;
+            gap: 30px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+        
+        .back-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+    <div id="three-canvas"></div>
+    <div class="market-layout">
+        <div class="market-header">
+            <h1 style="background: linear-gradient(135deg,#00f3ff,#7b2ff7); -webkit-background-clip:text; background-clip:text; color:transparent;">🛒 Agent 市场</h1>
+            <div class="user-bar">
+                <span>👤</span>
+                <input type="text" id="userId" value="default">
+                <button class="btn-neon" style="padding: 6px 16px;" onclick="loadAllData()">刷新</button>
+                <button class="btn-neon" style="padding: 6px 16px; background:#333;" onclick="location.href='../index_root.html'">门户</button>
+            </div>
+        </div>
+        
+        <div class="stats-bar">
+            <div>📦 产品 <span id="stat-total">0</span></div>
+            <div>🤖 Agent <span id="stat-agents">0</span></div>
+            <div>⚡ 技能 <span id="stat-skills">0</span></div>
+            <div>✅ 已安装 <span id="stat-installed">0</span></div>
+        </div>
+        
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="filterProducts('all')">全部</button>
+            <button class="filter-btn" onclick="filterProducts('agent')">🤖 Agent</button>
+            <button class="filter-btn" onclick="filterProducts('skill')">⚡ 技能</button>
+        </div>
+        
+        <div id="products-grid" class="products-grid">
+            <div class="loading">加载中...</div>
+        </div>
+        
+        <div class="installed-section">
+            <h3>📦 已安装的 Agent</h3>
+            <div id="installed-grid" class="installed-grid">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="back-btn">
+        <button class="btn-neon" onclick="location.href='../index_root.html'">← 返回</button>
+    </div>
+    
+    <!-- 3D背景暂时禁用 -->
+    <script>
+        const API_BASE = 'http://localhost:5002';
+        let allProducts = [];
+        let installedAgents = [];
+        let currentFilter = 'all';
+        
+        function getUserId() { return document.getElementById('userId').value || 'default'; }
+        
+        function showToast(msg, isErr) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+        
+        async function loadProducts() {
+            try {
+                const res = await fetch(`${API_BASE}/api/marketplace/list`);
+                const data = await res.json();
+                allProducts = data.products || [];
+                document.getElementById('stat-total').textContent = allProducts.length;
+                document.getElementById('stat-agents').textContent = allProducts.filter(p => p.type === 'agent').length;
+                document.getElementById('stat-skills').textContent = allProducts.filter(p => p.type === 'skill').length;
+                renderProducts();
+            } catch(e) {
+                document.getElementById('products-grid').innerHTML = '<div class="loading">❌ 连接后端失败</div>';
+            }
+        }
+        
+        async function loadInstalled() {
+            try {
+                const res = await fetch(`${API_BASE}/api/marketplace/installed?user_id=${getUserId()}`);
+                const data = await res.json();
+                installedAgents = data.agents || [];
+                document.getElementById('stat-installed').textContent = installedAgents.length;
+                renderInstalled();
+                renderProducts();
+            } catch(e) {
+                document.getElementById('installed-grid').innerHTML = '<div class="loading">加载失败</div>';
+            }
+        }
+        
+        function isInstalled(productId) {
+            return installedAgents.some(a => a.id === productId || a.name === productId);
+        }
+        
+        async function installProduct(productId, productName) {
+            try {
+                const res = await fetch(`${API_BASE}/api/marketplace/install`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: getUserId(), product_id: productId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ 安装成功: ${productName}`);
+                    await loadInstalled();
+                } else {
+                    showToast(`❌ 安装失败: ${data.error}`, true);
+                }
+            } catch(e) {
+                showToast(`❌ 安装失败: ${e.message}`, true);
+            }
+        }
+        
+        async function uninstallProduct(agentId, agentName) {
+            try {
+                const res = await fetch(`${API_BASE}/api/marketplace/uninstall`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: getUserId(), agent_id: agentId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`🗑️ 已卸载: ${agentName}`);
+                    await loadInstalled();
+                } else {
+                    showToast(`❌ 卸载失败: ${data.error}`, true);
+                }
+            } catch(e) {
+                showToast(`❌ 卸载失败: ${e.message}`, true);
+            }
+        }
+        
+        function renderProducts() {
+            let filtered = allProducts;
+            if (currentFilter !== 'all') {
+                filtered = allProducts.filter(p => p.type === currentFilter);
+            }
+            if (filtered.length === 0) {
+                document.getElementById('products-grid').innerHTML = '<div class="loading">暂无产品</div>';
+                return;
+            }
+            document.getElementById('products-grid').innerHTML = filtered.map(p => {
+                const installed = isInstalled(p.id);
+                return `
+                    <div class="product-card glass-card">
+                        <div class="product-icon">${p.type === 'agent' ? '🤖' : '⚡'}</div>
+                        <div class="product-name">${escapeHtml(p.name || p.id)}</div>
+                        <div class="product-desc" style="font-size:12px; color:#aaa;">${escapeHtml((p.description || '').substring(0, 60))}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
+                            <span style="font-size:11px;">v${p.version || '1.0'}</span>
+                            ${installed ? 
+                                `<button class="btn-neon btn-installed" disabled>✅ 已安装</button>` :
+                                `<button class="btn-neon btn-install" onclick="installProduct('${p.id}','${p.name}')">📥 安装</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderInstalled() {
+            if (installedAgents.length === 0) {
+                document.getElementById('installed-grid').innerHTML = '<div style="color:#666; text-align:center; padding:20px;">暂无已安装的Agent</div>';
+                return;
+            }
+            document.getElementById('installed-grid').innerHTML = installedAgents.map(a => `
+                <div class="installed-item glass-card">
+                    <div>
+                        <div style="font-weight:bold;">${escapeHtml(a.name || a.id)}</div>
+                        <div style="font-size:11px; color:#666;">${a.installed_at ? new Date(a.installed_at).toLocaleDateString() : '已安装'}</div>
+                    </div>
+                    <button class="btn-neon btn-uninstall" onclick="uninstallProduct('${a.id}','${a.name}')">🗑️ 卸载</button>
+                </div>
+            `).join('');
+        }
+        
+        function filterProducts(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach((btn, i) => {
+                btn.classList.remove('active');
+                if ((type === 'all' && i === 0) || (type === 'agent' && i === 1) || (type === 'skill' && i === 2)) {
+                    btn.classList.add('active');
+                }
+            });
+            renderProducts();
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function loadAllData() {
+            await loadProducts();
+            await loadInstalled();
+        }
+        
+        loadAllData();
+    </script>
+</body>
+</html>

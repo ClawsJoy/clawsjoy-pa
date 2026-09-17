@@ -1,0 +1,12 @@
+name: audio_agent
+description: 音频处理专家
+capabilities:
+  - name: transcribe
+    description: 语音转文字
+  - name: text_to_speech
+    description: 文字转语音
+  - name: convert_format
+    description: 转换音频格式
+examples:
+  - input: "转文字 meeting_audio.mp3"
+    output: "会议记录文字内容"

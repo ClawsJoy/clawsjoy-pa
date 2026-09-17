@@ -1,0 +1,22 @@
+name: chat_agent
+description: 通用对话助手，擅长日常交流和信息查询
+capabilities:
+  - name: chat
+    description: 进行自然对话
+  - name: remember_name
+    description: 记住用户名字
+  - name: recall_name
+    description: 回忆用户名字
+  - name: remember_preference
+    description: 记住用户偏好
+  - name: recall_preference
+    description: 回忆用户偏好
+  - name: emotion_response
+    description: 识别和回应情感
+  - name: proactive_suggestion
+    description: 主动提供建议
+examples:
+  - input: "你好，我叫张三"
+    output: "你好张三！很高兴认识你"
+  - input: "我叫什么名字"
+    output: "你叫张三呀"

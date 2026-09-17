@@ -1,0 +1,114 @@
+# OS 事件注入点配置
+# 状态：active / pending_review / deprecated / rejected
+
+injection_points:
+  - id: "llm_ollama_retry_exhausted"
+    file: "core/lib/llm_client.py"
+    method: "_call"
+    trigger: "all Ollama retries failed"
+    event:
+      event_type: "degrade"
+      operation: "execute"
+      os_action: "degraded"
+      reason: "llm_unavailable"
+    status: "active"
+
+  - id: "llm_deepseek_retry_exhausted"
+    file: "core/lib/llm_client.py"
+    method: "_call_openai_compatible"
+    trigger: "all DeepSeek retries failed"
+    event:
+      event_type: "degrade"
+      operation: "execute"
+      os_action: "degraded"
+      reason: "llm_unavailable"
+    status: "active"
+
+  - id: "ollama_warmup_failed"
+    file: "agent_gateway_enhanced.py"
+    method: "_warmup"
+    trigger: "model warmup failed"
+    event:
+      event_type: "degrade"
+      operation: "execute"
+      os_action: "degraded"
+      reason: "llm_unavailable"
+    status: "active"
+
+  - id: "billing_hook_silent"
+    file: "agent_gateway_enhanced.py"
+    method: "v5_execute"
+    trigger: "record_if_roster_member failed"
+    event:
+      event_type: "intercept"
+      operation: "write"
+      os_action: "blocked"
+      reason: "billing_lost"
+    status: "active"
+
+  - id: "channel_context_cleanup_failed"
+    file: "agent_gateway_enhanced.py"
+    method: "v5_execute"
+    trigger: "cleanup_task_context failed"
+    event:
+      event_type: "intercept"
+      operation: "write"
+      os_action: "blocked"
+      reason: "state_persist_failed"
+    status: "active"
+
+  - id: "heartbeat_checkpoint_lost"
+    file: "agent_gateway_enhanced.py"
+    method: "task heartbeat"
+    trigger: "ProgressManager.save_checkpoint failed"
+    event:
+      event_type: "intercept"
+      operation: "write"
+      os_action: "blocked"
+      reason: "checkpoint_lost"
+    status: "active"
+
+  - id: "metacognition_silent_failure"
+    file: "agent_gateway_enhanced.py"
+    method: "_execute_agent_task"
+    trigger: "Metacognition.reflect or SelfUpgradingAgent failed"
+    event:
+      event_type: "intercept"
+      operation: "execute"
+      os_action: "blocked"
+      reason: "metacognition_failed"
+    status: "active"
+
+  - id: "ollama_gpu_auto_start"
+    file: "agent_gateway_enhanced.py"
+    method: "_ensure_ollama"
+    trigger: "GPU instance unreachable"
+    event:
+      event_type: "auto_fix"
+      operation: "execute"
+      os_action: "corrected"
+      reason: "process_auto_started"
+    status: "active"
+
+  - id: "task_state_read_failed"
+    file: "agent_gateway_enhanced.py"
+    method: "v9_task_status"
+    trigger: "agent_state.json parse failed"
+    event:
+      event_type: "intercept"
+      operation: "read"
+      os_action: "blocked"
+      reason: "state_persist_failed"
+    status: "active"
+    note: "原代码无except块，暂不注入"
+
+  - id: "stream_chunk_parse_failed"
+    file: "agent_gateway_enhanced.py"
+    method: "chat_stream"
+    trigger: "SSE chunk JSON parse failed"
+    event:
+      event_type: "intercept"
+      operation: "read"
+      os_action: "blocked"
+      reason: "stream_parse_failed"
+    status: "active"

@@ -1,0 +1,40 @@
+# 推理引擎配置
+
+version: "1.0.0"
+
+engine:
+  name: reasoning
+  enabled: true
+  max_rules: 100
+
+# 规则配置
+rules:
+  file: data/reasoning_rules.json
+  auto_save: true
+  
+# 默认规则
+default_rules:
+  - name: "greeting_personalized"
+    condition: "user_said_hello AND user_name_known"
+    conclusion: "respond_with_personalized_greeting"
+    weight: 1.0
+    
+  - name: "greeting_default"
+    condition: "user_said_hello AND NOT user_name_known"
+    conclusion: "respond_with_greeting"
+    weight: 0.8
+    
+  - name: "code_help"
+    condition: "user_wants_code"
+    conclusion: "can_provide_code"
+    weight: 0.9
+    
+  - name: "weather_query"
+    condition: "user_asks_weather AND city_detected"
+    conclusion: "can_provide_weather"
+    weight: 0.9
+
+# 置信度配置
+confidence:
+  min_threshold: 0.3
+  high_threshold: 0.8

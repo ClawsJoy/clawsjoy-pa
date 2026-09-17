@@ -1,0 +1,140 @@
+version: "1.1"
+
+# ===== 执行预算硬限制(借鉴 Harness maxSteps — 超限强制终止, 防步骤膨胀) =====
+execution_budget:
+  max_steps: 30            # _execute_agent_task 最大轮次(原硬编码 100), 超限强制 timeout
+  max_tools_per_round: 12  # bridge_loop 每轮工具调用数上限, 超限强制收敛
+  max_total_tools: 48      # #21 bridge_loop 总工具数硬上限(R1 2026-08-30 调宽 32→48: 仅防失控第二道闸,
+                           #   常规终止由 token 水位驱动; 多步浏览器任务 30+ 不再误触发)
+  # ===== P0 费用保护(2026-08-29): DeepSeek 成本控制 =====
+  per_task_token_budget: 500000   # 单任务 token 预算(50万 ≈ ¥0.5, 超限停止/降级 7B)
+  daily_cost_limit: 20.0          # 每日 DeepSeek 费用上限(¥, 超限后续任务走 7B)
+  thinking_enabled: false         # thinking 模式默认关(按需开: 含 分析/推理/设计 关键词)
+  thinking_max_tokens: 8000       # thinking 模式输出上限
+  compaction_threshold: 0.6        # #24: 上下文压缩阈值(R2 2026-08-30: 0.8→0.6 更早压缩。原 0.8×61K≈49K
+
+  normal_max_tokens: 4000         # 普通任务输出上限(原 8000)
+  max_bridge_rounds: 100  # R1(2026-08-30): 轮次护栏(原 16 硬截断 → 100 防失控)。不再按轮次掐断任务,
+                          #   常规终止由 token 水位(per_task_token_budget)驱动, 消除伪失败/重复计费
+  goal_max_turns: 5        # Goal 驱动多 turn: goal 级续跑上限(每 turn=一次 bridge_loop), 防无限续跑。
+                          #   R1: 续跑条件改为 token 预算(goal_info.token_left), max_turns 仅护栏
+  tool_timeout_ms: 320000  # P1-2 execute_command 单次工具执行超时(2026-09-03: 180s→320s。qwen2.5vl 7B 3.4tok/s, 三问合并 >200s, 原 180s 使 timeout 300 内层被外层截断 → Agent 反复重试烧 token)
+  max_parallel_tools: 4    # P3: 同轮并行工具上限(0=禁用; 非 exclusive 读工具 ThreadPool 并行)
+  # turn 级硬时限(毫秒, 2026-09-13 加)。超时 → 置取消标志 + 发 error 事件 + [DONE]。
+  # 此前 _stream_gen 超时只发心跳、无限循环 —— 桥接线程挂死后流会永远心跳, 只能重启网关。
+  turn_timeout_ms: 1500000  # 25 分钟
+  exclusive_tools: ["write_file", "execute_command"]  # 2026-08-24: edit_file/write_large 未注册移除  # P3: 写/命令串行 barrier(永不与其他工具并行)
+
+# ===== V9 本地浏览器操作(Manus 对齐, P1 只读调研) =====
+browser_local:
+  ws_port: 5007              # 扩展 WebSocket 连接端口(独立 WS 服务线程; 低端口被 svchost 占用 → 定为 5006)
+  ws_host: localhost         # 扩展连接地址(Chrome 侧): localhost 经 WSL2 localhost 转发可达; 桥接/共享 IP 下 Windows 连 192.168.3.11 不通, 勿用
+  domain_whitelist:          # 平台域名白名单(默认 小红书/抖音/B站/知乎/公众号/微博)
+    - xiaohongshu.com
+    - xhslink.com
+    - douyin.com
+    - iesdouyin.com
+    - bilibili.com
+    - b23.tv
+    - fanqieopen.com
+    - kol.fanqieopen.com
+    - fanqienovel.com
+    - daren.fanqienovel.com   # 2026-08-30 番茄达人中心(提交发布/回填必需)
+    - zhihu.com
+    - mp.weixin.qq.com
+    - weibo.com
+    - bytedance.larkoffice.com  # 2026-09-07 飞书文档(官方可信, 红果漫剧激励活动文档读取)
+    - chat.deepseek.com       # 2026-09-10 专家页面(V9/PA 与 DeepSeek 专家交互: 提问+取回答)
+    - deepseek.com
+  default_timeout: 30        # 指令默认超时(秒)
+
+workspace:
+  project_prefix: "clawsjoy_dev/"
+  forbidden_prefix: "clawsjoy_dev/clawsjoy_v10/"
+
+# ===== Obsidian 第二大脑集成(2026-08-29): 知识检索源 + 任务复盘写入 =====
+obsidian:
+  enabled: true
+  vault_path: "/mnt/d/Obsidian/ClawsJoy/ClawsJoy"   # WSL 挂载; Windows 侧 D:\Obsidian\ClawsJoy
+  reviews_dir: "聊天区/复盘"   # 批198: 按《第二大脑分类规范 v2》目标目录（此前仍写顶层 Reviews ⇒ 迁移回退、972 份堆积）
+  sops_dir: "SOPs"
+  pitfalls_dir: "Pitfalls"
+  pitfalls_file: "避坑清单.md"  # 2026-08-30 知识迁移: 常驻避坑文件(旧 avoid_pitfalls.md 内容已并入)
+  clippings_dir: "Clippings"   # 2026-08-30 第二大脑: browse/fetch 抓取的新闻/资料自动剪藏目录
+  sync_clippings: true          # 抓取成功页面自动同步到 vault Clippings/(幂等去重)
+  write_on_complete: true      # 任务完成后写复盘笔记
+  append_pitfalls: true        # 新坑追加 避坑清单.md
+
+# ===== 精准注入过滤网参数(B, 2026-08-29): 阈值/权重/衰减/预算 配置化 =====
+precision_inject:
+  vault_min_score: 0.05        # vault 检索最低相似度
+  memory_min_score: 0.1        # memory(known_issues/patterns) 最低相似度
+  report_min_score: 0.05       # 报告目录最低相似度
+  keyword_weight: 0.3          # 任务词命中加权
+  decay_days: 60               # memory 时间衰减周期(天, 0=不衰减)
+  min_score: 0.1               # 过滤后最低 rank_score(防噪音)
+  top_n: 5                     # 注入条数上限
+  token_budget: 750            # 注入文本预算(字符, ≈500 tokens)
+
+task_types:
+  read_only:
+    deliverable: "报告"
+    write_required: false
+  modification:
+    deliverable: "实际修改 + 验证"
+    write_required: true
+  compound:
+    deliverable: "拆分为多次单点写入"
+    write_required: true
+
+read_policy:
+  max_files: 5
+  max_list_dir: 3
+  prefer_query_index: true
+  full_file_read_once: true
+
+write_policy:
+  small_edit: "1-2 行使用 write_file line 模式"
+  large_edit: "3+ 行或文件 >500 行使用完整写入或 heredoc 分区域写入"
+  comment_style: "#"
+  auto_create_parent_dir: true
+
+validation_flow:
+  - write_file/execute_command 实际写入
+  - read_file 确认写入内容
+  - python3 -m py_compile 语法检查
+  - python3 -c / heredoc 逻辑验证
+  - git diff 核对改动
+
+anti_hallucination:
+  must_write_before_complete: true
+  no_fake_completion: true
+  blocked_dependency: "明确报告阻塞原因并请求授权"
+
+retry:
+  max_attempts: 3
+  strategy_switch_after_failure: 2
+  rejected_strategy: "execute_command 被拒 → python3 heredoc + subprocess；write_file line 模式被拒 → heredoc 完整写入"
+  switch_immediately: true
+  failure_analysis_max_loops: 3
+  js_rollback_limit: 2
+  write_retry_limit: 2
+
+recursion:
+  duplicate_operation_warning: "同一 (工具, 路径) 连续 2-4 次 → 注入'检测到重复操作，请换一种方式'"
+  auto_pause_threshold: 5
+  auto_pause_action: "自动暂停任务保存断点"
+  counter_reset_on_switch: true
+
+data_flow_chain:
+  - 写入
+  - 语法检查
+  - 导入测试
+  - 运行验证
+  - 内容核验
+
+forbidden:
+  - grep/cat/head/tail 读文件
+  - python3 -c 执行多行代码
+  - 读完整文件后追加读取同一文件
+  - 重复调用被拒工具

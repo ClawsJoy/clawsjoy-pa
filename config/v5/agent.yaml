@@ -1,0 +1,18 @@
+# Agent 配置
+defaults:
+  max_history: 50
+  temperature: 0.7
+  
+agents:
+  main_agent:
+    enabled: true
+    description: "主智能体"
+  chat:
+    enabled: true
+    description: "聊天助手"
+  code:
+    enabled: true
+    description: "代码助手"
+  decision:
+    enabled: true
+    description: "决策助手"

@@ -1,0 +1,27 @@
+# 共享知识库 - 所有 Agent 可读
+version: "1.0.0"
+
+# 系统知识
+system:
+  version: "5.0.0"
+  name: "ClawsJoy"
+  description: "配置驱动的多租户AI Agent操作系统"
+
+# 公共规则
+rules:
+  - name: "用户隔离"
+    description: "每个用户数据独立存储"
+  - name: "配置驱动"
+    description: "所有行为通过YAML配置"
+
+# 最佳实践
+best_practices:
+  - "使用 unified_config 读取配置"
+  - "Agent 通过注册中心管理"
+  - "向量记忆使用用户隔离"
+
+# 公共技能
+shared_skills:
+  - "do_anything"
+  - "calculator"
+  - "weather"

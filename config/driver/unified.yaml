@@ -1,0 +1,191 @@
+# ClawsJoy 统一配置 v1.0.0
+# 消除所有硬编码
+
+# ========== 网络服务配置 ==========
+services:
+  ports:
+    gateway: 5002
+    file: 5003
+    multi_agent: 5006
+    doc: 5008
+    agent_api: 5010
+    web: 5011
+    registry: 5022
+    scheduler: 5023
+    skill_market: 5024
+    promo: 8105
+    chat: 8101
+    joymate: 8093
+    tts: 9000
+    meilisearch: 7700
+    qdrant: 6333
+
+  hosts:
+    internal: "smart_config.HOST"
+    external: "0.0.0.0"
+
+  urls:
+    immd: "https://www.immd.gov.hk/hks/services/index.html"
+    info_gov: "https://www.info.gov.hk/gia/general/today.htm"
+    unsplash_api: "https://api.unsplash.com/search/photos"
+
+# ========== LLM 配置 ==========
+llm:
+  ollama:
+    host: "127.0.0.1"
+    port: 11434
+    model: "qwen2.5:7b-instruct-q4_0-gpu"
+    timeout: 30
+    temperature: 0.7
+    max_tokens: 2000
+
+  alternatives:
+    - model: "qwen2.5:7b-instruct-q4_0-gpu"
+      timeout: 60
+    - model: "llama3.2:3b"
+      timeout: 45
+
+# ========== 阈值配置 ==========
+thresholds:
+  success_rate:
+    high: 0.9      # 高成功率阈值
+    medium: 0.7    # 中成功率阈值
+    low: 0.5       # 低成功率阈值
+    critical: 0.3  # 危急阈值
+
+  quality:
+    excellent: 0.8
+    good: 0.5
+    poor: 0.3
+
+  resource:
+    cpu_warning: 80
+    cpu_critical: 90
+    memory_warning: 80
+    memory_critical: 90
+    disk_warning: 85
+    disk_critical: 95
+
+# ========== 时间配置 ==========
+timing:
+  intervals:
+    health_check: 30          # 健康检查间隔(秒)
+    heartbeat: 30             # 心跳间隔(秒)
+    auto_heal: 600            # 自动修复间隔(秒) 10分钟
+    dream_cycle: 300          # 梦境循环间隔(秒) 5分钟
+    reflection: 60            # 反思间隔(秒)
+
+  timeouts:
+    http: 30                  # HTTP 请求超时(秒)
+    llm: 60                   # LLM 调用超时(秒)
+    long_llm: 90              # 长 LLM 调用超时(秒)
+
+  delays:
+    retry: 2                  # 重试延迟(秒)
+    cooldown: 5               # 冷却时间(秒)
+
+# ========== 限制配置 ==========
+limits:
+  queues:
+    event_queue: 500
+    message_history: 100
+    retry_max: 3
+
+  memories:
+    short_term: 20
+    long_term: 100
+    history_max: 1000
+
+  search:
+    default_limit: 5
+    max_limit: 100
+    vector_dim: 384
+
+# ========== 学习配置 ==========
+learning:
+  reflection:
+    interval: 5               # 每N次交互反思
+    min_samples: 10
+
+  dreaming:
+    interval: 10              # 每N次交互梦境
+    promotion_threshold: 0.7
+
+  evolution:
+    interval: 20              # 每N次交互进化
+    confidence_threshold: 0.45
+
+# ========== 安全配置 ==========
+security:
+  rate_limit: 100             # 每分钟请求数
+  max_file_size: 10485760     # 10MB
+  allowed_origins:
+    - "http://localhost:5011"
+    - "https://localhost:5446"
+
+# ========== 路径配置 ==========
+paths:
+  data: "./data"
+  logs: "./logs"
+  output: "./output"
+  skills: "./skills"
+  models: "./models"
+  ssl: "./ssl"
+
+# ========== 模型配置 ==========
+models:
+  defaults:
+    llm: "qwen2.5:7b-instruct-q4_0-gpu"
+    embedding: "nomic-embed-text:latest"
+
+  embedding:
+    dimension: 384
+
+  image:
+    default: "sd15"
+    alternatives: ["dreamshaper"]
+
+# ========== 额外配置（迁移剩余硬编码）==========
+engineer:
+  auto_heal_interval: 600      # 自动修复间隔(秒) - 原 sleep(2) 实际是循环间隔
+  retry_delay: 2               # 重试延迟(秒)
+
+memory_manager:
+  default_search_limit: 5
+  max_search_limit: 100
+
+orchestrator:
+  short_timeout: 12            # 短超时(秒)
+  normal_timeout: 30           # 正常超时(秒)
+  long_timeout: 90             # 长超时(秒)
+
+# ========== 容量配置 ==========
+capacity:
+  event_queue_maxlen: 500
+  message_history_maxlen: 100
+  history_max_records: 1000
+  vector_dimension: 384
+
+# ========== 成功率和质量阈值 ==========
+success_rate:
+  high: 0.9
+  medium: 0.7
+  low: 0.5
+  critical: 0.3
+
+quality:
+  excellent: 0.8
+  good: 0.5
+  poor: 0.3
+
+# ========== 资源监控阈值 ==========
+resource:
+  cpu:
+    warning: 80
+    critical: 90
+  memory:
+    warning: 80
+    critical: 90
+  disk:
+    warning: 85
+    critical: 95

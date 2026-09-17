@@ -1,0 +1,20 @@
+capable_of:
+- 分析
+- 数据分析
+- 数据统计
+- 报表生成
+- 数据可视化
+- 统计
+- 报表
+- 趋势
+- 报告
+- 总结
+class: AnalysisAgent
+description: analysis_agent 智能体
+enabled: true
+name: analysis_agent
+priority: 20
+requires_context: false
+type: custom
+version: 9.0.0
+wake_interval: 300

@@ -1,0 +1,65 @@
+description: 自动学习的规则
+learned_at: '2026-06-03T11:30:43.508936'
+rules:
+- answer: 大约需要3天
+  created_at: '2026-05-31T16:43:42.744954'
+  enabled: true
+  frequency: 3
+  id: 1
+  last_seen: '2026-06-03T11:30:43.494909'
+  question: 这个项目要多久完成？
+- answer: 25乘以4等于100。
+  created_at: '2026-06-01T09:55:03.992167'
+  enabled: true
+  frequency: 3
+  id: 2
+  last_seen: '2026-06-03T11:30:43.497619'
+  question: '[NUM]乘以[NUM]等于多少'
+- answer: 你好，李华！很高兴为你提供帮助。你可以告诉我你需要什么帮助吗？无论是学习上的问题、生活中的困惑还是其他方面的需求，我都会尽全力协助你。
+  created_at: '2026-06-01T09:55:05.031437'
+  enabled: true
+  frequency: 3
+  id: 3
+  last_seen: '2026-06-01T09:55:05.031440'
+  question: 我叫李华
+- answer: 您好！有什么可以帮助您的吗？
+  created_at: '2026-06-01T11:34:24.719214'
+  enabled: true
+  frequency: 19
+  id: 4
+  last_seen: '2026-06-03T11:30:43.508929'
+  question: 你好
+- answer: '创建一个简单的Python入门脚本，我们可以从一些基本的Python语法和功能开始，比如变量、数据类型、输入输出以及简单的数学运算。下面是一个基本的Python入门脚本示例：
+
+
+    ```python
+
+    #'
+  created_at: '2026-06-01T14:51:53.081841'
+  enabled: true
+  frequency: 9
+  id: 5
+  last_seen: '2026-06-03T11:30:43.499667'
+  question: 生成脚本：Python入门
+- answer: 我目前的身份是ClawsJoy，但我并不具备查看内容日历的功能。如果你是在询问如何在特定的应用程序或平台上查看内容日历（例如Google Calendar、Outlook或其他日历应用），请提供更多详
+  created_at: '2026-06-01T14:52:47.986086'
+  enabled: true
+  frequency: 3
+  id: 6
+  last_seen: '2026-06-03T11:30:43.501932'
+  question: 查看内容日历
+- answer: 对不起，您刚才提到的是一个错误的身份名称 "ClawsJoy"。 我是阿里云的Qwen。请问您需要我帮忙翻译什么内容吗？请提供您想要翻译的文字或句子。
+  created_at: '2026-06-01T19:27:03.102962'
+  enabled: true
+  frequency: 3
+  id: 7
+  last_seen: '2026-06-03T11:30:43.506459'
+  question: 翻译这段话
+- answer: 当然可以帮助您编写代码，不过请告诉我您需要什么样的帮助呢？比如您是编程新手需要一个基础的教程示例，还是有一个具体的项目需求想要得到相应的解决方案？提供一些详细信息将有助于我更好地为您提供支持。
+  created_at: '2026-06-02T05:31:54.069059'
+  enabled: true
+  frequency: 11
+  id: 8
+  last_seen: '2026-06-03T11:30:43.504233'
+  question: 帮我写代码
+version: 1.0.0

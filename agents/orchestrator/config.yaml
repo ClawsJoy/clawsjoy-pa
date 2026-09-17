@@ -1,0 +1,43 @@
+agent:
+  name: orchestrator
+  display_name: 编排师
+  type: builtin
+  enabled: true
+  role:
+    title: "编排师"
+    alias: "调度员"
+    level: 2
+    responsibilities:
+      - "分解复杂任务"
+      - "协调多个执行器"
+      - "编排执行顺序"
+    permissions:
+      - "decompose_task"
+      - "orchestrate"
+
+decomposition:
+  enabled: true
+  routing:
+    - keywords: ["分析", "统计", "数据"]
+      target: analysis_agent
+    - keywords: ["代码", "编程"]
+      target: code_agent
+  default_target: chat_agent
+
+memory:
+  enabled: true
+  path: memory/
+
+  llm:
+    provider: ollama
+    model: qwen2.5:7b
+    temperature: 0.2
+    max_tokens: 4096
+    timeout: 60
+
+  # 能力声明
+  capabilities:
+    - intelligent_routing
+    - workflow_orchestration
+    - task_decomposition
+    - error_handling

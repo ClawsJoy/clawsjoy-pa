@@ -1,0 +1,13 @@
+# 云端服务配置（新增）
+cloud:
+  comfyui:
+    endpoint: "https://comfy.clawsjoy.ai"
+    enabled: false  # 默认关闭，需配置
+  
+  aliyun_pai:
+    endpoint: "https://pai.aliyuncs.com"
+    enabled: false
+  
+  render_3d:
+    endpoint: "https://render.clawsjoy.ai"
+    enabled: false

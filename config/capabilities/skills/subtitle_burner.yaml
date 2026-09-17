@@ -1,0 +1,8 @@
+actions:
+- subtitle
+- 字幕
+description: subtitle-burner 技能
+enabled: true
+name: subtitle-burner
+type: skill
+version: 1.0.0

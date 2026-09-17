@@ -1,0 +1,66 @@
+# 技能关键词注册表 - 配置驱动
+# 一级配置（系统级），管理员维护
+
+version: "1.0.0"
+
+# 技能关键词映射（语义补充）
+keyword_mappings:
+  programming:
+    keywords: ["编程", "代码", "写代码", "开发", "Python", "Java", "JavaScript", "Golang"]
+    skills: ["code_agent", "skill_creator"]
+    priority: 10
+  
+  ai_ml:
+    keywords: ["人工智能", "AI", "机器学习", "深度学习", "大模型", "LLM", "神经网络"]
+    skills: ["ai_agent", "llm_agent"]
+    priority: 10
+  
+  docker:
+    keywords: ["Docker", "容器", "镜像", "部署", "K8s", "Kubernetes"]
+    skills: ["docker_executor"]
+    priority: 10
+  
+  image:
+    keywords: ["图片", "图像", "识别", "看图", "图片识别", "图像分析", "OCR"]
+    skills: ["vision", "image_recognition"]
+    priority: 10
+  
+  video:
+    keywords: ["视频", "制作视频", "剪辑", "视频编辑", "生成视频"]
+    skills: ["auto_视频制作", "video_maker"]
+    priority: 10
+  
+  math:
+    keywords: ["计算", "数学", "加法", "减法", "乘法", "除法", "算术"]
+    skills: ["calculate", "add", "subtract", "multiply", "divide"]
+    priority: 10
+  
+  translate:
+    keywords: ["翻译", "译", "中译英", "英译中", "翻译文本"]
+    skills: ["translate"]
+    priority: 10
+  
+  weather:
+    keywords: ["天气", "温度", "预报", "气象"]
+    skills: ["get_weather"]
+    priority: 10
+  
+  file:
+    keywords: ["文件", "读取", "写入", "保存", "列出", "目录"]
+    skills: ["read_file", "write_file", "list_files"]
+    priority: 8
+  
+  search:
+    keywords: ["搜索", "查找", "检索", "查询"]
+    skills: ["search_book", "knowledge_search"]
+    priority: 8
+  
+  butler:
+    keywords: ["管家", "私人管家", "改名", "待办", "提醒"]
+    skills: ["personal_butler_v2"]
+    priority: 10
+
+# 默认配置
+default:
+  min_similarity: 0.5
+  max_results: 5

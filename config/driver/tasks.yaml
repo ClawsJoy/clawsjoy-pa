@@ -1,0 +1,9 @@
+# 任务配置 v1.0.01
+default_priority: 2               # 默认优先级 (0-3, 3最高)
+max_concurrent: 5                 # 最大并发任务数
+retry_delay: 5                    # 重试延迟（秒）
+generation_interval: 5            # 生成间隔（秒）
+queue_persist: true               # 队列持久化
+queue_persist_file: "data/task_queue.json"
+auto_generate: true               # 自动生成任务
+task_cleanup_days: 7              # 任务清理天数

@@ -1,0 +1,23 @@
+agent:
+  capabilities:
+  - 视频编辑
+  - 视频裁剪
+  - 视频合并
+  - 视频变速
+  - 音轨添加
+  display_name: 视频编辑器
+  enabled: true
+  keywords:
+  - 视频
+  - 裁剪
+  - 合并
+  - 变速
+  - 音轨
+  - 剪辑
+  llm:
+    max_tokens: 512
+    model: qwen2.5:7b
+    provider: ollama
+    temperature: 0.1
+  name: video_editor_agent
+  type: builtin

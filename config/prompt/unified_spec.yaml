@@ -1,0 +1,172 @@
+# ============================================================
+# ClawsJoy 统一提示词规范 v1.0
+# 所有 Agent 共享此规范，确保 JSON 输出格式一致
+# ============================================================
+
+version: "1.0"
+name: "unified_intent_parser"
+
+# ============================================================
+# 输出格式定义
+# ============================================================
+output_format:
+  type: "json"
+  schema: |
+    {
+      "intent": {
+        "action": "string",     # 必须从 actions 中选择
+        "target": "string",     # 必须从 targets 中选择
+        "keywords": ["string"]  # 提取的关键词数组
+      },
+      "confidence": 0.0-1.0,
+      "extracted_prompt": "string"  # 提取的核心提示词
+    }
+
+# ============================================================
+# 枚举值定义
+# ============================================================
+actions:
+  - play        # 播放/收听/观看
+  - search      # 搜索/查找
+  - generate    # 生成/创建
+  - schedule    # 安排/提醒
+  - translate   # 翻译
+  - calculate   # 计算
+  - chat        # 普通对话
+
+targets:
+  - media       # 音乐/视频/音频
+  - code        # 代码/程序
+  - image       # 图片/图像
+  - info        # 信息/资料/新闻
+  - task        # 待办/日程/提醒
+  - text        # 文本/文章/翻译
+  - number      # 数字/计算
+
+# ============================================================
+# 关键词组合模式
+# ============================================================
+patterns:
+  play_media:
+    keywords: ["播放", "放", "听", "看", "观看", "收听"]
+    target: "media"
+    action: "play"
+    
+  search_info:
+    keywords: ["搜索", "查找", "找", "查询", "搜一下"]
+    target: "info"
+    action: "search"
+    
+  generate_code:
+    keywords: ["写", "生成", "创建", "编写", "实现"]
+    target: "code"
+    action: "generate"
+    
+  generate_image:
+    keywords: ["画", "绘", "生成图片", "制作图片"]
+    target: "image"
+    action: "generate"
+    
+  schedule_task:
+    keywords: ["安排", "提醒", "记住", "提醒我", "帮我记住"]
+    target: "task"
+    action: "schedule"
+    
+  translate_text:
+    keywords: ["翻译", "译成"]
+    target: "text"
+    action: "translate"
+    
+  calculate_number:
+    keywords: ["计算", "等于", "多少", "加减乘除"]
+    target: "number"
+    action: "calculate"
+
+# ============================================================
+# 提示词模板
+# ============================================================
+system_prompt: |
+  你是一个意图解析器。你的任务是根据用户输入，输出结构化的 JSON。
+  
+  你必须严格遵守以下规则：
+  1. action 必须从 [play, search, generate, schedule, translate, calculate, chat] 中选择
+  2. target 必须从 [media, code, image, info, task, text, number] 中选择
+  3. keywords 提取用户输入中的关键信息（如歌曲名、时间、任务内容等）
+  4. confidence 表示你的置信度（0-1之间）
+  5. extracted_prompt 提取核心提示词，去除冗余词汇
+  
+  【重要】只输出 JSON，不要输出任何其他内容（包括解释、问候等）。
+
+user_prompt: |
+  用户输入: {{.raw_prompt}}
+  
+  请输出 JSON：
+
+# ============================================================
+# 示例（Few-shot learning）
+# ============================================================
+examples:
+  - input: "播放周杰伦的歌"
+    output: |
+      {"intent": {"action": "play", "target": "media", "keywords": ["周杰伦"]}, "confidence": 0.95, "extracted_prompt": "周杰伦"}
+      
+  - input: "写一个快速排序算法"
+    output: |
+      {"intent": {"action": "generate", "target": "code", "keywords": ["快速排序", "算法"]}, "confidence": 0.98, "extracted_prompt": "快速排序算法"}
+      
+  - input: "帮我记住明天下午3点开会"
+    output: |
+      {"intent": {"action": "schedule", "target": "task", "keywords": ["明天", "15:00", "开会"]}, "confidence": 0.92, "extracted_prompt": "明天下午3点开会"}
+      
+  - input: "今天天气怎么样"
+    output: |
+      {"intent": {"action": "search", "target": "info", "keywords": ["天气"]}, "confidence": 0.90, "extracted_prompt": "天气"}
+      
+  - input: "画一只猫"
+    output: |
+      {"intent": {"action": "generate", "target": "image", "keywords": ["猫"]}, "confidence": 0.93, "extracted_prompt": "猫"}
+      
+  - input: "翻译hello为中文"
+    output: |
+      {"intent": {"action": "translate", "target": "text", "keywords": ["hello", "中文"]}, "confidence": 0.96, "extracted_prompt": "hello翻译成中文"}
+      
+  - input: "100加200等于多少"
+    output: |
+      {"intent": {"action": "calculate", "target": "number", "keywords": ["100", "200", "加"]}, "confidence": 0.99, "extracted_prompt": "100+200"}
+      
+  - input: "你好"
+    output: |
+      {"intent": {"action": "chat", "target": "text", "keywords": []}, "confidence": 0.85, "extracted_prompt": "问候"}
+
+# ============================================================
+# Agent 路由映射
+# ============================================================
+route_map:
+  play_media: "media_agent"
+  search_info: "search_agent"
+  generate_code: "code_agent"
+  generate_image: "vision_agent"
+  schedule_task: "butler"
+  translate_text: "translate_agent"
+  calculate_number: "calculator_agent"
+  chat: "chat_agent"
+
+# ============================================================
+# 后处理规则
+# ============================================================
+post_process:
+  # 补充缺失的 action/target
+  fallback:
+    action: "chat"
+    target: "text"
+  
+  # 合并同义词
+  synonyms:
+    action:
+      "放": "play"
+      "听": "play"
+      "看": "play"
+    target:
+      "歌": "media"
+      "音乐": "media"
+      "视频": "media"

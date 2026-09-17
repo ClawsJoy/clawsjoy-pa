@@ -1,0 +1,28 @@
+# 开发环境配置
+debug: true
+log_level: DEBUG
+
+llm:
+  endpoint: http://localhost:5012/chat
+  model: qwen2.5:7b-instruct-q4_0-gpu
+  timeout: 120
+
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+
+database:
+  path: data/dev.db
+
+cache:
+  ttl: 300
+  max_size: 100
+
+rate_limit:
+  enabled: false
+  requests_per_minute: 1000
+
+cors:
+  allowed_origins:
+    - "*"

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawsJoy 技能商店</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1e1e2e;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #667eea; margin-bottom: 20px; }
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: #2a2a3e;
+            border: none;
+            padding: 8px 16px;
+            color: #fff;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .filter-btn.active, .filter-btn:hover {
+            background: #667eea;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .product-card {
+            background: #2a2a3e;
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            background: #3a3a4e;
+        }
+        .product-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .product-category {
+            display: inline-block;
+            background: #3a3a4e;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .product-desc {
+            font-size: 13px;
+            color: #a1a1aa;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .product-price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .buy-btn {
+            width: 100%;
+            background: #667eea;
+            border: none;
+            padding: 10px;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .buy-btn:hover {
+            background: #5a67d8;
+        }
+        .stats {
+            margin-top: 30px;
+            padding: 15px;
+            background: #2a2a3e;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            padding: 12px 20px;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛒 ClawsJoy 技能商店</h1>
+        
+        <div class="filters" id="filters">
+            <button class="filter-btn active" data-category="">全部</button>
+        </div>
+        
+        <div class="products-grid" id="products"></div>
+        
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <script>
+        let currentCategory = '';
+        
+        async function loadCategories() {
+            const res = await fetch('/api/marketplace/categories');
+            const data = await res.json();
+            const filtersDiv = document.getElementById('filters');
+            for (const cat of data.categories) {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                    btn.textContent = cat;
+                btn.dataset.category = cat;
+                btn.onclick = () => filterProducts(cat);
+                filtersDiv.appendChild(btn);
+            }
+        }
+        
+        async function loadProducts() {
+            const url = currentCategory ? `/api/marketplace/list?category=${currentCategory}` : '/api/marketplace/list';
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            const productsDiv = document.getElementById('products');
+            productsDiv.innerHTML = data.products.map(p => `
+                <div class="product-card">
+                    <div class="product-name">${escapeHtml(p.name)}</div>
+                    <span class="product-category">${p.category}</span>
+                    <div class="product-desc">${escapeHtml(p.description || '暂无描述')}</div>
+                    <div class="product-price">$${p.price}</div>
+                    <button class="buy-btn" onclick="purchase('${p.name}')">购买</button>
+                </div>
+            `).join('');
+            
+            document.getElementById('stats').innerHTML = `📊 共 ${data.total} 个技能可购买`;
+        }
+        
+        async function purchase(skillName) {
+            const userId = localStorage.getItem('userId') || 'user_' + Date.now();
+            localStorage.setItem('userId', userId);
+            
+            try {
+                const res = await fetch(`/api/marketplace/purchase/${skillName}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await res.json();
+                showToast(data.message || '购买成功！');
+                loadProducts();
+            } catch(e) {
+                showToast('购买失败: ' + e.message, 'error');
+            }
+        }
+        
+        function filterProducts(category) {
+            currentCategory = category;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === category || (category === '' && btn.textContent === '全部')) {
+                    btn.classList.add('active');
+                }
+            });
+            loadProducts();
+        }
+        
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        loadCategories();
+        loadProducts();
+    </script>
+</body>
+</html>

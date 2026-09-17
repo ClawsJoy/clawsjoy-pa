@@ -1,0 +1,10 @@
+actions:
+- text-basic
+capabilities:
+- description: text-basic skill
+  name: text-basic
+description: text-basic skill
+enabled: true
+name: text-basic
+type: skill
+version: 1.0.0

@@ -1,0 +1,16 @@
+name: three_d_agent
+description: 3D 模型创建与处理专家
+capabilities:
+  - name: generate_model
+    description: 生成 3D 模型
+  - name: analyze_model
+    description: 分析 3D 模型结构
+  - name: convert_format
+    description: 转换 3D 模型格式
+  - name: optimize_model
+    description: 优化 3D 模型
+examples:
+  - input: "生成一个3D森林模型"
+    output: "3D 模型已生成"
+  - input: "分析这个3D模型"
+    output: "模型结构分析报告"

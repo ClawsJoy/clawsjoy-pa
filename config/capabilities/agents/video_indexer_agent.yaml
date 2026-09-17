@@ -1,0 +1,16 @@
+name: video_indexer_agent
+description: 视频索引与标签管理专家
+capabilities:
+  - name: index_video
+    description: 索引视频内容，生成标签
+  - name: search_video
+    description: 搜索视频库
+  - name: get_tags
+    description: 获取视频标签
+  - name: update_tags
+    description: 更新视频标签
+examples:
+  - input: "索引视频 meeting.mp4"
+    output: "✅ 视频已索引，生成 5 个标签"
+  - input: "搜索视频 产品介绍"
+    output: "找到 3 个相关视频"

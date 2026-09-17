@@ -1,0 +1,15 @@
+{
+    "香港": [
+        {"url": "https://www.immd.gov.hk/hks/", "category": "移民", "priority": 1},
+        {"url": "https://www.info.gov.hk/gia/general/today.htm", "category": "新闻", "priority": 1},
+        {"url": "https://www.edb.gov.hk/sc/", "category": "教育", "priority": 1},
+        {"url": "https://www.labour.gov.hk/tc/", "category": "工作", "priority": 1},
+        {"url": "https://www.ha.org.hk/", "category": "医疗", "priority": 1}
+    ],
+    "深圳": [
+        {"url": "https://hrss.sz.gov.cn/", "category": "人才", "priority": 1}
+    ],
+    "上海": [
+        {"url": "https://www.shanghai.gov.cn/", "category": "综合", "priority": 1}
+    ]
+}

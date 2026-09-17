@@ -1,0 +1,91 @@
+actions:
+- write
+- chat
+capabilities:
+- description: 将小说转换为漫剧剧本格式
+  input_schema:
+    properties:
+      episodes:
+        description: 集数（默认3集）
+        type: integer
+      genre:
+        description: 类型（科幻/悬疑/热血/治愈/奇幻/日常）
+        type: string
+      novel_content:
+        description: 小说全文
+        type: string
+      style:
+        description: 视觉风格（温暖/冷峻/明亮/暗黑）
+        type: string
+    type: object
+  name: novel_to_script
+  output_schema:
+    properties:
+      characters:
+        description: 角色档案列表
+        type: array
+      scenes:
+        description: 场景列表
+        type: array
+      script:
+        description: 漫剧剧本（含分镜、对话、旁白）
+        type: string
+    type: object
+- description: 直接创作漫剧剧本
+  input_schema:
+    properties:
+      episodes:
+        description: 集数
+        type: integer
+      genre:
+        description: 类型
+        type: string
+      premise:
+        description: 故事前提/创意
+        type: string
+    type: object
+  name: write_script
+  output_schema:
+    properties:
+      script:
+        description: 完整漫剧剧本
+        type: string
+    type: object
+- description: 修改/优化已有剧本
+  input_schema:
+    properties:
+      feedback:
+        description: 修改意见
+        type: string
+      script:
+        description: 原剧本
+        type: string
+    type: object
+  name: revise_script
+  output_schema:
+    properties:
+      revised_script:
+        description: 修改后的剧本
+        type: string
+    type: object
+description: 漫剧剧本创作专家，将小说转换为专业漫剧剧本
+examples:
+- input:
+    episodes: 3
+    genre: 科幻
+    novel_content: 小明是个普通程序员...
+  output:
+    characters: '[{name: ''小明'', age: 25, ...}]'
+    scenes: '[{name: ''办公室'', ...}]'
+    script: '### 第1集：觉醒
+
+
+      【分镜1】...'
+name: comic_writer_agent
+tags:
+- comic
+- script
+- novel-to-script
+- storyboard
+type: agent
+version: 1.0.0

@@ -1,0 +1,19 @@
+capable_of:
+- youtube
+- 油管
+- 上传视频
+- 频道
+- 生成脚本
+- 写脚本
+- 标题
+- 描述
+- 标签
+class: YouTubeAgent
+description: youtube_agent 智能体
+enabled: true
+name: youtube_agent
+priority: 20
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

@@ -1,0 +1,48 @@
+# ClawsJoy v5.0 系统配置
+version: "5.0.0"
+
+system:
+  name: "ClawsJoy"
+  description: "智能体AI操作系统"
+  environment: "production"
+
+# 功能开关
+features:
+  llm_enabled: true
+  vector_memory: false
+  proactive_service: true
+  auto_learning: true
+
+# LLM 配置
+llm:
+  provider: "ollama"
+  default_model: "qwen2.5:7b-instruct-q4_0-gpu"
+  fallback_model: "llama3.2:3b"
+  temperature:
+    chat: 0.7
+    decision: 0.3
+    code: 0.2
+  timeout: 60
+  max_retries: 3
+
+# 记忆配置
+memory:
+  levels:
+    l0_session: 50      # 会话记忆条数
+    l1_daily: 100       # 日记忆条数
+    l2_long: 500        # 长期记忆条数
+  auto_compress: true
+  user_isolation: true
+
+# 主动服务
+proactive:
+  enabled: true
+  morning_greeting: true
+  morning_hour: 9
+  idle_reminder: true
+  idle_minutes: 30
+
+# 日志
+logging:
+  level: "INFO"
+  output: "logs/v5/"

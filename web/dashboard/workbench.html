@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClawsJoy · AI劳动力管理</title>
+<style>
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #30363d;
+  --text: #c9d1d9; --sub: #8b949e; --blue: #58a6ff;
+  --green: #3fb950; --red: #f85149; --purple: #bc8cff;
+  --radius: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:Inter,-apple-system,sans-serif; height:100vh; height:100dvh; display:flex; }
+.sidebar { width:260px; min-width:180px; max-width:500px; background:var(--card); border-right:1px solid var(--border); display:flex; flex-direction:column; position:relative; }
+.sidebar-resize { position:absolute; right:-4px; top:0; bottom:0; width:8px; cursor:col-resize; z-index:10; }
+.sidebar-resize:hover { background:var(--blue); opacity:0.4; }
+.sidebar-header { padding:16px; border-bottom:1px solid var(--border); font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
+.sidebar-header .dot { width:8px; height:8px; border-radius:50%; background:var(--green); }
+.nav { display:flex; flex-direction:column; padding:8px; }
+.nav-btn { background:none; border:none; color:var(--sub); padding:10px 12px; text-align:left; border-radius:6px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:8px; }
+.nav-btn:hover,.nav-btn.active { background:rgba(88,166,255,0.08); color:var(--text); }
+.nav-btn .icon { font-size:16px; }
+.members { padding:8px; border-top:1px solid var(--border); margin-top:auto; }
+.members-title { font-size:11px; color:var(--sub); padding:8px; text-transform:uppercase; letter-spacing:1px; }
+.member-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; font-size:12px; position:relative; }
+.member-row:hover { background:rgba(255,255,255,0.03); }
+.member-row .avatar { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.member-row .info { flex:1; min-width:0; }
+.member-row .name { font-weight:500; }
+.member-row .pos { font-size:10px; color:var(--sub); }
+.member-row .status { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.member-row .status.active { background:var(--green); }
+.member-row .status.paused { background:#d2991d; }
+.member-row .actions { display:none; gap:4px; }
+.member-row:hover .actions { display:flex; }
+.member-row .actions button { background:none; border:none; color:var(--sub); cursor:pointer; font-size:12px; padding:2px 4px; border-radius:4px; }
+.member-row .actions button:hover { color:var(--text); background:rgba(255,255,255,0.05); }
+.main { flex:1; display:flex; flex-direction:column; }
+/* ========== 通知铃铛 ========== */
+.topbar { height:44px; min-height:44px; display:flex; align-items:center; justify-content:flex-end; padding:0 16px; background:var(--card); border-bottom:1px solid var(--border); flex-shrink:0; z-index:20; }
+.bell-wrap { position:relative; display:inline-block; }
+.bell-btn { background:none; border:none; color:var(--sub); font-size:18px; cursor:pointer; padding:6px; border-radius:6px; line-height:1; transition:color .2s, background .2s; }
+.bell-btn:hover { color:var(--text); background:rgba(255,255,255,0.05); }
+.bell-badge { position:absolute; top:0; right:0; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--red); color:#fff; font-size:10px; font-weight:700; display:none; align-items:center; justify-content:center; line-height:1; box-sizing:border-box; }
+.bell-badge.show { display:flex; }
+.notif-panel { position:absolute; top:38px; right:0; width:320px; max-width:90vw; max-height:60vh; overflow-y:auto; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:0 8px 24px rgba(0,0,0,0.4); display:none; z-index:30; }
+.notif-panel.open { display:block; }
+.notif-head { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid var(--border); font-size:12px; font-weight:600; color:var(--text); position:sticky; top:0; background:var(--card); }
+.notif-head .mark-all { background:none; border:none; color:var(--blue); font-size:11px; cursor:pointer; padding:0; }
+.notif-head .mark-all:hover { text-decoration:underline; }
+.notif-item { display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .2s; }
+.notif-item:hover { background:rgba(255,255,255,0.03); }
+.notif-item:last-child { border-bottom:none; }
+.notif-item.unread { background:rgba(88,166,255,0.06); }
+.notif-dot { width:6px; height:6px; border-radius:50%; background:var(--blue); flex-shrink:0; margin-top:5px; }
+.notif-item.read .notif-dot { background:transparent; }
+.notif-body { flex:1; min-width:0; }
+.notif-msg { font-size:12px; color:var(--text); line-height:1.5; word-break:break-word; }
+.notif-meta { font-size:10px; color:var(--sub); margin-top:4px; }
+.notif-level { font-size:10px; padding:1px 6px; border-radius:8px; flex-shrink:0; height:16px; line-height:14px; }
+.notif-level.info { background:rgba(88,166,255,0.15); color:var(--blue); }
+.notif-level.warning { background:rgba(210,153,29,0.15); color:#d2991d; }
+.notif-level.error { background:rgba(248,81,73,0.15); color:var(--red); }
+.notif-empty { padding:24px; text-align:center; color:var(--sub); font-size:12px; }
+.tab-content { display:none; flex:1; flex-direction:column; }
+.tab-content.active { display:flex; }
+.chat-header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:600; font-size:14px; display:flex; align-items:center; gap:8px; }
+.chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+.msg { max-width:80%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+.msg.user { align-self:flex-end; background:var(--blue); color:#fff; }
+.msg.agent { align-self:flex-start; background:var(--card); border:1px solid var(--border); }
+.msg .tag { font-size:11px; color:var(--purple); margin-bottom:4px; font-weight:600; }
+.msg .discuss-btn { display:inline-block; margin-top:8px; padding:3px 10px; font-size:11px; color:var(--purple); background:transparent; border:1px solid var(--purple); border-radius:999px; cursor:pointer; opacity:0.75; transition:opacity .15s, background .15s; }
+.msg .discuss-btn:hover { opacity:1; background:var(--purple); color:#fff; }
+.chat-input { padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:8px; position:relative; }
+.chat-input input { flex:1; background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px 14px; border-radius:20px; font-size:13px; outline:none; }
+.chat-input button { background:var(--blue); color:#fff; border:none; padding:10px 20px; border-radius:20px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap; flex-shrink:0; }
+.market { padding:20px; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; align-content:start; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; cursor:pointer; transition:border-color .2s; }
+.card:hover { border-color:var(--blue); }
+.card .pos-icon { font-size:32px; margin-bottom:8px; }
+.card .pos-name { font-weight:600; font-size:14px; }
+.card .pos-desc { font-size:12px; color:var(--sub); margin:6px 0; }
+.card .pos-budget { font-size:12px; color:var(--green); }
+.card .hire-btn { margin-top:10px; width:100%; background:var(--blue); color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; }
+.timeline { padding:20px; overflow-y:auto; }
+.tl-item { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:10px; display:flex; gap:12px; align-items:flex-start; }
+.tl-icon { font-size:20px; flex-shrink:0; margin-top:2px; }
+.tl-body { flex:1; }
+.tl-agent { font-weight:600; font-size:13px; }
+.tl-action { font-size:13px; margin:4px 0; }
+.tl-meta { font-size:11px; color:var(--sub); }
+.tl-status { font-size:11px; padding:2px 8px; border-radius:10px; display:inline-block; }
+.tl-status.completed { background:rgba(63,185,80,0.15); color:var(--green); }
+.tl-status.failed { background:rgba(248,81,73,0.15); color:var(--red); }
+.billing { padding:20px; overflow-y:auto; }
+.billing .total { font-size:36px; font-weight:700; margin-bottom:20px; }
+.billing .total span { font-size:14px; color:var(--sub); font-weight:400; }
+.bill-row { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
+.bill-row .bar-wrap { flex:1; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+.bill-row .bar { height:100%; border-radius:4px; transition:width .5s; }
+.bill-row .bar.normal { background:var(--green); }
+.bill-row .bar.warn { background:#d2991d; }
+.bill-row .bar.danger { background:var(--red); }
+.bill-info { font-size:12px; color:var(--sub); min-width:120px; text-align:right; }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; justify-content:center; align-items:center; }
+.modal.show { display:flex; }
+.modal-content { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; width:360px; }
+.modal-content h3 { margin-bottom:16px; }
+.modal-content label { display:block; font-size:12px; color:var(--sub); margin:8px 0 4px; }
+.modal-content input,.modal-content select { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); padding:8px; border-radius:6px; font-size:13px; margin-bottom:8px; }
+.modal-content button { width:100%; background:var(--blue); color:#fff; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:600; margin-top:8px; }
+.modal-content .btn-cancel { background:var(--border); margin-top:4px; }
+.at-list { position:absolute; bottom:60px; left:16px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:4px; z-index:50; max-height:200px; overflow-y:auto; min-width:180px; }
+.at-list div { padding:6px 12px; cursor:pointer; border-radius:4px; font-size:13px; }
+.at-list div:hover { background:rgba(88,166,255,0.1); }
+.empty-hint { text-align:center; color:var(--sub); padding:40px; font-size:13px; }
+.plan-btn { transition:all 0.2s; }
+
+/* Agent Discussion */
+.discussion-container { padding:0; }
+.discussion-header { margin-bottom:16px; padding:0; }
+.discussion-header h3 { color:var(--blue); font-size:14px; margin-bottom:4px; }
+.discussion-header p { color:var(--sub); font-size:12px; }
+.discussion-round { margin-bottom:12px; }
+.discussion-agent-name { font-size:11px; color:var(--purple); font-weight:600; margin-bottom:4px; }
+.discussion-round-label { font-size:10px; color:var(--sub); font-weight:400; }
+.discussion-content { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; max-width:80%; display:inline-block; }
+.discussion-message { margin-bottom:8px; }
+.discussion-done-panel { background:var(--card); border:1px solid var(--green); border-radius:12px; padding:16px; margin-top:8px; }
+.discussion-consensus-header { font-size:15px; font-weight:700; margin-bottom:12px; }
+.discussion-decision-label { font-size:11px; color:var(--sub); margin-bottom:4px; }
+.discussion-decision-content { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-word; margin-bottom:8px; }
+.discussion-rounds-info { font-size:11px; color:var(--sub); text-align:right; }
+.discussion-error { color:var(--red); padding:16px; text-align:center; }
+.chat-input.disabled { opacity:0.5; pointer-events:none; }
+.discussion-history-item { transition:all 0.2s; }
+.discussion-history-item:hover { border-color:var(--blue) !important; }
+.discussion-history-topic { font-weight:600; font-size:13px; }
+.discussion-history-meta { font-size:11px; color:var(--sub); margin-top:4px; }
+
+
+
+/* Edit Modal */
+.edit-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:1000; }
+.edit-overlay.show { display:flex; }
+.edit-modal { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; width:360px; max-width:90vw; }
+.edit-modal h3 { font-size:15px; margin-bottom:16px; color:var(--text); }
+.edit-modal label { display:block; font-size:12px; color:var(--sub); margin-bottom:4px; }
+.edit-modal input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px 12px; color:var(--text); font-size:13px; outline:none; margin-bottom:12px; }
+.edit-modal input:focus { border-color:var(--blue); }
+.edit-modal .edit-actions { display:flex; gap:8px; justify-content:flex-end; }
+.edit-modal .edit-actions button { padding:8px 16px; border-radius:6px; border:none; cursor:pointer; font-size:13px; }
+.edit-modal .edit-save { background:var(--blue); color:#fff; }
+.edit-modal .edit-cancel { background:var(--border); color:var(--text); }
+
+</style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebarPanel"><div class="sidebar-resize" id="sidebarResize"></div>
+  <div class="sidebar-header"><span class="dot"></span> ClawsJoy v8</div>
+  <div class="nav">
+    <button class="nav-btn active" data-tab="chat"><span class="icon">💬</span> 团队频道</button>
+    <button class="nav-btn" data-tab="market"><span class="icon">🏪</span> 岗位市场</button>
+    <button class="nav-btn" data-tab="timeline"><span class="icon">📋</span> 时间线</button>
+    <button class="nav-btn" data-tab="billing"><span class="icon">💰</span> 账单</button>
+    <button class="nav-btn" data-tab="discussion-history"><span class="icon">📜</span> 讨论历史 <span id="discussionHistoryCount" style="background:var(--blue);color:#fff;border-radius:10px;padding:0 6px;font-size:11px;display:none;">0</span></button>
+    <button class="nav-btn" data-tab="review"><span class="icon">🔍</span> 审核 <span id="reviewBadge" style="background:var(--red);color:#fff;border-radius:10px;padding:0 6px;font-size:11px;display:none;">0</span></button>
+    <button class="nav-btn" data-tab="goal-review"><span class="icon">🎯</span> 复盘</button>
+    <button class="nav-btn" data-tab="agent" onclick="if(typeof openAgent==='function')openAgent()"><span class="icon">🤖</span> Agent 工作区</button>
+    <a href="http://localhost:8502" target="_blank" class="nav-btn" style="text-decoration:none;color:var(--blue);"><span class="icon">🎯</span> AI Studio →</a>
+    <a href="http://localhost:7860" target="_blank" class="nav-btn" style="text-decoration:none;color:var(--purple);"><span class="icon">🎭</span> 数字人 →</a>
+    <a href="/v5.1" target="_blank" class="nav-btn" style="text-decoration:none;color:var(--green);"><span class="icon">🐾</span> v5.1 门户 →</a>
+  </div>
+  <div class="members-title">团队成员</div>
+  <div class="members" id="memberList"><div class="empty-hint">暂无AI员工<br>去岗位市场招聘吧</div></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="bell-wrap">
+      <button class="bell-btn" id="bellBtn" title="通知" onclick="toggleNotifPanel()">🔔</button>
+      <span class="bell-badge" id="bellBadge">0</span>
+      <div class="notif-panel" id="notifPanel">
+        <div class="notif-head">
+          <span>🔔 通知</span>
+          <button class="mark-all" onclick="markAllRead()">全部已读</button>
+        </div>
+        <div class="notif-list" id="notifList"></div>
+      </div>
+    </div>
+  </div>
+  <div id="tab-chat" class="tab-content active">
+    <div class="chat-header">💬 团队频道</div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="empty-hint">👋 欢迎使用 ClawsJoy v8<br>输入消息开始工作</div>
+      <div id="discussion-container" class="discussion-container" style="display:none;"></div>
+    </div>
+    <div class="chat-input">
+      <input id="chatInput" placeholder="发消息或指令..." onkeydown="if(event.key==='Enter')send()">
+      <button onclick="send()">发送</button>
+      <button onclick="clearChat()" style="background:#21262d; color:#c9d1d9; border:1px solid #30363d; border-radius:6px; padding:8px 12px; cursor:pointer; font-size:13px; white-space:nowrap;" title="清空对话显示与会话上下文">🗑 清空对话</button>
+    </div>
+  </div>
+  <div id="tab-market" class="tab-content">
+    <div class="chat-header">🏪 岗位市场 · 聘用AI员工</div>
+    <div class="market" id="marketList"></div>
+  </div>
+  <div id="tab-timeline" class="tab-content">
+    <div class="chat-header" style="display:flex;align-items:center;gap:8px;">📋 时间线
+      <span style="flex:1"></span>
+      <input id="replaySessionInput" placeholder="session_id" style="width:200px;padding:4px 8px;border-radius:6px;border:1px solid var(--line,#333);background:var(--bg,#161b22);color:var(--text,#c9d1d9);font-size:12px;"/>
+      <button class="nav-btn" style="padding:4px 10px;" onclick="loadReplay()">▶ 回放</button>
+    </div>
+    <div class="timeline" id="timelineContent"></div>
+    <div class="timeline" id="replayContent" style="margin-top:14px;"></div>
+  </div>
+  <div id="tab-review" class="tab-content" style="padding:20px;overflow-y:auto;">
+    <div class="chat-header">🔍 待审核修复建议</div>
+    <div id="reviewList"></div>
+  </div>
+  <div id="tab-goal-review" class="tab-content" style="padding:20px;overflow-y:auto;">
+    <div class="chat-header">🎯 跨 session 复盘</div>
+    <div style="margin:8px 0;">
+      <select id="goalStatusFilter" onchange="if(typeof loadGoalReview==='function')loadGoalReview()" style="background:#0d1117;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;padding:4px 8px;font-size:12px;">
+        <option value="">全部状态</option>
+        <option value="active">进行中</option>
+        <option value="complete">已完成</option>
+        <option value="archived">已归档</option>
+        <option value="paused">已暂停</option>
+      </select>
+    </div>
+    <div id="goalReviewList"></div>
+  </div>
+  <div id="tab-billing" class="tab-content">
+    <div class="chat-header">💰 账单（仅供参考）</div>
+    <div class="billing" id="billingContent"></div>
+  </div>
+  <div id="tab-discussion-history" class="tab-content" style="overflow-y:auto;">
+    <div class="chat-header">📜 讨论历史</div>
+    <div id="discussionHistoryList" style="padding:12px;"><div class="empty-hint">暂无讨论记录</div></div>
+  </div>
+</div>
+
+<div class="modal" id="hireModal">
+  <div class="modal-content">
+    <h3 id="hireTitle">聘用 AI 员工</h3>
+    <label>员工名字</label><input id="hireName" placeholder="如：小程">
+    <label>模型</label>
+    <select id="hireModel">
+      <option value="">本地 Ollama（默认）</option>
+    </select>
+    <label>API Key <span style="color:var(--sub);font-weight:400">（本地模型可留空）</span></label>
+    <input id="hireApiKey" placeholder="sk-...">
+    <label>单价 <span style="color:var(--sub);font-weight:400">$/1K tokens</span></label>
+    <input id="hireUnitPrice" type="number" step="0.0001" value="0" placeholder="0=仅记账不估算">
+    <label>月预算 ($)</label>
+    <input id="hireBudget" type="number" step="0.01" value="0" placeholder="0=不限">
+    <button onclick="doHire()">聘用</button>
+    <button class="btn-cancel" onclick="closeModal()">取消</button>
+  </div>
+</div>
+
+<!-- Agent 弹窗 -->
+<div id="agentModal" style="display:none; position:fixed; top:0; left:0; right:0; height:100vh; height:100dvh; background:rgba(0,0,0,0.85); z-index:9999; flex-direction:column;">
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#161b22; border-bottom:1px solid #30363d;">
+    <span style="color:#c9d1d9; font-size:16px; font-weight:600;">🤖 Agent 工作区</span>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <select id="threadSelect" onchange="switchThread(this.value)" style="background:#0d1117; border:1px solid #30363d; color:#c9d1d9; border-radius:4px; padding:3px 6px; font-size:11px;"></select>
+      <span id="balanceDisplay" style="color:#8b949e; font-size:11px;">💰 --</span>
+      <button onclick="newThread()" style="background:#30363d; color:#c9d1d9; border:none; border-radius:4px; padding:3px 8px; font-size:11px; cursor:pointer;">+新建</button>
+    </div>
+    <button onclick="closeAgent()" style="background:none; border:none; color:#8b949e; font-size:20px; cursor:pointer;">✕</button>
+  </div>
+  <div style="flex:1; display:flex; gap:0; overflow:hidden; min-height:0;">
+    <!-- 折叠按钮：面板隐藏时出现 -->
+    <button onclick="toggleFilePanel()" id="toggleBtn"
+            style="width:20px; min-width:20px; background:#0d1117; border:none; color:#8b949e; cursor:pointer; font-size:14px; padding:0; flex-shrink:0; display:none;">
+        ▶
+    </button>
+
+    <!-- 文件面板 -->
+    <div id="filePanel" style="width:220px; min-width:50px; max-width:50vw; background:#0d1117; border-right:1px solid #30363d; padding:12px; overflow-y:auto; position:relative;flex-shrink:0;">
+      <div id="fileDragHandle" style="position:absolute;right:-4px;top:0;bottom:0;width:8px;cursor:col-resize;z-index:10;"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span>📁</span>
+        <button onclick="toggleFilePanel()" style="background:none; border:none; color:#8b949e; cursor:pointer; font-size:14px; padding:0 4px;">
+                ◀
+            </button>
+      </div>
+      <div id="fileTree" style="font-family:monospace; font-size:12px; color:#c9d1d9; line-height:1.8;"></div>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; background:#0d1117;">
+      <div id="agentTerminal" style="flex:1; min-height:0; max-height:calc(100vh - 140px); padding:16px; overflow-y:auto; overflow-x:hidden; word-break:break-all; font-family:'JetBrains Mono',monospace; font-size:13px; color:#c9d1d9; white-space:pre-wrap; line-height:1.6;">
+        <div style="color:#58a6ff;">🤖 ClawsJoy Agent 就绪。输入任务开始。</div>
+      </div>
+      <div style="display:flex; gap:6px; padding:12px 16px; background:#161b22; border-top:1px solid #30363d; align-items:center; position:relative;">
+        <input id="agentInput" placeholder="描述任务..." style="flex:1; width:0; min-width:150px; background:#0d1117; border:1px solid #30363d; border-radius:6px; padding:10px 14px; color:#c9d1d9; font-size:14px; outline:none; word-break:break-word; white-space:pre-wrap; overflow-wrap:break-word;" onkeydown="if(event.key==='Enter') agentSend()">
+        <button onclick="agentSend()" style="background:#238636; color:#fff; border:none; border-radius:6px; padding:8px 14px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap; flex-shrink:0;">▶ 执行</button>
+        <button id="agentStopBtn" onclick="agentStop()" style="display:none; background:#da3633; color:#fff; border:none; border-radius:6px; padding:8px 14px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap; flex-shrink:0;" title="协作取消：通知服务端下轮退出">⏹ 停止</button>
+        <button onclick="agentSendAsync()" style="background:#1f6feb; color:#fff; border:none; border-radius:6px; padding:8px 14px; cursor:pointer; font-size:13px; white-space:nowrap; flex-shrink:0;" title="后台执行">🔗</button>
+        <button onclick="agentStop()" id="agentStopBtn" style="background:#30363d; color:#c9d1d9; border:none; border-radius:6px; padding:8px 14px; cursor:pointer; display:none; white-space:nowrap; flex-shrink:0;">⏹</button>
+        <button id="browserLocalBtn" onclick="connectBrowserLocal()" style="background:#6f42c1; color:#fff; border:none; border-radius:6px; padding:8px 14px; cursor:pointer; font-size:13px; white-space:nowrap; flex-shrink:0;" title="连接本地浏览器（Manus 模式）">🖥️ 本地浏览器</button>
+        <span id="browserLocalStatus" style="font-size:11px;color:#8b949e;white-space:nowrap;"></span>
+        <button onclick="toggleOpsPanel()" style="background:#30363d;color:#c9d1d9;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px;white-space:nowrap;flex-shrink:0;" title="P4 运营面板（监控/回复队列）">📊 运营</button>
+      </div>
+      <!-- P4 运营面板: 监控任务 + 回复队列 -->
+      <div id="opsPanel" style="display:none;padding:10px 16px;background:#0d1117;border-top:1px solid #21262d;max-height:300px;overflow-y:auto;font-size:12px;">
+        <div style="color:#8b949e;margin-bottom:8px;">📊 运营面板 <span style="margin-left:8px;"><button onclick="loadOpsPanel()" style="background:#21262d;color:#c9d1d9;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;">刷新</button></span></div>
+        <div id="opsContent"><div class="empty-hint">加载中…</div></div>
+      </div>
+      <!-- 任务3: 子任务并发卡片区（有界并发池执行，状态实时轮询） -->
+      <div id="subtaskPanel" style="padding:10px 16px; background:#0d1117; border-top:1px solid #21262d; max-height:260px; overflow-y:auto; display:none;">
+        <div style="color:#8b949e; font-size:12px; margin-bottom:8px;">🧩 子任务池（有界并发 3）<span style="margin-left:8px;">
+          <input id="subtaskInput" placeholder="子任务描述..." style="width:60%; background:#0d1117; border:1px solid #30363d; border-radius:6px; padding:6px 10px; color:#c9d1d9; font-size:13px; outline:none;" onkeydown="if(event.key==='Enter') createSubtask()">
+          <button onclick="createSubtask()" style="background:#1f6feb; color:#fff; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px;">+ 子任务</button>
+        </span></div>
+        <div id="subtaskList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/web/dashboard/api-client.js"></script>
+<script>
+// ========== 全局状态 ==========
+const API = '';
+let userId = localStorage.getItem('clawsjoy_user_id');
+if (!userId) { userId = 'web_' + Date.now(); localStorage.setItem('clawsjoy_user_id', userId); }
+
+let sessionId = localStorage.getItem('clawsjoy_session_id');
+if (!sessionId || sessionId === 'default') { sessionId = 'session_' + Date.now(); localStorage.setItem('clawsjoy_session_id', sessionId); }
+
+let currentThread = localStorage.getItem('current_thread');
+if (!currentThread || currentThread === 'default') { currentThread = sessionId; localStorage.setItem('current_thread', currentThread); }
+
+let threads = [...new Set(JSON.parse(localStorage.getItem('agent_threads') || '[]').filter(t => t && t !== 'default'))];
+if (!threads.includes(currentThread)) { threads.push(currentThread); }
+
+let agentRunning = false, agentAbort = false;
+let currentPosition = '', atList = null, selectedPlanBtn = null;
+
+function saveThreads() {
+  localStorage.setItem('agent_threads', JSON.stringify(threads.filter(t => t && t !== 'default')));
+  localStorage.setItem('current_thread', currentThread);
+}
+
+// ========== 侧边栏拖拽 ==========
+(function(){
+  const sb = document.getElementById('sidebarPanel');
+  const h = document.getElementById('sidebarResize');
+  if (!sb || !h) return;
+  let sx, sw;
+  h.addEventListener('mousedown', e => {
+    sx = e.clientX; sw = sb.offsetWidth;
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', mu);
+    e.preventDefault();
+  });
+  function mv(e) { const w = sw + e.clientX - sx; if (w >= 180 && w <= 500) sb.style.width = w + 'px'; }
+  function mu() { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', mu); }
+})();
+
+// ========== 文件树拖拽 ==========
+let fileDragInit = false;
+function initFileDrag() {
+  if (fileDragInit) return;
+  const h = document.getElementById('fileDragHandle'), p = document.getElementById('filePanel');
+  if (!h || !p) return;
+  fileDragInit = true;
+  let sx, sw;
+  h.addEventListener('mousedown', e => {
+    sx = e.clientX; sw = p.offsetWidth;
+    e.preventDefault(); e.stopPropagation();
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', mu);
+  });
+  function mv(e) { const w = sw + e.clientX - sx; if (w >= 50 && w <= window.innerWidth * 0.5) p.style.width = w + 'px'; }
+  function mu() { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', mu); }
+}
+
+// ========== 导航 ==========
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', function() { if (this.dataset.tab !== 'agent') switchTab(this.dataset.tab); });
+});
+function switchTab(tab) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.nav-btn[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'market') loadMarket();
+  if (tab === 'billing') loadBilling();
+  if (tab === 'review') loadReview();
+  if (tab === 'goal-review') { if (typeof loadGoalReview === 'function') loadGoalReview(); }
+  if (tab === 'timeline') { loadTimeline(); const _ri = document.getElementById('replaySessionInput'); if (_ri && !_ri.value.trim()) _ri.value = sessionId; }
+}
+
+// ========== 聊天 ==========
+let planState = JSON.parse(localStorage.getItem("planState") || '{"status":"","plan":null}');
+let discussionHistory = null; // 累积的讨论数据
+
+// ===== 模块化共享状态(拆分映射表: window.__APP_STATE) =====
+window.__APP_STATE = {
+  api: window.DSH_API || null,
+  userId, sessionId, currentThread, threads,
+  agentRunning, agentAbort,
+  planState, discussionHistory,
+  get: function (k) { return window.__APP_STATE[k]; },
+  set: function (k, v) { window.__APP_STATE[k] = v; return v; },
+};
+// 恢复 V8 频道历史消息
+try {
+  const msgs = JSON.parse(localStorage.getItem('v8_messages') || '[]');
+  msgs.forEach(m => addMessage(m.role, m.content, m.agent || ''));
+} catch(e) {}
+// 恢复讨论历史列表 — 优先 API，localStorage 兜底
+// 延迟到 DOMContentLoaded(defer 模块已挂载 refreshDiscussionHistoryList)
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof refreshDiscussionHistoryList === 'function') refreshDiscussionHistoryList();
+});
+
+// #V9 会话清理：清空 V8 频道显示 + localStorage + 后端 session 上下文
+// clearChat 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// 任务2 流式 SSE 解析：progress 事件实时渲染 tool_steps 卡片 + 进度条；返回最终 done 事件 payload
+// readSSEStream 已提取至 web/static/js/chat.js(拆分映射表步骤 3/4)
+
+// ===== 任务3: 子任务并发（有界池 3，状态卡片轮询） =====
+let _subtaskPollTimer = null;
+
+// createSubtask 已提取至 web/static/js/subtask-panel.js(拆分映射表步骤 5/6/7)
+
+// pollSubtasks 已提取至 web/static/js/subtask-panel.js(拆分映射表步骤 5/6/7)
+
+// renderSubtasks 已提取至 web/static/js/subtask-panel.js(拆分映射表步骤 5/6/7)
+
+// send 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// loadTasks 已提取至 web/static/js/subtask-panel.js(拆分映射表步骤 5/6/7)
+
+// 💬 发起讨论：在 Agent 回复气泡上添加讨论入口按钮（复用 send() 中 348 行 agent_discussion 分支）
+// addDiscussBtn 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// addMessage 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// ========== @ 成员 ==========
+document.getElementById('chatInput').addEventListener('input', function () {
+  const val = this.value, lastAt = val.lastIndexOf('@');
+  if (lastAt >= 0 && (lastAt === 0 || val[lastAt - 1] === ' ')) showAtList(); else hideAtList();
+});
+// showAtList 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+// hideAtList 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+// insertAt 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+
+// ========== Agent Discussion 渲染 ==========
+// renderAgentOutput 已提取至 web/static/js/agent-terminal.js(拆分映射表步骤 3/4)
+
+// renderDiscussionDone 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML.replace(/\n/g, '<br>');
+}
+
+// saveCurrentDiscussion 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+let _apiDiscussionsCache = []; // 缓存 API 返回的讨论列表
+
+// showDiscussionRecordFromApi 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// _displayDiscussionRecord 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// saveDiscussionRecordFromView 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// refreshDiscussionHistoryList 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// _renderDiscussionListFromLocal 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// _renderDiscussionList 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// showDiscussionRecord 已提取至 web/static/js/discussion.js(拆分映射表步骤 5/6/7)
+
+// ========== 成员 ==========
+async function loadMembers() {
+  try {
+    const r = await fetch(API + '/v8/roster/list?server_id=default');
+    const members = await r.json();
+    window._rosterAgents = members.map(m => m.name);
+    const el = document.getElementById('memberList');
+    if (!members.length) { el.innerHTML = '<div class="empty-hint">暂无AI员工<br>去岗位市场招聘吧</div>'; return; }
+    el.innerHTML = members.map(m => `
+      <div class="member-row">
+        <div class="avatar">${m.position === '程序员' ? '👨‍💻' : m.position === '设计师' ? '👩‍🎨' : '📊'}</div>
+        <div class="info">
+          <div class="name">${m.name} <span style="font-size:10px;color:var(--sub);">💰${(m.spent||0).toFixed(1)}/${m.budget||0} 📋${m.task_count||0}次</span></div>
+          <div class="pos">${m.position}</div>
+        </div>
+        <div class="status ${m.status}"></div>
+        <div class="actions">
+          ${m.status === 'active' ? '<button title="暂停" onclick="togglePause(\'' + m.name + '\',true)">⏸</button>' : '<button title="恢复" onclick="togglePause(\'' + m.name + '\',false)">▶</button>'}
+          <button title="编辑" onclick="editMember('${m.name}')">✏️</button>
+          <button title="解雇" onclick="fireMember('${m.name}')">❌</button>
+        </div>
+      </div>`).join('');
+  } catch (e) { }
+}
+
+async function loadModels() {
+  try {
+    const r = await fetch(API + '/v8/models/list');
+    const models = await r.json();
+    const sel = document.getElementById('hireModel');
+    models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.value;
+      opt.textContent = m.label;
+      sel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function togglePause(name, pause) {
+  await fetch(API + '/v8/roster/' + (pause ? 'pause' : 'resume'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ server_id: 'default', name }) });
+  loadMembers(); addMessage('agent', pause ? name + ' 已暂停' : name + ' 已恢复');
+}
+async function fireMember(name) {
+  if (!confirm('确定解雇 ' + name + '？')) return;
+  await fetch(API + '/v8/roster/fire', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ server_id: 'default', name }) });
+  loadMembers(); addMessage('agent', name + ' 已解雇');
+}
+
+// ========== 招聘 ==========
+async function loadMarket() {
+  try {
+    const r = await fetch(API + '/v8/positions/list');
+    const positions = await r.json();
+    document.getElementById('marketList').innerHTML = positions.map(p => `
+      <div class="card">
+        <div class="pos-icon">${p.position === '程序员' ? '👨‍💻' : p.position === '设计师' ? '👩‍🎨' : '📊'}</div>
+        <div class="pos-name">${p.position}</div>
+        <div class="pos-desc">${p.description || ''}</div>
+        <div class="pos-budget">默认模型: ${p.model}</div>
+        <button class="hire-btn" onclick="openHire('${p.id}','${p.position}')">聘用</button>
+      </div>`).join('');
+  } catch (e) { }
+}
+function openHire(id, position) {
+  currentPosition = id;
+  document.getElementById('hireTitle').textContent = '聘用 ' + position;
+  document.getElementById('hireBudget').value = 0; document.getElementById('hireUnitPrice').value = 0;
+  document.getElementById('hireApiKey').value = ''; document.getElementById('hireModel').value = '';
+  document.getElementById('hireName').value = '';
+  document.getElementById('hireModal').classList.add('show');
+}
+function closeModal() { document.getElementById('hireModal').classList.remove('show'); }
+async function doHire() {
+  const name = document.getElementById('hireName').value.trim();
+  if (!name) return alert('请输入员工名字');
+  try {
+    const r = await fetch(API + '/v8/roster/hire', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        server_id: 'default', name, position: currentPosition,
+        model: document.getElementById('hireModel').value,
+        api_key: document.getElementById('hireApiKey').value.trim(),
+        unit_price: parseFloat(document.getElementById('hireUnitPrice').value) || 0,
+        budget: parseFloat(document.getElementById('hireBudget').value) || 0
+      })
+    });
+    const d = await r.json();
+    if (d.success) { closeModal(); loadMembers(); switchTab('chat'); addMessage('agent', d.member.name + '（' + d.member.position + '）加入了团队！'); }
+    else alert(d.error || '聘用失败');
+  } catch (e) { alert('出错: ' + e.message); }
+}
+
+// ========== 账单 ==========
+async function loadReview() {
+  try {
+    const r = await fetch(API + '/v9/auto_fixes');
+    const d = await r.json();
+    const list = document.getElementById('reviewList');
+    const badge = document.getElementById('reviewBadge');
+    if (d.success && d.auto_fixes.length > 0) {
+      badge.style.display = 'inline';
+      badge.textContent = d.auto_fixes.length;
+      list.innerHTML = d.auto_fixes.map((f, i) => `
+        <div class="card" style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong>${f.detail.problem_type}</strong>
+            <span style="color:var(--sub);font-size:12px;">${f.detail.occurrence_count}次</span>
+          </div>
+          <div style="color:var(--text);margin:8px 0;">${f.detail.latest_insight}</div>
+          <div style="color:var(--blue);font-size:13px;">建议: ${f.detail.suggested_action.change}</div>
+          <div style="margin-top:8px;display:flex;gap:8px;">
+            <button onclick="approveFix('${f.name}')" style="background:var(--green);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;">✅ 确认</button>
+            <button onclick="rejectFix('${f.name}')" style="background:var(--red);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;">❌ 驳回</button>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      badge.style.display = 'none';
+      list.innerHTML = '<div style="color:var(--sub);">暂无待审核项 🎉</div>';
+    }
+  } catch(e) { document.getElementById('reviewList').innerHTML = '加载失败: ' + e.message; }
+}
+
+async function approveFix(name) {
+  await fetch(API + '/v9/auto_fixes/approve', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+  loadReview();
+}
+
+async function rejectFix(name) {
+  await fetch(API + '/v9/auto_fixes/reject', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+  loadReview();
+}
+
+async function loadBilling() {
+  try {
+    const r = await fetch(API + '/v8/ledger/billing?server_id=default');
+    const d = await r.json();
+    const agents = Object.entries(d.by_agent || {});
+    if (!agents.length) { document.getElementById('billingContent').innerHTML = '<div class="empty-hint">暂无账单数据</div>'; return; }
+    document.getElementById('billingContent').innerHTML = `
+      <div class="total">$${d.total.toFixed(4)}<span> 本月总花费（估算）</span></div>
+      <div style="font-size:11px;color:var(--sub);margin:-12px 0 16px">⚠️ 金额为本地估算，实际费用以API提供商账单为准</div>
+      ${agents.map(([name, info]) => `<div class="bill-row">
+        <span>${info.position === '程序员' ? '👨‍💻' : info.position === '设计师' ? '👩‍🎨' : '📊'} ${name}</span>
+        <span style="font-size:12px;color:var(--sub)">${info.position} · ${info.model}</span>
+        <div style="flex:1;font-size:12px;color:var(--sub)">${info.calls}次调用 · ${info.tokens} tokens</div>
+        <div class="bill-info">$${info.cost.toFixed(4)}</div>
+      </div>`).join('')}`;
+  } catch (e) { document.getElementById('billingContent').innerHTML = '<div class="empty-hint">账单加载失败</div>'; }
+}
+
+// 时间线 + 回放已提取至 web/static/js/timeline.js(拆分映射表步骤 2)
+
+// ========== Agent 工作区 ==========
+// agentLog 已提取至 web/static/js/agent-terminal.js(拆分映射表步骤 3/4)
+
+// executeToolCall 已提取至 web/static/js/chat.js(拆分映射表步骤 3/4)
+
+// agentSend 已提取至 web/static/js/chat.js(拆分映射表步骤 3/4)
+
+// #102 键点A扩展：审批/选择回传后继续执行（复用 agentSend 原循环体）
+// runAgentLoop 已提取至 web/static/js/chat.js(拆分映射表步骤 3/4)
+
+// ========== 方案按钮 ==========
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// #102 键点A：写操作确认卡片
+// renderWriteConfirmCard 已提取至 web/static/js/approval.js(拆分映射表步骤 5/6/7)
+
+// #102 键点A：确认/拒绝回传
+// sendWriteApproval 已提取至 web/static/js/approval.js(拆分映射表步骤 5/6/7)
+
+// #101 G2 计划确认卡片：多文件/多意图任务的计划等待老板确认
+// renderPlanConfirmCard 已提取至 web/static/js/approval.js(拆分映射表步骤 5/6/7)
+
+// #101 G2 计划确认/拒绝回传
+// sendPlanApproval 已提取至 web/static/js/approval.js(拆分映射表步骤 5/6/7)
+
+// #101 G3 ask 式提问卡片：Agent 用结构化提问请求老板决策
+// renderAskCard 已提取至 web/static/js/approval.js(拆分映射表步骤 5/6/7)
+
+// #101 G3 选项选择回传：以用户消息继续对话
+// sendAskChoice 已提取至 web/static/js/approval.js(拆分映射表步骤 5/6/7)
+
+// #101 G1 进度显式化：渲染进度条 + 步骤清单（step_index/total_steps）
+let _lastProgressKey = '';
+// renderProgressBar 已提取至 web/static/js/chat.js(拆分映射表步骤 3/4)
+
+// renderPlanButtons 已提取至 web/static/js/approval.js(拆分映射表步骤 5/6/7)
+
+// selectPlan 已提取至 web/static/js/approval.js(拆分映射表步骤 5/6/7)
+
+// ========== 异步后台执行 ==========
+// agentSendAsync 已提取至 web/static/js/subtask-panel.js(拆分映射表步骤 5/6/7)
+
+// pollTaskResult 已提取至 web/static/js/subtask-panel.js(拆分映射表步骤 5/6/7)
+
+// getProgressSummary 已提取至 web/static/js/chat.js(拆分映射表步骤 3/4)
+
+// agentStop 已提取至 web/static/js/chat.js(拆分映射表步骤 3/4)
+
+// continuePausedTask 已提取至 web/static/js/chat.js(拆分映射表步骤 3/4)
+
+// ========== 文件树 ==========
+async function refreshFileTree() {
+  try {
+    const resp = await fetch(API + '/v9/sandbox/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, session_id: sessionId, path: '.', skip_quota: true }) });
+    const d = await resp.json();
+    if (d.success) {
+      let html = '';
+      for (const dir of (d.dirs || [])) html += `<div data-path="${dir}" onclick="openDir('${dir}')" style="cursor:pointer;">📁 ${dir}</div>`;
+      for (const file of (d.files || [])) html += `<div onclick="openFile('${file}')" style="cursor:pointer;">📄 ${file}</div>`;
+      document.getElementById('fileTree').innerHTML = html;
+    }
+  } catch (e) { }
+}
+
+async function openDir(path) {
+  const resp = await fetch(API + '/v9/sandbox/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, session_id: sessionId, path, skip_quota: true }) });
+  const d = await resp.json();
+  if (!d.success) return;
+  const tree = document.getElementById('fileTree'), folderDiv = tree.querySelector(`[data-path="${path}"]`);
+  if (!folderDiv) return;
+  if (folderDiv.classList.contains('expanded')) {
+    folderDiv.classList.remove('expanded');
+    const sub = folderDiv.nextElementSibling; if (sub && sub.classList.contains('sub-tree')) sub.remove();
+    return;
+  }
+  folderDiv.classList.add('expanded');
+  const subDiv = document.createElement('div'); subDiv.style.paddingLeft = '16px'; subDiv.className = 'sub-tree';
+  for (const dir of (d.dirs || [])) subDiv.innerHTML += `<div data-path="${path + '/' + dir}" onclick="event.stopPropagation();openDir('${path + '/' + dir}')" style="cursor:pointer;">📁 ${dir}</div>`;
+  for (const file of (d.files || [])) subDiv.innerHTML += `<div onclick="event.stopPropagation();openFile('${path + '/' + file}')" style="cursor:pointer;">📄 ${file}</div>`;
+  folderDiv.after(subDiv);
+}
+
+async function openFile(path) {
+  const resp = await fetch(API + '/v9/sandbox/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, session_id: sessionId, path, skip_quota: true }) });
+  const d = await resp.json();
+  if (d.success) { agentLog('📄 ' + path, '#58a6ff'); agentLog(d.content, '#c9d1d9'); }
+}
+
+async function refreshBalance() {
+  try {
+    const r = await fetch(API + '/v9/balance');
+    const d = await r.json();
+    if (d.success) {
+      const ds = (d.deepseek && d.deepseek.total) ? d.deepseek.total : '--';
+      const glm = (d.glm && d.glm.total) ? d.glm.total : '--';
+      const cost = d.total_cost || '--';
+      document.getElementById('balanceDisplay').innerHTML = `🔵 ¥${ds}  🟣 ¥${glm}  💰 ¥${cost}`;
+    }
+  } catch (e) { }
+}
+
+// ========== 线程管理 ==========
+async function loadThreads() {
+  const sel = document.getElementById("threadSelect");
+  if (!sel) return;
+  try {
+    const resp = await fetch(API + "/api/v5/session/list?user_id=" + userId);
+    const d = await resp.json();
+    if (d.success && d.sessions) {
+      for (const s of d.sessions) {
+        if (!threads.includes(s.session_id)) threads.push(s.session_id);
+      }
+      saveThreads();
+    }
+  } catch (e) {}
+  sel.innerHTML = threads.map(t => `<option value="${t}" ${t === currentThread ? "selected" : ""}>${t.substring(0, 24)}</option>`).join("");
+}
+
+function switchThread(id) {
+  currentThread = id; sessionId = id;
+  window.__APP_STATE.set('currentThread', currentThread); window.__APP_STATE.set('sessionId', sessionId);
+  localStorage.setItem('clawsjoy_session_id', id);
+  localStorage.setItem('clawsjoy_user_id', 'web_1783219071801');
+  saveThreads();
+  messages = [];
+  document.getElementById('agentTerminal').innerHTML = '<div style="color:#58a6ff;">🤖 切换到线程 ' + id.substring(0, 16) + '</div>';
+  const term = document.getElementById('agentTerminal');
+  const logs = JSON.parse(localStorage.getItem('agent_logs_' + currentThread) || '[]');
+  term.innerHTML = '';
+  if (logs.length > 0) {
+    logs.forEach(l => {
+      term.appendChild(agentLineEl(l.text, l.color));   /* 批190：与 agentLog 同一渲染（含 MD）*/
+    });
+  } else { term.innerHTML = '<div style="color:#58a6ff;">🤖 切换到线程 ' + id.substring(0, 16) + '</div>'; }
+  term.scrollTop = term.scrollHeight;
+  refreshFileTree();
+}
+function newThread() {
+  const id = 'session_' + Date.now();
+  threads.push(id); currentThread = id; sessionId = id; localStorage.setItem('clawsjoy_session_id', id); saveThreads(); loadThreads();
+  window.__APP_STATE.set('currentThread', currentThread); window.__APP_STATE.set('sessionId', sessionId);
+  document.getElementById('agentTerminal').innerHTML = '<div style="color:#58a6ff;">🤖 新线程 ' + id.substring(0, 16) + ' 就绪</div>';
+  refreshFileTree();
+}
+
+// ========== Agent 面板 ==========
+// V9 本地浏览器(Manus 对齐): 连接扩展 + 开启专属标签页 + 状态
+function connectBrowserLocal() {
+  const st = document.getElementById('browserLocalStatus');
+  st.textContent = '…';
+  try {
+    if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+      // 在扩展页面环境(workbench 由扩展注入时)直接发消息; 常规浏览器则提示装扩展
+      chrome.runtime.sendMessage({ type: 'connect', userId }, (r) => {
+        st.textContent = (r && r.ok) ? '✅ 已连接' : '⏳ 请点击扩展图标授权';
+        if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({ type: 'openTab', userId, url: 'https://www.xiaohongshu.com' }, () => {
+            st.textContent = '✅ 已连接，专属标签页已开启';
+          });
+        }
+      });
+    } else {
+      st.textContent = '⚠ 请安装 ClawsJoy 本地浏览器扩展并点击图标连接';
+      st.style.color = '#f85149';
+      setTimeout(() => { st.style.color = ''; }, 3000);
+    }
+  } catch (e) {
+    st.textContent = '⚠ 浏览器不支持扩展消息';
+  }
+}
+// P4 运营面板: 监控任务 + 回复队列(轮询 /v9/browser/monitor)
+function toggleOpsPanel() {
+  const p = document.getElementById('opsPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  if (p.style.display === 'block') loadOpsPanel();
+}
+async function loadOpsPanel() {
+  const box = document.getElementById('opsContent');
+  if (!box) return;
+  try {
+    const resp = await fetch('/v9/browser/monitor?user_id=' + encodeURIComponent(userId) + '&status=pending', {});
+    const d = await resp.json();
+    if (!d.success) { box.innerHTML = '<div class="empty-hint">加载失败: ' + (d.error || '') + '</div>'; return; }
+    const monitors = (d.monitors || []).map(m =>
+      '<div style="padding:4px 0;border-bottom:1px solid #21262d;">🖥️ ' + (m.platform||'') + ' · ' + (m.target||'') +
+      ' · 间隔 ' + (m.interval||60) + 's · 变化 ' + (m.changes||0) + ' 次 · ' + (m.status||'') + '</div>').join('');
+    const replies = (d.reply_queue || []).map(r =>
+      '<div style="padding:6px 0;border-bottom:1px solid #21262d;">💬 ' + (r.item && r.item.target ? r.item.target : '') +
+      ' <span style="color:#8b949e;">' + (r.suggested_reply||'').substring(0,80) + '</span><br>' +
+      '<button onclick="opsReplyApprove(\'' + r.id + '\',true)" style="background:#238636;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;margin-top:4px;">✅ 批准回复</button> ' +
+      '<button onclick="opsReplyApprove(\'' + r.id + '\',false)" style="background:#da3633;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;margin-top:4px;">❌ 拒绝</button></div>').join('');
+    const hist = (d.reply_history || []).slice(0,5).map(h =>
+      '<div style="color:#8b949e;font-size:11px;padding:2px 0;">📜 ' + (h.platform||'') + ' · ' + (h.success?'✅':'❌') + ' ' + (h.text||'').substring(0,50) + '</div>').join('');
+    box.innerHTML =
+      '<div style="font-weight:600;margin:4px 0;">监控任务 (' + (monitors ? '' : '0') + ')</div>' +
+      (monitors || '<div class="empty-hint">无监控任务</div>') +
+      '<div style="font-weight:600;margin:8px 0 4px;">回复队列 (' + (replies ? '' : '0') + ' 待处理)</div>' +
+      (replies || '<div class="empty-hint">回复队列为空</div>') +
+      (hist ? '<div style="font-weight:600;margin:8px 0 4px;">回复历史</div>' + hist : '');
+  } catch (e) {
+    box.innerHTML = '<div class="empty-hint">加载失败: ' + e.message + '</div>';
+  }
+}
+async function opsReplyApprove(replyId, approve) {
+  try {
+    const resp = await fetch(API + '/v9/agent/chat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, session_id: sessionId, model: 'deepseek-v4-flash',
+        approve_reply: { reply_id: replyId, approve: approve } })
+    });
+    const d = await resp.json();
+    agentLog(approve ? '✅ 回复已执行' : '❌ 已拒绝回复建议', approve ? '#3fb950' : '#f85149');
+    loadOpsPanel();
+  } catch (e) { agentLog('❌ 回复审批失败: ' + e.message, '#f85149'); }
+}
+function openAgent() {
+  setTimeout(initFileDrag, 100);
+  document.getElementById('agentModal').style.display = 'flex';
+  localStorage.setItem('agent_open', '1');
+  loadThreads(); refreshFileTree(); refreshBalance();
+  const term = document.getElementById('agentTerminal');
+  const logs = JSON.parse(localStorage.getItem('agent_logs_' + currentThread) || '[]');
+  if (logs.length > 0) {
+    term.innerHTML = '';
+    logs.forEach(l => {
+      term.appendChild(agentLineEl(l.text, l.color));   /* 批190：与 agentLog 同一渲染（含 MD）*/
+    });
+    term.scrollTop = term.scrollHeight;
+  }
+}
+function closeAgent() {
+  document.getElementById('agentModal').style.display = 'none';
+  localStorage.setItem('agent_open', '0');
+}
+
+// ========== 初始化 ==========
+
+// ========== 编辑 Agent ==========
+function editMember(name) {
+  document.getElementById('editName').value = name;
+  document.getElementById('editModel').value = '';
+  document.getElementById('editApiKey').value = '';
+  document.getElementById('editOverlay').classList.add('show');
+}
+function closeEdit() {
+  document.getElementById('editOverlay').classList.remove('show');
+}
+async function saveEdit() {
+  const name = document.getElementById('editName').value;
+  const model = document.getElementById('editModel').value;
+  const api_key = document.getElementById('editApiKey').value;
+  if (!model && !api_key) { alert('请填写 model 或 api_key'); return; }
+  try {
+    const r = await fetch(API + '/v8/roster/update', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ server_id: 'default', name, model, api_key })
+    });
+    if (!r.ok) { alert('保存失败: ' + await r.text()); return; }
+    closeEdit();
+    loadMembers();
+  } catch(e) { alert('保存失败: ' + e.message); }
+}
+
+function toggleFilePanel() {
+    const panel = document.getElementById('filePanel');
+    const btn = document.getElementById('toggleBtn');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        btn.style.display = 'none';
+    } else {
+        panel.style.display = 'none';
+        btn.style.display = 'block';
+    }
+}
+
+// 通知中心已提取至 web/static/js/notifications.js(拆分映射表步骤 1)
+
+// 初始化延迟到 DOMContentLoaded(defer 模块已全部挂载)
+document.addEventListener('DOMContentLoaded', function () {
+  loadMembers();
+  loadModels();
+  // 批171 · 入口可达性：**首访默认展开**任务框（此前只在「上次开过」时才展开 ⇒ 用户看不到 "描述任务..." 入口；
+  // 页面上唯一默认可见的是团队频道的「发消息或指令...」——2026-09-15 真浏览器实测）。用户显式关闭后记住关闭。
+  if (localStorage.getItem("agent_open") !== "0" && typeof openAgent === "function") setTimeout(openAgent, 500);
+});
+</script>
+<script defer src="/web/static/js/notifications.js"></script>
+<script defer src="/web/static/js/timeline.js"></script>
+<script defer src="/web/static/js/md.js"></script>
+<script defer src="/web/static/js/agent-terminal.js"></script>
+<script defer src="/web/static/js/chat.js"></script>
+<script defer src="/web/static/js/approval.js"></script>
+<script defer src="/web/static/js/subtask-panel.js"></script>
+<script defer src="/web/static/js/discussion.js"></script>
+<script defer src="/web/static/js/goal-review.js"></script>
+<script src="/web/static/js/agent_discussion_sse.js"></script>
+
+<!-- 编辑 Agent -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-modal">
+    <h3>编辑 Agent</h3>
+    <input type="hidden" id="editName">
+    <label>Model</label>
+    <input id="editModel" placeholder="如: gpt-4o">
+    <label>API Key</label>
+    <input id="editApiKey" placeholder="sk-..." type="password">
+    <div class="edit-actions">
+      <button class="edit-cancel" onclick="closeEdit()">取消</button>
+      <button class="edit-save" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

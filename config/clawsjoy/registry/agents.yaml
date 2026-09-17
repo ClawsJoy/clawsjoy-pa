@@ -1,0 +1,12 @@
+# Agent 注册中心配置
+agents:
+  analysis_agent:
+    type: core
+    personality: analytical
+    capabilities: ["data_analysis", "optimization_suggestion"]
+  chat_agent:
+    type: core
+    personality: friendly
+  decision_agent:
+    type: core
+    personality: professional

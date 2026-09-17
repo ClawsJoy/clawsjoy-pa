@@ -1,0 +1,37 @@
+# 3D 制作工作流 - 从概念到渲染
+name: 3d_pipeline
+description: 3D 制作完整流程：概念设计 → 建模 → 材质 → 灯光 → 渲染
+version: 1.0.0
+
+steps:
+  - name: concept
+    agent: writer_agent
+    prompt: "生成3D场景概念描述: {topic}"
+    output: concept
+  
+  - name: modeling
+    agent: threejs_skill
+    prompt: "创建3D模型: {concept}"
+    output: model
+  
+  - name: material
+    agent: blender_skill
+    prompt: "应用材质: {model} 颜色: {color}"
+    output: materialized
+  
+  - name: lighting
+    agent: blender_skill
+    prompt: "添加灯光: {materialized}"
+    output: lit
+  
+  - name: render
+    agent: blender_skill
+    prompt: "高质量渲染: {lit} 分辨率: {resolution}"
+    output: final_image
+
+output:
+  - concept
+  - model
+  - materialized
+  - lit
+  - final_image

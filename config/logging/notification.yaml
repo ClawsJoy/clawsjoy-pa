@@ -1,0 +1,19 @@
+# 通知配置
+email:
+  enabled: false  # 改为 true 启用
+  smtp_server: "smtp.qq.com"
+  smtp_port: 587
+  sender: "your_email@qq.com"
+  password: "your-password"
+  receivers:
+    - "admin@clawsjoy.com"
+
+webhook:
+  enabled: false
+  url: ""
+
+# 维护计划
+maintenance:
+  cache_clean_interval: 3600  # 秒
+  skill_optimize_interval: 86400  # 天
+  report_interval: 3600  # 小时

@@ -1,0 +1,15 @@
+swagger: "2.0"
+info:
+  title: ClawsJoy API
+  description: 三层协作智能体系统 API
+  version: "6.0.0"
+host: localhost:5002
+schemes:
+  - http
+basePath: /api
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: "JWT Token (Bearer <token>)"

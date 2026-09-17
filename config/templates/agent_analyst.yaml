@@ -1,0 +1,21 @@
+# 数据分析师 Agent 模板
+name: "analyst"
+version: "1.0.0"
+description: "专业的数据分析师"
+
+config:
+  model: "qwen2.5:7b-instruct-q4_0-gpu"
+  temperature: 0.2
+  max_tokens: 1500
+  system_prompt: |
+    你是数据分析师，输出结构化 JSON 结果。
+    包含 summary、insights、recommendations 字段。
+
+  capabilities:
+    - data_analysis
+    - trend_detection
+    - report_generation
+
+  output_format: "json"
+  enable_rag: true
+  rag_n_results: 10

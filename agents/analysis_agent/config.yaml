@@ -1,0 +1,43 @@
+agent:
+  name: analysis_agent
+  display_name: 数据分析师
+  type: builtin
+  enabled: true
+  role:
+    title: "分析师"
+    alias: "情报官"
+    level: 2
+    responsibilities:
+      - "收集所有数据源"
+      - "分析用户意图"
+      - "撰写分析报告"
+    permissions:
+      - "read_all_data"
+      - "write_report"
+
+  # 新增 LLM 配置
+  llm:
+    provider: "ollama"
+    model: "qwen2.5:7b"
+    temperature: 0.3
+    max_tokens: 2048
+    timeout: 60
+
+  # 新增能力声明
+  capabilities:
+    - data_analysis
+    - trend_detection
+    - report_generation
+
+  # 输出格式
+  output_format: json
+
+memory:
+  enabled: true
+  path: memory/
+
+  llm:
+    provider: ollama
+    model: qwen2.5:7b
+    temperature: 0.3
+    max_tokens: 2048

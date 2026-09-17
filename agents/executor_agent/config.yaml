@@ -1,0 +1,39 @@
+agent:
+  name: executor_agent
+  display_name: 执行器
+  type: builtin
+  enabled: true
+  role:
+    title: "执行器"
+    alias: "执行者"
+    level: 1
+    responsibilities:
+      - "执行具体技能"
+      - "调用底层工具"
+      - "返回执行结果"
+    permissions:
+      - "execute_skill"
+      - "call_tool"
+
+memory:
+  enabled: true
+  path: memory/
+
+  llm:
+    provider: ollama
+    model: llama3.2:3b
+    temperature: 0.1
+    max_tokens: 512
+
+  llm:
+    provider: ollama
+    model: llama3.2:3b
+    temperature: 0.1
+    max_tokens: 512
+    timeout: 30
+
+  capabilities:
+    - "任务执行"
+    - "命令运行"
+    - "操作执行"
+    - "技能调用"

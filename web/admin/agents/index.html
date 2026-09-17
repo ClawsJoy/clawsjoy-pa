@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent 管理中心 | ClawsJoy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a, #050510);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        h1 { margin-bottom: 20px; background: linear-gradient(135deg, #00f3ff, #7b2ff7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: rgba(26,26,46,0.6); backdrop-filter: blur(10px); border-radius: 12px; padding: 15px; border: 1px solid rgba(0,243,255,0.2); }
+        .stat-number { font-size: 32px; font-weight: bold; color: #00f3ff; }
+        .stat-label { color: #888; font-size: 14px; margin-top: 5px; }
+        .agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; }
+        .agent-card { background: rgba(26,26,46,0.6); backdrop-filter: blur(10px); border-radius: 12px; padding: 15px; border: 1px solid rgba(0,243,255,0.2); transition: all 0.3s; }
+        .agent-card:hover { border-color: #00f3ff; transform: translateY(-2px); }
+        .agent-name { font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; }
+        .agent-version { font-size: 12px; color: #888; }
+        .agent-desc { font-size: 12px; color: #aaa; margin: 10px 0; }
+        .agent-status { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .status-enabled { background: rgba(68,255,68,0.2); color: #44ff44; }
+        .status-disabled { background: rgba(255,68,68,0.2); color: #ff4444; }
+        .btn { padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; border: none; margin-right: 8px; }
+        .btn-toggle { background: #00f3ff; color: #000; }
+        .btn-edit { background: #ffaa44; color: #000; }
+        .btn-delete { background: #ff4444; color: #fff; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1a1a2e; border-radius: 16px; padding: 24px; width: 500px; max-width: 90%; border: 1px solid #00f3ff; }
+        .modal-content input, .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin: 10px 0; background: #0a0a1a; border: 1px solid #333; border-radius: 8px; color: white; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #1a1a2e; border: 1px solid #00f3ff; padding: 12px 24px; border-radius: 8px; z-index: 1100; animation: fadeOut 3s forwards; }
+        @keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🤖 Agent 管理中心</h1>
+    
+    <div class="stats">
+        <div class="stat-card"><div class="stat-number" id="stat-total">0</div><div class="stat-label">Agent总数</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-enabled">0</div><div class="stat-label">已启用</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-core">0</div><div class="stat-label">核心Agent</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-custom">0</div><div class="stat-label">自定义Agent</div></div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+        <button class="btn btn-toggle" onclick="showCreateModal()">➕ 创建 Agent</button>
+        <button class="btn btn-edit" onclick="reloadAll()">🔄 热重载</button>
+    </div>
+    
+    <div id="agents-container" class="agents-grid">加载中...</div>
+</div>
+
+<div id="createModal" class="modal">
+    <div class="modal-content">
+        <h3>创建新 Agent</h3>
+        <input type="text" id="agent-name" placeholder="Agent 名称 (如: my_agent)">
+        <input type="text" id="agent-display" placeholder="显示名称">
+        <select id="agent-type">
+            <option value="custom">自定义</option>
+            <option value="core">核心</option>
+        </select>
+        <textarea id="agent-desc" placeholder="描述" rows="3"></textarea>
+        <button class="btn btn-toggle" onclick="createAgent()">创建</button>
+        <button class="btn btn-delete" onclick="closeModal()">取消</button>
+    </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:5002';
+let agents = [];
+
+async function loadAgents() {
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/agents/list`);
+        const data = await res.json();
+        agents = data.agents || [];
+        renderStats();
+        renderAgents();
+    } catch(e) {
+        document.getElementById('agents-container').innerHTML = '<div class="agent-card">加载失败</div>';
+    }
+}
+
+function renderStats() {
+    const total = agents.length;
+    const enabled = agents.filter(a => a.enabled !== false).length;
+    const core = agents.filter(a => a.type === 'core').length;
+    const custom = agents.filter(a => a.type === 'custom').length;
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-enabled').textContent = enabled;
+    document.getElementById('stat-core').textContent = core;
+    document.getElementById('stat-custom').textContent = custom;
+}
+
+function renderAgents() {
+    const container = document.getElementById('agents-container');
+    if (!agents.length) {
+        container.innerHTML = '<div class="agent-card">暂无 Agent，点击创建</div>';
+        return;
+    }
+    container.innerHTML = agents.map(agent => `
+        <div class="agent-card">
+            <div class="agent-name">
+                <span>${agent.display_name || agent.name}</span>
+                <span class="agent-version">v${agent.version || '1.0'}</span>
+            </div>
+            <div class="agent-desc">${agent.description || '无描述'}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="agent-status ${agent.enabled !== false ? 'status-enabled' : 'status-disabled'}">
+                    ${agent.enabled !== false ? '● 已启用' : '○ 已禁用'}
+                </span>
+                <div>
+                    <button class="btn btn-toggle" onclick="toggleAgent('${agent.name}')">切换</button>
+                    <button class="btn btn-delete" onclick="deleteAgent('${agent.name}')">删除</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function toggleAgent(name) {
+    const agent = agents.find(a => a.name === name);
+    const newState = agent.enabled === false;
+    const res = await fetch(`${API_BASE}/api/admin/agents/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, enabled: newState })
+    });
+    if (res.ok) {
+        showToast(`Agent ${name} 已${newState ? '启用' : '禁用'}`);
+        loadAgents();
+    }
+}
+
+async function deleteAgent(name) {
+    if (!confirm(`确定删除 Agent ${name} 吗？`)) return;
+    const res = await fetch(`${API_BASE}/api/admin/agents/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+    });
+    if (res.ok) {
+        showToast(`Agent ${name} 已删除`);
+        loadAgents();
+    }
+}
+
+async function createAgent() {
+    const name = document.getElementById('agent-name').value;
+    const display_name = document.getElementById('agent-display').value;
+    const type = document.getElementById('agent-type').value;
+    const description = document.getElementById('agent-desc').value;
+    
+    if (!name) {
+        alert('请输入 Agent 名称');
+        return;
+    }
+    
+    const res = await fetch(`${API_BASE}/api/admin/agents/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, display_name, type, description })
+    });
+    
+    if (res.ok) {
+        showToast(`Agent ${name} 已创建`);
+        closeModal();
+        loadAgents();
+    } else {
+        const err = await res.json();
+        alert('创建失败: ' + err.error);
+    }
+}
+
+async function reloadAll() {
+    const res = await fetch(`${API_BASE}/api/admin/agents/reload`, { method: 'POST' });
+    if (res.ok) {
+        showToast('热重载完成');
+        loadAgents();
+    }
+}
+
+function showCreateModal() {
+    document.getElementById('createModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('createModal').style.display = 'none';
+    document.getElementById('agent-name').value = '';
+    document.getElementById('agent-display').value = '';
+    document.getElementById('agent-desc').value = '';
+}
+
+function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+loadAgents();
+</script>
+</body>
+</html>

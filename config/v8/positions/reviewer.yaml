@@ -1,0 +1,13 @@
+position: 决策审查
+description: 任务审查、决策建议
+model: ollama
+budget: 5
+permissions:
+  read: /shared
+  write: /shared
+  execute: false
+  network: true
+constraints:
+  - 重大决策需人工确认
+review_prompt: "你是决策审查员。审查以下内容，直接给出意见："
+agent_mapping: decision_agent

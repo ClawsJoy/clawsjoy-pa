@@ -1,0 +1,45 @@
+agent:
+  capabilities:
+  - 上传视频
+  - 获取视频信息
+  - 更新视频元数据
+  - 管理播放列表
+  - 分析视频数据
+  - 优化标题和描述
+  - 优化标签
+  - 管理评论
+  - 频道分析
+  - 盈利分析
+  collaboration:
+  - video_agent: 视频处理合作
+  - writer_agent: 标题和描述写作
+  - director_agent: 内容策划
+  - analysis_agent: 数据分析
+  display_name: YouTube 运营官
+  enabled: true
+  keywords:
+  - youtube
+  - 油管
+  - 上传视频
+  - 频道
+  - 数据分析
+  - 视频数据
+  - 播放量
+  - 粉丝
+  llm:
+    max_tokens: 1024
+    model: qwen2.5:7b
+    provider: ollama
+    temperature: 0.3
+  name: youtube_agent
+  role:
+    alias: 频道主理人
+    responsibilities:
+    - 视频上传与管理
+    - 频道数据分析和优化
+    - SEO 标题和标签优化
+    - 评论互动和粉丝管理
+    - 盈利分析和广告优化
+    - 内容排期和发布计划
+    title: YouTube 运营官
+  type: builtin

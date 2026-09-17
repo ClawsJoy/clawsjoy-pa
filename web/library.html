@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>资料库 - ClawsJoy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0f1a, #03060c);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #0ff; margin-bottom: 20px; text-align: center; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 10px 20px; background: #0f1a2a; border: 1px solid #0ff; border-radius: 30px; cursor: pointer; }
+        .tab.active { background: #0ff; color: #000; }
+        .panel { display: none; background: rgba(10,20,30,0.8); border-radius: 16px; padding: 20px; }
+        .panel.active { display: block; }
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .file-card { background: #0f0f1a; border: 1px solid #0ff3; border-radius: 12px; padding: 12px; text-align: center; }
+        .file-card video, .file-card audio { width: 100%; max-height: 150px; border-radius: 8px; }
+        .file-name { margin-top: 8px; font-size: 12px; color: #0ff; word-break: break-all; }
+        .file-size { font-size: 10px; color: #888; }
+        .delete-btn { background: #f00; border: none; border-radius: 20px; padding: 4px 12px; margin-top: 8px; cursor: pointer; }
+        .upload-area { border: 2px dashed #0ff; border-radius: 16px; padding: 30px; text-align: center; margin-bottom: 20px; }
+        input[type="file"] { margin-bottom: 10px; }
+        button { background: #0f2a3a; border: 1px solid #0ff; border-radius: 30px; padding: 8px 20px; color: #0ff; cursor: pointer; }
+        .status { margin-top: 10px; color: #0f0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📁 ClawsJoy 资料库</h1>
+    
+    <div class="tabs">
+        <div class="tab active" data-type="videos">🎬 视频</div>
+        <div class="tab" data-type="audios">🎵 音频</div>
+        <div class="tab" data-type="scripts">📝 文案</div>
+        <div class="tab" data-type="images">🖼️ 图片</div>
+    </div>
+    
+    <div id="videosPanel" class="panel active">
+        <div class="upload-area">
+            <input type="file" id="videoUpload" accept="video/*">
+            <button onclick="uploadFile('videos')">上传视频</button>
+        </div>
+        <div id="videoList" class="file-grid">加载中...</div>
+    </div>
+    
+    <div id="audiosPanel" class="panel">
+        <div class="upload-area">
+            <input type="file" id="audioUpload" accept="audio/*">
+            <button onclick="uploadFile('audios')">上传音频</button>
+        </div>
+        <div id="audioList" class="file-grid">加载中...</div>
+    </div>
+    
+    <div id="scriptsPanel" class="panel">
+        <div class="upload-area">
+            <textarea id="scriptContent" rows="5" style="width:100%; background:#0f0f1a; border:1px solid #0ff; color:#0ff; padding:10px;"></textarea>
+            <button onclick="saveScript()">保存文案</button>
+        </div>
+        <div id="scriptList" class="file-grid">加载中...</div>
+    </div>
+    
+    <div id="imagesPanel" class="panel">
+        <div class="upload-area">
+            <input type="file" id="imageUpload" accept="image/*">
+            <button onclick="uploadFile('images')">上传图片</button>
+        </div>
+        <div id="imageList" class="file-grid">加载中...</div>
+    </div>
+    
+    <div id="status" class="status"></div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:18108';
+const tenantId = new URLSearchParams(location.search).get('tenant') || '1';
+let currentType = 'videos';
+
+// 初始化
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.onclick = () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        currentType = tab.dataset.type;
+        document.getElementById(`${currentType}Panel`).classList.add('active');
+        loadFiles(currentType);
+    };
+});
+
+async function loadFiles(type) {
+    const container = document.getElementById(`${type}List`);
+    container.innerHTML = '加载中...';
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/library/list?tenant_id=${tenantId}&type=${type}`);
+        const data = await res.json();
+        
+        if (data.success && data.files.length) {
+            container.innerHTML = data.files.map(f => `
+                <div class="file-card">
+                    ${type === 'videos' ? `<video controls src="${API_BASE}${f.url}"></video>` : ''}
+                    ${type === 'audios' ? `<audio controls src="${API_BASE}${f.url}"></audio>` : ''}
+                    ${type === 'images' ? `<img src="${API_BASE}${f.url}" style="max-width:100%; border-radius:8px;">` : ''}
+                    ${type === 'scripts' ? `<div style="height:80px; overflow:auto; font-size:12px;">${f.content || f.name}</div>` : ''}
+                    <div class="file-name">${f.name}</div>
+                    <div class="file-size">${(f.size/1024).toFixed(1)} KB</div>
+                    <button class="delete-btn" onclick="deleteFile('${f.id}', '${type}')">删除</button>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<div style="text-align:center; padding:40px;">暂无文件，请上传</div>';
+        }
+    } catch(e) {
+        container.innerHTML = '<div style="text-align:center; padding:40px;">加载失败</div>';
+    }
+}
+
+async function uploadFile(type) {
+    const input = document.getElementById(`${type}Upload`);
+    const file = input.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('tenant_id', tenantId);
+    formData.append('file', file);
+    formData.append('type', type);
+    
+    showStatus('上传中...');
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/library/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            showStatus('上传成功');
+            input.value = '';
+            loadFiles(currentType);
+        } else {
+            showStatus('上传失败');
+        }
+    } catch(e) {
+        showStatus('上传失败');
+    }
+}
+
+async function saveScript() {
+    const content = document.getElementById('scriptContent').value;
+    if (!content) return;
+    
+    const formData = new FormData();
+    formData.append('tenant_id', tenantId);
+    formData.append('content', content);
+    formData.append('type', 'scripts');
+    formData.append('filename', `script_${Date.now()}.txt`);
+    
+    showStatus('保存中...');
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/library/save_script`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            showStatus('保存成功');
+            document.getElementById('scriptContent').value = '';
+            loadFiles('scripts');
+        } else {
+            showStatus('保存失败');
+        }
+    } catch(e) {
+        showStatus('保存失败');
+    }
+}
+
+async function deleteFile(id, type) {
+    if (!confirm('确定删除吗？')) return;
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/library/delete?id=${id}&tenant_id=${tenantId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showStatus('删除成功');
+            loadFiles(type);
+        } else {
+            showStatus('删除失败');
+        }
+    } catch(e) {
+        showStatus('删除失败');
+    }
+}
+
+function showStatus(msg) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = msg;
+    setTimeout(() => { statusDiv.textContent = ''; }, 3000);
+}
+
+// 初始加载
+loadFiles('videos');
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+capable_of:
+- 剪辑
+- 裁剪
+- 拼接
+- 字幕
+- 转码
+- ffmpeg
+- mp4
+class: VideoAgent
+description: video_agent 智能体
+enabled: true
+name: video_agent
+priority: 20
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

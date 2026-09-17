@@ -1,0 +1,10 @@
+actions:
+- video-quality
+capabilities:
+- description: video-quality skill
+  name: video-quality
+description: video-quality skill
+enabled: true
+name: video-quality
+type: skill
+version: 1.0.0

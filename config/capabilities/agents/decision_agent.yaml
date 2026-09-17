@@ -1,0 +1,16 @@
+name: decision_agent
+description: 智能决策者，从 LLM 推荐的 Top 3 能力中选择最佳执行方案
+capabilities:
+  - name: select_best
+    description: 从候选能力中选择最佳方案
+  - name: evaluate_context
+    description: 评估上下文，选择最合适的能力
+  - name: fallback
+    description: 推荐失败时的降级方案
+  - name: confidence_score
+    description: 评估每个候选的置信度
+examples:
+  - input: "下载 YouTube 视频"
+    output: "选择 youtube_agent (置信度 0.95)"
+  - input: "写代码"
+    output: "选择 code_agent (置信度 0.92)"

@@ -1,0 +1,52 @@
+# 意图路由配置 - 精简版
+intents:
+  - name: "health"
+    route: "/api/health"
+    sentences:
+      - "检查系统健康状态"
+      - "系统健康检查"
+      
+  - name: "skills"
+    route: "/api/skills"
+    sentences:
+      - "获取技能列表"
+      - "有哪些技能"
+      
+  - name: "send_message"
+    route: "/api/agents/send"
+    sentences:
+      - "发送消息给Agent"
+      - "和智能体对话"
+      
+  - name: "do_anything"
+    route: "/api/agent/v3/do_anything"
+    sentences:
+      - "执行任务"
+      - "帮我处理"
+      
+  - name: "logs"
+    route: "/api/logs"
+    sentences:
+      - "查看系统日志"
+      
+  - name: "error_logs"
+    route: "/api/logs/errors"
+    sentences:
+      - "查看错误日志"
+      - "查看异常记录"
+      
+  - name: "metrics"
+    route: "/metrics"
+    sentences:
+      - "查看性能指标"
+      - "查看监控数据"
+      
+  - name: "broadcast"
+    route: "/api/agents/broadcast"
+    sentences:
+      - "广播消息"
+      
+  - name: "agents_list"
+    route: "/api/agents/list"
+    sentences:
+      - "查看Agent列表"

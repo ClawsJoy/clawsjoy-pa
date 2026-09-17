@@ -1,0 +1,32 @@
+# ClawsJoy 统一调度器配置
+version: "1.0.0"
+
+# 任务队列配置
+task_queue:
+  enabled: true
+  max_size: 10000
+  persistent: true
+  storage_path: "data/task_queue.json"
+
+# 定时调度配置
+scheduler:
+  enabled: true
+  type: "reliable"  # reliable, cron, schedule
+  interval: 60  # 秒
+
+# GPU 调度配置
+gpu_scheduler:
+  enabled: true
+  max_concurrent: 1
+  memory_threshold: 0.8
+
+# 智能调度配置
+smart_scheduler:
+  enabled: true
+  prediction: true
+  dynamic_priority: true
+
+# 容器调度配置
+sandbox_scheduler:
+  enabled: false  # 可选，需要 docker
+  max_containers: 5

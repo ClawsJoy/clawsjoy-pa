@@ -1,0 +1,22 @@
+# 代码助手 Agent 模板
+name: "code_assistant"
+version: "1.0.0"
+description: "专业的代码生成助手"
+
+config:
+  model: "deepseek-coder:6.7b"
+  temperature: 0.2
+  max_tokens: 2000
+  system_prompt: |
+    你是专业的代码助手。只输出高质量、可执行的代码。
+    使用 ```语言 标记代码块，包含必要的注释。
+
+  capabilities:
+    - code_generation
+    - code_review
+    - code_debug
+    - code_refactor
+
+  output_format: "code"
+  enable_rag: true
+  rag_n_results: 5

@@ -1,0 +1,26 @@
+name: code_agent
+description: 代码开发与审查专家
+capabilities:
+  - name: generate_code
+    description: 根据需求生成代码
+  - name: review_code
+    description: 审查代码质量、安全性和性能
+  - name: debug_code
+    description: 调试代码，定位和修复问题
+  - name: optimize_code
+    description: 优化代码性能和结构
+  - name: explain_code
+    description: 解释代码功能和逻辑
+  - name: generate_tests
+    description: 生成单元测试用例
+  - name: analyze_code
+    description: 深度分析代码结构、复杂度和问题
+  - name: format_code
+    description: 格式化代码（autopep8/black）
+  - name: deep_review
+    description: 深度审查代码，生成结构化报告
+examples:
+  - input: "写一个排序函数"
+    output: "返回排序函数的完整代码"
+  - input: "审查代码：```python\ndef f(): pass\n```"
+    output: "返回问题清单和修复建议"

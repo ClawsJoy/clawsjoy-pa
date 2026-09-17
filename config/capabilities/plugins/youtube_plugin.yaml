@@ -1,0 +1,13 @@
+actions:
+- 上传YouTube
+- YouTube发布
+capabilities:
+- description: 上传视频到 YouTube
+  name: upload_video
+- description: 发布视频
+  name: publish_video
+- description: 获取视频分析数据
+  name: get_analytics
+description: YouTube 集成插件
+name: youtube_plugin
+type: plugin

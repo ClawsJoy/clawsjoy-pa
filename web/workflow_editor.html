@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ClawsJoy - 工作流编辑器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', monospace;
+            background: #1a1a2e;
+            color: #e0e0ff;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        /* 左侧节点面板 */
+        .node-panel {
+            width: 280px;
+            background: #0f0f1a;
+            border-right: 1px solid #00f3ff33;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .node-panel h3 {
+            color: #00f3ff;
+            margin-bottom: 15px;
+        }
+        .node-category {
+            margin-bottom: 20px;
+        }
+        .node-category h4 {
+            color: #b000ff;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .node-item {
+            background: #1a1a2e;
+            border: 1px solid #00f3ff33;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 5px 0;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        .node-item:hover {
+            background: #00f3ff22;
+            border-color: #00f3ff;
+        }
+        /* 中间画布区域 */
+        .canvas {
+            flex: 1;
+            position: relative;
+            background: #0a0a1a;
+            background-image: 
+                linear-gradient(rgba(0,243,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,243,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: auto;
+        }
+        #flowCanvas {
+            width: 2000px;
+            height: 2000px;
+            position: relative;
+        }
+        .workflow-node {
+            position: absolute;
+            min-width: 200px;
+            background: #1a1a2e;
+            border: 2px solid #00f3ff;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: move;
+            box-shadow: 0 0 15px rgba(0,243,255,0.2);
+        }
+        .workflow-node.selected {
+            border-color: #b000ff;
+            box-shadow: 0 0 20px rgba(176,0,255,0.3);
+        }
+        .node-header {
+            background: #00f3ff22;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #00f3ff;
+        }
+        .node-body {
+            padding: 8px;
+            font-size: 12px;
+        }
+        .node-port {
+            width: 12px;
+            height: 12px;
+            background: #00f3ff;
+            border-radius: 50%;
+            position: absolute;
+            cursor: crosshair;
+        }
+        .port-input { left: -6px; top: 50%; }
+        .port-output { right: -6px; top: 50%; }
+        /* 右侧属性面板 */
+        .property-panel {
+            width: 320px;
+            background: #0f0f1a;
+            border-left: 1px solid #00f3ff33;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .property-panel h3 {
+            color: #00f3ff;
+            margin-bottom: 15px;
+        }
+        .property-group {
+            margin-bottom: 15px;
+        }
+        .property-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #888;
+        }
+        .property-group input, .property-group select, .property-group textarea {
+            width: 100%;
+            background: #1a1a2e;
+            border: 1px solid #00f3ff33;
+            color: #e0e0ff;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        button {
+            background: linear-gradient(135deg, #00f3ff, #b000ff);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .toolbar {
+            position: fixed;
+            bottom: 20px;
+            left: 300px;
+            background: #0f0f1a;
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid #00f3ff;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧节点面板 -->
+        <div class="node-panel">
+            <h3>🔧 可用节点</h3>
+            <div class="node-category">
+                <h4>🎬 Agent 节点</h4>
+                <div class="node-item" draggable="true" data-type="agent" data-agent="video_agent" data-action="create_video">
+                    🎥 视频制作
+                </div>
+                <div class="node-item" draggable="true" data-type="agent" data-agent="code_agent" data-action="generate_code">
+                    💻 代码生成
+                </div>
+                <div class="node-item" draggable="true" data-type="agent" data-agent="analysis_agent" data-action="analyze">
+                    📊 数据分析
+                </div>
+                <div class="node-item" draggable="true" data-type="agent" data-agent="youtube_agent" data-action="upload">
+                    📤 YouTube上传
+                </div>
+                <div class="node-item" draggable="true" data-type="agent" data-agent="translate_agent" data-action="translate">
+                    🌐 翻译
+                </div>
+            </div>
+            <div class="node-category">
+                <h4>⚡ 技能节点</h4>
+                <div class="node-item" draggable="true" data-type="skill" data-skill="manju_maker">
+                    🎬 馒头视频生成
+                </div>
+                <div class="node-item" draggable="true" data-type="skill" data-skill="add_subtitles">
+                    📝 添加字幕
+                </div>
+                <div class="node-item" draggable="true" data-type="skill" data-skill="get_stock">
+                    📈 股票查询
+                </div>
+                <div class="node-item" draggable="true" data-type="skill" data-skill="get_weather">
+                    ☁️ 天气查询
+                </div>
+            </div>
+            <div class="node-category">
+                <h4>🔀 控制节点</h4>
+                <div class="node-item" draggable="true" data-type="control" data-control="start">
+                    🟢 开始
+                </div>
+                <div class="node-item" draggable="true" data-type="control" data-control="end">
+                    🔴 结束
+                </div>
+                <div class="node-item" draggable="true" data-type="control" data-control="parallel">
+                    ⚡ 并行执行
+                </div>
+            </div>
+        </div>
+        
+        <!-- 画布区域 -->
+        <div class="canvas" id="canvas">
+            <div id="flowCanvas"></div>
+        </div>
+        
+        <!-- 属性面板 -->
+        <div class="property-panel" id="propertyPanel">
+            <h3>📋 属性</h3>
+            <div id="propertyContent">
+                <p style="color: #888;">点击节点查看属性</p>
+            </div>
+            <div class="toolbar">
+                <button onclick="saveWorkflow()">💾 保存工作流</button>
+                <button onclick="executeWorkflow()">🚀 执行</button>
+                <button onclick="clearCanvas()">🗑️ 清空</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let nodes = [];
+        let connections = [];
+        let selectedNode = null;
+        let dragTarget = null;
+        
+        // 拖拽创建节点
+        document.querySelectorAll('.node-item').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    type: item.dataset.type,
+                    agent: item.dataset.agent,
+                    action: item.dataset.action,
+                    skill: item.dataset.skill,
+                    label: item.innerText.trim()
+                }));
+            });
+        });
+        
+        const canvas = document.getElementById('canvas');
+        const flowCanvas = document.getElementById('flowCanvas');
+        
+        canvas.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left + canvas.scrollLeft;
+            const y = e.clientY - rect.top + canvas.scrollTop;
+            
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            
+            const node = {
+                id: `node_${Date.now()}_${Math.random()}`,
+                type: data.type,
+                label: data.label,
+                x: x - 100,
+                y: y - 40,
+                config: {
+                    agent: data.agent,
+                    action: data.action,
+                    skill: data.skill
+                }
+            };
+            
+            nodes.push(node);
+            renderCanvas();
+        });
+        
+        function renderCanvas() {
+            flowCanvas.innerHTML = '';
+            nodes.forEach(node => {
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = 'workflow-node' + (selectedNode === node.id ? ' selected' : '');
+                nodeDiv.style.left = node.x + 'px';
+                nodeDiv.style.top = node.y + 'px';
+                nodeDiv.innerHTML = `
+                    <div class="node-header">${node.label}</div>
+                    <div class="node-body">
+                        ${node.type === 'agent' ? `Agent: ${node.config.agent}<br>动作: ${node.config.action}` : ''}
+                        ${node.type === 'skill' ? `技能: ${node.config.skill}` : ''}
+                        ${node.type === 'control' ? `控制: ${node.config.control}` : ''}
+                    </div>
+                    <div class="node-port port-input" data-node="${node.id}" data-port="input"></div>
+                    <div class="node-port port-output" data-node="${node.id}" data-port="output"></div>
+                `;
+                nodeDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectNode(node.id);
+                });
+                flowCanvas.appendChild(nodeDiv);
+            });
+        }
+        
+        function selectNode(nodeId) {
+            selectedNode = nodeId;
+            const node = nodes.find(n => n.id === nodeId);
+            if (node) {
+                document.getElementById('propertyContent').innerHTML = `
+                    <div class="property-group">
+                        <label>节点名称</label>
+                        <input type="text" value="${node.label}" id="nodeLabel">
+                    </div>
+                    <div class="property-group">
+                        <label>类型</label>
+                        <input type="text" value="${node.type}" disabled>
+                    </div>
+                    ${node.type === 'agent' ? `
+                    <div class="property-group">
+                        <label>Agent</label>
+                        <select id="nodeAgent">
+                            <option ${node.config.agent === 'video_agent' ? 'selected' : ''}>video_agent</option>
+                            <option ${node.config.agent === 'code_agent' ? 'selected' : ''}>code_agent</option>
+                            <option ${node.config.agent === 'analysis_agent' ? 'selected' : ''}>analysis_agent</option>
+                        </select>
+                    </div>
+                    <div class="property-group">
+                        <label>动作</label>
+                        <input type="text" value="${node.config.action}" id="nodeAction">
+                    </div>
+                    ` : ''}
+                    <button onclick="updateNode()">更新</button>
+                `;
+            }
+            renderCanvas();
+        }
+        
+        function updateNode() {
+            const node = nodes.find(n => n.id === selectedNode);
+            if (node) {
+                node.label = document.getElementById('nodeLabel')?.value || node.label;
+                if (node.type === 'agent') {
+                    node.config.agent = document.getElementById('nodeAgent')?.value || node.config.agent;
+                    node.config.action = document.getElementById('nodeAction')?.value || node.config.action;
+                }
+                renderCanvas();
+            }
+        }
+        
+        function saveWorkflow() {
+            const workflow = {
+                name: prompt('工作流名称', 'my_workflow'),
+                nodes: nodes,
+                connections: connections
+            };
+            if (workflow.name) {
+                localStorage.setItem(`workflow_${workflow.name}`, JSON.stringify(workflow));
+                alert(`工作流 "${workflow.name}" 已保存`);
+            }
+        }
+        
+        async function executeWorkflow() {
+            // 将节点转换为工作流步骤
+            const steps = nodes.filter(n => n.type === 'agent' || n.type === 'skill').map((node, idx) => ({
+                step: idx + 1,
+                agent: node.config.agent || 'skill_loader',
+                action: node.config.action || node.config.skill
+            }));
+            
+            const response = await fetch('/api/workflow/execute', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    workflow: 'custom_workflow',
+                    input: {steps: steps}
+                })
+            });
+            const result = await response.json();
+            alert(`工作流已启动: ${result.workflow_id}`);
+        }
+        
+        function clearCanvas() {
+            if (confirm('清空所有节点？')) {
+                nodes = [];
+                connections = [];
+                renderCanvas();
+            }
+        }
+        
+        // 加载示例工作流
+        function loadExample() {
+            nodes = [
+                {id: 'start', type: 'control', label: '开始', x: 100, y: 200, config: {control: 'start'}},
+                {id: 'video', type: 'agent', label: '视频制作', x: 350, y: 200, config: {agent: 'video_agent', action: 'create_video'}},
+                {id: 'subtitle', type: 'skill', label: '添加字幕', x: 600, y: 200, config: {skill: 'add_subtitles'}},
+                {id: 'end', type: 'control', label: '结束', x: 850, y: 200, config: {control: 'end'}}
+            ];
+            renderCanvas();
+        }
+        
+        // 页面加载时渲染
+        renderCanvas();
+    </script>
+</body>
+</html>

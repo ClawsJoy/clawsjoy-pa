@@ -1,0 +1,180 @@
+# Orchestrator 规则分解配置 - 配置驱动
+
+rules:
+  # 分析 + 写作
+  - patterns:
+      - "分析.*写"
+      - "分析.*总结"
+      - "分析.*报告"
+    steps:
+      - target: analysis_agent
+        description: "数据分析"
+        input: "{task}"
+      - target: writer_agent
+        description: "撰写报告"
+        input: "根据分析结果写总结报告"
+
+  # 纯分析
+  - patterns:
+      - "分析"
+      - "趋势"
+      - "洞察"
+    steps:
+      - target: analysis_agent
+        description: "数据分析"
+        input: "{task}"
+
+  # 代码生成
+  - patterns:
+      - "代码"
+      - "函数"
+      - "写一个"
+      - "编程"
+      - "实现"
+    steps:
+      - target: code_agent
+        description: "代码生成"
+        input: "{task}"
+
+  # 图像识别
+  - patterns:
+      - "识别"
+      - "描述图片"
+      - "看图"
+      - "图像识别"
+      - "vision"
+    steps:
+      - target: vision_agent
+        description: "图像识别"
+        input: "{task}"
+
+  # 视频处理
+  - patterns:
+      - "裁剪"
+      - "转码"
+      - "截图"
+      - "合成"
+      - "视频"
+      - "video"
+    steps:
+      - target: video_agent
+        description: "视频处理"
+        input: "{task}"
+
+  # 长文本翻译
+  - patterns:
+      - "翻译"
+    condition: "len(task) > 50"
+    steps:
+      - target: translate_agent
+        description: "文本翻译"
+        input: "{task}"
+
+  # 复杂计算
+  - patterns:
+      - "复杂计算"
+      - "科学计算"
+      - "矩阵"
+      - "微积分"
+      - "方程"
+    steps:
+      - target: calculator_agent
+        description: "数学计算"
+        input: "{task}"
+
+  # 导演/编排任务
+  - patterns:
+      - "导演"
+      - "编排"
+      - "指挥"
+      - "协调"
+    steps:
+      - target: director_agent
+        description: "任务编排"
+        input: "{task}"
+
+  # 协作任务
+  - patterns:
+      - "协作"
+      - "合作"
+      - "协同"
+      - "配合"
+    steps:
+      - target: collaboration_agent
+        description: "协作处理"
+        input: "{task}"
+
+  # 方言识别
+  - patterns:
+      - "方言"
+      - "口音"
+      - "哪里的口音"
+    steps:
+      - target: dialect_agent
+        description: "方言识别"
+        input: "{task}"
+
+  # 文件操作
+  - patterns:
+      - "文件"
+      - "读取文件"
+      - "写入文件"
+      - "保存文件"
+    steps:
+      - target: file_agent
+        description: "文件操作"
+        input: "{task}"
+
+  # YouTube 操作
+  - patterns:
+      - "youtube"
+      - "YouTube"
+      - "视频上传"
+      - "频道"
+    steps:
+      - target: youtube_agent
+        description: "YouTube 操作"
+        input: "{task}"
+
+  # 视频索引
+  - patterns:
+      - "索引视频"
+      - "视频索引"
+      - "视频搜索"
+    steps:
+      - target: video_indexer_agent
+        description: "视频索引"
+        input: "{task}"
+
+  # 记忆任务
+  - patterns:
+      - "记住"
+      - "记忆"
+      - "回忆"
+      - "忘记"
+    steps:
+      - target: memory_agent
+        description: "记忆管理"
+        input: "{task}"
+
+  # 视频索引
+  - patterns:
+      - "索引视频"
+      - "视频索引"
+      - "视频搜索"
+      - "视频分析"
+    steps:
+      - target: video_indexer_agent
+        description: "视频索引"
+        input: "{task}"
+
+  # 视频索引
+  - patterns:
+      - "索引视频"
+      - "视频索引"
+      - "视频搜索"
+      - "视频分析"
+    steps:
+      - target: video_indexer_agent
+        description: "视频索引"
+        input: "{task}"

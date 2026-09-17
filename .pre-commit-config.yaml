@@ -1,0 +1,32 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/pycqa/pylint
+    rev: v3.3.9
+    hooks:
+      - id: pylint
+        args: [--fail-under=7.0]
+
+  - repo: local
+    hooks:
+      - id: ownership-check
+        name: 目录归属检查（DSH 不能提交 agents/core/engine/skills/tools）
+        entry: bash scripts/check_ownership.sh
+        language: system
+        pass_filenames: true

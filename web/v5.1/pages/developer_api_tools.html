@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <title>开发者API调试工具 | ClawsJoy</title>
+    <link rel="stylesheet" href="../css/themes.css">
+    <style>
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .api-tools {
+            display: flex;
+            gap: 20px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+            padding: 20px;
+        }
+        
+        .api-sidebar {
+            width: 280px;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 170, 68, 0.3);
+        }
+        
+        .api-main {
+            flex: 1;
+            background: rgba(10, 10, 26, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 170, 68, 0.3);
+        }
+        
+        .api-endpoint {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #ccc;
+        }
+        
+        .api-endpoint:hover, .api-endpoint.active {
+            background: rgba(255, 170, 68, 0.15);
+            color: #ffaa44;
+        }
+        
+        .method-select {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-right: 10px;
+        }
+        
+        .method-GET { background: #44ff44; color: #000; }
+        .method-POST { background: #ffaa44; color: #000; }
+        .method-PUT { background: #00f3ff; color: #000; }
+        .method-DELETE { background: #ff4444; color: #fff; }
+        
+        .param-input {
+            background: #0a0a1a;
+            border: 1px solid #ffaa44;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            width: 100%;
+            margin: 8px 0;
+        }
+        
+        .response-area {
+            background: #0a0a1a;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow: auto;
+        }
+        
+        .code-editor {
+            background: #0a0a1a;
+            border: 1px solid #ffaa44;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 13px;
+            min-height: 300px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div id="three-canvas"></div>
+    <div class="api-tools">
+        <div class="api-sidebar">
+            <h3 style="color:#ffaa44; margin-bottom: 20px;">🔧 API 端点</h3>
+            <div id="api-list">
+                <div class="api-endpoint" onclick="selectAPI('marketplace/list', 'GET')">
+                    <span class="method-select method-GET">GET</span> /api/marketplace/list
+                </div>
+                <div class="api-endpoint" onclick="selectAPI('marketplace/install', 'POST')">
+                    <span class="method-select method-POST">POST</span> /api/marketplace/install
+                </div>
+                <div class="api-endpoint" onclick="selectAPI('marketplace/uninstall', 'POST')">
+                    <span class="method-select method-POST">POST</span> /api/marketplace/uninstall
+                </div>
+                <div class="api-endpoint" onclick="selectAPI('developer/upload', 'POST')">
+                    <span class="method-select method-POST">POST</span> /api/developer/upload
+                </div>
+                <div class="api-endpoint" onclick="selectAPI('skills', 'GET')">
+                    <span class="method-select method-GET">GET</span> /api/skills
+                </div>
+                <div class="api-endpoint" onclick="selectAPI('skills/execute', 'POST')">
+                    <span class="method-select method-POST">POST</span> /api/skills/execute
+                </div>
+                <div class="api-endpoint" onclick="selectAPI('agent/v3/do_anything', 'POST')">
+                    <span class="method-select method-POST">POST</span> /api/agent/v3/do_anything
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="color:#ffaa44;">📦 我的Agent</h3>
+                <div id="my-agents-list"></div>
+            </div>
+        </div>
+        
+        <div class="api-main">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="api-title">API 调试器</h2>
+                <button class="btn-neon" onclick="sendRequest()">🚀 发送请求</button>
+            </div>
+            
+            <div>
+                <label>请求URL</label>
+                <div style="display: flex; gap: 10px;">
+                    <select id="method-select" class="param-input" style="width: 100px;">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                    <input type="text" id="url-input" class="param-input" value="/api/marketplace/list">
+                </div>
+            </div>
+            
+            <div id="params-section" style="display: none;">
+                <label>请求参数 (JSON)</label>
+                <textarea id="body-input" class="code-editor" rows="6" placeholder='{"user_id": "developer_001", "product_id": "code_assistant"}'></textarea>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <label>响应结果</label>
+                <div id="response-area" class="response-area">等待请求...</div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <label>📝 代码生成示例</label>
+                <div class="response-area" id="code-example">
+// 点击发送后，这里会生成调用代码
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 3D背景暂时禁用 -->
+    <script>
+        const API_BASE = 'http://localhost:5002';
+        let currentAPI = { path: '/api/marketplace/list', method: 'GET', needBody: false };
+        
+        function selectAPI(path, method) {
+            currentAPI = { path, method, needBody: method === 'POST' || method === 'PUT' };
+            document.getElementById('url-input').value = path;
+            document.getElementById('method-select').value = method;
+            document.getElementById('params-section').style.display = currentAPI.needBody ? 'block' : 'none';
+            
+            document.querySelectorAll('.api-endpoint').forEach(el => el.classList.remove('active'));
+            event.target.closest('.api-endpoint').classList.add('active');
+        }
+        
+        async function sendRequest() {
+            const method = document.getElementById('method-select').value;
+            const url = document.getElementById('url-input').value;
+            let body = null;
+            
+            if (method === 'POST' || method === 'PUT') {
+                try {
+                    body = JSON.parse(document.getElementById('body-input').value || '{}');
+                } catch(e) {
+                    document.getElementById('response-area').innerHTML = '❌ JSON格式错误: ' + e.message;
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch(API_BASE + url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body ? JSON.stringify(body) : undefined
+                });
+                const data = await response.json();
+                document.getElementById('response-area').innerHTML = JSON.stringify(data, null, 2);
+                
+                // 生成代码示例
+                const codeExample = `
+// JavaScript 调用示例
+const response = await fetch('${API_BASE}${url}', {
+    method: '${method}',
+    headers: { 'Content-Type': 'application/json' }${body ? `,
+    body: JSON.stringify(${JSON.stringify(body, null, 2)})` : ''}
+});
+const data = await response.json();
+console.log(data);
+                `;
+                document.getElementById('code-example').innerHTML = codeExample;
+                
+            } catch(e) {
+                document.getElementById('response-area').innerHTML = '❌ 请求失败: ' + e.message;
+            }
+        }
+        
+        // 监听方法选择变化
+        document.getElementById('method-select').addEventListener('change', (e) => {
+            currentAPI.needBody = e.target.value === 'POST' || e.target.value === 'PUT';
+            document.getElementById('params-section').style.display = currentAPI.needBody ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

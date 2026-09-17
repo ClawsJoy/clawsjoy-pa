@@ -1,0 +1,100 @@
+import time
+#!/usr/bin/env python3
+"""Agent池 - 预热+复用+按需扩容"""
+
+import threading
+import time
+from collections import defaultdict
+from typing import Dict, List, Any, Optional
+
+from core.lib.llm_client import llm_client
+
+
+class AgentPool:
+    """Agent实例池 - 矩阵架构核心"""
+
+    # 高频Agent预热数量
+    WARM_POOL = {
+        "chat_agent": 3,
+        "code_agent": 2,
+        "memory_agent": 2,
+        "calculator_agent": 2,
+        "translate_agent": 2,
+        "writer_agent": 2,
+    }
+
+    # 最大池大小
+    MAX_PER_AGENT = 10
+    MAX_TOTAL = 50
+
+    def __init__(self):
+        self._pools: Dict[str, List[Any]] = defaultdict(list)
+        self._lock = threading.Lock()
+        self._stats = {"hits": 0, "misses": 0, "created": 0}
+        self._warmed = False
+        self._warmup_done = False
+
+    def get(self, agent_name: str, user_id: str = "default"):
+        """从池中获取Agent实例，池空时自动创建"""
+        with self._lock:
+            pool = self._pools.get(f"{agent_name}:{user_id}", [])
+            if pool:
+                agent = pool.pop()
+                self._stats["hits"] += 1
+                return agent
+
+        self._stats["misses"] += 1
+        agent = self._create(agent_name, user_id)
+        # 放入池中供后续复用
+        if agent and len(self._pools.get(f"{agent_name}:{user_id}", [])) < self.MAX_PER_AGENT:
+            self._pools[f"{agent_name}:{user_id}"].append(agent)
+        return agent
+
+    def release(self, agent_name: str, agent):
+        """归还Agent到池中"""
+        with self._lock:
+            pool = self._pools[agent_name]
+            if len(pool) < self.MAX_PER_AGENT and self._total_size() < self.MAX_TOTAL:
+                pool.append(agent)
+
+    def warmup(self):
+        """后台预热高频Agent"""
+        if self._warmed:
+            return
+        self._warmed = True
+        threading.Thread(target=self._warmup_thread, daemon=True).start()
+
+    def _warmup_thread(self):
+        print("🔥 Agent池预热中...")
+        for agent_name, count in self.WARM_POOL.items():
+            for i in range(count):
+                agent = self._create(agent_name, "pool")
+                if agent:
+                    self._pools[f"{agent_name}:{user_id}"].append(agent)
+        print(f"✅ Agent池预热完成: {self._total_size()}个实例")
+        self._warmup_done = True
+
+    def _create(self, agent_name: str, user_id: str):
+        """创建Agent实例"""
+        self._stats["created"] += 1
+        try:
+            from core.agents.wisdom.wisdom_factory import wisdom_factory
+            return wisdom_factory.get_agent(agent_name, user_id)
+        except Exception as e:
+            print(f"❌ 创建Agent失败 {agent_name}: {e}")
+            return None
+
+    def _total_size(self) -> int:
+        return sum(len(p) for p in self._pools.values())
+
+    def get_stats(self) -> Dict:
+        return {
+            **self._stats,
+            "pool_size": self._total_size(),
+            "pools": {k: len(v) for k, v in self._pools.items()},
+            "hit_rate": self._stats["hits"] / max(self._stats["hits"] + self._stats["misses"], 1),
+        }
+
+
+# 全局单例
+agent_pool = AgentPool()

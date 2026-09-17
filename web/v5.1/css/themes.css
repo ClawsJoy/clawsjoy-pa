@@ -1,0 +1,173 @@
+/* ClawsJoy v5.1 3D科幻风格主题 */
+:root {
+    /* 品牌色 */
+    --brand-cyan: #00f3ff;
+    --brand-purple: #7b2ff7;
+    --brand-pink: #ff00ff;
+    --brand-dark: #0a0a1a;
+    --brand-darker: #050510;
+    
+    /* 主题变量 */
+    --theme-primary: #00f3ff;
+    --theme-glow: #00f3ff80;
+    
+    /* 玻璃态 */
+    --glass-bg: rgba(26, 26, 46, 0.7);
+    --glass-border: rgba(0, 243, 255, 0.3);
+    --glass-blur: 20px;
+    
+    /* 动画 */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'Poppins', 'Microsoft YaHei', sans-serif;
+    background: var(--brand-darker);
+    color: #e0e0e0;
+    overflow-x: hidden;
+}
+
+/* 3D容器 */
+#three-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 主内容容器 */
+.main-container {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+}
+
+/* 玻璃态组件 */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    transition: var(--transition-normal);
+}
+
+.glass-card:hover {
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 30px var(--theme-glow);
+    transform: translateY(-2px);
+}
+
+/* 霓虹按钮 */
+.btn-neon {
+    background: linear-gradient(135deg, var(--brand-cyan), var(--brand-purple));
+    border: none;
+    padding: 10px 24px;
+    border-radius: 40px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-neon:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--theme-glow);
+}
+
+.btn-neon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-neon:hover::before {
+    left: 100%;
+}
+
+/* 角色主题边框 */
+.role-guest { border-left: 3px solid #00f3ff; }
+.role-user { border-left: 3px solid #44ff44; }
+.role-developer { border-left: 3px solid #ffaa44; }
+.role-admin { border-left: 3px solid #ff4444; }
+
+/* 动画 */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; text-shadow: 0 0 5px var(--theme-primary); }
+    50% { opacity: 1; text-shadow: 0 0 20px var(--theme-primary); }
+}
+
+@keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 全息扫描线 */
+.hologram {
+    position: relative;
+    overflow: hidden;
+}
+
+.hologram::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, 
+        transparent 0%, 
+        rgba(0, 243, 255, 0.05) 50%, 
+        transparent 100%);
+    animation: scan 3s linear infinite;
+    pointer-events: none;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--theme-primary);
+    border-radius: 10px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .glass-card { border-radius: 16px; }
+    .btn-neon { padding: 8px 16px; font-size: 12px; }
+}

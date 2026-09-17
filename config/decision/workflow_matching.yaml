@@ -1,0 +1,43 @@
+# 工作流匹配配置 - 配置驱动
+version: "1.0.0"
+
+# 工作流关键词映射
+workflows:
+  image_to_text:
+    keywords:
+      - "图片"
+      - "识别"
+      - "图像"
+      - "描述"
+      - "看图"
+      - "翻译图片"
+      - "图片内容"
+    workflow: "image_to_text"
+    description: "图片识别并翻译"
+    params:
+      input_image: "{image_path}"
+  
+  video_maker:
+    keywords:
+      - "视频"
+      - "制作视频"
+      - "生成视频"
+      - "剪辑视频"
+    workflow: "video_maker"
+    description: "视频制作"
+  
+  math_calc:
+    keywords:
+      - "计算"
+      - "等于"
+      - "加"
+      - "减"
+      - "乘"
+      - "除"
+    workflow: "math_calc"
+    description: "数学计算"
+
+# 默认配置
+default:
+  fallback_to_llm: true
+  max_workflow_steps: 10

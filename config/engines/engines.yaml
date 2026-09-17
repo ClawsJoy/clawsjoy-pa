@@ -1,0 +1,60 @@
+# 原子引擎总配置
+
+version: "1.0.0"
+
+# 引擎列表
+engines:
+  semantic:
+    enabled: true
+    config: config/engines/semantic.yaml
+    order: 1
+    description: "语义理解引擎"
+    
+  profile:
+    enabled: true
+    config: config/engines/profile.yaml
+    order: 2
+    description: "用户画像引擎"
+    
+  knowledge:
+    enabled: true
+    config: config/engines/knowledge.yaml
+    order: 3
+    description: "知识图谱引擎"
+    
+  reasoning:
+    enabled: true
+    config: config/engines/reasoning.yaml
+    order: 4
+    description: "推理引擎"
+    
+  planning:
+    enabled: true
+    config: config/engines/planning.yaml
+    order: 5
+    description: "规划引擎"
+    
+  skill_matrix:
+    enabled: true
+    config: config/engines/skill_matrix.yaml
+    order: 6
+    description: "技能矩阵引擎"
+    
+  memory:
+    enabled: true
+    config: config/engines/memory.yaml
+    order: 7
+    description: "记忆引擎"
+    
+  active:
+    enabled: true
+    config: config/engines/active.yaml
+    order: 8
+    description: "主动学习引擎"
+
+# 全局配置
+global:
+  cache_enabled: true
+  cache_ttl: 300
+  log_level: "INFO"
+  metrics_enabled: true

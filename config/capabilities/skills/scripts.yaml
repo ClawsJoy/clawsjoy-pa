@@ -1,0 +1,10 @@
+actions:
+- scripts
+capabilities:
+- description: scripts skill
+  name: scripts
+description: scripts skill
+enabled: true
+name: scripts
+type: skill
+version: 1.0.0

@@ -1,0 +1,7 @@
+name: send_sms
+type: skill
+actions:
+  - send_sms
+  - 发短信
+  - 短信
+description: 返回短信指令给前端，触发手机短信

@@ -1,0 +1,11 @@
+actions:
+- video_download
+- 下载视频
+capabilities:
+- description: video_download skill
+  name: video_download
+description: video_download skill
+enabled: true
+name: video_download
+type: skill
+version: 1.0.0

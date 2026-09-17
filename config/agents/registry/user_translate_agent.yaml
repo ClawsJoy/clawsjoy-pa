@@ -1,0 +1,13 @@
+capable_of:
+- 用户翻译
+- 个性化翻译
+- 习惯用语
+class: UserTranslateAgentAgent
+description: user_translate_agent 智能体
+enabled: true
+name: user_translate_agent
+priority: 15
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

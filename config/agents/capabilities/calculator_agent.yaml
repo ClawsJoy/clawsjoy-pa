@@ -1,0 +1,15 @@
+actions:
+- calculate
+capabilities:
+- description: 执行数学计算
+  name: calculate
+- description: 科学计算（三角函数、对数、阶乘等）
+  name: scientific_calc
+description: 数学计算专家
+examples:
+- input: 计算 123 + 456
+  output: 123 + 456 = 579
+- input: 计算 sin(pi/2)
+  output: sin(pi/2) = 1
+name: calculator_agent
+type: agent

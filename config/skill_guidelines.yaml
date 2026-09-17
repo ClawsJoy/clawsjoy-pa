@@ -1,0 +1,47 @@
+# 原子技能作业指导
+
+skills:
+  calculator:
+    name: "计算器"
+    input_schema:
+      a: number
+      b: number
+      op: string  # + - * /
+    output_schema:
+      result: number
+    examples:
+      - input: {"a": 10, "b": 5, "op": "+"}
+        output: {"result": 15}
+
+  translate:
+    name: "翻译"
+    input_schema:
+      text: string
+      source: string  # 可选，默认 auto
+      target: string  # 可选，默认 zh
+    output_schema:
+      translated: string
+    examples:
+      - input: {"text": "hello", "target": "zh"}
+        output: {"translated": "你好"}
+
+  weather:
+    name: "天气"
+    input_schema:
+      city: string
+    output_schema:
+      temperature: number
+      condition: string
+    examples:
+      - input: {"city": "北京"}
+        output: {"temperature": 22, "condition": "晴"}
+
+  youtube_collector:
+    name: "YouTube采集"
+    input_schema:
+      action: string  # trending / search / channel_data
+      query: string   # 搜索关键词
+      limit: integer  # 数量限制
+    output_schema:
+      trending: array
+      count: integer

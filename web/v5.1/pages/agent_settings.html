@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <title>Agent 配置中心 | ClawsJoy</title>
+    <link rel="stylesheet" href="../css/themes.css">
+    <style>
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', 'Poppins', sans-serif;
+            background: #050510;
+            overflow-x: hidden;
+        }
+        
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        .settings-container {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 双轨布局 */
+        .dual-track {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .track-card {
+            flex: 1;
+            min-width: 320px;
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            overflow: hidden;
+        }
+        
+        .track-header {
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(0,243,255,0.1), rgba(123,47,247,0.1));
+            border-bottom: 1px solid rgba(0,243,255,0.2);
+        }
+        
+        .track-title {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .track-visual .track-title { color: #00f3ff; }
+        .track-ai .track-title { color: #44ff44; }
+        .track-code .track-title { color: #ffaa44; }
+        
+        .track-body {
+            padding: 20px;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: #0a0a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 12px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: #00f3ff;
+            outline: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00f3ff, #7b2ff7);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(0,243,255,0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #444;
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+        }
+        
+        /* Agent列表 */
+        .agent-list {
+            margin-top: 20px;
+        }
+        
+        .agent-item {
+            background: #0a0a1a;
+            border-radius: 16px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid #00f3ff;
+        }
+        
+        .agent-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .agent-endpoint {
+            font-size: 11px;
+            color: #888;
+            font-family: monospace;
+        }
+        
+        .agent-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        
+        .status-active { background: rgba(68,255,68,0.2); color: #44ff44; }
+        .status-inactive { background: rgba(255,68,68,0.2); color: #ff4444; }
+        
+        /* AI聊天区域 */
+        .chat-area {
+            height: 300px;
+            overflow-y: auto;
+            background: #0a0a1a;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .chat-message {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-user { justify-content: flex-end; }
+        .chat-ai { justify-content: flex-start; }
+        
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            font-size: 13px;
+        }
+        
+        .chat-user .chat-bubble {
+            background: linear-gradient(135deg, #00f3ff, #7b2ff7);
+            color: white;
+        }
+        
+        .chat-ai .chat-bubble {
+            background: #1a1a2e;
+            border: 1px solid #00f3ff;
+            color: #ccc;
+        }
+        
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            background: #0a0a1a;
+            border: 1px solid #333;
+            border-radius: 30px;
+            padding: 12px 20px;
+            color: white;
+        }
+        
+        /* 代码编辑器区域 */
+        .code-editor {
+            background: #0a0a1a;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #0d0d1a;
+            border-bottom: 1px solid #333;
+        }
+        
+        .code-area {
+            width: 100%;
+            min-height: 250px;
+            background: #0a0a1a;
+            border: none;
+            padding: 15px;
+            color: #00f3ff;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+        
+        .review-result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #0a0a1a;
+            border-radius: 12px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        .issue-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #ff4444;
+            background: rgba(255,68,68,0.1);
+        }
+        
+        .suggestion-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #44ff44;
+            background: rgba(68,255,68,0.05);
+        }
+        
+        /* Tab切换 */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+        
+        .tab {
+            padding: 8px 20px;
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            border-radius: 20px;
+        }
+        
+        .tab.active {
+            background: rgba(0,243,255,0.15);
+            color: #00f3ff;
+        }
+        
+        .download-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #00f3ff;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 1024px) {
+            .dual-track { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div id="three-canvas"></div>
+    
+    <div class="settings-container">
+        <div style="margin-bottom: 20px;">
+            <button class="btn-secondary" onclick="location.href='../index_root.html'">← 返回门户</button>
+        </div>
+        
+        <h1 style="background: linear-gradient(135deg,#00f3ff,#7b2ff7); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom: 30px;">⚙️ Agent 配置中心</h1>
+        
+        <div class="dual-track">
+            <!-- 轨道一：可视化配置 -->
+            <div class="track-card track-visual">
+                <div class="track-header">
+                    <div class="track-title">
+                        <span>🎨</span> 可视化配置
+                        <span style="font-size:12px; background:#00f3ff20; padding:2px 8px; border-radius:20px;">零代码</span>
+                    </div>
+                    <p style="color:#aaa; font-size:12px; margin-top:8px;">填写表单，快速创建Agent服务</p>
+                </div>
+                <div class="track-body">
+                    <div class="form-group">
+                        <label class="form-label">Agent ID</label>
+                        <input type="text" id="agent-id" class="form-input" placeholder="例如: my_code_assistant">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Agent名称</label>
+                        <input type="text" id="agent-name" class="form-input" placeholder="例如: 代码审查助手">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">服务端点</label>
+                        <input type="text" id="agent-endpoint" class="form-input" placeholder="http://localhost:8080">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">能力标签</label>
+                        <select id="agent-capabilities" class="form-select" multiple size="3">
+                            <option value="chat">💬 对话聊天</option>
+                            <option value="code_review">🔍 代码审查</option>
+                            <option value="code_generation">⚡ 代码生成</option>
+                            <option value="translation">🌐 翻译</option>
+                            <option value="analysis">📊 数据分析</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="registerAgent()">✅ 注册Agent</button>
+                    
+                    <div class="agent-list" id="agent-list">
+                        <div style="color:#888; text-align:center; padding:20px;">加载中...</div>
+                    </div>
+                    
+                    <a href="/agent_starter_template.zip" class="download-link">📦 下载 Agent Starter 模板</a>
+                </div>
+            </div>
+            
+            <!-- 轨道二：自然语言AI助手 -->
+            <div class="track-card track-ai">
+                <div class="track-header">
+                    <div class="track-title">
+                        <span>🤖</span> AI 配置助手
+                        <span style="font-size:12px; background:#44ff4420; padding:2px 8px; border-radius:20px;">自然语言</span>
+                    </div>
+                    <p style="color:#aaa; font-size:12px; margin-top:8px;">用中文描述需求，AI帮你生成配置</p>
+                </div>
+                <div class="track-body">
+                    <div class="chat-area" id="chat-area">
+                        <div class="chat-message chat-ai">
+                            <div class="chat-bubble">👋 你好！我是ClawsJoy配置助手。告诉我你想创建什么样的Agent？<br><br>例如：<br>• "帮我创建一个代码审查助手"<br>• "我需要一个能翻译多国语言的Agent"<br>• "创建一个数据分析Agent，可以分析CSV文件"</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" class="chat-input" placeholder="用自然语言描述你的需求..." onkeypress="if(event.key==='Enter') sendChat()">
+                        <button class="btn-primary" onclick="sendChat()">发送</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 轨道三：代码助手 + 审核 -->
+            <div class="track-card track-code">
+                <div class="track-header">
+                    <div class="track-title">
+                        <span>💻</span> 代码助手
+                        <span style="font-size:12px; background:#ffaa4420; padding:2px 8px; border-radius:20px;">AI审核</span>
+                    </div>
+                    <p style="color:#aaa; font-size:12px; margin-top:8px;">编写/粘贴代码，AI辅助审查和优化</p>
+                </div>
+                <div class="track-body">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchCodeTab('write')">✏️ 编写</button>
+                        <button class="tab" onclick="switchCodeTab('review')">🔍 审核</button>
+                        <button class="tab" onclick="switchCodeTab('optimize')">⚡ 优化</button>
+                    </div>
+                    
+                    <div class="code-editor">
+                        <div class="code-header">
+                            <span id="code-lang">Python</span>
+                            <select id="code-language" class="form-select" style="width:100px; padding:4px;" onchange="document.getElementById('code-lang').innerText=this.value">
+                                <option value="Python">Python</option>
+                                <option value="JavaScript">JavaScript</option>
+                                <option value="Java">Java</option>
+                                <option value="Go">Go</option>
+                                <option value="Rust">Rust</option>
+                            </select>
+                        </div>
+                        <textarea id="code-input" class="code-area" placeholder='# 在这里粘贴或编写代码
+
+def hello():
+    print("Hello, ClawsJoy!")'></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn-primary" onclick="runCodeReview()">🔍 代码审核</button>
+                        <button class="btn-secondary" onclick="generateCode()">✨ AI生成</button>
+                        <button class="btn-secondary" onclick="explainCode()">📖 解释代码</button>
+                    </div>
+                    
+                    <div id="review-result" class="review-result" style="display:none;">
+                        <!-- 审核结果将显示在这里 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 3D背景暂时禁用 -->
+    <script>
+        const API_BASE = 'http://localhost:5002';
+        
+        // ========== 可视化配置 ==========
+        async function loadAgents() {
+            try {
+                const res = await fetch(`${API_BASE}/api/local/agents`);
+                const data = await res.json();
+                const agents = data.agents || {};
+                const container = document.getElementById('agent-list');
+                
+                if (Object.keys(agents).length === 0) {
+                    container.innerHTML = '<div style="color:#888; text-align:center; padding:20px;">暂无Agent，点击上方注册</div>';
+                } else {
+                    container.innerHTML = Object.entries(agents).map(([id, agent]) => `
+                        <div class="agent-item">
+                            <div>
+                                <div class="agent-name">${agent.name || id}</div>
+                                <div class="agent-endpoint">${agent.endpoint || '未配置'}</div>
+                            </div>
+                            <div>
+                                <span class="agent-status ${agent.enabled ? 'status-active' : 'status-inactive'}">
+                                    ${agent.enabled ? '● 运行中' : '○ 已禁用'}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) {
+                document.getElementById('agent-list').innerHTML = '<div style="color:#888; text-align:center; padding:20px;">加载失败</div>';
+            }
+        }
+        
+        async function registerAgent() {
+            const id = document.getElementById('agent-id').value;
+            const name = document.getElementById('agent-name').value;
+            const endpoint = document.getElementById('agent-endpoint').value;
+            const capabilities = Array.from(document.getElementById('agent-capabilities').selectedOptions).map(opt => opt.value);
+            
+            if (!id || !endpoint) {
+                alert('请填写 Agent ID 和服务端点');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/local/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agent_id: id,
+                        config: { name: name || id, endpoint, enabled: true, capabilities }
+                    })
+                });
+                
+                if (res.ok) {
+                    alert(`✅ Agent "${name || id}" 注册成功！`);
+                    loadAgents();
+                    document.getElementById('agent-id').value = '';
+                    document.getElementById('agent-name').value = '';
+                    document.getElementById('agent-endpoint').value = '';
+                } else {
+                    alert('注册失败');
+                }
+            } catch(e) {
+                alert('网络错误');
+            }
+        }
+        
+        // ========== AI 助手 (模拟) ==========
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const chatArea = document.getElementById('chat-area');
+            
+            // 添加用户消息
+            chatArea.innerHTML += `
+                <div class="chat-message chat-user">
+                    <div class="chat-bubble">${escapeHtml(message)}</div>
+                </div>
+            `;
+            input.value = '';
+            
+            // 模拟AI响应
+            setTimeout(() => {
+                let response = '';
+                if (message.includes('代码审查') || message.includes('review')) {
+                    response = `我来帮你创建一个代码审查Agent：
+
+**配置建议：**
+- Agent ID: code_reviewer
+- 名称: 代码审查助手
+- 端点: http://localhost:8080
+- 能力: code_review, code_generation
+
+**需要实现的接口：**
+POST /v1/review - 代码审查
+POST /v1/suggest - 代码建议
+
+需要我帮你生成代码模板吗？`;
+                } else if (message.includes('翻译') || message.includes('translate')) {
+                    response = `翻译Agent配置：
+
+- Agent ID: translator
+- 名称: 智能翻译助手
+- 端点: http://localhost:8080
+- 能力: translation
+
+**支持语言：** 中、英、日、韩、法、德
+**API格式：** {"text": "hello", "target": "zh"}`;
+                } else if (message.includes('数据分析') || message.includes('analysis')) {
+                    response = `数据分析Agent配置：
+
+- Agent ID: data_analyst
+- 名称: 数据分析师
+- 端点: http://localhost:8080
+- 能力: analysis, visualization
+
+**支持格式：** CSV, Excel, JSON
+**功能：** 数据清洗、统计分析、图表生成`;
+                } else {
+                    response = `根据你的需求，我建议创建一个通用Agent：
+
+**快速配置：**
+- Agent ID: ${message.toLowerCase().replace(/\s/g, '_').substring(0, 20)}
+- 名称: ${message.substring(0, 30)}
+- 端点: http://localhost:8080
+
+**下一步：**
+1. 下载 Agent Starter 模板
+2. 解压并进入目录
+3. 修改 agent.yaml 配置
+4. 运行 docker-compose up -d
+5. 在这里注册你的Agent
+
+需要我详细说明某个步骤吗？`;
+                }
+                
+                chatArea.innerHTML += `
+                    <div class="chat-message chat-ai">
+                        <div class="chat-bubble">${response.replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }, 500);
+        }
+        
+        // ========== 代码助手 ==========
+        let currentCodeTab = 'write';
+        
+        function switchCodeTab(tab) {
+            currentCodeTab = tab;
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                t.classList.remove('active');
+                if ((tab === 'write' && i === 0) || (tab === 'review' && i === 1) || (tab === 'optimize' && i === 2)) {
+                    t.classList.add('active');
+                }
+            });
+            
+            const resultDiv = document.getElementById('review-result');
+            if (tab === 'write') {
+                resultDiv.style.display = 'none';
+            } else {
+                resultDiv.style.display = 'block';
+                if (tab === 'review') runCodeReview();
+                if (tab === 'optimize') optimizeCode();
+            }
+        }
+        
+        async function runCodeReview() {
+            const code = document.getElementById('code-input').value;
+            const language = document.getElementById('code-language').value;
+            
+            if (!code.trim()) {
+                alert('请先粘贴或编写代码');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('review-result');
+            resultDiv.innerHTML = '<div style="color:#888;">🔍 正在审核代码...</div>';
+            resultDiv.style.display = 'block';
+            
+            // 模拟代码审核（实际可调用后端API）
+            setTimeout(() => {
+                const issues = [];
+                const suggestions = [];
+                
+                if (language === 'Python') {
+                    if (!code.includes('def') && !code.includes('class')) {
+                        issues.push('缺少函数或类定义');
+                        suggestions.push('建议将代码组织成函数或类');
+                    }
+                    if (code.includes('print') && code.includes('debug')) {
+                        suggestions.push('生产环境建议使用logging模块替代print');
+                    }
+                    if (!code.strip().startswith('import') && code.includes('input')) {
+                        suggestions.push('建议添加输入验证');
+                    }
+                    issues.push('未检测到异常处理');
+                    suggestions.push('建议添加 try-except 异常捕获');
+                } else if (language === 'JavaScript') {
+                    if (!code.includes('const') && !code.includes('let')) {
+                        issues.push('使用了var，建议改用const/let');
+                    }
+                    if (code.includes('eval(')) {
+                        issues.push('⚠️ 安全风险: 检测到eval()使用');
+                    }
+                }
+                
+                if (issues.length === 0 && suggestions.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div style="color:#44ff44;">✅ 代码审核通过！</div>
+                        <div style="margin-top:10px;">代码质量良好，无明显问题。</div>
+                        <div style="margin-top:10px; color:#888;">💡 建议：添加更多注释和单元测试</div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div style="color:#ffaa44;">📋 审核结果</div>
+                        ${issues.length > 0 ? `<div style="margin-top:10px;"><strong>⚠️ 问题：</strong>${issues.map(i => `<div class="issue-item">${i}</div>`).join('')}</div>` : ''}
+                        ${suggestions.length > 0 ? `<div style="margin-top:10px;"><strong>💡 建议：</strong>${suggestions.map(s => `<div class="suggestion-item">${s}</div>`).join('')}</div>` : ''}
+                        <div style="margin-top:15px; color:#888;">评分: ${Math.max(60, 100 - issues.length * 15)}/100</div>
+                    `;
+                }
+            }, 800);
+        }
+        
+        function generateCode() {
+            const language = document.getElementById('code-language').value;
+            const resultDiv = document.getElementById('review-result');
+            resultDiv.innerHTML = '<div style="color:#888;">✨ AI正在生成代码...</div>';
+            resultDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                let code = '';
+                if (language === 'Python') {
+                    code = `# AI 生成的 Agent 代码模板
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok"})
+
+@app.route('/v1/chat', methods=['POST'])
+def chat():
+    data = request.json
+    message = data.get('message', '')
+    
+    # TODO: 实现你的业务逻辑
+    response = f"收到消息: {message}"
+    
+    return jsonify({"response": response})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=True)`;
+                } else if (language === 'JavaScript') {
+                    code = `// AI 生成的 Agent 代码模板
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+app.post('/v1/chat', (req, res) => {
+    const { message } = req.body;
+    // TODO: 实现你的业务逻辑
+    res.json({ response: \`收到消息: \${message}\` });
+});
+
+app.listen(8080, () => console.log('Agent running on port 8080'));`;
+                }
+                
+                document.getElementById('code-input').value = code;
+                resultDiv.innerHTML = '<div style="color:#44ff44;">✅ 代码已生成！你可以根据需求修改。</div>';
+            }, 1000);
+        }
+        
+        function explainCode() {
+            const code = document.getElementById('code-input').value;
+            if (!code.trim()) {
+                alert('请先粘贴或编写代码');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('review-result');
+            resultDiv.innerHTML = '<div style="color:#888;">📖 正在分析代码...</div>';
+            resultDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                const language = document.getElementById('code-language').value;
+                const lines = code.split('\n').length;
+                const functions = (code.match(/def /g) || []).length;
+                const classes = (code.match(/class /g) || []).length;
+                
+                resultDiv.innerHTML = `
+                    <div style="color:#00f3ff;">📖 代码分析报告</div>
+                    <div style="margin-top:10px;">
+                        <div>📄 语言: ${language}</div>
+                        <div>📏 行数: ${lines}</div>
+                        <div>🔧 函数数: ${functions}</div>
+                        <div>📦 类数: ${classes}</div>
+                    </div>
+                    <div style="margin-top:10px; color:#888;">
+                        这是一个${functions > 0 ? '函数式' : classes > 0 ? '面向对象' : '脚本风格'}的${language}程序。
+                        ${functions > 0 ? '建议为每个函数添加文档字符串。' : ''}
+                        ${classes > 0 ? '建议使用类型注解增强可读性。' : ''}
+                    </div>
+                `;
+            }, 600);
+        }
+        
+        function optimizeCode() {
+            const code = document.getElementById('code-input').value;
+            if (!code.trim()) {
+                alert('请先粘贴或编写代码');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('review-result');
+            resultDiv.innerHTML = '<div style="color:#888;">⚡ AI正在优化代码...</div>';
+            resultDiv.style.display = 'block';
+            switchCodeTab('optimize');
+            
+            setTimeout(() => {
+                resultDiv.innerHTML = `
+                    <div style="color:#44ff44;">✨ 优化建议</div>
+                    <div style="margin-top:10px;">
+                        <div class="suggestion-item">1. 添加类型注解提高可读性</div>
+                        <div class="suggestion-item">2. 将重复代码抽取为函数</div>
+                        <div class="suggestion-item">3. 添加异常处理增强健壮性</div>
+                        <div class="suggestion-item">4. 使用配置文件管理常量</div>
+                    </div>
+                    <div style="margin-top:10px; color:#888;">💡 需要我生成优化后的代码吗？</div>
+                `;
+            }, 1000);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 初始化
+        loadAgents();
+        
+        // 示例代码
+        document.getElementById('code-input').value = `# 代码审查示例
+def calculate_average(numbers):
+    """计算平均值"""
+    total = 0
+    for n in numbers:
+        total += n
+    return total / len(numbers)
+
+# 测试
+result = calculate_average([1, 2, 3, 4, 5])
+print(f"平均值: {result}")`;
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# 长计划识别配置
+min_message_length: 5
+action_keywords:
+  - "制作"
+  - "创建"
+  - "完成"
+  - "并且"
+  - "同时"
+  - "然后"
+  - "之后"
+  - "接着"
+special_rules:
+  - condition: "视频 in message and 制作 in message"
+    description: "视频制作任务"

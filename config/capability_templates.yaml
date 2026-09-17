@@ -1,0 +1,38 @@
+# Agent 能力描述模板（结构化）
+version: "1.0.0"
+
+templates:
+  code_agent:
+    name: "代码助手"
+    domain: "编程"
+    capabilities:
+      - "编写代码"
+      - "调试代码"
+      - "解释代码"
+    keywords: ["代码", "编程", "函数", "算法"]
+    
+  analysis_agent:
+    name: "数据分析师"
+    domain: "数据分析"
+    capabilities:
+      - "数据分析"
+      - "趋势预测"
+      - "报告生成"
+    keywords: ["分析", "统计", "趋势", "报告"]
+    
+  translate_agent:
+    name: "翻译官"
+    domain: "翻译"
+    capabilities:
+      - "文本翻译"
+      - "语言检测"
+    keywords: ["翻译", "译成", "translate"]
+    
+  memory_agent:
+    name: "记忆管家"
+    domain: "记忆管理"
+    capabilities:
+      - "记住信息"
+      - "回忆信息"
+      - "忘记信息"
+    keywords: ["记住", "忘记", "回忆", "记得"]

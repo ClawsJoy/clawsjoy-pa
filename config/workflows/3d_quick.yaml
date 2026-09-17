@@ -1,0 +1,13 @@
+# 快速 3D 生成工作流 - 一键生成
+name: 3d_quick
+description: 快速3D生成：输入描述 → 输出3D场景
+version: 1.0.0
+
+steps:
+  - name: generate
+    agent: threejs_skill
+    prompt: "生成3D场景: {description} 形状: {shape} 颜色: {color}"
+    output: html_file
+
+output:
+  - html_file

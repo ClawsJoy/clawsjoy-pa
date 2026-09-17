@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>ClawsJoy Terminal</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:monospace;height:100vh;display:flex;flex-direction:column}
+.header{background:#1a1a1a;padding:10px 20px;display:flex;justify-content:space-between;border-bottom:1px solid #2a2a2a}
+.terminal{flex:1;display:flex;flex-direction:column;padding:20px}
+.output{flex:1;background:#0a0a0a;border-radius:8px;padding:12px;overflow-y:auto;font-size:13px;margin-bottom:12px}
+.input-line{display:flex;gap:10px;background:#1a1a1a;padding:10px;border-radius:8px}
+.prompt{color:#00d4ff}
+.input-line input{flex:1;background:transparent;border:none;color:#e0e0e0;outline:none;font-family:monospace}
+.input-line button{background:#2a2a2a;border:none;padding:6px 12px;border-radius:6px;cursor:pointer}
+.quick-cmds{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.quick-cmds button{background:#1a1a1a;border:1px solid #2a2a2a;padding:6px 12px;border-radius:6px;cursor:pointer}
+.quick-cmds button:hover{background:#2a2a2a}
+</style>
+</head>
+<body>
+<div class="header"><span>🦞 ClawsJoy Terminal</span><span>🧠 AI Ready</span></div>
+<div class="terminal">
+<div class="output" id="output">ClawsJoy Terminal Ready.<br>Type command → Enter, ↑↓ history, Tab complete<br>-----------------------------------</div>
+<div class="input-line"><span class="prompt">$</span><input type="text" id="cmdInput" autofocus><button onclick="execute()">Run</button></div>
+<div class="quick-cmds"><button onclick="run('pm2 list')">pm2 list</button><button onclick="run('ls -la')">ls</button><button onclick="run('curl localhost:5002/api/health')">health</button><button onclick="clearOutput()">Clear</button></div>
+</div>
+<script>
+const API='http://localhost:5002'; let history=[], idx=0;
+function addOutput(t,c){let d=document.getElementById('output');let l=document.createElement('div');l.style.color=c||'#e0e0e0';l.innerText=t;d.appendChild(l);l.scrollIntoView()}
+async function execute(){let inp=document.getElementById('cmdInput');let cmd=inp.value.trim();if(!cmd)return;addOutput(`$ ${cmd}`,'#00d4ff');if(cmd!==history[history.length-1])history.push(cmd);idx=history.length;inp.value='';try{let res=await fetch(`${API}/api/terminal/execute`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})});let data=await res.json();if(data.stdout)addOutput(data.stdout);if(data.stderr)addOutput(data.stderr,'#ff8888')}catch(e){addOutput(`Error: ${e.message}`,'#ff8888')}}
+function run(c){document.getElementById('cmdInput').value=c;execute()}
+function clearOutput(){document.getElementById('output').innerHTML='';addOutput('Cleared.')}
+document.getElementById('cmdInput').addEventListener('keydown',(e)=>{if(e.key==='Enter')execute();else if(e.key==='ArrowUp'){e.preventDefault();if(idx>0){idx--;document.getElementById('cmdInput').value=history[idx]}}else if(e.key==='ArrowDown'){e.preventDefault();if(idx<history.length-1){idx++;document.getElementById('cmdInput').value=history[idx]}else if(idx===history.length-1){idx=history.length;document.getElementById('cmdInput').value=''}}})
+</script>
+</body>
+</html>

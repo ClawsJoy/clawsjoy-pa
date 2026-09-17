@@ -1,0 +1,22 @@
+actions:
+- analyze_video
+- summarize_video
+- transcribe_video
+- generate_script
+capabilities:
+- description: 分析视频内容
+  name: analyze_video
+- description: 生成视频摘要
+  name: summarize_video
+- description: 视频转文字
+  name: transcribe_video
+- description: 生成视频脚本
+  name: generate_script
+description: 视频处理与分析专家
+examples:
+- input: 分析视频 product_intro.mp4
+  output: 视频分析报告
+- input: 生成脚本 AI 介绍视频
+  output: 视频脚本内容...
+name: video_agent
+type: agent

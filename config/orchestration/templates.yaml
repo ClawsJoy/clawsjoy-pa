@@ -1,0 +1,116 @@
+templates:
+  # 视频制作模板
+  video_production:
+    name: "视频制作"
+    description: "制作视频，支持并行处理"
+    triggers: ["制作视频", "剪辑视频", "视频编辑", "制作", "帮我制作", "做一个"]
+    parallel: true
+    rollback: true
+    tasks:
+      - name: "analyze_requirement"
+        agent: "analysis_agent"
+        message: "分析需求: {user_input}"
+        depends_on: []
+        rollback: "clear_cache"
+      - name: "analyze_video"
+        agent: "video_agent"
+        message: "分析视频 {video_file}"
+        depends_on: ["analyze_requirement"]
+        rollback: "delete_temp"
+      - name: "generate_script"
+        agent: "writer_agent"
+        message: "根据需求写脚本: {user_input}"
+        depends_on: ["analyze_requirement"]
+        optional: true
+        rollback: "delete_draft"
+
+  # 图像生成模板
+  image_generation:
+    name: "图像生成"
+    triggers: ["生成图片", "画图", "创建图像", "生成", "画一张"]
+    parallel: false
+    rollback: true
+    tasks:
+      - name: "analyze_prompt"
+        agent: "analysis_agent"
+        message: "分析需求: {user_input}"
+        depends_on: []
+      - name: "generate_image"
+        agent: "vision_agent"
+        message: "{user_input}"
+        depends_on: ["analyze_prompt"]
+        rollback: "delete_image"
+      - name: "enhance_image"
+        agent: "vision_agent"
+        message: "优化图片质量"
+        depends_on: ["generate_image"]
+        optional: true
+
+  # 数据分析模板
+  data_analysis:
+    name: "数据分析"
+    triggers: ["分析数据", "数据趋势", "统计分析", "分析", "数据报表"]
+    parallel: true
+    rollback: true
+    tasks:
+      - name: "collect_data"
+        agent: "analysis_agent"
+        message: "收集相关数据"
+        depends_on: []
+      - name: "analyze_trend"
+        agent: "analysis_agent"
+        message: "分析趋势: {user_input}"
+        depends_on: ["collect_data"]
+      - name: "analyze_pattern"
+        agent: "analysis_agent"
+        message: "识别模式: {user_input}"
+        depends_on: ["collect_data"]
+      - name: "generate_report"
+        agent: "writer_agent"
+        message: "生成分析报告"
+        depends_on: ["analyze_trend", "analyze_pattern"]
+        rollback: "delete_report"
+
+  # 代码生成模板（新增）
+  code_generation:
+    name: "代码生成"
+    triggers: ["写代码", "生成代码", "编程", "写一个", "写个函数"]
+    parallel: false
+    tasks:
+      - name: "analyze_code"
+        agent: "analysis_agent"
+        message: "分析代码需求: {user_input}"
+        depends_on: []
+      - name: "generate_code"
+        agent: "code_agent"
+        message: "{user_input}"
+        depends_on: ["analyze_code"]
+      - name: "review_code"
+        agent: "analysis_agent"
+        message: "审查生成的代码质量"
+        depends_on: ["generate_code"]
+        optional: true
+
+  # PPT/演示文稿模板（新增）
+  presentation:
+    name: "PPT制作"
+    triggers: ["制作PPT", "做演示文稿", "幻灯片", "PPT"]
+    parallel: true
+    tasks:
+      - name: "analyze_topic"
+        agent: "analysis_agent"
+        message: "分析主题: {user_input}"
+        depends_on: []
+      - name: "generate_outline"
+        agent: "writer_agent"
+        message: "生成PPT大纲"
+        depends_on: ["analyze_topic"]
+      - name: "write_content"
+        agent: "writer_agent"
+        message: "撰写每页内容"
+        depends_on: ["generate_outline"]
+      - name: "design_slides"
+        agent: "vision_agent"
+        message: "设计幻灯片样式"
+        depends_on: ["write_content"]
+        optional: true

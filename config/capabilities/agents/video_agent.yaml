@@ -1,0 +1,12 @@
+name: video_agent
+description: 视频处理与分析专家
+capabilities:
+  - name: analyze_video
+    description: 分析视频内容
+  - name: summarize_video
+    description: 生成视频摘要
+  - name: generate_script
+    description: 生成视频脚本
+examples:
+  - input: "分析视频 product_intro.mp4"
+    output: "视频分析报告"

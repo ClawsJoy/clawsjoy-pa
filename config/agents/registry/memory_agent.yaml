@@ -1,0 +1,15 @@
+capable_of:
+- 记忆
+- 短期记忆
+- 对话记忆
+- 刚才说的
+- 之前说过
+class: MemoryAgent
+description: memory_agent 智能体
+enabled: true
+name: memory_agent
+priority: 20
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

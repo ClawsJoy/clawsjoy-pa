@@ -1,0 +1,31 @@
+version: "3.0"
+services:
+  gateway:
+    port: 5002
+    host: 0.0.0.0
+  file_service:
+    port: 5003
+  multi_agent:
+    port: 5006
+  doc_generator:
+    port: 5008
+  agent_api:
+    port: 5010
+
+paths:
+  root: .
+  data: ./data
+  skills: ./skills
+  output: ./output
+  logs: ./logs
+
+llm:
+  provider: ollama
+  endpoint: http://127.0.0.1:11434
+  default_model: qwen2.5:7b-instruct-q4_0-gpu
+
+# Ollama 配置
+ollama:
+  host: 127.0.0.1
+  port: 11434
+  url: "http://127.0.0.1:11434"

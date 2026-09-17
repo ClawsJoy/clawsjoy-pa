@@ -1,0 +1,15 @@
+name: robotics_agent
+type: agent
+description: 机器人认知引擎 - 执行物理世界任务（拿取、巡逻、整理等）
+actions:
+  - fetch
+  - grasp
+  - 拿
+  - 取
+  - 帮我拿
+  - 巡逻
+  - 整理
+  - 收拾
+  - robotics
+entry: robotics_agent.RoboticsAgent
+module_path: /home/flybo/clawsjoy_robotics

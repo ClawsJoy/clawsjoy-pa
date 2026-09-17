@@ -1,0 +1,48 @@
+# v5.0 主动服务配置
+version: "1.0.0"
+
+# 主动问候
+greeting:
+  enabled: true
+  morning:
+    enabled: true
+    hour: 9
+    message: "早安！新的一天开始了~"
+  afternoon:
+    enabled: true
+    hour: 14
+    message: "下午好！工作愉快~"
+  evening:
+    enabled: true
+    hour: 20
+    message: "晚上好！今天过得怎么样？"
+
+# 空闲提醒
+idle:
+  enabled: true
+  threshold_seconds: 1800  # 30分钟
+  message: "您已经有一段时间没有互动了，需要帮助吗？"
+
+# 待办提醒
+todo:
+  enabled: true
+  check_interval: 300  # 5分钟
+  message: "您还有 {count} 个待办事项未完成"
+
+# 习惯养成
+habit:
+  enabled: true
+  patterns:
+    - name: "学习时间"
+      hour: 20
+      message: "到了学习时间了，加油！"
+    - name: "运动时间"
+      hour: 18
+      message: "该运动了，保持健康！"
+
+# 智能推荐
+recommendation:
+  enabled: true
+  based_on:
+    - preferences
+    - history

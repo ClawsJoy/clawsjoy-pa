@@ -1,0 +1,14 @@
+capable_of:
+- gpu渲染
+- 安全渲染
+- 显卡渲染
+- cuda渲染
+class: GpuSafeSkillAgent
+description: gpu_safe_skill 智能体
+enabled: true
+name: gpu_safe_skill
+priority: 25
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

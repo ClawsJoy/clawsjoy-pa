@@ -1,0 +1,35 @@
+# 技能参数模板配置
+
+ai-image-gen:
+  description: "AI图像生成"
+  required_params:
+    - name: "subject"
+      question: "请问您想要生成什么？"
+      examples: ["漫剧人物", "风景", "猫咪"]
+    - name: "age"
+      question: "请问年龄范围？"
+      options: ["青年(20-30)", "中年(40-50)", "老年(60以上)"]
+      default: "中年"
+    - name: "expression"
+      question: "请问表情是？"
+      options: ["坚毅", "温和", "开心", "严肃"]
+      default: "坚毅"
+    - name: "style"
+      question: "请问风格？"
+      options: ["写实", "卡通", "水墨", "油画"]
+      default: "写实"
+  
+  optional_params:
+    - name: "width"
+      default: 512
+    - name: "height"
+      default: 768
+
+scheduler:
+  description: "任务调度"
+  required_params:
+    - name: "task_name"
+      question: "请问任务名称是什么？"
+    - name: "time"
+      question: "请问执行时间？"
+      examples: ["明天早上9点", "每天下午3点"]

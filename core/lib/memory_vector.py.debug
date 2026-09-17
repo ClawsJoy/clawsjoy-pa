@@ -1,0 +1,99 @@
+from lib.unified_config import unified_config
+"""向量记忆 - 使用 ChromaDB 语义搜索（配置驱动版）"""
+import os
+import hashlib
+import chromadb
+from pathlib import Path
+from datetime import datetime
+from chromadb.config import Settings
+from lib.memory_optimization_config import memory_opt_config
+
+
+class VectorMemory:
+    def __init__(self, persist_dir=None, collection_name="memory_vectors"):
+        if persist_dir is None:
+            from lib.path_manager import path_manager
+            persist_dir = str(path_manager.get("data.vector_kb"))
+        self.persist_dir = Path(persist_dir)
+        self.persist_dir.mkdir(parents=True, exist_ok=True)
+
+        self.client = chromadb.PersistentClient(
+            path=str(self.persist_dir),
+            settings=Settings(anonymized_telemetry=False)
+        )
+
+        self.collection = self.client.get_or_create_collection(
+            name=collection_name,
+            metadata={"hnsw:space": "cosine"}
+        )
+
+        print(f"✅ 向量记忆初始化成功，集合大小: {self.collection.count()}")
+
+    def add(self, text: str, category: str = "general", metadata: dict = None):
+        doc_id = hashlib.md5(f"{text}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+        meta = metadata or {}
+        meta["category"] = category
+        meta["timestamp"] = datetime.now().isoformat()
+        
+        # 配置驱动：存储 ID 到 metadata
+        if memory_opt_config.get('id_management.store_in_metadata', True):
+            id_field = memory_opt_config.get('id_management.id_field_name', 'doc_id')
+            meta[id_field] = doc_id
+
+        self.collection.add(
+            ids=[doc_id],
+            documents=[text],
+            metadatas=[meta]
+        )
+        return doc_id
+
+    def search(self, query: str, category: str = None, n: int = 5):
+        where = {"category": category} if category else None
+        results = self.collection.query(
+            query_texts=[query],
+            n_results=n,
+            where=where
+        )
+
+        documents = results.get('documents', [[]])[0]
+        distances = results.get('distances', [[]])[0]
+        metadatas = results.get('metadatas', [[]])[0]
+        ids = results.get('ids', [[]])[0]
+
+        output = []
+        return_id = memory_opt_config.get('id_management.return_id_in_search', True)
+        id_field = memory_opt_config.get('id_management.id_field_name', 'doc_id')
+
+        for i, doc in enumerate(documents):
+            similarity = 1 - distances[i] if distances else 0
+            item = {
+                "text": doc,
+                "similarity": similarity,
+                "metadata": metadatas[i] if metadatas else {}
+            }
+            if return_id:
+                # 优先从 metadata 获取，否则用 ChromaDB 的 ID
+                if metadatas and metadatas[i] and id_field in metadatas[i]:
+                    item["id"] = metadatas[i][id_field]
+                else:
+                    item["id"] = ids[i]
+            output.append(item)
+        return output
+
+    def get_stats(self):
+        return {"total_vectors": self.collection.count(), "initialized": True}
+
+    def list_all(self, limit=50):
+        results = self.collection.get(limit=limit)
+        items = []
+        for doc, meta in zip(results.get('documents', []), results.get('metadatas', [])):
+            items.append({"text": doc, "metadata": meta})
+        return items
+
+
+vector_memory = VectorMemory()
+
+__version__ = "2.0.0"
+__version_date__ = "2026-05-19"
+__version_author__ = "ClawsJoy"
+__changelog__ = "配置驱动化，添加 ID 存储和返回，支持去重"

@@ -1,0 +1,89 @@
+# 统一关键词配置
+
+version: "2.0.0"
+
+# 意图关键词
+intents:
+  greeting:
+    keywords: ["你好", "您好", "hi", "hello", "在吗"]
+    priority: 10
+    
+  name_set:
+    keywords: ["我叫", "名字叫", "称为", "我是"]
+    priority: 15
+    extractors: ["name"]
+    
+  name_query:
+    keywords: ["我叫什么名字", "我的名字", "我名字"]
+    priority: 20
+    
+  preference_set:
+    keywords: ["我喜欢", "我爱", "热爱"]
+    priority: 15
+    extractors: ["preference"]
+    
+  preference_query:
+    keywords: ["我喜欢什么", "我的喜好", "我爱好"]
+    priority: 20
+    
+  code:
+    keywords: ["写代码", "编程", "函数", "算法", "代码"]
+    priority: 30
+    
+  weather:
+    keywords: ["天气", "温度", "预报", "气象"]
+    priority: 25
+    extractors: ["city"]
+
+# 技能关键词
+skills:
+  code:
+    keywords: ["写代码", "编程", "代码", "python", "java"]
+    category: "code"
+    
+  calculator:
+    keywords: ["计算", "加", "减", "乘", "除", "数学"]
+    category: "math"
+    
+  weather:
+    keywords: ["天气", "气温", "预报", "下雨", "晴天"]
+    category: "weather"
+    
+  translate:
+    keywords: ["翻译", "语言", "英文", "中文", "日语"]
+    category: "translate"
+    
+  video:
+    keywords: ["视频", "制作视频", "剪辑", "ffmpeg"]
+    category: "video"
+    
+  image:
+    keywords: ["图片", "图像", "生成图片", "ai绘画"]
+    category: "image"
+    
+  audio:
+    keywords: ["音频", "语音", "tts", "朗读"]
+    category: "audio"
+
+# 实体提取器
+extractors:
+  name:
+    patterns:
+      - "叫([\\u4e00-\\u9fa5]{2,4})"
+      - "名字[叫是]([\\u4e00-\\u9fa5]{2,4})"
+      
+  preference:
+    patterns:
+      - "喜欢([\\u4e00-\\u9fa5]{2,10})"
+      - "爱([\\u4e00-\\u9fa5]{2,10})"
+      
+  city:
+    list: ["北京", "上海", "广州", "深圳", "杭州", "成都"]
+
+# Agent 映射
+agent_mapping:
+  code: "code_agent"
+  weather: "chat_agent"
+  translate: "translate_agent"
+  video: "video_agent"
+  image: "image_agent"

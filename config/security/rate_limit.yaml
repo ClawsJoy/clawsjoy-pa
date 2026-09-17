@@ -1,0 +1,61 @@
+# 全局限流配置 - 所有模块统一管理
+version: "1.0.0"
+
+enabled: true
+
+# 默认限流
+default:
+  max_requests: 20
+  time_window: 1
+  queue_size: 100
+
+# 各模块独立配置
+modules:
+  # 游客聊天
+  chat_agent:
+    max_requests: 15
+    time_window: 1
+    queue_size: 50
+    priority: 3
+  
+  # 私人管家（注册用户）
+  personal_butler:
+    max_requests: 10
+    time_window: 1
+    queue_size: 100
+    priority: 2
+  
+  # 任务编排
+  task_orchestrator:
+    max_requests: 5
+    time_window: 1
+    queue_size: 20
+    priority: 4
+  
+  # 技能执行
+  skill_executor:
+    max_requests: 10
+    time_window: 1
+    queue_size: 50
+    priority: 3
+  
+  # Agent 通信
+  agent_communication:
+    max_requests: 20
+    time_window: 1
+    queue_size: 100
+    priority: 2
+  
+  # LLM 调用
+  llm_generate:
+    max_requests: 5
+    time_window: 1
+    queue_size: 30
+    priority: 5
+  
+  # 系统任务
+  system_task:
+    max_requests: 10
+    time_window: 1
+    queue_size: 50
+    priority: 1

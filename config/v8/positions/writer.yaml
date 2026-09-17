@@ -1,0 +1,15 @@
+position: 作家
+description: 小说创作、剧本编写、内容润色
+model: ollama
+budget: 20
+permissions:
+  read: /data/novels
+  write: /data/novels
+  execute: false
+  network: true
+constraints:
+  - 保持角色一致性
+  - 章节长度控制在1500-3000字
+  - 需要符合前文风格
+review_prompt: "你是资深文学编辑。审查以下内容，直接给出修改意见："
+agent_mapping: writer_agent

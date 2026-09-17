@@ -1,0 +1,58 @@
+# 规划引擎配置
+
+version: "1.0.0"
+
+engine:
+  name: planning
+  enabled: true
+  max_parallel: 5  # 最大并行任务数
+
+# 任务模板
+templates:
+  code:
+    description: "代码生成任务"
+    subtasks:
+      - name: "需求分析"
+        agent: "analysis_agent"
+      - name: "代码设计"
+        agent: "code_agent"
+      - name: "代码生成"
+        agent: "code_agent"
+      - name: "代码审查"
+        agent: "code_agent"
+        
+  analysis:
+    description: "数据分析任务"
+    subtasks:
+      - name: "数据收集"
+        agent: "collector_agent"
+      - name: "数据分析"
+        agent: "analysis_agent"
+      - name: "报告生成"
+        agent: "analyst_agent"
+        
+  writing:
+    description: "写作任务"
+    subtasks:
+      - name: "主题确定"
+        agent: "writer_agent"
+      - name: "内容规划"
+        agent: "writer_agent"
+      - name: "内容创作"
+        agent: "writer_agent"
+        
+  weather:
+    description: "天气查询任务"
+    subtasks:
+      - name: "城市识别"
+        agent: "chat_agent"
+      - name: "天气查询"
+        agent: "weather_agent"
+      - name: "结果整理"
+        agent: "chat_agent"
+
+# 执行配置
+execution:
+  timeout: 30  # 任务超时(秒)
+  retry_count: 3
+  fallback_agent: "chat_agent"

@@ -1,0 +1,53 @@
+name: memory_query
+type: atomic
+version: 2.0.0
+description: 记忆查询和添加技能，添加时自动去重
+category: memory
+author: ClawsJoy
+compatible_with:
+  - openclaw
+  - clawsjoy
+
+input_schema:
+  action:
+    type: string
+    enum: [query, add, add_batch, stats]
+    default: query
+    description: 操作类型
+  query:
+    type: string
+    description: 搜索关键词
+  category:
+    type: string
+    default: general
+    description: 记忆类别
+  n:
+    type: integer
+    default: 10
+    description: 返回数量
+  text:
+    type: string
+    description: 要添加的记忆内容
+
+output_schema:
+  success:
+    type: boolean
+  status:
+    type: string
+    enum: [added, duplicate]
+
+execution:
+  runtime: python3
+  entry: skills/memory/memory_query.py
+
+examples:
+  - input:
+      action: add
+      text: "ClawsJoy 是一个智能系统"
+      category: knowledge
+    description: 添加记忆（自动去重）
+  - input:
+      action: query
+      query: "ClawsJoy"
+      n: 5
+    description: 搜索记忆

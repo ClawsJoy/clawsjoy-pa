@@ -1,0 +1,17 @@
+capable_of:
+- 协作
+- 合作
+- 一起
+- 协同
+- 团队
+- 分配任务
+- 多人
+class: CollaborationAgent
+description: collaboration_agent 智能体
+enabled: true
+name: collaboration_agent
+priority: 25
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

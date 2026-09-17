@@ -1,0 +1,15 @@
+capable_of:
+- 收集
+- 采集
+- 抓取
+- 爬虫
+- 数据收集
+class: CollectorAgentAgent
+description: collector_agent 智能体
+enabled: true
+name: collector_agent
+priority: 15
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

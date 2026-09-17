@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>市场API测试 - ClawsJoy</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 20px; background: #1a1a2e; color: #eee; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        h2 { color: #00d4ff; margin-top: 0; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .product-item { background: #0f3460; border-radius: 8px; padding: 15px; cursor: pointer; transition: transform 0.2s; }
+        .product-item:hover { transform: translateY(-2px); background: #1a4a7a; }
+        .product-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .product-type { font-size: 12px; color: #00d4ff; margin-bottom: 10px; }
+        .product-desc { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+        .btn { background: #00d4ff; color: #1a1a2e; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+        .btn-install { background: #4caf50; }
+        .btn-uninstall { background: #f44336; }
+        .status { margin-top: 10px; font-size: 12px; }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        pre { background: #0a0a1a; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+        .installed-list { margin-top: 10px; }
+        .installed-item { background: #0f3460; border-radius: 6px; padding: 8px 12px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛒 ClawsJoy 市场API测试</h1>
+        
+        <div class="card">
+            <h2>📦 产品列表</h2>
+            <div id="products" class="product-grid">加载中...</div>
+        </div>
+        
+        <div class="card">
+            <h2>✅ 已安装</h2>
+            <div id="installed">加载中...</div>
+        </div>
+        
+        <div class="card">
+            <h2>📡 API响应</h2>
+            <pre id="api-response">等待操作...</pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5002';
+        let currentUser = 'test_user';
+        
+        async function callAPI(url, options = {}) {
+            try {
+                const response = await fetch(API_BASE + url, {
+                    headers: { 'Content-Type': 'application/json' },
+                    ...options
+                });
+                const data = await response.json();
+                document.getElementById('api-response').innerHTML = JSON.stringify(data, null, 2);
+                return data;
+            } catch (error) {
+                document.getElementById('api-response').innerHTML = `错误: ${error.message}`;
+                return null;
+            }
+        }
+        
+        async function loadProducts() {
+            const data = await callAPI('/api/marketplace/list');
+            if (data && data.products) {
+                const container = document.getElementById('products');
+                container.innerHTML = data.products.map(p => `
+                    <div class="product-item">
+                        <div class="product-name">${p.name || p.id}</div>
+                        <div class="product-type">${p.type || 'agent'}</div>
+                        <div class="product-desc">${(p.description || '').substring(0, 50)}</div>
+                        <button class="btn btn-install" onclick="installProduct('${p.id}')">安装</button>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        async function loadInstalled() {
+            const data = await callAPI(`/api/marketplace/installed?user_id=${currentUser}`);
+            if (data && data.agents) {
+                const container = document.getElementById('installed');
+                if (data.agents.length === 0) {
+                    container.innerHTML = '<p>暂无已安装的Agent</p>';
+                } else {
+                    container.innerHTML = `
+                        <div class="installed-list">
+                            ${data.agents.map(a => `
+                                <div class="installed-item">
+                                    <span>${a.name || a.id}</span>
+                                    <button class="btn btn-uninstall" onclick="uninstallProduct('${a.id}')">卸载</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        async function installProduct(productId) {
+            const data = await callAPI('/api/marketplace/install', {
+                method: 'POST',
+                body: JSON.stringify({ user_id: currentUser, product_id: productId })
+            });
+            if (data && data.success) {
+                alert(`安装成功: ${productId}`);
+                loadInstalled();
+            } else {
+                alert(`安装失败: ${data?.error || '未知错误'}`);
+            }
+        }
+        
+        async function uninstallProduct(agentId) {
+            const data = await callAPI('/api/marketplace/uninstall', {
+                method: 'POST',
+                body: JSON.stringify({ user_id: currentUser, agent_id: agentId })
+            });
+            if (data && data.success) {
+                alert(`卸载成功: ${agentId}`);
+                loadInstalled();
+            } else {
+                alert(`卸载失败: ${data?.error || '未知错误'}`);
+            }
+        }
+        
+        // 初始化
+        loadProducts();
+        loadInstalled();
+    </script>
+</body>
+</html>

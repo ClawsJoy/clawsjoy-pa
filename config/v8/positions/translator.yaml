@@ -1,0 +1,12 @@
+position: 翻译员
+description: 多语言翻译、本地化
+model: ollama
+budget: 3
+permissions:
+  read: /shared
+  write: /exports
+  execute: false
+  network: true
+constraints:
+  - 专业术语需人工确认
+agent_mapping: translate_agent

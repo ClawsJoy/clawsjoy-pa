@@ -1,0 +1,30 @@
+capable_of:
+- 计算
+- 加法
+- 减法
+- 乘法
+- 除法
+- sin
+- cos
+- tan
+- sqrt
+- 平方根
+- log
+- ln
+- 单位转换
+- cm to m
+- kg to g
+- 帮我算
+- 算一下
+- 求值
+- 运算
+- 等于多少
+class: CalculatorAgent
+description: 数学大师 - 高级数学计算
+enabled: true
+name: calculator_agent
+priority: 30
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

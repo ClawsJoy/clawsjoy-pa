@@ -1,0 +1,18 @@
+name: collaboration_agent
+description: 多Agent协作专家，协调多个Agent完成任务
+capabilities:
+  - name: delegate_task
+    description: 委托任务给指定Agent
+  - name: orchestrate
+    description: 编排多个Agent顺序执行
+  - name: parallel_execute
+    description: 并行执行多个任务
+  - name: assign_task
+    description: 分配任务给团队成员
+  - name: schedule_meeting
+    description: 安排会议
+examples:
+  - input: "先用 analysis_agent 分析数据，再用 code_agent 生成报表"
+    output: "analysis_agent 分析完成 → code_agent 生成报表"
+  - input: "委托 code_agent 写一个排序函数"
+    output: "code_agent 执行完成"

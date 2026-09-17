@@ -1,0 +1,116 @@
+# 语音配置
+
+voices:
+  default:
+    name: "默认女声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-XiaoxiaoNeural"
+    gender: "female"
+    style: "gentle"
+    price: "free"
+    
+  xiaoyi:
+    name: "小艺 - 活泼女声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-XiaoyiNeural"
+    gender: "female"
+    style: "cheerful"
+    price: "free"
+    
+  yunxi:
+    name: "云希 - 男声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-YunxiNeural"
+    gender: "male"
+    style: "calm"
+    price: "free"
+    
+  yunjian:
+    name: "云健 - 沉稳男声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-YunjianNeural"
+    gender: "male"
+    style: "professional"
+    price: 2.99
+    
+  xiaochen:
+    name: "晓晨 - 可爱女声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-XiaochenNeural"
+    gender: "female"
+    style: "cute"
+    price: 2.99
+    
+  en_us_female:
+    name: "Jenny - 美式女声"
+    provider: "edge_tts"
+    voice_id: "en-US-JennyNeural"
+    gender: "female"
+    language: "en"
+    price: 3.99
+    
+  en_us_male:
+    name: "Guy - 美式男声"
+    provider: "edge_tts"
+    voice_id: "en-US-GuyNeural"
+    gender: "male"
+    language: "en"
+    price: 3.99
+# 语音配置
+
+voices:
+  default:
+    name: "默认女声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-XiaoxiaoNeural"
+    gender: "female"
+    style: "gentle"
+    price: "free"
+    
+  xiaoyi:
+    name: "小艺 - 活泼女声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-XiaoyiNeural"
+    gender: "female"
+    style: "cheerful"
+    price: "free"
+    
+  yunxi:
+    name: "云希 - 男声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-YunxiNeural"
+    gender: "male"
+    style: "calm"
+    price: "free"
+    
+  yunjian:
+    name: "云健 - 沉稳男声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-YunjianNeural"
+    gender: "male"
+    style: "professional"
+    price: 2.99
+    
+  xiaochen:
+    name: "晓晨 - 可爱女声"
+    provider: "edge_tts"
+    voice_id: "zh-CN-XiaochenNeural"
+    gender: "female"
+    style: "cute"
+    price: 2.99
+    
+  en_us_female:
+    name: "Jenny - 美式女声"
+    provider: "edge_tts"
+    voice_id: "en-US-JennyNeural"
+    gender: "female"
+    language: "en"
+    price: 3.99
+    
+  en_us_male:
+    name: "Guy - 美式男声"
+    provider: "edge_tts"
+    voice_id: "en-US-GuyNeural"
+    gender: "male"
+    language: "en"
+    price: 3.99

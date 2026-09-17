@@ -1,0 +1,26 @@
+# version: 2.0.0 - 光影引擎升级版
+name: image_to_text
+description: 图片转文字工作流 - 识别图片内容生成描述
+version: 2.0.0
+
+steps:
+  - name: analyze_image
+    agent: vision_agent
+    prompt: "分析图片内容: {image_path}"
+    output: description
+  
+  - name: generate_text
+    agent: writer_agent
+    prompt: "根据图片描述生成文案: {description}"
+    output: text
+  
+  - name: translate
+    agent: translate_agent
+    prompt: "翻译文案: {text} 目标语言: {target_lang}"
+    output: translated
+    optional: true
+
+output:
+  - description
+  - text
+  - translated

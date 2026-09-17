@@ -1,0 +1,13 @@
+capable_of:
+- 提醒
+- 定时任务
+- 主动分析
+class: ProactiveAgent
+description: 主动服务智能体 - 会主动提醒、分析、执行任务
+enabled: true
+name: proactive_agent
+priority: 15
+requires_context: false
+type: custom
+version: 1.0.0
+wake_interval: 300

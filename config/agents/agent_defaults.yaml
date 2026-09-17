@@ -1,0 +1,17 @@
+# Agent 默认配置（各 Agent 可覆盖）
+defaults:
+  llm:
+    model: "qwen2.5:7b-instruct-q4_0-gpu"
+    temperature: 0.3
+    timeout: 30
+  retry:
+    max_attempts: 3
+    backoff: 2
+
+agents:
+  code_agent:
+    llm:
+      model: "qwen2.5:7b-instruct-q4_0-gpu
+  decision_agent:
+    llm:
+      temperature: 0.2

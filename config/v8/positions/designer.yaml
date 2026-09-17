@@ -1,0 +1,13 @@
+position: 设计师
+description: 生成图片、Logo、海报
+model: ollama
+budget: 15
+permissions:
+  write: /design
+  read: /shared
+  execute: false
+  network: true
+constraints:
+  - 最终稿需人工确认
+review_prompt: "你是设计审查员。审查设计需求，直接给出意见："
+agent_mapping: vision_agent

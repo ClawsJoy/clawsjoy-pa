@@ -1,0 +1,15 @@
+capable_of:
+- 业务分析
+- 需求分析
+- 市场分析
+- 竞品分析
+- 商业洞察
+class: AnalystAgentAgent
+description: analyst_agent 智能体
+enabled: true
+name: analyst_agent
+priority: 20
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

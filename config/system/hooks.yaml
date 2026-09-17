@@ -1,0 +1,80 @@
+# 钩子配置 v2.0 - 完整版
+version: "2.0.0"
+
+# ========== 数据钩子 ==========
+data:
+  before_save:
+    - name: "redact_sensitive"
+      module: "lib.security_hooks"
+      function: "redact_sensitive"
+      priority: 5
+      enabled: true
+      
+    - name: "encrypt_sensitive"
+      module: "lib.security_hooks"
+      function: "encrypt_sensitive"
+      priority: 10
+      enabled: true
+      
+    - name: "auto_backup"
+      module: "lib.backup_hooks"
+      function: "auto_backup"
+      priority: 100
+      enabled: true
+
+  after_load:
+    - name: "decrypt_sensitive"
+      module: "lib.security_hooks"
+      function: "decrypt_sensitive"
+      priority: 10
+      enabled: true
+      
+    - name: "validate_data"
+      module: "lib.security_hooks"
+      function: "validate_data"
+      priority: 20
+      enabled: true
+
+# ========== 请求钩子 ==========
+request:
+  before_process:
+    - name: "check_proactive_service"
+      module: "lib.learning_hooks"
+      function: "check_proactive_service"
+      priority: 5
+      enabled: true
+
+  after_process:
+    - name: "log_interaction"
+      module: "lib.learning_hooks"
+      function: "log_interaction"
+      priority: 10
+      enabled: true
+      
+    - name: "monitor_performance"
+      module: "lib.learning_hooks"
+      function: "monitor_performance"
+      priority: 20
+      enabled: true
+      
+    - name: "learn_from_interaction"
+      module: "lib.learning_hooks"
+      function: "learn_from_interaction"
+      priority: 30
+      enabled: true
+
+# ========== 安全钩子 ==========
+security:
+  before_encrypt:
+    - name: "prepare_encryption"
+      module: "lib.security_hooks"
+      function: "prepare_encryption"
+      priority: 10
+      enabled: true
+
+  after_decrypt:
+    - name: "cleanup_after_decrypt"
+      module: "lib.security_hooks"
+      function: "cleanup_after_decrypt"
+      priority: 10
+      enabled: true

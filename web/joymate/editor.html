@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能编辑器 - Joy Mate</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a14;
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        /* 科技风导航栏 */
+        .navbar {
+            background: rgba(10, 10, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 15px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .navbar h1 {
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+        
+        .nav-links {
+            float: right;
+            margin-top: 5px;
+        }
+        
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            margin-left: 25px;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #667eea;
+        }
+        
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        /* 两栏布局 */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        /* 卡片样式 */
+        .card {
+            background: rgba(20, 20, 35, 0.8);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card h2 {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #667eea;
+            border-left: 3px solid #667eea;
+            padding-left: 12px;
+        }
+        
+        /* 图片网格 */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .image-card {
+            background: rgba(30, 30, 45, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s, border 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+        }
+        
+        .image-card.selected {
+            border-color: #4caf50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .image-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+        
+        .image-card .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(244, 67, 54, 0.8);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .image-card:hover .delete-btn {
+            opacity: 1;
+        }
+        
+        /* 文案编辑区 */
+        .script-editor {
+            width: 100%;
+            min-height: 150px;
+            background: rgba(10, 10, 20, 0.9);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            color: #fff;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.3s, opacity 0.3s;
+            margin-right: 10px;
+        }
+        
+        .btn:hover {
+            transform: scale(1.02);
+            opacity: 0.9;
+        }
+        
+        .btn-secondary {
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.5);
+        }
+        
+        /* 参数面板 */
+        .param-group {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .param-group label {
+            display: block;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        
+        .param-group select, .param-group input {
+            background: rgba(10, 10, 20, 0.9);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        /* 状态栏 */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 20, 0.95);
+            border-top: 1px solid #333;
+            padding: 10px 30px;
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+        }
+        
+        /* 加载动画 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #aaa;
+        }
+        
+        @media (max-width: 768px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🎬 智能视频编辑器</h1>
+        <div class="nav-links">
+            <a href="/joymate/index.html">💬 对话</a>
+            <a href="/joymate/editor.html">✏️ 编辑器</a>
+            <a href="/joymate/library.html">📁 资料库</a>
+            <a href="/index.html">🏠 首页</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="two-columns">
+            <!-- 左侧：素材编辑区 -->
+            <div>
+                <div class="card">
+                    <h2>🖼️ 素材库</h2>
+                    <div id="imageGrid" class="image-grid">
+                        <div class="loading">加载中...</div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="uploadImage()">📤 上传图片</button>
+                        <button class="btn btn-secondary" onclick="fetchMoreImages()">🔄 更多推荐</button>
+                        <input type="file" id="fileInput" accept="image/*" multiple style="display: none;" onchange="handleFileUpload(this)">
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>✏️ 文案编辑</h2>
+                    <textarea id="scriptEditor" class="script-editor" placeholder="点击「生成文案」或直接编辑..."></textarea>
+                    <div style="margin-top: 15px;">
+                        <button class="btn" onclick="generateScript()">✨ 生成文案</button>
+                        <button class="btn btn-secondary" onclick="saveScript()">💾 保存文案</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧：参数设置 -->
+            <div>
+                <div class="card">
+                    <h2>🎛️ 视频参数</h2>
+                    <div class="param-group">
+                        <label>🏙️ 城市</label>
+                        <select id="city">
+                            <option value="香港">香港</option>
+                            <option value="上海">上海</option>
+                            <option value="北京">北京</option>
+                            <option value="深圳">深圳</option>
+                            <option value="广州">广州</option>
+                            <option value="杭州">杭州</option>
+                            <option value="成都">成都</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>🎨 风格</label>
+                        <select id="style">
+                            <option value="科技">科技</option>
+                            <option value="复古">复古</option>
+                            <option value="温馨">温馨</option>
+                            <option value="大气">大气</option>
+                            <option value="文艺">文艺</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>⏱️ 时长</label>
+                        <select id="duration">
+                            <option value="15">15秒</option>
+                            <option value="30" selected>30秒</option>
+                            <option value="60">60秒</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>🎤 音色</label>
+                        <select id="voice">
+                            <option value="zh-CN-XiaoxiaoNeural">女声 - 晓晓</option>
+                            <option value="zh-CN-YunxiNeural">男声 - 云希</option>
+                            <option value="zh-CN-YunjianNeural">男声 - 云健</option>
+                            <option value="zh-CN-XiaoyiNeural">女声 - 晓伊</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn" onclick="generateVideo()">🎬 生成视频</button>
+                        <button class="btn btn-secondary" onclick="previewVideo()">👁️ 预览</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>📊 生成状态</h2>
+                    <div id="status" style="color: #aaa; font-size: 13px;">
+                        等待操作...
+                    </div>
+                    <div id="videoPreview" style="margin-top: 15px; display: none;">
+                        <video id="videoPlayer" controls style="width: 100%; border-radius: 10px;"></video>
+                        <a id="downloadLink" download style="display: block; text-align: center; margin-top: 10px; color: #667eea;">⬇️ 下载视频</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="status-bar">
+        <span id="connectionStatus">🟢 服务正常</span>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:18095';
+        const PROMO_API = 'http://localhost:18108';
+        let currentImages = [];
+        let selectedImages = [];
+        
+        // 检查服务状态
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/tasks`);
+                if (response.ok) {
+                    document.getElementById('connectionStatus').innerHTML = '🟢 服务正常 | 编辑器已连接';
+                } else {
+                    document.getElementById('connectionStatus').innerHTML = '🟡 服务异常';
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').innerHTML = '🔴 连接失败';
+            }
+        }
+        
+        // 加载素材库
+        async function loadLibrary() {
+            const grid = document.getElementById('imageGrid');
+            grid.innerHTML = '<div class="loading">📁 加载资料库...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/tasks`);
+                if (response.ok) {
+                    const tasks = await response.json();
+                    // 显示示例图片占位（实际应该从用户资料库读取）
+                    grid.innerHTML = `
+                        <div class="image-card" onclick="selectImage(this, 'sample1.jpg')">
+                            <img src="https://picsum.photos/id/1015/300/200" alt="示例图片1">
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteImage(this)">✕</button>
+                        </div>
+                        <div class="image-card" onclick="selectImage(this, 'sample2.jpg')">
+                            <img src="https://picsum.photos/id/104/300/200" alt="示例图片2">
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteImage(this)">✕</button>
+                        </div>
+                        <div class="image-card" onclick="selectImage(this, 'sample3.jpg')">
+                            <img src="https://picsum.photos/id/106/300/200" alt="示例图片3">
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteImage(this)">✕</button>
+                        </div>
+                        <div class="image-card" onclick="selectImage(this, 'sample4.jpg')">
+                            <img src="https://picsum.photos/id/107/300/200" alt="示例图片4">
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteImage(this)">✕</button>
+                        </div>
+                    `;
+                } else {
+                    grid.innerHTML = '<div class="loading">❌ 加载失败，请检查服务</div>';
+                }
+            } catch (error) {
+                grid.innerHTML = `<div class="loading">❌ 连接失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 选中图片
+        function selectImage(card, imageUrl) {
+            if (card.classList.contains('selected')) {
+                card.classList.remove('selected');
+                selectedImages = selectedImages.filter(url => url !== imageUrl);
+            } else {
+                card.classList.add('selected');
+                selectedImages.push(imageUrl);
+            }
+            console.log('已选中', selectedImages.length, '张图片');
+        }
+        
+        // 删除图片
+        function deleteImage(btn) {
+            const card = btn.parentElement;
+            card.remove();
+        }
+        
+        // 上传图片
+        function uploadImage() {
+            document.getElementById('fileInput').click();
+        }
+        
+        async function handleFileUpload(input) {
+            const files = input.files;
+            const grid = document.getElementById('imageGrid');
+            
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const newCard = document.createElement('div');
+                    newCard.className = 'image-card';
+                    newCard.onclick = function() { selectImage(this, e.target.result); };
+                    newCard.innerHTML = `
+                        <img src="${e.target.result}" alt="上传图片">
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteImage(this)">✕</button>
+                    `;
+                    grid.appendChild(newCard);
+                };
+                reader.readAsDataURL(file);
+            }
+            input.value = '';
+        }
+        
+        // 生成文案
+        async function generateScript() {
+            const city = document.getElementById('city').value;
+            const style = document.getElementById('style').value;
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.innerHTML = '📝 正在生成文案...';
+            
+            try {
+                const response = await fetch('http://localhost:18106/api/agent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: `为${city}写一段${style}风格的宣传片文案，30秒` })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('scriptEditor').value = data.message || '生成失败，请重试';
+                    statusDiv.innerHTML = '✅ 文案生成成功';
+                } else {
+                    statusDiv.innerHTML = '❌ 文案生成失败';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `❌ 错误: ${error.message}`;
+            }
+        }
+        
+        // 保存文案
+        function saveScript() {
+            const script = document.getElementById('scriptEditor').value;
+            localStorage.setItem('saved_script', script);
+            document.getElementById('status').innerHTML = '💾 文案已保存到本地';
+            setTimeout(() => {
+                document.getElementById('status').innerHTML = '等待操作...';
+            }, 2000);
+        }
+        
+        // 生成视频
+        async function generateVideo() {
+            const city = document.getElementById('city').value;
+            const style = document.getElementById('style').value;
+            const duration = document.getElementById('duration').value;
+            const script = document.getElementById('scriptEditor').value;
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.innerHTML = '🎬 正在生成视频，请稍候...';
+            
+            try {
+                const response = await fetch(`${PROMO_API}/api/promo/make`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        city: city,
+                        style: style,
+                        tenant_id: '1',
+                        duration: parseInt(duration)
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = '✅ 视频生成成功！';
+                    if (data.video_url) {
+                        const videoDiv = document.getElementById('videoPreview');
+                        const videoPlayer = document.getElementById('videoPlayer');
+                        const downloadLink = document.getElementById('downloadLink');
+                        
+                        videoPlayer.src = data.video_url;
+                        downloadLink.href = data.video_url;
+                        videoDiv.style.display = 'block';
+                    }
+                } else {
+                    statusDiv.innerHTML = '❌ 视频生成失败';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `❌ 错误: ${error.message}`;
+            }
+        }
+        
+        // 预览
+        function previewVideo() {
+            const videoDiv = document.getElementById('videoPreview');
+            if (videoDiv.style.display === 'none') {
+                videoDiv.style.display = 'block';
+            }
+        }
+        
+        // 更多图片
+        async function fetchMoreImages() {
+            const city = document.getElementById('city').value;
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '🖼️ 获取更多图片...';
+            
+            // 模拟获取更多图片
+            setTimeout(() => {
+                statusDiv.innerHTML = '✅ 已添加推荐图片';
+            }, 1000);
+        }
+        
+        // 初始化
+        checkStatus();
+        loadLibrary();
+        setInterval(checkStatus, 30000);
+        
+        // 恢复保存的文案
+        const savedScript = localStorage.getItem('saved_script');
+        if (savedScript) {
+            document.getElementById('scriptEditor').value = savedScript;
+        }
+    </script>
+</body>
+</html>
+<script>
+// ==================== IndexedDB 草稿存储 ====================
+const DB_NAME = 'JoyMateDrafts';
+const DB_VERSION = 1;
+let db = null;
+
+// 初始化数据库
+function initDraftDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            db = request.result;
+            console.log('✅ 草稿数据库已连接');
+            resolve(db);
+            loadLastDraft(); // 自动加载上次草稿
+        };
+        
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('drafts')) {
+                db.createObjectStore('drafts', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('images')) {
+                db.createObjectStore('images', { keyPath: 'id' });
+            }
+            console.log('✅ 草稿数据库创建完成');
+        };
+    });
+}
+
+// 保存草稿
+async function saveDraft(type, content) {
+    if (!db) return;
+    const tx = db.transaction(['drafts'], 'readwrite');
+    const store = tx.objectStore('drafts');
+    
+    const draft = {
+        id: `${type}_latest`,
+        type: type,
+        content: content,
+        updatedAt: new Date().toISOString()
+    };
+    
+    return store.put(draft);
+}
+
+// 加载草稿
+async function loadDraft(type) {
+    if (!db) return null;
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(['drafts'], 'readonly');
+        const store = tx.objectStore('drafts');
+        const request = store.get(`${type}_latest`);
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// 加载上次的文案草稿
+async function loadLastDraft() {
+    const draft = await loadDraft('script');
+    if (draft && draft.content) {
+        const scriptArea = document.getElementById('scriptEditor');
+        if (scriptArea && !scriptArea.value) {
+            scriptArea.value = draft.content;
+            console.log('📝 已加载上次保存的文案');
+        }
+    }
+    
+    const paramsDraft = await loadDraft('video_params');
+    if (paramsDraft && paramsDraft.content) {
+        console.log('⚙️ 已加载上次的视频参数');
+        // 恢复参数选择
+        if (paramsDraft.content.city) document.getElementById('city').value = paramsDraft.content.city;
+        if (paramsDraft.content.style) document.getElementById('style').value = paramsDraft.content.style;
+        if (paramsDraft.content.duration) document.getElementById('duration').value = paramsDraft.content.duration;
+        if (paramsDraft.content.voice) document.getElementById('voice').value = paramsDraft.content.voice;
+    }
+}
+
+// 自动保存文案
+let autoSaveTimer = null;
+function autoSaveScript() {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+        const scriptArea = document.getElementById('scriptEditor');
+        if (scriptArea && scriptArea.value) {
+            saveDraft('script', scriptArea.value);
+            showToast('💾 文案已自动保存', false, 1500);
+        }
+    }, 3000);
+}
+
+// 保存视频参数
+function saveVideoParams() {
+    const params = {
+        city: document.getElementById('city')?.value || '香港',
+        style: document.getElementById('style')?.value || '科技',
+        duration: document.getElementById('duration')?.value || '30',
+        voice: document.getElementById('voice')?.value || 'zh-CN-XiaoxiaoNeural'
+    };
+    saveDraft('video_params', params);
+}
+
+// 监听文案变化
+document.addEventListener('DOMContentLoaded', () => {
+    initDraftDB();
+    
+    const scriptArea = document.getElementById('scriptEditor');
+    if (scriptArea) {
+        scriptArea.addEventListener('input', autoSaveScript);
+    }
+    
+    // 监听参数变化
+    const params = ['city', 'style', 'duration', 'voice'];
+    params.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', saveVideoParams);
+    });
+});
+
+// 显示提示
+function showToast(message, isError = false, duration = 3000) {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${isError ? '#f44336' : '#4caf50'};
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        z-index: 10000;
+        animation: fadeInOut 3s ease;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), duration);
+}
+</script>

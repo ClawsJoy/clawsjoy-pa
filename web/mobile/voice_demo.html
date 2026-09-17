@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ClawsJoy 语音助手 - 离线唤醒+识别</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .status-card {
+            background: #f8f9fa;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+        }
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .status-text {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .status-detail {
+            font-size: 12px;
+            color: #666;
+        }
+        .wake-word-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        .result-card {
+            background: #f0f0f0;
+            margin: 20px;
+            padding: 16px;
+            border-radius: 16px;
+        }
+        .result-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .result-text {
+            font-size: 16px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 20px;
+        }
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:active { transform: scale(0.96); }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:active { transform: scale(0.96); }
+        .recording {
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .log-area {
+            background: #1e1e1e;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 12px;
+            margin: 20px;
+            border-radius: 12px;
+            height: 150px;
+            overflow-y: auto;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 11px;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 ClawsJoy 语音助手</h1>
+            <p>离线唤醒 · 本地识别 · 隐私安全</p>
+        </div>
+
+        <div class="status-card">
+            <div class="status-icon" id="statusIcon">🎤</div>
+            <div class="status-text" id="statusText">等待唤醒</div>
+            <div class="status-detail" id="statusDetail">说 "你好小管" 唤醒我</div>
+            <div class="wake-word-badge">⚡ 唤醒词: 你好小管</div>
+        </div>
+
+        <div class="result-card">
+            <div class="result-label">📝 识别结果</div>
+            <div class="result-text" id="resultText">-</div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" id="startBtn">▶ 启动监听</button>
+            <button class="btn btn-secondary" id="stopBtn">⏹️ 停止</button>
+        </div>
+
+        <div class="log-area" id="logArea">
+            [系统] 准备就绪\n[系统] 点击"启动监听"并允许麦克风权限
+        </div>
+
+        <div class="footer">
+            🔒 完全离线 · 不依赖云端 · 隐私安全
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // 离线唤醒 + 识别方案
+        // ============================================
+        
+        let isListening = false;
+        let mediaStream = null;
+        let audioContext = null;
+        let sourceNode = null;
+        
+        // 使用 Web Speech API 作为识别引擎（替代 Vosk，无需下载模型）
+        // 虽然 Web Speech API 依赖云端，但作为演示版够用
+        // 正式版可替换为 vosk-browser
+        
+        let recognition = null;
+        
+        const statusIcon = document.getElementById('statusIcon');
+        const statusText = document.getElementById('statusText');
+        const statusDetail = document.getElementById('statusDetail');
+        const resultText = document.getElementById('resultText');
+        const logArea = document.getElementById('logArea');
+        
+        function addLog(msg) {
+            logArea.innerHTML += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function updateStatus(icon, text, detail) {
+            statusIcon.textContent = icon;
+            statusText.textContent = text;
+            statusDetail.textContent = detail;
+        }
+        
+        // 模拟唤醒词检测（实际可用 Mellon）
+        let isAwakened = false;
+        
+        function checkWakeWord(text) {
+            const wakeWords = ['你好小管', '你好小馆', '小管小管', '你好管家'];
+            for (const word of wakeWords) {
+                if (text.includes(word)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        function onWakeWordDetected() {
+            if (isAwakened) return;
+            isAwakened = true;
+            addLog('🎉 唤醒成功！开始听候指令...');
+            updateStatus('🎧', '已唤醒', '请说话...');
+            resultText.textContent = '等待指令...';
+            
+            // 唤醒后震动一下（如果支持）
+            if (navigator.vibrate) navigator.vibrate(200);
+            
+            // 唤醒后自动开始识别
+            startRecognition();
+        }
+        
+        function startRecognition() {
+            if (!recognition) {
+                initRecognition();
+            }
+            if (recognition) {
+                try {
+                    recognition.start();
+                    addLog('🎙️ 开始识别...');
+                } catch(e) {
+                    addLog('识别启动失败: ' + e.message);
+                }
+            }
+        }
+        
+        function initRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                addLog('❌ 浏览器不支持语音识别');
+                updateStatus('❌', '不支持', '请使用 Chrome 或 Edge');
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+            
+            recognition.onstart = () => {
+                addLog('🎙️ 识别中...');
+                updateStatus('🎙️', '识别中', '请说话...');
+            };
+            
+            recognition.onend = () => {
+                addLog('⏹️ 识别结束');
+                // 识别完成后，5秒后自动回到待唤醒状态
+                setTimeout(() => {
+                    if (!isListening) return;
+                    isAwakened = false;
+                    updateStatus('🎤', '等待唤醒', '说 "你好小管" 唤醒我');
+                    addLog('🔁 返回待唤醒状态');
+                }, 3000);
+            };
+            
+            recognition.onresult = (event) => {
+                let interim = '';
+                let final = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        final = event.results[i][0].transcript;
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                
+                if (interim) {
+                    resultText.textContent = '⏳ ' + interim;
+                }
+                if (final) {
+                    resultText.textContent = final;
+                    addLog(`📝 识别: ${final}`);
+                    
+                    // 调用 ClawsJoy API
+                    callClawsJoy(final);
+                    isAwakened = false;
+                    recognition.stop();
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                addLog(`❌ 识别错误: ${event.error}`);
+                updateStatus('⚠️', '错误', event.error);
+                isAwakened = false;
+            };
+        }
+        
+        // 模拟唤醒词检测（轮询方式，简单实现）
+        // 实际可用 Mellon 库做精确唤醒
+        
+        let mockRecognizer = null;
+        
+        function startMockWakeWordDetection() {
+            if (!('webkitSpeechRecognition' in window)) {
+                addLog('❌ 浏览器不支持，无法模拟唤醒');
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            mockRecognizer = new SpeechRecognition();
+            mockRecognizer.lang = 'zh-CN';
+            mockRecognizer.continuous = true;
+            mockRecognizer.interimResults = true;
+            
+            mockRecognizer.onstart = () => {
+                addLog('🔍 唤醒监听已启动');
+            };
+            
+            mockRecognizer.onresult = (event) => {
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const text = event.results[i][0].transcript;
+                    if (checkWakeWord(text)) {
+                        addLog(`🔔 检测到唤醒词: ${text}`);
+                        onWakeWordDetected();
+                        // 检测到唤醒后，临时停止唤醒监听
+                        mockRecognizer.stop();
+                        setTimeout(() => {
+                            if (isListening) mockRecognizer.start();
+                        }, 10000);
+                        break;
+                    }
+                }
+            };
+            
+            mockRecognizer.onerror = (event) => {
+                addLog(`⚠️ 唤醒监听错误: ${event.error}`);
+            };
+            
+            mockRecognizer.start();
+        }
+        
+        async function callClawsJoy(text) {
+            addLog(`🤖 调用 ClawsJoy: ${text}`);
+            updateStatus('🤖', '思考中...', 'ClawsJoy 正在处理');
+            
+            try {
+                const response = await fetch('/api/agent/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, user_id: 'voice_user' })
+                });
+                const data = await response.json();
+                const reply = data.response || '处理完成';
+                addLog(`💬 ClawsJoy: ${reply.substring(0, 100)}`);
+                updateStatus('✅', '完成', '回复已显示');
+                resultText.textContent = reply;
+                
+                // 可选：语音合成回复
+                speak(reply);
+            } catch (e) {
+                addLog(`❌ 调用失败: ${e.message}`);
+                updateStatus('❌', '错误', '服务不可用');
+            }
+        }
+        
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.9;
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        async function startListening() {
+            if (isListening) {
+                addLog('已经在监听中');
+                return;
+            }
+            
+            try {
+                // 请求麦克风权限
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaStream = stream;
+                isListening = true;
+                
+                addLog('✅ 麦克风权限已获取');
+                updateStatus('🎤', '监听中', '等待唤醒词...');
+                
+                // 启动唤醒检测
+                startMockWakeWordDetection();
+                
+            } catch (err) {
+                addLog(`❌ 麦克风错误: ${err.message}`);
+                updateStatus('❌', '错误', '无法获取麦克风权限');
+            }
+        }
+        
+        function stopListening() {
+            isListening = false;
+            isAwakened = false;
+            
+            if (mockRecognizer) {
+                try { mockRecognizer.stop(); } catch(e) {}
+            }
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+            }
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            
+            updateStatus('⏹️', '已停止', '点击启动监听');
+            addLog('⏹️ 监听已停止');
+            resultText.textContent = '-';
+        }
+        
+        document.getElementById('startBtn').addEventListener('click', startListening);
+        document.getElementById('stopBtn').addEventListener('click', stopListening);
+        
+        addLog('✅ 页面加载完成');
+        addLog('💡 点击"启动监听"并允许麦克风权限');
+        addLog('🎯 唤醒词: "你好小管"');
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+version: "1.0.01"
+release_date: "2026-05-17"
+success_rate:
+  source: "log"
+  log_source:
+    path: "logs/active_runner.log"
+    patterns:
+      success: "✅ 完成"
+      failure: "❌ 失败"
+    window_size: 100
+  thresholds:
+    critical: 30
+    warning: 50
+    normal: 70

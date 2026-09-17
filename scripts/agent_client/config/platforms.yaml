@@ -1,0 +1,4 @@
+# 平台适配配置 — 覆盖/新增内置默认(scripts/agent_client/platforms.py)
+# 加平台: 在此加一段 {login_url, search_url, card_selector, ...} 即可
+# xiaohongshu:
+#   search_url: "https://www.xiaohongshu.com/search_result?keyword={q}"

@@ -1,0 +1,16 @@
+capable_of:
+- 终极记忆
+- 永久知识
+- 知识库
+- 长期存储
+- 永久记忆
+- 长期记忆
+class: UltimateMemoryAgentAgent
+description: ultimate_memory_agent 智能体
+enabled: true
+name: ultimate_memory_agent
+priority: 22
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

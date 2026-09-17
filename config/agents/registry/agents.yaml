@@ -1,0 +1,15 @@
+calculator_agent:
+  class: CalculatorAgent
+  description: 数学大师 - 高级数学计算
+  enabled: true
+  keywords:
+  - 计算
+  - 加法
+  - 减法
+  - 乘法
+  - 除法
+  name: calculator_agent
+  type: custom
+  version: 2.0.0
+  workspace: agents/calculator_agent
+wake_interval: 300

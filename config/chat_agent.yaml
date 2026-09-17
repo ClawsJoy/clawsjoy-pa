@@ -1,0 +1,4 @@
+# ChatAgent 配置
+context_window: 20      # 直接注入 LLM 的原始对话条数
+summary_interval: 100   # 每多少条触发摘要
+llm_fallback: true      # 低置信度时 LLM 兜底

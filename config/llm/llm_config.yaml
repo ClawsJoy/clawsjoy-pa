@@ -1,0 +1,35 @@
+# LLM 多模型配置
+default_provider: ollama
+
+providers:
+  ollama:
+    endpoint: http://127.0.0.1:11434
+    model: qwen2.5:7b-instruct-q4_0-gpu
+    models:
+      - qwen2.5:7b-instruct-q4_0-gpu
+      - qwen2.5:7b-instruct-q4_0-gpu
+      - qwen2.5:7b-instruct-q4_0-gpu
+      - deepseek-coder:6.7b
+      - llama3.2:3b
+      - nomic-embed-text
+  # ⭐ 新增
+  deepseek:
+    endpoint: https://api.deepseek.com
+    model: deepseek-v4-flash
+    api_key: ${DEEPSEEK_API_KEY}
+
+  openai:
+    model: gpt-3.5-turbo
+    api_key: "your-api-key"
+
+# 路由策略
+routing:
+  code: deepseek-coder:6.7b
+  math: qwen2.5:7b-instruct-q4_0-gpu
+  creative: deepseek:deepseek-v4-flash    # ← 改为 DeepSeek
+  simple: qwen2.5:7b-instruct-q4_0-gpu
+  english: llama3.2:3b
+  embedding: nomic-embed-text
+  fallback: qwen2.5:7b-instruct-q4_0-gpu
+# 超时配置
+timeout: 60

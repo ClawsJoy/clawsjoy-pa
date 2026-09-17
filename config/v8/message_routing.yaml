@@ -1,0 +1,23 @@
+# V8 消息路由配置 — 消息分层路由与配额统一管理
+# 供 V8 消息中心（/v8/notifications 等）路由决策使用
+
+core_layer:                 # 核心消息层：实时必达、最多 3 轮处理
+  max_rounds: 3             # 核心消息最大处理轮次，超限自动转摘要层
+  max_chars: 2000           # 核心消息单条最大字符数，超限截断
+
+summary_layer:              # 摘要层：聚合降噪、批量分发
+  max_chars: 500            # 摘要单条最大字符数
+  max_items: 20             # 单次聚合的最大消息条数
+
+broadcast:                  # 广播层：全员通知
+  max_targets: 50           # 单次广播最大目标数
+  priority: "high"          # 广播默认优先级
+
+notification:               # 通知层：与前端角标/已读联动
+  max_retries: 3            # 已读回执最大重试次数
+  rollback_on_fail: true    # 已读失败回滚（前端乐观更新配套）
+  read_batch_max: 200       # 全部已读单次最大行数
+
+fallback:                   # 兜底路由
+  route: "summary"          # 无法分类的消息默认走摘要层
+  max_chars: 500            # 兜底消息单条最大字符数

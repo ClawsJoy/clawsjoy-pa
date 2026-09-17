@@ -1,0 +1,170 @@
+[MASTER]
+# 忽略的目录
+ignore=tools,backups,__pycache__,logs,venv,.venv,env,.env
+
+# 允许加载的扩展
+extension-pkg-whitelist=
+
+[MESSAGES CONTROL]
+# 禁用的检查项
+disable=
+    # 格式问题
+    C0111,  # missing-docstring
+    C0103,  # invalid-name
+    C0301,  # line-too-long
+    C0302,  # too-many-lines
+    C0411,  # wrong-import-order
+    C0412,  # ungrouped-imports
+    C0413,  # wrong-import-position
+    C0415,  # import-outside-toplevel
+    
+    # 设计问题
+    R0902,  # too-many-instance-attributes
+    R0903,  # too-few-public-methods
+    R0904,  # too-many-public-methods
+    R0911,  # too-many-return-statements
+    R0912,  # too-many-branches
+    R0913,  # too-many-arguments
+    R0914,  # too-many-locals
+    R0915,  # too-many-statements
+    R0901,  # too-many-nested-blocks
+    R1705,  # no-else-return
+    
+    # 代码问题
+    W0611,  # unused-import
+    W0612,  # unused-variable
+    W0613,  # unused-argument
+    W0621,  # redefined-outer-name
+    W0622,  # redefined-builtin
+    W0702,  # bare-except
+    W0703,  # broad-except
+    W0718,  # broad-exception-caught
+    W1203,  # logging-fstring-interpolation
+    W1309,  # f-string-without-interpolation
+    W1514,  # unspecified-encoding
+    W1510,  # subprocess-run-check
+    
+    # 导入问题
+    E0401,  # import-error
+    E0611,  # no-name-in-module
+    W0404,  # reimported
+    W0406,  # import-self
+    
+    # 其他
+    E1101,  # no-member
+    E1120,  # no-value-for-parameter
+    E1123,  # unexpected-keyword-arg
+    E1136,  # unsubscriptable-object
+    R0801,  # duplicate-code
+    W0101,  # unreachable
+    W0105,  # pointless-string-statement
+    W0107,  # unnecessary-pass
+    W0123,  # eval-used
+    W0201,  # attribute-defined-outside-init
+    W0212,  # protected-access
+    W0221,  # arguments-differ
+    W0231,  # super-init-not-called
+    W0237,  # arguments-renamed
+
+[REPORTS]
+# 输出格式
+output-format=colorized
+score=yes
+
+# 禁用统计报告
+reports=no
+
+[FORMAT]
+# 最大行长度
+max-line-length=120
+
+# 期望的缩进
+indent-string='    '
+
+[BASIC]
+# 好的变量名
+good-names=i,j,k,v,db,ex,fd,fp,id,_,x,y,z,app,api,db_pool
+
+# 常量命名模式
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+# 变量命名模式
+variable-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# 函数命名模式
+function-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# 方法命名模式
+method-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# 属性命名模式
+attr-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# 参数命名模式
+argument-rgx=[a-z_][a-z0-9_]{0,30}$
+
+[EXCEPTIONS]
+# 覆盖的异常类型
+overgeneral-exceptions=BaseException,Exception
+
+[MISCELLANEOUS]
+# 列出 TODO 和 FIXME
+notes=FIXME,XXX,TODO
+
+[SIMILARITIES]
+# 最小重复行数
+min-similarity-lines=8
+# 忽略注释和文档字符串
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+
+[TYPECHECK]
+# 忽略的类方法
+ignored-classes=optparse.Values,thread._local,_thread._local
+
+# 生成的成员
+generated-members=REQUEST,acl_users,aq_parent
+
+[IMPORTS]
+# 允许通配符导入
+allow-wildcard-with-all=no
+
+# 允许非顶层导入
+allow-any-import-level=no
+
+[CLASSES]
+# 类属性的定义顺序
+defining-attr-methods=__init__,__new__,setUp,__post_init__
+
+# 有效类属性
+valid-classmethod-first-arg=cls
+valid-metaclass-classmethod-first-arg=mcs
+
+[DESIGN]
+# 最大参数数量
+max-args=10
+
+# 最大局部变量
+max-locals=25
+
+# 最大返回语句
+max-returns=10
+
+# 最大分支数
+max-branches=20
+
+# 最大语句数
+max-statements=100
+
+# 最大属性数
+max-attributes=15
+
+# 最大父类数
+max-parents=7
+
+# 最大公共方法数
+max-public-methods=30
+
+# 最大布尔表达式数
+max-bool-expr=10

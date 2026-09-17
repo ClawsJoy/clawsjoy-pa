@@ -1,0 +1,19 @@
+# Agent 基类配置
+version: "1.0"
+
+defaults:
+  llm_model: "qwen2.5:7b-instruct-q4_0-gpu"
+  temperature: 0.7
+  max_history: 50
+
+system_prompt_template: |
+  你是 {name}，{description}。
+  
+  用户偏好: {preferences}
+  
+  请用中文回答，温暖、专业、简洁。
+
+responses:
+  error: "抱歉，处理过程中出现错误，请重试"
+  timeout: "请求超时，请稍后重试"
+  fallback: "收到您的消息，正在处理中..."

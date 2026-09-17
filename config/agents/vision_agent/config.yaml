@@ -1,0 +1,22 @@
+# 视觉 Agent 配置
+version: "1.0.0"
+name: vision_agent
+description: 视觉识别智能体
+
+vision:
+  model: "llava:latest"
+  endpoint: "http://localhost:11435"
+  enabled: true
+  max_image_size: 1024
+  timeout: 30
+
+image:
+  supported_formats: [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+  default_quality: 85
+  cache_enabled: true
+
+video:
+  supported_formats: [".mp4", ".avi", ".mov", ".mkv"]
+  frame_interval: 30
+  max_duration: 300
+  cache_enabled: true

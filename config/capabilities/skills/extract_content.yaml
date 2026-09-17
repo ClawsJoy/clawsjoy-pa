@@ -1,0 +1,10 @@
+actions:
+- extract-content
+capabilities:
+- description: extract-content skill
+  name: extract-content
+description: extract-content skill
+enabled: true
+name: extract-content
+type: skill
+version: 1.0.0

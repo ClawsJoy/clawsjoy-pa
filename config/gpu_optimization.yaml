@@ -1,0 +1,39 @@
+# GPU 优化配置 (6GB 显存)
+
+version: "1.0.0"
+
+# 模型量化配置
+quantization:
+  enabled: true
+  bits: 4  # 4-bit 量化
+  backend: "llama.cpp"
+
+# 内存优化
+memory:
+  gpu_memory_limit: 5.5  # GB, 预留 0.5GB
+  cpu_offload: true
+  batch_size: 4
+
+# 模型优先级 (内存优先)
+models:
+  embedding:
+    name: "nomic-embed-text"
+    gpu_layers: 0  # CPU only
+    
+  code:
+    name: "deepseek-coder:6.7b"
+    quantized: "deepseek-coder:6.7b-q4_0"
+    gpu_layers: 24
+    
+  chat:
+    name: "qwen2.5:7b-instruct-q4_0-gpu
+    quantized: "qwen2.5:7b-instruct-q4_0-gpu-q4_0"
+    gpu_layers: 28
+
+# Ollama 配置
+ollama:
+  num_gpu: 1
+  num_threads: 8
+  f16_kv: true
+  use_mmap: false
+  use_mlock: false

@@ -1,0 +1,20 @@
+# 视频索引器配置
+version: "1.0.0"
+name: video_indexer_agent
+
+video:
+  frame_rate: 30
+  frame_interval: 30
+  max_frames: 100
+  supported_formats:
+    - .mp4
+    - .avi
+    - .mov
+    - .mkv
+  cache_enabled: true
+  cache_dir: "data/cache/video_frames"
+
+indexer:
+  enabled: true
+  batch_size: 10
+  timeout: 60

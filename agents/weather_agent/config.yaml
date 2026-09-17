@@ -1,0 +1,17 @@
+agent:
+  capabilities:
+  - 计算
+  - 数学
+  display_name: null
+  enabled: true
+  keywords:
+  - 计算
+  - 等于
+  - 多少
+  llm:
+    max_tokens: 512
+    model: qwen2.5:7b
+    provider: ollama
+    temperature: 0.1
+  name: calculator_agent
+  type: builtin

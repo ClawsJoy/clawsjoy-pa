@@ -1,0 +1,14 @@
+capable_of:
+- opengl
+- 本地渲染
+- 实时渲染
+- 3d实时
+class: OpenglSkillAgent
+description: opengl_skill 智能体
+enabled: true
+name: opengl_skill
+priority: 20
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

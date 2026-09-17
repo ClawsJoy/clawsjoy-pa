@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClawsJoy · 智能体矩阵</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg: #060b14;
+  --card: #0d1525;
+  --border: #1a2740;
+  --text: #e8edf5;
+  --sub: #6b7d99;
+  --blue: #38bdf8;
+  --green: #4ade80;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --pink: #f472b6;
+  --gold: #fbbf24;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 动态网格背景 */
+.bg-grid {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background-image: 
+    linear-gradient(rgba(56,189,248,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.02) 1px, transparent 1px);
+  background-size: 80px 80px;
+  z-index:0;
+}
+
+/* 主容器 */
+.container { position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:24px; }
+
+/* 顶部：品牌+卖点 */
+.hero {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:28px 36px; margin-bottom:20px;
+  background: linear-gradient(135deg, rgba(13,21,37,0.95), rgba(13,21,37,0.7));
+  backdrop-filter: blur(20px);
+  border:1px solid var(--border); border-radius:24px;
+}
+.brand { display:flex; align-items:center; gap:16px; }
+.brand-icon {
+  width:56px; height:56px;
+  background: linear-gradient(135deg, #38bdf8, #a78bfa);
+  border-radius:16px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px;
+  box-shadow: 0 0 40px rgba(56,189,248,0.25);
+  animation: glow 3s ease-in-out infinite;
+}
+@keyframes glow { 0%,100%{box-shadow:0 0 30px rgba(56,189,248,0.2)} 50%{box-shadow:0 0 60px rgba(167,139,250,0.4)} }
+.brand h1 { font-size:28px; font-weight:800; letter-spacing:-1px; }
+.brand p { font-size:13px; color:var(--sub); margin-top:2px; }
+
+.sell-points { display:flex; gap:20px; }
+.sell-point { text-align:center; padding:12px 20px; }
+.sell-point .num { font-size:32px; font-weight:800; letter-spacing:-1px; }
+.sell-point .label { font-size:11px; color:var(--sub); margin-top:2px; text-transform:uppercase; letter-spacing:1px; }
+
+/* 对比条 */
+.compare-bar {
+  display:grid; grid-template-columns:1fr 2fr 1fr 1fr 1fr;
+  gap:1px; margin-bottom:16px;
+  background:var(--border); border-radius:12px; overflow:hidden;
+  font-size:13px;
+}
+.compare-bar div { padding:12px 16px; background:var(--card); }
+.compare-bar .header { background:rgba(56,189,248,0.08); font-weight:600; color:var(--blue); }
+.compare-bar .ours { background:rgba(74,222,128,0.05); }
+.compare-bar .check { color:var(--green); font-weight:600; }
+.compare-bar .cross { color:var(--sub); }
+
+/* 优势卡片 */
+.advantage-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:20px; }
+.adv-card {
+  background:linear-gradient(135deg, var(--card), rgba(13,21,37,0.5));
+  border:1px solid var(--border); border-radius:18px; padding:28px;
+  transition:all 0.3s; position:relative; overflow:hidden;
+}
+.adv-card:hover { border-color:rgba(56,189,248,0.3); transform:translateY(-2px); }
+.adv-card .adv-icon { font-size:36px; margin-bottom:16px; }
+.adv-card h3 { font-size:18px; font-weight:700; margin-bottom:8px; }
+.adv-card p { font-size:13px; color:var(--sub); line-height:1.6; }
+.adv-card .tag {
+  display:inline-block; padding:4px 12px; border-radius:20px;
+  font-size:11px; font-weight:600; margin-top:12px;
+}
+.tag.local { background:rgba(74,222,128,0.1); color:var(--green); }
+.tag.ai { background:rgba(56,189,248,0.1); color:var(--blue); }
+.tag.privacy { background:rgba(167,139,250,0.1); color:var(--purple); }
+
+/* 硬件检测面板 */
+.hw-panel {
+  display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;
+}
+.hw-card {
+  background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px;
+}
+.hw-card .hw-label { font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.hw-card .hw-value { font-size:20px; font-weight:700; }
+.hw-card .hw-sub { font-size:12px; color:var(--sub); margin-top:4px; }
+
+/* Agent矩阵可视化 */
+.agent-section {
+  display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:20px;
+}
+.agent-card {
+  background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px;
+}
+.agent-card h3 { font-size:14px; color:var(--sub); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; }
+.agent-flow { display:flex; flex-wrap:wrap; gap:6px; }
+.agent-node {
+  padding:6px 14px; border-radius:8px; font-size:12px; font-weight:500;
+  background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.12);
+  transition:all 0.3s;
+}
+.agent-node:hover { background:rgba(56,189,248,0.12); border-color:rgba(56,189,248,0.3); }
+.agent-node.core { border-color:var(--green); color:var(--green); background:rgba(74,222,128,0.06); }
+.agent-node.create { border-color:var(--purple); color:var(--purple); background:rgba(167,139,250,0.06); }
+.agent-node.media { border-color:var(--orange); color:var(--orange); background:rgba(251,146,60,0.06); }
+.agent-node.tool { border-color:var(--blue); color:var(--blue); background:rgba(56,189,248,0.06); }
+
+/* 分类标签 */
+.cat-label { font-size:11px; color:var(--sub); margin:12px 0 6px; font-weight:600; letter-spacing:1px; }
+
+/* 实时状态 */
+.live-bar {
+  display:flex; gap:20px; padding:16px 24px;
+  background:var(--card); border:1px solid var(--border); border-radius:18px;
+  align-items:center; font-size:13px;
+}
+.live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.live-stat { margin-left:auto; display:flex; gap:30px; }
+.live-stat span { color:var(--sub); }
+.live-stat strong { color:var(--text); }
+
+/* 响应式 */
+@media(max-width:1000px) {
+  .advantage-grid,.hw-panel { grid-template-columns:repeat(2, 1fr); }
+  .agent-section { grid-template-columns:1fr; }
+  .hero { flex-direction:column; gap:20px; }
+  .compare-bar { font-size:11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<div class="container">
+
+  <!-- ====== 1. 顶部：一句话说清楚 ====== -->
+  <div class="hero">
+    <div class="brand">
+      <div class="brand-icon">🧠</div>
+      <div>
+        <h1>ClawsJoy 智能体矩阵</h1>
+        <p>23个专业AI Agent · 本地运行 · 隐私安全 · 硬件适配</p>
+      </div>
+    </div>
+    <div class="sell-points">
+      <div class="sell-point"><div class="num" style="color:#4ade80">23</div><div class="label">专业Agent</div></div>
+      <div class="sell-point"><div class="num" style="color:#38bdf8">0</div><div class="label">云端依赖</div></div>
+      <div class="sell-point"><div class="num" style="color:#a78bfa">100%</div><div class="label">本地隐私</div></div>
+      <div class="sell-point"><div class="num" style="color:#fb923c">5</div><div class="label">并发Agent</div></div>
+    </div>
+  </div>
+
+  <!-- ====== 2. 对比竞品：为什么选我们 ====== -->
+  <div class="compare-bar">
+    <div class="header">能力对比</div>
+    <div class="header">ClawsJoy</div>
+    <div class="header">ChatGPT</div>
+    <div class="header">文心一言</div>
+    <div class="header">Copilot</div>
+
+    <div>多Agent协作</div><div class="ours check">✅ 23个专业Agent</div><div class="cross">❌ 单一模型</div><div class="cross">❌ 单一模型</div><div class="cross">❌ 仅代码</div>
+    <div>本地运行</div><div class="ours check">✅ 完全离线</div><div class="cross">❌ 需要云端</div><div class="cross">❌ 需要云端</div><div class="cross">❌ 需要云端</div>
+    <div>数据隐私</div><div class="ours check">✅ 数据不出设备</div><div class="cross">⚠ 上传云端</div><div class="cross">⚠ 上传云端</div><div class="cross">⚠ 上传云端</div>
+    <div>硬件适配</div><div class="ours check">✅ GPU/NPU自动检测</div><div class="cross">❌ 不涉及</div><div class="cross">❌ 不涉及</div><div class="cross">❌ 不涉及</div>
+    <div>离线可用</div><div class="ours check">✅ 无需联网</div><div class="cross">❌ 必须联网</div><div class="cross">❌ 必须联网</div><div class="cross">❌ 必须联网</div>
+    <div>厂商定制</div><div class="ours check">✅ 品牌/UI/模型定制</div><div class="cross">❌ 不可定制</div><div class="cross">❌ 不可定制</div><div class="cross">❌ 不可定制</div>
+  </div>
+
+  <!-- ====== 3. 三大核心优势 ====== -->
+  <div class="advantage-grid">
+    <div class="adv-card">
+      <div class="adv-icon">🔒</div>
+      <h3>数据永不离开设备</h3>
+      <p>全部AI推理在本地完成。用户密码、文件、对话记录永不触网。对标苹果隐私标准，这是硬件最大的卖点。</p>
+      <span class="tag privacy">核心卖点</span>
+    </div>
+    <div class="adv-card">
+      <div class="adv-icon">🤖</div>
+      <h3>23个Agent协同工作</h3>
+      <p>不是单一聊天机器人。代码、写作、翻译、导演、数据分析...23个专业Agent像团队一样协作，一个指令自动调度。</p>
+      <span class="tag ai">独家能力</span>
+    </div>
+    <div class="adv-card">
+      <div class="adv-icon">⚡</div>
+      <h3>硬件即体验</h3>
+      <p>自动检测GPU/NPU，推荐最优模型配置。RTX2060跑7B模型，高端卡跑14B。越好的硬件，越强的AI——让硬件价值被感知。</p>
+      <span class="tag local">硬件增值</span>
+    </div>
+  </div>
+
+  <!-- ====== 4. 硬件检测：让厂商看到适配能力 ====== -->
+  <div class="hw-panel">
+    <div class="hw-card"><div class="hw-label">🖥 CPU</div><div class="hw-value" id="cpu-val">-</div><div class="hw-sub" id="cpu-sub"></div></div>
+    <div class="hw-card"><div class="hw-label">🧠 内存</div><div class="hw-value" id="mem-val">-</div><div class="hw-sub" id="mem-sub"></div></div>
+    <div class="hw-card"><div class="hw-label">🎮 GPU</div><div class="hw-value" id="gpu-val">-</div><div class="hw-sub" id="gpu-sub"></div></div>
+    <div class="hw-card"><div class="hw-label">⚡ 推荐配置</div><div class="hw-value" style="color:#4ade80" id="tier-val">-</div><div class="hw-sub" id="tier-sub"></div></div>
+  </div>
+
+  <!-- ====== 5. Agent矩阵 ====== -->
+  <div class="agent-section">
+    <div class="agent-card">
+      <h3>🤖 Agent矩阵 (23个专业Agent)</h3>
+      <div class="cat-label">🧠 核心智能</div>
+      <div class="agent-flow" id="core-agents"></div>
+      <div class="cat-label">✍️ 创作矩阵</div>
+      <div class="agent-flow" id="create-agents"></div>
+      <div class="cat-label">🎬 媒体引擎</div>
+      <div class="agent-flow" id="media-agents"></div>
+      <div class="cat-label">🔧 工具链</div>
+      <div class="agent-flow" id="tool-agents"></div>
+    </div>
+    <div class="agent-card">
+      <h3>📊 实时指标</h3>
+      <div style="font-size:48px; font-weight:800; letter-spacing:-2px;" id="total-req">0</div>
+      <div style="color:var(--sub); margin-bottom:20px;">总处理请求</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div><div style="font-size:24px; font-weight:700; color:var(--green)" id="success-rate">100%</div><div style="font-size:12px; color:var(--sub)">成功率</div></div>
+        <div><div style="font-size:24px; font-weight:700; color:var(--blue)" id="fast-count">0</div><div style="font-size:12px; color:var(--sub)">快速路由</div></div>
+        <div><div style="font-size:24px; font-weight:700; color:var(--purple)" id="deep-count">0</div><div style="font-size:12px; color:var(--sub)">深度推理</div></div>
+        <div><div style="font-size:24px; font-weight:700; color:var(--orange)" id="llm-calls">0</div><div style="font-size:12px; color:var(--sub)">LLM调用</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 6. 实时状态条 ====== -->
+  <div class="live-bar">
+    <div class="live-dot"></div>
+    <span id="status-text">系统就绪</span>
+    <div class="live-stat">
+      <span>安装: <strong>./install.sh</strong></span>
+      <span>启动: <strong>./start.sh</strong></span>
+      <span>仪表盘: <strong>:5002/dashboard</strong></span>
+      <span>API: <strong>:5002/v5/execute</strong></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = '/api/v5';
+
+async function fetchJSON(url) {
+  try { const r = await fetch(url); return r.json(); } catch(e) { return null; }
+}
+
+// Agent分类
+const AGENT_CATS = {
+  core: ['chat_agent','code_agent','memory_agent','decision_agent','collaboration_agent','orchestrator'],
+  create: ['writer_agent','comic_writer_agent','director_agent','translate_agent','dialect_agent','proactive_agent'],
+  media: ['vision_agent','video_agent','audio_agent','three_d_agent','video_indexer_agent','youtube_agent'],
+  tool: ['calculator_agent','file_agent','executor_agent','butler_agent','analysis_agent'],
+};
+
+function renderAgents() {
+  Object.entries(AGENT_CATS).forEach(([cat, agents]) => {
+    const el = document.getElementById(cat+'-agents');
+    if (!el) return;
+    const cls = cat === 'core' ? 'core' : cat === 'create' ? 'create' : cat === 'media' ? 'media' : 'tool';
+    el.innerHTML = agents.map(a => 
+      `<span class="agent-node ${cls}">${a.replace('_agent','')}</span>`
+    ).join('');
+  });
+}
+
+function updateHardware(data) {
+  const hw = data.hardware || data || {};
+  const rec = hw.recommended || {};
+  const cpu = hw.cpu || {}, mem = hw.memory || {}, gpu = hw.gpu || {};
+
+  document.getElementById('cpu-val').textContent = cpu.model?.split(' ').slice(0,2).join(' ') || 'Unknown';
+  document.getElementById('cpu-sub').textContent = `${cpu.threads||'?'}线程 ${cpu.cores||'?'}核`;
+  document.getElementById('mem-val').textContent = `${mem.total_gb||'?'} GB`;
+  document.getElementById('mem-sub').textContent = `可用 ${mem.available_gb||'?'} GB`;
+
+  const gpuDev = gpu.devices?.[0];
+  document.getElementById('gpu-val').textContent = gpuDev?.name?.split(' ').slice(-2).join(' ') || '未检测到';
+  document.getElementById('gpu-sub').textContent = gpuDev ? `${gpuDev.memory_total_mb||0}MB` : '';
+
+  document.getElementById('tier-val').textContent = (rec.tier||'?').toUpperCase();
+  document.getElementById('tier-sub').textContent = `${rec.max_concurrent_agents||0}并发 · ${rec.offline_capable?'离线可用':'需联网'}`;
+}
+
+function updateMetrics(data) {
+  const s = data.stats || data.startup || {};
+  const total = s.total || 0;
+  const success = s.success || 0;
+  document.getElementById('total-req').textContent = total;
+  document.getElementById('success-rate').textContent = total ? Math.round(success/total*100)+'%' : '100%';
+  document.getElementById('fast-count').textContent = s.fast_path || 0;
+  document.getElementById('deep-count').textContent = s.deep_reasoning || 0;
+}
+
+async function refresh() {
+  const health = await fetchJSON('/health');
+  if (health) {
+    updateHardware(health);
+    document.getElementById('status-text').textContent = health.startup?.ready ? '系统就绪 · 可演示' : '启动中...';
+  }
+  updateMetrics(health || {});
+
+  // LLM统计
+  try {
+    const llm = await fetchJSON(API + '/stats/performance');
+    if (llm?.llm_calls) document.getElementById('llm-calls').textContent = llm.llm_calls;
+  } catch(e) {}
+}
+
+renderAgents();
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

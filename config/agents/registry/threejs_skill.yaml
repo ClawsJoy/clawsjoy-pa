@@ -1,0 +1,17 @@
+capable_of:
+- 3d
+- 三维
+- 立体
+- 立方体
+- 球体
+- 旋转
+- three.js
+class: ThreejsSkillAgent
+description: threejs_skill 智能体
+enabled: true
+name: threejs_skill
+priority: 1
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

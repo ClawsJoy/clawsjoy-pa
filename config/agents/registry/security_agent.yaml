@@ -1,0 +1,16 @@
+capable_of:
+- 安全
+- 权限
+- 认证
+- 加密
+- 防护
+- 漏洞
+class: SecurityAgentAgent
+description: security_agent 智能体
+enabled: true
+name: security_agent
+priority: 25
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

@@ -1,0 +1,33 @@
+capable_of:
+- 写代码
+- 编程
+- 代码
+- python
+- java
+- javascript
+- 函数
+- 算法
+- 开发
+- 写个程序
+- 帮我写
+- 代码能力
+- 3d
+- 三维
+- 立方体
+- 球体
+- 立体
+- 旋转
+- three.js
+- 3D场景
+- threejs
+- 生成.*3D
+- 红色立方体
+class: CodeAgent
+description: code_agent 智能体
+enabled: true
+name: code_agent
+priority: 50
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

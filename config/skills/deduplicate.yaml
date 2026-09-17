@@ -1,0 +1,23 @@
+# 去重技能配置
+version: "1.0.0"
+description: "文本去重处理技能"
+
+skill:
+  name: deduplicate
+  version: 1.0.0
+  category: text
+  description: "去除重复内容"
+
+input:
+  text:
+    type: string
+    required: true
+    description: "需要去重的文本"
+
+output:
+  result:
+    type: string
+    description: "去重后的文本"
+  count:
+    type: integer
+    description: "去重前的数量"

@@ -1,0 +1,16 @@
+name: dialect_agent
+description: 方言理解与转换专家
+capabilities:
+  - name: to_dialect
+    description: 将普通话转换为方言
+  - name: to_standard
+    description: 将方言转换为普通话
+  - name: learn_dialect
+    description: 学习新的方言表达
+  - name: detect_dialect
+    description: 检测文本是否包含方言
+examples:
+  - input: "翻译成上海话：你好"
+    output: "侬好"
+  - input: "学习方言 上海话：阿拉 = 我们"
+    output: "✅ 已学习：阿拉 = 我们"

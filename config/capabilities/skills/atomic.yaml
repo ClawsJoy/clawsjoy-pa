@@ -1,0 +1,10 @@
+actions:
+- atomic
+capabilities:
+- description: atomic skill
+  name: atomic
+description: atomic skill
+enabled: true
+name: atomic
+type: skill
+version: 1.0.0

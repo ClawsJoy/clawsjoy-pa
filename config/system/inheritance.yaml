@@ -1,0 +1,34 @@
+# 传承系统配置 - 配置驱动
+version: "1.0.0"
+
+# 传承开关
+enabled: true
+
+# 配置
+inheritance:
+  # 传承策略
+  strategies:
+    - type: "direct"      # 直接继承
+      weight: 0.8
+    - type: "adaptive"    # 自适应继承
+      weight: 0.6
+    - type: "selective"   # 选择性继承
+      weight: 0.4
+
+  # 经验沉淀
+  sedimentation:
+    min_confidence: 0.6
+    min_usage: 5
+    auto_promote: true
+
+  # 代际传递
+  generation:
+    decay_rate: 0.9
+    max_generations: 10
+
+# 可传承的经验类型
+experience_types:
+  - pattern
+  - rule
+  - strategy
+  - wisdom

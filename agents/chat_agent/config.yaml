@@ -1,0 +1,41 @@
+agent:
+  capabilities:
+  - 日常闲聊
+  - 情感陪伴
+  - 问候应答
+  - 天气查询
+  - 时间查询
+  display_name: 聊天助手
+  enabled: true
+  keywords:
+  - 聊天
+  - 闲聊
+  - 你好
+  - 天气
+  - 时间
+  - 心情
+  llm:
+    max_tokens: 1024
+    model: qwen2.5:7b
+    provider: ollama
+    temperature: 0.8
+  name: chat_agent
+  prompts:
+    fallback: 抱歉，我没太理解。能再说详细点吗？
+    greeting: 你好！我是话匣子，有什么可以帮你的？
+    system: 你是ClawsJoy的聊天助手，名叫话匣子。你友好、热情、善于倾听。
+  role:
+    alias: 话匣子
+    responsibilities:
+    - 日常闲聊
+    - 情感陪伴
+    - 简单问答
+    title: 聊天助手
+  self_upgrading:
+    auto_apply: false
+    enabled: true
+    max_upgrades_per_day: 3
+    min_interactions_before_upgrade: 50
+    success_rate_threshold: 0.7
+  type: builtin
+max_context: 16000

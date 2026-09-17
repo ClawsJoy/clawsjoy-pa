@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ClawsJoy 移动助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .voice-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .wakeword-section {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 15px;
+            margin-top: 10px;
+        }
+
+        .wakeword-input {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .wakeword-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .wakeword-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .preset-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .preset-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .preset-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .listening-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .transcript-area {
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .transcript-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .wake-detected {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>🎤 ClawsJoy 语音助手</h1>
+                <p>智能语音唤醒 | 离线识别</p>
+            </div>
+
+            <!-- 服务状态 -->
+            <div class="voice-status">
+                <span>🎙️ VOSK 状态</span>
+                <span id="voskStatus" class="status-badge status-offline">检测中...</span>
+            </div>
+
+            <!-- 唤醒词设置 -->
+            <div class="wakeword-section">
+                <h3>🔊 唤醒词设置</h3>
+                <div class="wakeword-input">
+                    <input type="text" id="wakeWord" placeholder="输入唤醒词" value="你好助手">
+                    <button class="btn btn-primary" onclick="saveWakeWord()">保存</button>
+                </div>
+                
+                <div class="preset-words">
+                    <button class="preset-btn" onclick="setWakeWord('你好助手')">你好助手</button>
+                    <button class="preset-btn" onclick="setWakeWord('嘿爪爪')">嘿爪爪</button>
+                    <button class="preset-btn" onclick="setWakeWord('ClawsJoy')">ClawsJoy</button>
+                    <button class="preset-btn" onclick="setWakeWord('小爪')">小爪</button>
+                    <button class="preset-btn" onclick="setWakeWord('机器人')">机器人</button>
+                    <button class="preset-btn" onclick="setWakeWord('小爱同学')">小爱同学</button>
+                </div>
+            </div>
+
+            <!-- 控制按钮 -->
+            <div class="button-group">
+                <button id="startBtn" class="btn btn-primary" onclick="startListening()">🎙️ 开始监听</button>
+                <button id="stopBtn" class="btn btn-danger" onclick="stopListening()" disabled>⏹️ 停止监听</button>
+            </div>
+
+            <!-- 状态显示 -->
+            <div id="statusArea" style="margin-top: 15px; text-align: center; padding: 10px; background: #f0f0f0; border-radius: 10px;">
+                <span id="listeningIndicator"></span>
+                <span id="statusText">未开始监听</span>
+            </div>
+
+            <!-- 识别记录 -->
+            <div class="transcript-area">
+                <strong>📝 识别记录</strong>
+                <div id="transcriptLog"></div>
+            </div>
+        </div>
+
+        <!-- 训练唤醒词卡片 -->
+        <div class="card">
+            <h3>🎓 训练自定义唤醒词</h3>
+            <p style="color: #666; font-size: 14px; margin: 10px 0;">训练专属唤醒词，提高识别准确率</p>
+            <button class="btn btn-primary" onclick="location.href='train_wakeword.html'">开始训练 →</button>
+        </div>
+
+        <div class="footer">
+            <p>Powered by VOSK | 离线语音识别</p>
+        </div>
+    </div>
+
+    <script>
+        let recognition = null;
+        let isListening = false;
+        let currentWakeWord = localStorage.getItem('wakeWord') || '你好助手';
+
+        // 初始化
+        document.getElementById('wakeWord').value = currentWakeWord;
+        checkVoskStatus();
+        setInterval(checkVoskStatus, 30000); // 每30秒检查一次
+
+        // 检查VOSK服务状态
+        async function checkVoskStatus() {
+            try {
+                const response = await fetch('/api/vosk/status');
+                const data = await response.json();
+                const statusSpan = document.getElementById('voskStatus');
+                
+                if (data.available && data.model_loaded) {
+                    statusSpan.className = 'status-badge status-online';
+                    statusSpan.innerHTML = '✅ 在线 · 模型已加载';
+                } else {
+                    statusSpan.className = 'status-badge status-offline';
+                    statusSpan.innerHTML = '❌ 离线 · 模型未加载';
+                }
+            } catch (e) {
+                document.getElementById('voskStatus').className = 'status-badge status-offline';
+                document.getElementById('voskStatus').innerHTML = '⚠️ 无法连接服务';
+            }
+        }
+
+        // 保存唤醒词
+        function saveWakeWord() {
+            const word = document.getElementById('wakeWord').value.trim();
+            if (word) {
+                currentWakeWord = word.toLowerCase();
+                localStorage.setItem('wakeWord', word);
+                addLog(`✅ 唤醒词已设置为: "${word}"`);
+                
+                // 如果正在监听，重启以生效
+                if (isListening) {
+                    stopListening();
+                    setTimeout(() => startListening(), 500);
+                }
+            }
+        }
+
+        function setWakeWord(word) {
+            document.getElementById('wakeWord').value = word;
+            saveWakeWord();
+        }
+
+        // 检查浏览器支持
+        function isSpeechRecognitionSupported() {
+            return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+        }
+
+        // 开始监听
+        function startListening() {
+            if (!isSpeechRecognitionSupported()) {
+                alert('当前浏览器不支持语音识别，请使用Chrome或Safari');
+                return;
+            }
+
+            // 检查服务状态后开始
+            fetch('/api/vosk/status').then(res => res.json()).then(data => {
+                if (!data.available) {
+                    addLog('⚠️ VOSK服务未就绪，请检查后端服务', true);
+                    return;
+                }
+                doStartListening();
+            }).catch(() => {
+                addLog('❌ 无法连接语音服务', true);
+            });
+        }
+
+        function doStartListening() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+            
+            recognition.onstart = () => {
+                isListening = true;
+                updateUI(true);
+                addLog('🎤 开始监听唤醒词...');
+            };
+            
+            recognition.onresult = (event) => {
+                let fullTranscript = '';
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        fullTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                const displayText = fullTranscript || interimTranscript;
+                if (displayText) {
+                    addLog(`识别: ${displayText}`, false, displayText.includes(currentWakeWord));
+                }
+                
+                // 检测唤醒词
+                const text = fullTranscript.toLowerCase() || interimTranscript.toLowerCase();
+                if (text.includes(currentWakeWord)) {
+                    onWakeWordDetected(currentWakeWord, fullTranscript);
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                addLog(`❌ 错误: ${event.error}`, true);
+                if (event.error === 'not-allowed') {
+                    addLog('请允许麦克风权限后重试', true);
+                    stopListening();
+                }
+            };
+            
+            recognition.onend = () => {
+                if (isListening) {
+                    // 自动重启
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        addLog('重启监听失败，请手动点击开始', true);
+                        isListening = false;
+                        updateUI(false);
+                    }
+                }
+            };
+            
+            recognition.start();
+        }
+
+        // 唤醒词触发
+        async function onWakeWordDetected(wakeWord, fullText) {
+            addLog(`🎯 检测到唤醒词: "${wakeWord}"！`, true);
+            
+            // 播放提示音（可选）
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                oscillator.connect(gain);
+                gain.connect(audioCtx.destination);
+                oscillator.frequency.value = 880;
+                gain.gain.value = 0.3;
+                oscillator.start();
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } catch(e) {}
+            
+            // 调用后端API进行后续处理
+            try {
+                const response = await fetch('/api/wakeword/trigger', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ wakeWord: wakeWord, text: fullText })
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    addLog(`🤖 助手已唤醒，等待指令...`);
+                }
+            } catch (e) {
+                addLog(`⚠️ 唤醒回调失败: ${e.message}`, true);
+            }
+        }
+
+        // 停止监听
+        function stopListening() {
+            isListening = false;
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch(e) {}
+                recognition = null;
+            }
+            updateUI(false);
+            addLog('⏹️ 已停止监听');
+        }
+
+        function updateUI(listening) {
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const statusText = document.getElementById('statusText');
+            const indicator = document.getElementById('listeningIndicator');
+            
+            if (listening) {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                statusText.innerHTML = `🎧 正在监听 "${currentWakeWord}" ...`;
+                indicator.innerHTML = '<span class="listening-indicator"></span>';
+                document.getElementById('statusArea').style.background = '#d4edda';
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                statusText.innerHTML = '⚪ 未监听';
+                indicator.innerHTML = '';
+                document.getElementById('statusArea').style.background = '#f0f0f0';
+            }
+        }
+
+        function addLog(msg, isImportant = false, isWake = false) {
+            const logDiv = document.getElementById('transcriptLog');
+            const time = new Date().toLocaleTimeString();
+            let className = '';
+            if (isWake) className = 'wake-detected';
+            if (isImportant) className = 'important';
+            
+            logDiv.innerHTML += `<div class="transcript-item ${className}" style="${isImportant ? 'color: #28a745; font-weight: bold;' : ''}">
+                [${time}] ${msg}
+            </div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // 限制日志数量
+            while (logDiv.children.length > 50) {
+                logDiv.removeChild(logDiv.firstChild);
+            }
+        }
+
+        // 页面关闭时释放资源
+        window.addEventListener('beforeunload', () => {
+            if (recognition) {
+                recognition.stop();
+            }
+        });
+    </script>
+</body>
+</html>

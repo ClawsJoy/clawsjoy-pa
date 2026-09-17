@@ -1,0 +1,14 @@
+position: 编排Agent
+description: 任务规划、技术选型讨论、多Agent协作编排
+model: deepseek-v4-flash
+budget: 5
+permissions:
+  read: /shared
+  write: /shared
+  execute: false
+  network: true
+constraints:
+  - 不直接修改代码，只做规划和讨论
+  - 执行计划需用户确认
+review_prompt: "你是编排审查员。审查任务规划的完整性和合理性，直接给出意见："
+agent_mapping: orchestration_agent

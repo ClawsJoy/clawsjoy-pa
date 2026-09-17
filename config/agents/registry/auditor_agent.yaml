@@ -1,0 +1,14 @@
+capable_of:
+- 审计日志
+- 合规检查
+- 安全审计
+- 权限审计
+class: AuditorAgentAgent
+description: auditor_agent 智能体
+enabled: true
+name: auditor_agent
+priority: 15
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

@@ -1,0 +1,18 @@
+capable_of:
+- 图片
+- 图像
+- 识别
+- 看图
+- 描述图片
+- 图片分析
+- OCR
+- 文字识别
+class: VisionAgent
+description: vision_agent 智能体
+enabled: true
+name: vision_agent
+priority: 25
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

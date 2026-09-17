@@ -1,0 +1,109 @@
+# 语义理解引擎配置
+# 用于定义意图识别、实体提取的行为
+
+version: "1.0.0"
+
+engine:
+  name: semantic
+  enabled: true
+  cache_ttl: 300  # 缓存时间(秒)
+
+# 意图配置
+intents:
+  greeting:
+    enabled: true
+    priority: 10
+    keywords: ["你好", "您好", "hi", "hello", "在吗", "嗨"]
+    response_template: "greeting"
+
+  name_set:
+    enabled: true
+    priority: 15
+    keywords: ["我叫", "名字叫", "称为", "我是"]
+    extractors: ["extract_name"]
+    response_template: "remember_name"
+
+  name_query:
+    enabled: true
+    priority: 20
+    keywords: ["我叫什么名字", "我的名字", "我名字", "我叫啥"]
+    response_template: "recall_name"
+
+  preference_set:
+    enabled: true
+    priority: 15
+    keywords: ["我喜欢", "我爱", "热爱", "喜欢打", "喜欢做"]
+    extractors: ["extract_preference"]
+    response_template: "remember_preference"
+
+  preference_query:
+    enabled: true
+    priority: 20
+    keywords: ["我喜欢什么", "我的喜好", "我爱好", "我爱什么"]
+    response_template: "recall_preference"
+
+  capability:
+    enabled: true
+    priority: 10
+    keywords: ["能做什么", "功能", "能力", "可以做什么", "help"]
+    response_template: "capabilities"
+
+  code:
+    enabled: true
+    priority: 30
+    keywords: ["写代码", "编程", "函数", "算法", "代码", "写个"]
+    response_template: "code"
+
+  weather:
+    enabled: true
+    priority: 25
+    keywords: ["天气", "温度", "预报", "气象"]
+    extractors: ["extract_city"]
+    response_template: "weather"
+
+  calculation:
+    enabled: true
+    priority: 25
+    keywords: ["计算", "加", "减", "乘", "除", "等于"]
+    extractors: ["extract_calculation"]
+    response_template: "calculation"
+
+  thanks:
+    enabled: true
+    priority: 10
+    keywords: ["谢谢", "感谢", "多谢", "thanks"]
+    response_template: "thanks"
+
+  farewell:
+    enabled: true
+    priority: 10
+    keywords: ["再见", "拜拜", "bye", "88", "回见"]
+    response_template: "farewell"
+
+  download:
+    enabled: true
+    priority: 25
+    keywords: ["下载视频", "保存视频", "youtube下载", "下载YouTube", "下载"]
+    response_template: "download"
+
+# 实体提取器配置
+extractors:
+  name:
+    patterns:
+      - "叫([\\u4e00-\\u9fa5]{2,4})"
+      - "名字[叫是]([\\u4e00-\\u9fa5]{2,4})"
+      - "是([\\u4e00-\\u9fa5]{2,4})"
+
+  preference:
+    patterns:
+      - "喜欢([\\u4e00-\\u9fa5]{2,10})"
+      - "爱([\\u4e00-\\u9fa5]{2,10})"
+
+  city:
+    cities: ["北京", "上海", "广州", "深圳", "杭州", "成都", "武汉", "西安"]
+
+# 置信度阈值
+thresholds:
+  high_confidence: 0.7   # 高置信度，直接使用
+  medium_confidence: 0.5  # 中等置信度，可能需要确认
+  low_confidence: 0.3     # 低置信度，降级处理

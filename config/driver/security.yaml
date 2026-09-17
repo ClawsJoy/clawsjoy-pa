@@ -1,0 +1,50 @@
+# 安全配置 v2.0
+version: "2.0.0"
+enabled: true
+
+# 输入过滤规则
+patterns:
+  sql_injection:
+    - "('|%27).*?('|%27)"
+    - "(--|%2D%2D)"
+    - "(;|%3B)"
+  xss:
+    - "<script.*?>"
+    - "javascript:"
+    - "onerror="
+    - "onload="
+  dangerous_commands:
+    - "eval\\("
+    - "exec\\("
+    - "system\\("
+
+# 敏感信息检测
+sensitive_patterns:
+  - "password"
+  - "token"
+  - "secret"
+  - "api_key"
+
+# 阻止的内容
+blocked_content:
+  - "rm -rf"
+  - "sudo"
+  - "passwd"
+
+# 安全响应
+safe_responses:
+  sql_injection: "输入包含非法字符"
+  xss: "输入包含不安全内容"
+  default: "内容被安全策略拦截"
+
+# 审计配置
+audit:
+  enabled: true
+  log_file: "logs/security_audit.log"
+  log_level: "INFO"
+
+# 告警配置
+alert:
+  enabled: true
+  threshold: 5
+  webhook: ""

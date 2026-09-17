@@ -1,0 +1,9 @@
+name: dialect_agent
+type: agent
+actions:
+  - dialect
+  - 方言
+  - 方言训练
+  - 方言练习
+  - 讲方言
+description: 方言学习助手 - 支持任意方言的学习、理解和表达

@@ -1,0 +1,12 @@
+# Redis 配置
+redis:
+  enabled: true
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: ""                    # 改为空（无密码）
+  # 会话配置
+  session_ttl: 3600               # 改为1小时
+  max_sessions: 10000
+  # 集群模式（可选）
+  cluster: false

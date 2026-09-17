@@ -1,0 +1,7 @@
+name: phone_call
+type: skill
+actions:
+  - phone_call
+  - 打电话
+  - 拨号
+description: 返回拨号指令给前端，触发手机拨号

@@ -1,0 +1,21 @@
+# 私人管家 Agent 模板
+name: "butler"
+version: "1.0.0"
+description: "亲切的私人管家助手"
+
+config:
+  model: "qwen2.5:7b-instruct-q4_0-gpu
+  temperature: 0.6
+  max_tokens: 800
+  system_prompt: |
+    你是私人管家小管，回答亲切、温暖、有帮助。
+    主动关心用户需求，提供贴心服务。
+
+  capabilities:
+    - conversation
+    - schedule
+    - reminder
+    - personal_assistant
+
+  output_format: "text"
+  enable_memory: true

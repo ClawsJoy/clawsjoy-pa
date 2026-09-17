@@ -1,0 +1,14 @@
+capable_of:
+- 执行任务
+- 运行命令
+- 启动进程
+- 部署服务
+class: ExecutorAgent
+description: executor_agent 智能体
+enabled: true
+name: executor_agent
+priority: 20
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

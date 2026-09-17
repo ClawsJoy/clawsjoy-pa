@@ -1,0 +1,14 @@
+name: proactive_agent
+description: 主动服务专家，提供个性化建议
+capabilities:
+  - name: get_suggestions
+    description: 获取个性化建议
+  - name: set_reminder
+    description: 设置提醒
+  - name: list_reminders
+    description: 列出提醒
+  - name: time_based_advice
+    description: 基于时间的建议
+examples:
+  - input: "有什么建议吗"
+    output: "根据当前时间，建议回顾今天的工作"

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ClawsJoy 环抱座舱 · CODE Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #050510;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Fira Code', monospace;
+        }
+
+        /* 座舱容器 */
+        .cockpit {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            perspective: 1200px;
+            perspective-origin: 50% 35%;
+            overflow: hidden;
+        }
+
+        /* 星空背景 */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #0a0a2a 0%, #030308 100%);
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        @keyframes twinkle { 0%,100% { opacity: 0; } 50% { opacity: 0.8; } }
+
+        /* 穹顶 */
+        .dome {
+            position: absolute;
+            top: 30px;
+            left: 5%;
+            right: 5%;
+            height: 180px;
+            background: radial-gradient(ellipse, rgba(0,243,255,0.06), transparent);
+            border-radius: 50% 50% 0 0;
+            border-top: 2px solid rgba(0,243,255,0.4);
+            transform: rotateX(-5deg) translateZ(30px);
+            pointer-events: none;
+        }
+
+        /* 舱壁 */
+        .wall-left, .wall-right {
+            position: absolute;
+            top: 80px;
+            bottom: 120px;
+            width: 300px;
+            background: linear-gradient(90deg, rgba(0,0,0,0.85), rgba(0,243,255,0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0,243,255,0.2);
+            overflow-y: auto;
+            padding: 20px;
+            z-index: 10;
+        }
+        .wall-left {
+            left: 15px;
+            transform: rotateY(12deg) translateZ(40px);
+            border-radius: 20px 0 0 20px;
+        }
+        .wall-right {
+            right: 15px;
+            transform: rotateY(-12deg) translateZ(40px);
+            border-radius: 0 20px 20px 0;
+        }
+
+        /* 中央巨幕 */
+        .central-screen {
+            position: absolute;
+            top: 80px;
+            left: 330px;
+            right: 330px;
+            bottom: 120px;
+            background: rgba(10,20,40,0.4);
+            backdrop-filter: blur(8px);
+            border-radius: 30px;
+            border: 1px solid rgba(0,243,255,0.3);
+            transform: rotateY(2deg) translateZ(20px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 5;
+        }
+
+        /* 底部操作台 */
+        .console {
+            position: absolute;
+            bottom: 20px;
+            left: 15%;
+            right: 15%;
+            height: 85px;
+            background: linear-gradient(180deg, rgba(0,243,255,0.1), rgba(0,0,0,0.8));
+            border-radius: 30px 30px 20px 20px;
+            border-top: 1px solid rgba(0,243,255,0.5);
+            transform: translateY(15px) translateZ(10px);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 50px;
+            z-index: 15;
+        }
+
+        /* 样式 */
+        .menu-title {
+            color: #00f3ff;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .message {
+            display: flex;
+            max-width: 85%;
+        }
+        .message.user { align-self: flex-end; }
+        .message-content {
+            padding: 10px 16px;
+            border-radius: 18px;
+            background: rgba(0,243,255,0.08);
+            border: 1px solid rgba(0,243,255,0.2);
+            font-size: 13px;
+        }
+        .chat-input-area {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(0,243,255,0.2);
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input {
+            flex: 1;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(0,243,255,0.3);
+            color: #e0e0ff;
+            padding: 12px 16px;
+            border-radius: 25px;
+        }
+        .send-btn, .code-btn {
+            background: transparent;
+            border: 1px solid #00f3ff;
+            color: #00f3ff;
+            padding: 0 20px;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        .code-btn { border-color: #b000ff; color: #b000ff; }
+        .code-preview {
+            background: #0a0a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow: auto;
+        }
+        .soft-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .soft-button .icon { font-size: 28px; filter: drop-shadow(0 0 8px #b000ff); }
+        .soft-button span { font-size: 10px; color: #b000ff; }
+        .status-badge { font-size: 11px; color: #4ade80; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a1a; }
+        ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 3px; }
+    </style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="cockpit">
+    <div class="dome"></div>
+
+    <!-- 左侧舱壁 - CODE Agent -->
+    <div class="wall-left">
+        <div class="menu-title">🤖 CODE Agent</div>
+        <div style="margin-bottom: 15px;">
+            <div style="background: rgba(0,243,255,0.1); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
+                <div style="font-size: 11px; color: #888;">状态</div>
+                <div id="agentStatus" style="color: #4ade80;">● 在线</div>
+            </div>
+            <div style="background: rgba(0,243,255,0.1); border-radius: 12px; padding: 12px;">
+                <div style="font-size: 11px; color: #888;">能力</div>
+                <div style="font-size: 12px;">🎨 生成座舱 | 🔧 修改代码 | 📝 审查 | 🎯 学习</div>
+            </div>
+        </div>
+        <div class="menu-title">📋 最近生成</div>
+        <div id="historyList" style="font-size: 12px;"></div>
+    </div>
+
+    <!-- 右侧舱壁 - 数据面板 -->
+    <div class="wall-right">
+        <div class="menu-title">📊 管家数据</div>
+        <div style="background: rgba(0,0,0,0.5); border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+            <div style="font-size: 11px;">🔒 信任值</div>
+            <div id="trustValue" style="font-size: 28px; color: #00f3ff;">98.5</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.5); border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+            <div style="font-size: 11px;">💚 管家状态</div>
+            <div style="font-size: 16px; color: #4ade80;">🟢 在线</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.5); border-radius: 12px; padding: 15px;">
+            <div style="font-size: 11px;">🎯 CODE Agent 统计</div>
+            <div id="codeStats" style="font-size: 12px;">生成次数: 0</div>
+        </div>
+    </div>
+
+    <!-- 中央巨幕 -->
+    <div class="central-screen">
+        <div style="padding: 15px 20px; border-bottom: 1px solid rgba(0,243,255,0.2);">
+            <h2 style="color: #00f3ff; font-size: 16px;">💬 与 CODE Agent 对话</h2>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message">
+                <div class="message-content">你好！我是 CODE Agent，可以帮你生成 Three.js 座舱、修改代码、审查质量。<br>试试说："帮我写一个环抱座舱"</div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chatInput" placeholder="输入需求...">
+            <button class="send-btn" onclick="sendToCodeAgent()">发送</button>
+        </div>
+        <div id="codePreview" class="code-preview" style="display: none;"></div>
+    </div>
+
+    <!-- 底部操作台 -->
+    <div class="console">
+        <div class="soft-button" onclick="alert('私人管家')">
+            <div class="icon">🤖</div>
+            <span>柔光管家</span>
+        </div>
+        <div class="soft-button" onclick="openGenerated()">
+            <div class="icon">🎨</div>
+            <span>打开生成</span>
+        </div>
+        <div class="soft-button" onclick="showCodePreview()">
+            <div class="icon">📄</div>
+            <span>预览代码</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentCode = '';
+    let conversationHistory = [];
+    
+    // 生成星空
+    function generateStars() {
+        for(let i=0; i<200; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.width = Math.random() * 2 + 1 + 'px';
+            star.style.height = star.style.width;
+            star.style.animationDelay = Math.random() * 3 + 's';
+            document.getElementById('stars').appendChild(star);
+        }
+    }
+    
+    // 与 CODE Agent 对话
+    async function sendToCodeAgent() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (!message) return;
+        
+        addMessage(message, 'user');
+        input.value = '';
+        
+        try {
+            // 检测是否是代码生成请求
+            if (message.includes('座舱') || message.includes('生成') || message.includes('写')) {
+                addMessage('🤖 CODE Agent 正在生成代码...', 'assistant');
+                
+                const response = await fetch('/api/code/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ request: message, user_id: 'john' })
+                });
+                const data = await response.json();
+                
+                if (data.code) {
+                    currentCode = data.code;
+                    addMessage(`✅ 代码已生成！代码长度: ${currentCode.length} 字符`, 'assistant');
+                    document.getElementById('codePreview').style.display = 'block';
+                    document.getElementById('codePreview').innerHTML = `<strong>生成的代码预览:</strong><br>${escapeHtml(currentCode.substring(0, 500))}...`;
+                    
+                    // 更新统计
+                    let stats = JSON.parse(localStorage.getItem('codeStats') || '{"count":0}');
+                    stats.count++;
+                    localStorage.setItem('codeStats', JSON.stringify(stats));
+                    updateStats();
+                    addToHistory(message);
+                }
+            } else if (message.includes('修改') || message.includes('改')) {
+                addMessage('🤖 CODE Agent 正在修改代码...', 'assistant');
+                
+                const response = await fetch('/api/code/modify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ instruction: message })
+                });
+                const data = await response.json();
+                
+                if (data.code) {
+                    currentCode = data.code;
+                    addMessage(`✅ 代码已修改: ${message}`, 'assistant');
+                }
+            } else {
+                addMessage('💡 试试说："帮我写一个 Three.js 环抱座舱"', 'assistant');
+            }
+        } catch (error) {
+            addMessage('❌ 连接失败: ' + error.message, 'assistant');
+        }
+    }
+    
+    function addMessage(text, role) {
+        const container = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        div.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function openGenerated() {
+        if (currentCode) {
+            const blob = new Blob([currentCode], {type: 'text/html'});
+            const url = URL.createObjectURL(blob);
+            window.open(url);
+        } else {
+            alert('没有生成的代码，请先让 CODE Agent 生成');
+        }
+    }
+    
+    function showCodePreview() {
+        const preview = document.getElementById('codePreview');
+        if (currentCode) {
+            preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
+        } else {
+            alert('没有生成的代码');
+        }
+    }
+    
+    function addToHistory(request) {
+        let history = JSON.parse(localStorage.getItem('codeHistory') || '[]');
+        history.unshift({ request: request.substring(0, 50), time: new Date().toLocaleTimeString() });
+        history = history.slice(0, 10);
+        localStorage.setItem('codeHistory', JSON.stringify(history));
+        renderHistory();
+    }
+    
+    function renderHistory() {
+        const history = JSON.parse(localStorage.getItem('codeHistory') || '[]');
+        const container = document.getElementById('historyList');
+        if (history.length === 0) {
+            container.innerHTML = '<div style="color: #666;">暂无历史</div>';
+        } else {
+            container.innerHTML = history.map(h => `<div style="font-size: 11px; padding: 5px 0; border-bottom: 1px solid rgba(0,243,255,0.1);">📄 ${h.request}<br><span style="color: #666;">${h.time}</span></div>`).join('');
+        }
+    }
+    
+    function updateStats() {
+        const stats = JSON.parse(localStorage.getItem('codeStats') || '{"count":0}');
+        document.getElementById('codeStats').innerHTML = `生成次数: ${stats.count}`;
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // 动态数据
+    function updateTrustValue() {
+        const trust = (95 + Math.random() * 4).toFixed(1);
+        document.getElementById('trustValue').innerHTML = trust;
+    }
+    
+    generateStars();
+    renderHistory();
+    updateStats();
+    updateTrustValue();
+    setInterval(updateTrustValue, 8000);
+    
+    document.getElementById('chatInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendToCodeAgent();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+# 事件驱动任务配置 - 替代定时任务
+
+conditions:
+  # 记忆增长触发学习
+  memory_growth:
+    check: "memory_size > 10MB"
+    event: "memory.large"
+    action: "learning_loop"
+    
+  # 错误率触发自愈
+  high_error_rate:
+    check: "error_rate > 0.1"
+    event: "error.high"
+    action: "auto_evolve"
+    
+  # 技能使用高峰触发采集
+  skill_burst:
+    check: "skill_usage > 500"
+    event: "skill.burst"
+    action: "collector"
+
+thresholds:
+  # 话题数量阈值
+  topics_count:
+    get: "count_hot_topics"
+    threshold: 1000
+    operator: ">"
+    event: "topics.full"
+    action: "cleanup_topics"
+
+# 事件监听映射
+listeners:
+  memory.large:
+    - "python3 scripts/learning_loop.py"
+  error.high:
+    - "bash scripts/auto_evolve.sh"
+  skill.burst:
+    - "bash scripts/collector_scheduler.sh"
+  topics.full:
+    - "python3 scripts/cleanup_hot_topics.py"

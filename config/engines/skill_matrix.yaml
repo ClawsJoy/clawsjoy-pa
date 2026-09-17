@@ -1,0 +1,40 @@
+# 技能矩阵引擎配置
+
+version: "1.0.0"
+
+engine:
+  name: skill_matrix
+  enabled: true
+  auto_discovery: true   # 自动发现技能
+  hot_reload: true       # 热重载
+
+# 技能扫描路径
+scan_paths:
+  - skills/
+  - marketplace/skills/
+  - core/agents/builtin/
+
+# 技能分类
+categories:
+  source: config/skills/skill_categories.yaml
+  
+# 关键词映射
+keywords:
+  source: config/skill_keywords_mapping.json
+  
+# 技能执行配置
+execution:
+  timeout: 30
+  sandbox_enabled: false  # 是否启用沙箱
+  max_concurrent: 10
+  
+# 安全配置
+security:
+  default_grade: "A"
+  require_audit_for: ["C", "D"]  # 需要审计的等级
+  
+# OpenClaw 兼容
+openclaw:
+  enabled: true
+  version: "1.0.0"
+  sync_endpoint: "https://openclaw.community/api/skills"

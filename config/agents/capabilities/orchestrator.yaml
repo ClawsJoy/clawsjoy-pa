@@ -1,0 +1,22 @@
+actions:
+- identify_task
+- route_task
+- decompose_task
+- aggregate_results
+capabilities:
+- description: 识别任务类型（代码/对话/分析/翻译/计算）
+  name: identify_task
+- description: 路由任务到合适的Agent
+  name: route_task
+- description: 分解复杂任务
+  name: decompose_task
+- description: 聚合多个Agent的结果
+  name: aggregate_results
+description: 任务编排专家，识别任务类型并路由到合适的Agent
+examples:
+- input: 写一个排序函数
+  output: 路由到 code_agent
+- input: 翻译 hello 为中文
+  output: 路由到 translate_agent
+name: orchestrator
+type: agent

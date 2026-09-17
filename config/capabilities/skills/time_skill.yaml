@@ -1,0 +1,8 @@
+actions:
+- time
+- 时间
+description: time 技能
+enabled: true
+name: time_skill
+type: skill
+version: 1.0.0

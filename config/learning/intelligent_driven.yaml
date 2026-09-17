@@ -1,0 +1,49 @@
+# 智能驱动配置 v3.0
+version: "3.0.0"
+
+# 向量化配置
+vectorization:
+  enabled: true
+  embedding_model: nomic-embed-text
+  provider: ollama
+  dimension: 768
+
+# 相似度优化
+similarity:
+  min_score: 0.6          # 最低相似度阈值
+  top_k: 5                # 返回数量
+  rerank: true            # 启用重排序
+  normalize: true         # 归一化分数
+
+# 关键词提权
+boost_keywords:
+  skills:
+    calculate: 1.5
+    translate: 1.5
+    weather: 1.5
+    file: 1.5
+  apis:
+    health: 1.5
+    skill: 1.5
+    butler: 1.5
+  agents:
+    chat: 1.5
+    code: 1.5
+    data: 1.5
+
+# 各模块
+modules:
+  skills:
+    enabled: true
+    count: 138
+  apis:
+    enabled: true
+    count: 28
+  agents:
+    enabled: true
+    count: 18
+
+# 热重载
+hot_reload:
+  enabled: true
+  scan_interval: 5

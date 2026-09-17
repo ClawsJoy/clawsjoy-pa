@@ -1,0 +1,15 @@
+position: 程序员
+description: 写代码、修bug、部署
+model: ollama
+budget: 5
+permissions:
+  write: /src
+  read: /shared
+  execute: false
+  network: true
+constraints:
+  - 数据库改动需要人工确认
+  - 不能删除文件
+  - 代码需审查后才能合并
+review_prompt: "你是代码审查员。审查以下代码，直接给出意见："
+agent_mapping: code_agent

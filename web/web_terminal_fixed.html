@@ -1,0 +1,41 @@
+<script>
+// 命令历史功能
+let cmdHistory = [];
+let historyIndex = -1;
+
+function addToHistory(cmd) {
+    if (cmd && cmd !== cmdHistory[cmdHistory.length - 1]) {
+        cmdHistory.push(cmd);
+        if (cmdHistory.length > 50) cmdHistory.shift();
+    }
+    historyIndex = cmdHistory.length;
+}
+
+function historyUp() {
+    if (historyIndex > 0) {
+        historyIndex--;
+        document.getElementById('cmdInput').value = cmdHistory[historyIndex];
+    }
+}
+
+function historyDown() {
+    if (historyIndex < cmdHistory.length - 1) {
+        historyIndex++;
+        document.getElementById('cmdInput').value = cmdHistory[historyIndex];
+    } else if (historyIndex === cmdHistory.length - 1) {
+        historyIndex = cmdHistory.length;
+        document.getElementById('cmdInput').value = '';
+    }
+}
+
+// 添加快捷键
+document.getElementById('cmdInput').addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        historyUp();
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        historyDown();
+    }
+});
+</script>

@@ -1,0 +1,14 @@
+capable_of:
+- 试用功能
+- 测试新功能
+- A/B测试
+- 实验
+class: TrialAgentAgent
+description: trial_agent 智能体
+enabled: true
+name: trial_agent
+priority: 10
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

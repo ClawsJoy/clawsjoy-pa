@@ -1,0 +1,19 @@
+actions:
+- recommend_tech_stack
+- route_decision
+- conflict_arbitration
+capabilities:
+- description: 推荐技术栈
+  name: recommend_tech_stack
+- description: Agent路由决策
+  name: route_decision
+- description: 多Agent冲突仲裁
+  name: conflict_arbitration
+description: 决策专家，提供技术选型和路由决策
+examples:
+- input: 推荐Web技术栈
+  output: React + FastAPI + PostgreSQL
+- input: 哪个agent能处理代码
+  output: code_agent
+name: decision_agent
+type: agent

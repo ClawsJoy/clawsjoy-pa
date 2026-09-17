@@ -1,0 +1,17 @@
+# 路由注册中心配置
+routes:
+  - path: "/"
+    method: "GET"
+    handler: "root"
+  - path: "/api/health"
+    method: "GET"
+    handler: "health"
+  - path: "/api/skills"
+    method: "GET"
+    handler: "list_skills"
+  - path: "/api/agents/list"
+    method: "GET"
+    handler: "list_agents"
+  - path: "/api/agents/send"
+    method: "POST"
+    handler: "send_agent_message"

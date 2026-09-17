@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <title>ClawsJoy v5.1 | 智能体AI操作系统</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .portal-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* 头部 */
+        .hero {
+            text-align: center;
+            padding: 80px 20px 60px;
+        }
+        
+        .logo-3d {
+            font-size: 80px;
+            filter: drop-shadow(0 0 30px rgba(0, 243, 255, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .title {
+            font-size: 48px;
+            background: linear-gradient(135deg, #00f3ff, #7b2ff7, #ff00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 20px 0;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+        
+        /* 三大分叉卡片 */
+        .forks {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .fork-card {
+            width: 320px;
+            text-align: center;
+            cursor: pointer;
+            padding: 30px;
+        }
+        
+        .fork-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .fork-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .fork-desc {
+            color: #aaa;
+            font-size: 14px;
+            margin: 15px 0;
+            line-height: 1.6;
+        }
+        
+        .fork-features {
+            text-align: left;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 243, 255, 0.2);
+        }
+        
+        .fork-features li {
+            list-style: none;
+            padding: 6px 0;
+            font-size: 13px;
+            color: #ccc;
+        }
+        
+        .fork-features li::before {
+            content: "✦ ";
+            color: #00f3ff;
+        }
+        
+        /* 角色卡片样式 */
+        .guest-card .fork-title { color: #00f3ff; }
+        .user-card .fork-title { color: #44ff44; }
+        .developer-card .fork-title { color: #ffaa44; }
+        
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: auto;
+        }
+        
+        @media (max-width: 768px) {
+            .title { font-size: 32px; }
+            .fork-card { width: 280px; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="three-canvas"></div>
+    <div class="portal-container">
+        <div class="hero">
+            <div class="logo-3d">🐾</div>
+            <h1 class="title">ClawsJoy v5.1</h1>
+            <p class="subtitle">未来已来 · 智能随行</p>
+        </div>
+        
+        <div class="forks">
+            <!-- 品牌导航页 (游客) -->
+            <div class="fork-card glass-card guest-card" onclick="location.href='/v5.1/pages/guest.html'">
+                <div class="fork-icon">🌐</div>
+                <div class="fork-title">品牌体验</div>
+                <div class="fork-desc">探索ClawsJoy的智能世界</div>
+                <ul class="fork-features">
+                    <li>3D人像聊天Agent</li>
+                    <li>十大核心功能展示</li>
+                    <li>嵌入式演示视频</li>
+                    <li>品牌故事+未来科技</li>
+                </ul>
+                <button class="btn-neon" style="margin-top: 20px;">立即体验 →</button>
+            </div>
+            
+            <!-- 商店 (注册/登录) -->
+            <div class="fork-card glass-card" onclick="location.href='/v5.1/pages/marketplace.html'">
+                <div class="fork-icon">🛒</div>
+                <div class="fork-title">智能市场</div>
+                <div class="fork-desc">发现Agent，购买技能</div>
+                <ul class="fork-features">
+                    <li>统一注册/登录入口</li>
+                    <li>角色选择 (用户/开发者)</li>
+                    <li>商品浏览/购买/安装</li>
+                    <li>权限分发 → 工作空间</li>
+                </ul>
+                <button class="btn-neon" style="margin-top: 20px;">进入商店 →</button>
+            </div>
+            
+            <!-- 用户中心 (角色分发) -->
+            <div class="fork-card glass-card developer-card" onclick="location.href='/v5.1/pages/role_select.html'">
+                <div class="fork-icon">👤</div>
+                <div class="fork-title">工作空间</div>
+                <div class="fork-desc">您的专属智能工作区</div>
+                <ul class="fork-features">
+                    <li>私人管家 (悬浮窗)</li>
+                    <li>工作流编辑器</li>
+                    <li>代码审核弹窗</li>
+                    <li>技能库 + 开发者工坊</li>
+                </ul>
+                <button class="btn-neon" style="margin-top: 20px;">进入空间 →</button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🐾 ClawsJoy 智能体AI操作系统 | v5.1.0 | 3D科幻风格</p>
+            <p style="margin-top: 8px;">© 2026 ClawsJoy · 未来科技 无限可能</p>
+        </div>
+    </div>
+    
+    <script>console.log("THREE loaded:", typeof THREE);</script>
+    <script defer  src="js/3d_background.js"></script>
+    <script defer  src="js/brand.js"></script>
+</body>
+</html>

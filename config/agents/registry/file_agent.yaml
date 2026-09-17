@@ -1,0 +1,17 @@
+capable_of:
+- 文件
+- 读写
+- 保存
+- 读取
+- 列出
+- 删除
+- 文件操作
+class: FileAgent
+description: file_agent 智能体
+enabled: true
+name: file_agent
+priority: 5
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

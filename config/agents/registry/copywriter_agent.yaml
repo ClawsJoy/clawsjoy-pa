@@ -1,0 +1,18 @@
+capable_of:
+- 写文案
+- 广告词
+- 营销文案
+- 宣传语
+- 品牌文案
+- 产品介绍
+- 推广文案
+- 社交媒体文案
+class: CopywriterAgentAgent
+description: copywriter_agent 智能体
+enabled: true
+name: copywriter_agent
+priority: 22
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

@@ -1,0 +1,6 @@
+# JWT 统一配置
+# 安全(2026-09-08 P0-1): secret 不入库 — 由环境变量 JWT_SECRET 注入(.env, 已 gitignore)
+# 未注入时各 AuthManager 生成进程级随机 secret(重启即轮换, 无静态默认值)
+secret_env: JWT_SECRET
+algorithm: "HS256"
+expire_hours: 24

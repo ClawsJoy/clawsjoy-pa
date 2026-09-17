@@ -1,0 +1,9 @@
+# 监控配置 v1.0.00
+source: "log"                     # 数据源: log | memory | api
+log_path: "logs/active_runner.log"
+success_pattern: "✅ 完成"
+failure_pattern: "❌ 失败"
+window_size: 100
+alert_on_critical: true
+alert_on_warning: true
+web_refresh_interval: 30          # Web 刷新间隔（秒）

@@ -1,0 +1,12 @@
+position: 文件管理
+description: 文件读写、整理、管理
+model: ollama
+budget: 2
+permissions:
+  read: /shared
+  write: /shared
+  execute: false
+  network: false
+constraints:
+  - 不能删除文件
+agent_mapping: file_agent

@@ -1,0 +1,3610 @@
+{
+  "archive.py": [
+    "logging",
+    "json",
+    "pathlib",
+    "datetime",
+    "re",
+    "core.lib.code_entity_extractor"
+  ],
+  "audit.py": [
+    "typing",
+    "json",
+    "threading",
+    "datetime",
+    "pathlib"
+  ],
+  "chat_stream.py": [
+    "os",
+    "yaml",
+    "concurrent.futures",
+    "logging",
+    "json",
+    "time",
+    "datetime",
+    "pathlib",
+    "flask",
+    "core.lib.precision_feed",
+    "core.gateway.context_validator",
+    "core.gateway.quota_manager",
+    "core.gateway.execute_agent_task",
+    "core.context.context_manager",
+    "core.gateway.archive",
+    "core.lib.v8.ledger",
+    "core.agents.cortex",
+    "re",
+    "core.lib.llm_client",
+    "core.gateway.inject_filter",
+    "psycopg2",
+    "core.lib.v8.roster_engine",
+    "core.lib.v8.agent_discussion",
+    "core.lib.v8.task_orchestrator",
+    "requests",
+    "threading",
+    "core.lib.os_event_logger",
+    "traceback",
+    "core.lib.code_entity_extractor",
+    "core.lib.v8.billing_hook"
+  ],
+  "context_validator.py": [
+    "json",
+    "logging",
+    "pathlib",
+    "core.gateway.archive",
+    "core.gateway.shared_state",
+    "re",
+    "core.gateway.sandbox_ops"
+  ],
+  "execute_agent_task.py": [
+    "logging",
+    "json",
+    "os",
+    "time",
+    "datetime",
+    "pathlib",
+    "core.gateway.archive",
+    "core.gateway.context_validator",
+    "core.gateway.message_assembler",
+    "core.gateway.path_utils",
+    "core.gateway.quota_manager",
+    "core.gateway.sag_feedback",
+    "core.gateway.sandbox_git",
+    "core.gateway.shared_state",
+    "core.gateway.state_persist",
+    "core.lib.gateway_helpers",
+    "core.lib.precision_feed",
+    "core.lib.v8.ledger",
+    "core.lib.v8.roster_engine",
+    "core.gateway.tool_router",
+    "requests",
+    "core.lib.os_event_logger",
+    "core.lib.v8.adapters.deepseek_adapter",
+    "core.lib.context_manager",
+    "threading",
+    "re",
+    "py_compile",
+    "core.gateway.audit",
+    "core.lib.v8.loop_context_manager",
+    "core.lib.code_entity_extractor"
+  ],
+  "goal_state.py": [
+    "json",
+    "time",
+    "threading",
+    "pathlib",
+    "datetime",
+    "core.lib.sag_audit_bridge"
+  ],
+  "inject_filter.py": [
+    "logging",
+    "typing",
+    "engine.orchestration.task_manager"
+  ],
+  "message_assembler.py": [
+    "logging",
+    "json",
+    "pathlib",
+    "core.gateway.message_assembler",
+    "yaml",
+    "tiktoken",
+    "core.lib.sag_audit_bridge"
+  ],
+  "os_monitor.py": [
+    "logging",
+    "json",
+    "time",
+    "pathlib",
+    "threading",
+    "core.agents.cortex",
+    "core.lib.llm_client",
+    "core.lib.os_event_logger",
+    "core.lib.metacognition",
+    "core.lib.v8.roster_engine",
+    "requests"
+  ],
+  "path_utils.py": [
+    "logging",
+    "pathlib",
+    "core.lib.gateway_helpers",
+    "json"
+  ],
+  "quota_manager.py": [
+    "logging",
+    "yaml",
+    "pathlib",
+    "datetime"
+  ],
+  "registry.py": [
+    "logging",
+    "json",
+    "yaml",
+    "pathlib",
+    "core.lib.precision_feed",
+    "core.lib.code_entity_extractor",
+    "engine.orchestration.task_manager",
+    "datetime",
+    "psycopg2"
+  ],
+  "sag_feedback.py": [
+    "logging",
+    "json",
+    "datetime",
+    "pathlib",
+    "core.gateway.shared_state",
+    "core.lib.code_entity_extractor",
+    "re",
+    "psycopg2"
+  ],
+  "sandbox_git.py": [
+    "logging",
+    "os",
+    "subprocess",
+    "core.gateway.path_utils",
+    "core.gateway.shared_state",
+    "core.lib.gateway_helpers",
+    "ast",
+    "time",
+    "shutil",
+    "py_compile",
+    "tempfile",
+    "datetime",
+    "core.lib.code_entity_extractor"
+  ],
+  "sandbox_ops.py": [
+    "json",
+    "logging",
+    "os",
+    "time",
+    "subprocess",
+    "pathlib",
+    "flask",
+    "core.lib.gateway_helpers",
+    "core.lib.tool_executor",
+    "core.lib.v8.ledger",
+    "core.gateway.shared_state",
+    "core.gateway.quota_manager",
+    "core.gateway.path_utils",
+    "core.gateway.sandbox_git",
+    "core.gateway.sag_feedback",
+    "core.context.context_manager",
+    "core.gateway.sandbox_util",
+    "core.lib.precision_feed",
+    "threading",
+    "re",
+    "hashlib",
+    "warnings",
+    "shlex",
+    "ast",
+    "core.lib.v8.task_orchestrator",
+    "core.gateway.execute_agent_task",
+    "requests",
+    "core.lib.code_indexer",
+    "core.lib.code_entity_extractor",
+    "core.gateway.audit"
+  ],
+  "sandbox_util.py": [
+    "logging",
+    "time",
+    "core.gateway.shared_state",
+    "re",
+    "core.gateway.security",
+    "uuid"
+  ],
+  "sandbox_write.py": [
+    "core.lib.gateway_helpers",
+    "core.gateway.path_utils",
+    "core.gateway.sag_feedback",
+    "core.gateway.sandbox_git",
+    "core.gateway.shared_state",
+    "json",
+    "logging",
+    "datetime",
+    "pathlib",
+    "flask",
+    "base64",
+    "core.lib.code_entity_extractor",
+    "uuid",
+    "tempfile",
+    "os",
+    "hashlib",
+    "core.gateway.execute_agent_task",
+    "re",
+    "subprocess"
+  ],
+  "security.py": [
+    "json",
+    "re",
+    "pathlib",
+    "typing"
+  ],
+  "shared_state.py": [
+    "logging",
+    "yaml",
+    "os",
+    "json",
+    "time",
+    "threading",
+    "pathlib",
+    "psutil",
+    "flask",
+    "flask_cors",
+    "core.lib.precision_feed",
+    "core.lib.sandbox_tools"
+  ],
+  "state_persist.py": [
+    "logging",
+    "json",
+    "pathlib",
+    "core.gateway.shared_state",
+    "re",
+    "traceback"
+  ],
+  "tool_router.py": [
+    "logging",
+    "json",
+    "subprocess",
+    "time",
+    "pathlib",
+    "core.gateway.path_utils",
+    "core.gateway.sandbox_git",
+    "core.gateway.shared_state",
+    "core.lib.gateway_helpers",
+    "core.lib.precision_feed",
+    "core.lib.tool_executor",
+    "core.gateway.quota_manager",
+    "core.context.context_manager",
+    "core.gateway.audit",
+    "core.tools.read_file",
+    "core.gateway.execute_agent_task",
+    "core.tools.write_file",
+    "core.tools.file_tools",
+    "re",
+    "core.gateway.sandbox_ops",
+    "core.tools.execute_command",
+    "core.tools.query_index"
+  ],
+  "v5_execute.py": [
+    "json",
+    "logging",
+    "os",
+    "time",
+    "datetime",
+    "pathlib",
+    "flask",
+    "core.agents.cortex",
+    "core.gateway.execute_agent_task",
+    "core.gateway.quota_manager",
+    "core.lib.gateway_helpers",
+    "core.lib.v8.ledger",
+    "sys",
+    "re",
+    "core.lib.v8.agent_discussion",
+    "core.lib.v8.task_orchestrator",
+    "threading",
+    "core.lib.v8.roster_engine",
+    "core.lib.v8.long_loop_state_machine",
+    "core.lib.v8.billing_hook",
+    "requests",
+    "core.lib.code_entity_extractor",
+    "core.lib.os_event_logger",
+    "core.agents.builtin.planner_agent",
+    "core.lib.metacognition"
+  ],
+  "__init__.py": [
+    "engine.learning.core"
+  ],
+  "_route_test.py": [],
+  "ab_test.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "random",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "ability_rules.py": [],
+  "adaptive_system.py": [
+    "core.lib.config_helper",
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests",
+    "yaml",
+    "core.lib.education.retrieval_generator",
+    "re"
+  ],
+  "advanced_math_solver.py": [
+    "re",
+    "typing"
+  ],
+  "agent_auto_register.py": [
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "agent_bus.py": [
+    "core.lib.unified_config",
+    "json",
+    "queue",
+    "threading",
+    "dataclasses",
+    "datetime",
+    "typing",
+    "uuid"
+  ],
+  "agent_cache.py": [
+    "importlib",
+    "logging",
+    "typing"
+  ],
+  "agent_capability_loader.py": [
+    "yaml",
+    "pathlib",
+    "typing"
+  ],
+  "agent_communication.py": [
+    "core.lib.unified_config",
+    "json",
+    "uuid",
+    "threading",
+    "collections",
+    "datetime",
+    "enum",
+    "typing"
+  ],
+  "agent_communication_init.py": [
+    "threading",
+    "typing",
+    "core.lib.agent_bus"
+  ],
+  "agent_discovery.py": [
+    "importlib",
+    "inspect",
+    "pathlib",
+    "typing",
+    "re"
+  ],
+  "agent_health.py": [
+    "datetime",
+    "typing"
+  ],
+  "agent_intent_router.py": [
+    "core.agents.builtin.agent_manager"
+  ],
+  "agent_knowledge.py": [
+    "core.lib.unified_config",
+    "hashlib",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.path_manager",
+    "core.lib.vector_knowledge_center"
+  ],
+  "agent_lifecycle_config.py": [
+    "core.lib.unified_config"
+  ],
+  "agent_marketplace.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "shutil",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "agent_meeting.py": [
+    "core.lib.unified_config",
+    "json",
+    "threading",
+    "time",
+    "dataclasses",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.agent_communication",
+    "core.lib.closed_loop_config",
+    "core.lib.memory_vector",
+    "core.lib.skill_loader_v3",
+    "core.lib.smart_adapter",
+    "re"
+  ],
+  "agent_memory_self_check.py": [
+    "json",
+    "pathlib",
+    "typing",
+    "api.skill_market",
+    "core.lib.knowledge_registry",
+    "core.lib.memory"
+  ],
+  "agent_packager.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "shutil",
+    "zipfile",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "agent_recovery.py": [
+    "core.lib.unified_config",
+    "subprocess",
+    "time",
+    "datetime",
+    "core.lib.agent_health",
+    "core.lib.agent_registry"
+  ],
+  "agent_registry.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.vector_knowledge_center"
+  ],
+  "agent_registry_config.py": [
+    "core.lib.unified_config"
+  ],
+  "agent_registry_manager.py": [
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.vector_knowledge_center"
+  ],
+  "agent_router.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "yaml",
+    "core.agents.builtin.personal_butler_v2",
+    "agents.chat_agent.agent"
+  ],
+  "agent_self_evaluator.py": [
+    "json",
+    "os",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "agent_skin_system.py": [
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "agent_soul.py": [
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "analysis_utils.py": [
+    "json",
+    "core.lib.memory_simple",
+    "core.lib.unified_config"
+  ],
+  "api_discovery.py": [
+    "pathlib",
+    "yaml",
+    "core.lib.route_handlers",
+    "core.lib.route_registry",
+    "core.lib.unified_config",
+    "core.tenant.tenant_vector_index"
+  ],
+  "architect_education.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "requests"
+  ],
+  "architect_prompt.py": [
+    "core.lib.unified_config"
+  ],
+  "ast_patcher.py": [
+    "ast",
+    "typing"
+  ],
+  "async_tasks.py": [
+    "time",
+    "core.lib.celery_app"
+  ],
+  "audit_hooks.py": [
+    "json",
+    "pathlib",
+    "datetime",
+    "typing"
+  ],
+  "auth_api.py": [
+    "core.lib.config_helper",
+    "hashlib",
+    "json",
+    "os",
+    "datetime",
+    "functools",
+    "pathlib",
+    "jwt",
+    "yaml",
+    "flask"
+  ],
+  "auth_middleware.py": [
+    "logging",
+    "os",
+    "datetime",
+    "functools",
+    "jwt",
+    "flask"
+  ],
+  "auto_tuner.py": [
+    "core.lib.unified_config",
+    "time",
+    "pathlib",
+    "threading",
+    "yaml"
+  ],
+  "auto_version_v1.0.01_20260517.py": [
+    "core.lib.unified_config",
+    "functools",
+    "pathlib",
+    "core.lib.version_registry_v1_0_01_20260517"
+  ],
+  "backup_hooks.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "shutil",
+    "gzip",
+    "pathlib",
+    "datetime",
+    "typing"
+  ],
+  "brain_rules.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "yaml"
+  ],
+  "brain_rules_v1.0.00_20260519.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "yaml"
+  ],
+  "brief_manager.py": [
+    "json",
+    "os",
+    "time",
+    "pathlib",
+    "datetime"
+  ],
+  "butler_asset.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "butler_cache.py": [
+    "core.lib.unified_config",
+    "os",
+    "pickle",
+    "datetime",
+    "redis",
+    "core.agents.builtin.personal_butler_v2"
+  ],
+  "butler_memory.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.vector_knowledge_center"
+  ],
+  "capability_recommender.py": [
+    "re",
+    "hashlib",
+    "time",
+    "typing",
+    "core.lib.llm_client",
+    "core.lib.unified_capability_loader"
+  ],
+  "capability_scheduler.py": [
+    "typing",
+    "core.lib.capability_recommender",
+    "core.agents.wisdom.wisdom_factory",
+    "core.lib.skill_registry_v6"
+  ],
+  "capability_tiers.py": [],
+  "celery_app.py": [
+    "os",
+    "celery"
+  ],
+  "channel_analyzer.py": [
+    "core.lib.unified_config",
+    "random",
+    "datetime",
+    "core.lib.memory_simple"
+  ],
+  "chat_engine.py": [
+    "json",
+    "logging",
+    "re",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.llm_client",
+    "core.lib.vector_knowledge_center",
+    "core.lib.unified_config",
+    "time",
+    "core.lib.config_driven_router"
+  ],
+  "chat_engine_simple.py": [
+    "requests",
+    "logging",
+    "typing"
+  ],
+  "clawsjoy_config.py": [
+    "core.lib.unified_config"
+  ],
+  "client_sanitizer.py": [
+    "json",
+    "re",
+    "typing"
+  ],
+  "closed_loop_config.py": [
+    "core.lib.unified_config"
+  ],
+  "aliyun_pai.py": [
+    "requests",
+    "core.lib.unified_config"
+  ],
+  "code_entity_extractor.py": [
+    "ast",
+    "re",
+    "os",
+    "json",
+    "pathlib",
+    "typing",
+    "psycopg2",
+    "psycopg2.extras",
+    "psycopg2.pool",
+    "logging",
+    "redis",
+    "fcntl"
+  ],
+  "code_generator.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "code_indexer.py": [
+    "ast",
+    "json",
+    "os",
+    "hashlib",
+    "re",
+    "pathlib",
+    "typing",
+    "core.lib.vector_knowledge_center",
+    "requests",
+    "yaml",
+    "jieba"
+  ],
+  "code_repo.py": [
+    "os",
+    "json",
+    "hashlib",
+    "pathlib",
+    "datetime",
+    "typing"
+  ],
+  "code_routes.py": [
+    "core.lib.unified_config",
+    "flask",
+    "core.lib.code_generator"
+  ],
+  "collaboration_ws.py": [
+    "json",
+    "typing",
+    "datetime"
+  ],
+  "config.py": [
+    "os",
+    "pathlib",
+    "core.lib.unified_config"
+  ],
+  "config_api.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "yaml",
+    "flask",
+    "core.lib.auth_api",
+    "core.lib.route_registry",
+    "core.lib.agent_registry",
+    "core.lib.skill_loader_v3"
+  ],
+  "config_auto_watcher.py": [
+    "pathlib",
+    "core.lib.config_watcher",
+    "core.lib.unified_config",
+    "core.lib.route_registry",
+    "core.agents.builtin.agent_manager",
+    "core.lib.skill_loader_v3",
+    "watchdog.events",
+    "watchdog.observers",
+    "agents.chat_agent.agent"
+  ],
+  "config_cache.py": [
+    "hashlib",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "config_compat.py": [
+    "core.lib.config_helper",
+    "pathlib",
+    "yaml"
+  ],
+  "config_driven_matcher.py": [
+    "sys",
+    "pathlib",
+    "yaml",
+    "core.tenant.tenant_vector_index",
+    "core.lib.config_watcher"
+  ],
+  "config_driven_router.py": [
+    "yaml",
+    "re",
+    "pathlib",
+    "typing",
+    "engine.semantic",
+    "engine.semantic.engines.rule_engine",
+    "engine.semantic.core"
+  ],
+  "config_driver.py": [
+    "typing",
+    "core.lib.config_loader",
+    "core.lib.unified_config"
+  ],
+  "config_driver_v1_0_00_20260517.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "functools",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "config_finder.py": [
+    "pathlib",
+    "typing"
+  ],
+  "config_helper.py": [
+    "core.lib.unified_config"
+  ],
+  "config_inherit.py": [
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "config_loader.py": [
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "config_manager.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "functools",
+    "pathlib",
+    "typing",
+    "yaml",
+    "time",
+    "threading"
+  ],
+  "config_query.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "core.lib.constants"
+  ],
+  "config_schema.py": [
+    "os",
+    "sys",
+    "pathlib",
+    "yaml"
+  ],
+  "config_unified_manager.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.config_watcher"
+  ],
+  "config_validator.py": [
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "config_version.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "shutil",
+    "datetime",
+    "pathlib",
+    "typing",
+    "hashlib",
+    "flask"
+  ],
+  "config_watcher.py": [
+    "threading",
+    "time",
+    "pathlib",
+    "typing"
+  ],
+  "constants.py": [
+    "core.lib.unified_config",
+    "pathlib"
+  ],
+  "context_engine.py": [
+    "typing",
+    "datetime",
+    "collections"
+  ],
+  "context_learner.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "context_manager.py": [
+    "json",
+    "time",
+    "pathlib",
+    "core.gateway.shared_state",
+    "core.gateway.message_assembler",
+    "core.gateway.execute_agent_task",
+    "ast",
+    "psycopg2",
+    "core.lib.code_entity_extractor"
+  ],
+  "context_middleware.py": [
+    "core.lib.unified_config",
+    "os",
+    "jwt",
+    "flask"
+  ],
+  "creative_writer.py": [
+    "random"
+  ],
+  "cross_cutting.py": [
+    "typing",
+    "enum",
+    "dataclasses",
+    "datetime",
+    "core.lib.security_hooks",
+    "core.lib.audit_hooks"
+  ],
+  "cross_session_memory.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "re",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "data_contract.py": [
+    "json",
+    "core.lib.memory_simple",
+    "core.lib.unified_config"
+  ],
+  "data_source_manager.py": [
+    "core.lib.unified_config",
+    "core.lib.config_helper",
+    "json",
+    "dataclasses",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests",
+    "core.lib.agent_knowledge",
+    "yaml",
+    "core.lib.memory_vector"
+  ],
+  "db_pool.py": [
+    "sqlite3",
+    "threading",
+    "contextlib"
+  ],
+  "decision_evaluator.py": [
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.gray_executor",
+    "core.lib.path_manager",
+    "core.lib.rollback_manager"
+  ],
+  "delta_store.py": [
+    "json",
+    "numpy",
+    "pathlib",
+    "datetime",
+    "typing"
+  ],
+  "dependency_checker.py": [
+    "core.lib.unified_config",
+    "re",
+    "subprocess",
+    "sys"
+  ],
+  "developer_api.py": [
+    "core.lib.config_helper",
+    "hashlib",
+    "json",
+    "shutil",
+    "tarfile",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "flask"
+  ],
+  "dialect_helper.py": [
+    "json",
+    "pathlib",
+    "typing"
+  ],
+  "dialect_learning_engine.py": [
+    "json",
+    "re",
+    "subprocess",
+    "pathlib",
+    "typing",
+    "datetime",
+    "core.lib.vector_bank"
+  ],
+  "dynamic_threshold.py": [
+    "core.lib.unified_config",
+    "importlib.util",
+    "pathlib"
+  ],
+  "dynamic_threshold_v1_0_00_20260517.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.config_driver",
+    "core.lib.success_predictor"
+  ],
+  "active_learner.py": [
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests",
+    "re"
+  ],
+  "clean_output.py": [
+    "core.lib.unified_config",
+    "json",
+    "typing",
+    "requests",
+    "re"
+  ],
+  "content_retriever.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "typing",
+    "requests",
+    "core.lib.memory_vector",
+    "re"
+  ],
+  "direct_retriever.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "re",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "force_retriever.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "re",
+    "pathlib",
+    "typing"
+  ],
+  "markdown_parser.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "re",
+    "pathlib",
+    "typing"
+  ],
+  "priority_retriever.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "re",
+    "pathlib",
+    "typing",
+    "requests"
+  ],
+  "retrieval_generator.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "smart_retriever.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "re",
+    "pathlib",
+    "typing",
+    "requests"
+  ],
+  "structured_generator.py": [
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "typing",
+    "requests",
+    "re"
+  ],
+  "thinker.py": [
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "typing",
+    "requests",
+    "datetime",
+    "re"
+  ],
+  "trainer.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "subprocess",
+    "pathlib",
+    "typing",
+    "requests"
+  ],
+  "encryption_hook.py": [
+    "base64",
+    "hashlib",
+    "json",
+    "secrets",
+    "pathlib",
+    "typing",
+    "cryptography.fernet"
+  ],
+  "engine_manager.py": [
+    "pathlib",
+    "typing",
+    "yaml",
+    "os",
+    "sys",
+    "agent_gateway_enhanced"
+  ],
+  "engine_metrics.py": [
+    "threading",
+    "time",
+    "collections",
+    "datetime"
+  ],
+  "env_loader.py": [
+    "os",
+    "pathlib",
+    "dotenv",
+    "typing"
+  ],
+  "error_handler.py": [
+    "logging",
+    "traceback",
+    "functools",
+    "flask"
+  ],
+  "error_knowledge.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.config_loader"
+  ],
+  "error_knowledge_v1_0_00_20260517.py": [
+    "core.lib.unified_config",
+    "json",
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.memory_simple"
+  ],
+  "error_knowledge_v1_0_01_20260517.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.config_driver"
+  ],
+  "error_knowledge_v1_0_02_20260517.py": [
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.config_driver_v1_0_00_20260517"
+  ],
+  "event_bus.py": [
+    "collections",
+    "typing",
+    "threading",
+    "time"
+  ],
+  "event_handlers.py": [
+    "os",
+    "subprocess",
+    "datetime",
+    "pathlib",
+    "core.lib.event_bus",
+    "json"
+  ],
+  "event_trigger.py": [
+    "threading",
+    "time",
+    "enum",
+    "typing"
+  ],
+  "evolution_logger.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.memory_vector"
+  ],
+  "evolving_prompt.py": [
+    "json",
+    "pathlib",
+    "datetime",
+    "typing"
+  ],
+  "exceptions.py": [],
+  "experience_decider.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "hashlib",
+    "chromadb.utils",
+    "core.lib.vector_knowledge_center"
+  ],
+  "federated_learning.py": [
+    "json",
+    "threading",
+    "pathlib",
+    "datetime",
+    "typing",
+    "collections"
+  ],
+  "federated_bus.py": [
+    "json",
+    "threading",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "hashlib"
+  ],
+  "feedback_handler.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.config_helper",
+    "core.lib.learning_hooks",
+    "core.learner.self_learning_coordinator"
+  ],
+  "feedback_system.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.config_helper"
+  ],
+  "file_exchange.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "shutil",
+    "threading",
+    "time",
+    "uuid",
+    "datetime",
+    "enum",
+    "pathlib",
+    "typing",
+    "core.lib.path_manager"
+  ],
+  "file_queue.py": [
+    "json",
+    "time",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "file_utils.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "os",
+    "uuid",
+    "datetime",
+    "pathlib"
+  ],
+  "free_image_api.py": [
+    "urllib.parse",
+    "random"
+  ],
+  "function_calling.py": [
+    "json",
+    "core.lib.safe_calculator",
+    "requests",
+    "typing",
+    "dataclasses"
+  ],
+  "gateway_helpers.py": [
+    "json",
+    "uuid",
+    "re",
+    "pathlib",
+    "time",
+    "datetime",
+    "typing",
+    "core.lib.json_standard",
+    "core.lib.json_builder",
+    "psycopg2",
+    "psycopg2.extras",
+    "core.lib.code_entity_extractor",
+    "core.lib.context_manager",
+    "urllib.request",
+    "urllib.error",
+    "os",
+    "ipaddress",
+    "socket",
+    "urllib.parse",
+    "core.lib.precision_feed",
+    "agents.memory_agent.agent_v4",
+    "core.lib.code_repo",
+    "core.lib.web_cache",
+    "playwright.sync_api",
+    "yaml",
+    "logging"
+  ],
+  "graceful_shutdown.py": [
+    "logging",
+    "signal",
+    "sys",
+    "time"
+  ],
+  "gray_executor.py": [
+    "core.lib.unified_config",
+    "random",
+    "time",
+    "collections",
+    "datetime",
+    "typing",
+    "core.lib.closed_loop_config"
+  ],
+  "group_manager.py": [
+    "json",
+    "pathlib",
+    "datetime",
+    "secrets"
+  ],
+  "growth_engine.py": [
+    "json",
+    "pathlib",
+    "datetime",
+    "typing",
+    "numpy",
+    "core.lib.vector_bank"
+  ],
+  "guest_token_manager.py": [
+    "hashlib",
+    "json",
+    "time",
+    "uuid",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.security_hooks"
+  ],
+  "hardware_probe.py": [
+    "platform",
+    "os",
+    "subprocess",
+    "pathlib",
+    "typing",
+    "psutil"
+  ],
+  "health_check.py": [
+    "sqlite3",
+    "pathlib",
+    "typing",
+    "psutil",
+    "requests",
+    "core.lib.unified_config"
+  ],
+  "help_generator.py": [
+    "typing",
+    "core.lib.llm_client"
+  ],
+  "hook_manager.py": [
+    "core.lib.unified_config",
+    "importlib",
+    "dataclasses",
+    "functools",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "hot_data_source.py": [
+    "core.lib.unified_config",
+    "random",
+    "datetime"
+  ],
+  "hot_db.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib"
+  ],
+  "hot_reload_manager.py": [],
+  "hotreload.py": [
+    "core.lib.unified_config",
+    "importlib",
+    "sys",
+    "flask",
+    "core.lib.auth_api"
+  ],
+  "image_gen.py": [
+    "requests",
+    "base64",
+    "typing",
+    "pathlib"
+  ],
+  "input_validator.py": [
+    "re",
+    "dataclasses",
+    "typing"
+  ],
+  "intelligent_driver.py": [
+    "os",
+    "typing"
+  ],
+  "intelligent_matcher.py": [
+    "core.lib.unified_config",
+    "core.tenant.tenant_vector_index"
+  ],
+  "intelligent_matcher_v2.py": [
+    "core.similarity_optimizer",
+    "core.tenant.tenant_vector_index"
+  ],
+  "intelligent_matcher_v3.py": [
+    "core.tenant.tenant_vector_index"
+  ],
+  "intent_fallback.py": [
+    "yaml",
+    "pathlib",
+    "typing"
+  ],
+  "intent_learner.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "hashlib",
+    "json",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests",
+    "re"
+  ],
+  "intent_parser.py": [
+    "core.lib.unified_config"
+  ],
+  "intent_parser_v2.py": [
+    "re",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.unified_config"
+  ],
+  "internet_news.py": [
+    "os",
+    "requests",
+    "typing",
+    "dotenv"
+  ],
+  "json_builder.py": [
+    "typing",
+    "core.lib.json_standard",
+    "core.lib.json_builder"
+  ],
+  "json_serializer.py": [
+    "json",
+    "typing",
+    "core.lib.json_standard"
+  ],
+  "json_standard.py": [
+    "dataclasses",
+    "typing",
+    "datetime",
+    "uuid"
+  ],
+  "knowledge_base.py": [
+    "json",
+    "os",
+    "typing"
+  ],
+  "knowledge_config.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config"
+  ],
+  "knowledge_registry.py": [
+    "core.lib.config_helper",
+    "hashlib",
+    "json",
+    "time",
+    "pathlib",
+    "chromadb.utils",
+    "core.lib.unified_config",
+    "chromadb.utils.embedding_functions",
+    "core.lib.vector_knowledge_center"
+  ],
+  "layered_config.py": [
+    "core.lib.unified_config"
+  ],
+  "lazy_loader.py": [
+    "threading",
+    "typing"
+  ],
+  "learning_coordinator.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.learning_hooks",
+    "core.lib.real_learner",
+    "core.lib.skill_evolver"
+  ],
+  "learning_hooks.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "time",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "lifecycle_monitor.py": [
+    "typing",
+    "datetime"
+  ],
+  "llm_agent.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "re",
+    "requests",
+    "core.lib.skill_loader_v3"
+  ],
+  "llm_audit.py": [
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "functools",
+    "pathlib",
+    "typing"
+  ],
+  "llm_chat.py": [
+    "json",
+    "requests",
+    "core.lib.unified_config"
+  ],
+  "llm_client.py": [
+    "os",
+    "socket",
+    "time",
+    "logging",
+    "typing",
+    "dataclasses",
+    "threading",
+    "concurrent.futures",
+    "requests",
+    "requests.adapters",
+    "urllib3.util.retry",
+    "core.lib.os_event_logger",
+    "yaml",
+    "tiktoken",
+    "subprocess"
+  ],
+  "llm_config.py": [
+    "core.lib.unified_config"
+  ],
+  "llm_guide_v4.py": [
+    "core.lib.unified_config",
+    "json",
+    "logging",
+    "typing"
+  ],
+  "llm_manager.py": [
+    "requests",
+    "requests.adapters",
+    "urllib3.util.retry",
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "core.lib.config",
+    "json",
+    "threading"
+  ],
+  "llm_nurture.py": [
+    "json",
+    "pathlib",
+    "datetime",
+    "typing"
+  ],
+  "llm_service.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "typing",
+    "requests"
+  ],
+  "local_knowledge.py": [
+    "json",
+    "hashlib",
+    "pathlib",
+    "datetime",
+    "typing",
+    "collections",
+    "re"
+  ],
+  "log_aggregator.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "collections",
+    "datetime",
+    "pathlib"
+  ],
+  "logging_config.py": [
+    "logging",
+    "json",
+    "datetime",
+    "pathlib"
+  ],
+  "marketplace_data.py": [
+    "json",
+    "pathlib",
+    "typing",
+    "core.lib.unified_config"
+  ],
+  "math_helper.py": [
+    "re",
+    "typing"
+  ],
+  "meeting_records.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.agent_meeting",
+    "core.lib.memory_vector",
+    "json"
+  ],
+  "memory_bank.py": [
+    "json",
+    "hashlib",
+    "pathlib",
+    "datetime",
+    "typing"
+  ],
+  "memory_layers.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "datetime",
+    "pathlib",
+    "core.lib.memory_vector"
+  ],
+  "memory_vector.py": [
+    "core.lib.config_helper",
+    "hashlib",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.vector_knowledge_center"
+  ],
+  "memory_writer.py": [
+    "core.lib.memory_vector"
+  ],
+  "metacognition.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "time",
+    "collections",
+    "datetime",
+    "pathlib",
+    "threading",
+    "typing",
+    "requests",
+    "yaml",
+    "core.lib.code_entity_extractor"
+  ],
+  "metrics.py": [
+    "threading",
+    "time",
+    "collections",
+    "datetime",
+    "typing"
+  ],
+  "model_router.py": [],
+  "model_selector.py": [
+    "re"
+  ],
+  "monitor_alert.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "threading",
+    "time",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests",
+    "json"
+  ],
+  "monitoring.py": [
+    "time",
+    "functools",
+    "typing",
+    "prometheus_client"
+  ],
+  "monitoring_integration.py": [
+    "core.lib.unified_config",
+    "subprocess",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests"
+  ],
+  "news_service.py": [
+    "os",
+    "requests",
+    "typing",
+    "dotenv"
+  ],
+  "no_proxy.py": [
+    "core.lib.unified_config",
+    "os",
+    "requests"
+  ],
+  "notify.py": [
+    "os",
+    "time",
+    "dotenv",
+    "requests"
+  ],
+  "os_event_logger.py": [
+    "os",
+    "json",
+    "logging",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "output_filter.py": [
+    "core.lib.unified_config",
+    "re"
+  ],
+  "output_filter_v1.py": [
+    "core.lib.unified_config",
+    "re",
+    "typing"
+  ],
+  "parallel_scheduler.py": [
+    "__future__",
+    "threading",
+    "typing"
+  ],
+  "path_config.py": [
+    "os",
+    "pathlib"
+  ],
+  "path_manager.py": [
+    "os",
+    "pathlib"
+  ],
+  "pattern_recognizer.py": [
+    "json",
+    "re",
+    "collections",
+    "datetime",
+    "pathlib",
+    "yaml",
+    "core.lib.skill_watcher"
+  ],
+  "optimizer.py": [
+    "time",
+    "json",
+    "hashlib",
+    "typing",
+    "collections",
+    "functools",
+    "threading"
+  ],
+  "performance_middleware.py": [
+    "logging",
+    "time",
+    "functools",
+    "flask"
+  ],
+  "permission_decorator.py": [
+    "functools",
+    "pathlib",
+    "yaml",
+    "flask"
+  ],
+  "persistent_memory.py": [
+    "json",
+    "os",
+    "pathlib",
+    "typing",
+    "re"
+  ],
+  "platform_client.py": [
+    "json",
+    "os",
+    "hashlib",
+    "pathlib",
+    "typing",
+    "cryptography.hazmat.primitives.asymmetric",
+    "base64",
+    "requests",
+    "zipfile",
+    "io"
+  ],
+  "port_config.py": [
+    "core.lib.unified_config"
+  ],
+  "port_manager.py": [
+    "core.lib.unified_config",
+    "os",
+    "pathlib",
+    "yaml"
+  ],
+  "precision_feed.py": [
+    "json",
+    "logging",
+    "os",
+    "time",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.os_event_logger",
+    "core.lib.sag_chain_injector",
+    "core.lib.code_entity_extractor",
+    "core.lib.task_vars",
+    "core.lib.sag_audit_bridge",
+    "psycopg2",
+    "core.lib.gateway_helpers"
+  ],
+  "preference_config.py": [
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "priority_adjuster.py": [
+    "core.lib.unified_config",
+    "datetime",
+    "typing",
+    "core.lib.config_loader"
+  ],
+  "priority_adjuster_v1_0_00_20260517.py": [
+    "core.lib.unified_config",
+    "datetime",
+    "typing"
+  ],
+  "proactive_service.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "smtplib",
+    "subprocess",
+    "datetime",
+    "email.mime.text",
+    "pathlib",
+    "typing",
+    "requests",
+    "shutil",
+    "yaml",
+    "time",
+    "core.lib.memory_vector"
+  ],
+  "user_profile.py": [
+    "json",
+    "pathlib",
+    "typing"
+  ],
+  "progress_manager.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.code_entity_extractor"
+  ],
+  "project_graph.py": [
+    "re",
+    "pathlib",
+    "typing",
+    "core.lib.code_repo"
+  ],
+  "project_graph_viz.py": [
+    "core.lib.project_graph",
+    "json",
+    "pathlib",
+    "core.lib.code_repo"
+  ],
+  "prompt_factory.py": [],
+  "prompt_injection.py": [
+    "core.lib.unified_config",
+    "re",
+    "typing"
+  ],
+  "prompt_loader.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "prompt_upgrader.py": [
+    "json",
+    "random",
+    "threading",
+    "time",
+    "pathlib",
+    "datetime",
+    "typing",
+    "collections",
+    "core.lib.prompt_upgrader"
+  ],
+  "prompt_version.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "proxy_helper.py": [
+    "core.lib.unified_config",
+    "os",
+    "requests"
+  ],
+  "rate_limit_decorator.py": [
+    "core.lib.unified_config",
+    "functools",
+    "core.lib.rate_limit_manager"
+  ],
+  "rate_limit_manager.py": [
+    "core.lib.unified_config",
+    "threading",
+    "time",
+    "collections",
+    "dataclasses",
+    "enum",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "rate_limiter.py": [
+    "time",
+    "collections",
+    "functools",
+    "flask"
+  ],
+  "reading_mind.py": [
+    "json",
+    "re",
+    "pathlib",
+    "datetime",
+    "typing",
+    "collections"
+  ],
+  "real_learner.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "time",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "re"
+  ],
+  "reasoning_chain.py": [
+    "typing"
+  ],
+  "reasoning_enhancer.py": [
+    "re",
+    "typing"
+  ],
+  "redis_cache.py": [
+    "json",
+    "redis",
+    "typing",
+    "core.lib.unified_config"
+  ],
+  "redis_manager.py": [
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "typing",
+    "redis",
+    "yaml"
+  ],
+  "reminder_service.py": [
+    "threading",
+    "time",
+    "uuid",
+    "dataclasses",
+    "datetime",
+    "typing"
+  ],
+  "request_tracer.py": [
+    "logging",
+    "uuid",
+    "functools",
+    "flask"
+  ],
+  "resource_monitor.py": [
+    "core.lib.unified_config",
+    "time",
+    "typing",
+    "core.lib.config_loader",
+    "psutil"
+  ],
+  "resource_monitor_v1_0_00_20260517.py": [
+    "core.lib.unified_config",
+    "os",
+    "typing",
+    "psutil"
+  ],
+  "response_cache.py": [
+    "hashlib",
+    "logging",
+    "time",
+    "collections",
+    "core.lib.redis_cache"
+  ],
+  "response_prefill_v1.py": [
+    "core.lib.unified_config",
+    "typing"
+  ],
+  "rollback_manager.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "route_handlers.py": [
+    "core.lib.config_helper",
+    "core.lib.marketplace_data",
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "shutil",
+    "datetime",
+    "pathlib",
+    "flask",
+    "core.lib.agent_communication",
+    "core.lib.agent_registry",
+    "core.lib.log_aggregator",
+    "core.lib.unified_skill_manager",
+    "requests",
+    "re",
+    "core.lib.skill_executor",
+    "skills.core.do_anything",
+    "core.lib.agent_bus",
+    "agents.chat_agent.agent",
+    "core.agents.builtin.personal_butler_v2",
+    "importlib",
+    "core.agents.builtin.agent_manager",
+    "core.lib.auth_api",
+    "api.skill_market",
+    "core.lib.config_auto_watcher",
+    "core.lib.route_registry",
+    "uuid",
+    "core.lib.feedback_system",
+    "core.lib.knowledge_registry",
+    "core.lib.developer_api"
+  ],
+  "route_manager.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "yaml"
+  ],
+  "route_registry.py": [
+    "pathlib",
+    "yaml",
+    "flask",
+    "core.lib.unified_config"
+  ],
+  "route_vectorizer.py": [
+    "hashlib",
+    "core.lib.route_handlers",
+    "core.lib.route_registry",
+    "core.tenant.tenant_vector_index"
+  ],
+  "safe_calculator.py": [
+    "ast",
+    "operator",
+    "math",
+    "typing"
+  ],
+  "safety_guard.py": [
+    "functools",
+    "sys",
+    "typing"
+  ],
+  "sag_audit_bridge.py": [
+    "os",
+    "core.lib.code_entity_extractor",
+    "psycopg2",
+    "pathlib",
+    "re"
+  ],
+  "sag_chain_injector.py": [
+    "typing",
+    "core.lib.code_entity_extractor"
+  ],
+  "sandbox_tools.py": [
+    "os",
+    "json",
+    "pathlib",
+    "re"
+  ],
+  "scriptbook_learner.py": [
+    "yaml",
+    "re",
+    "pathlib",
+    "datetime",
+    "typing",
+    "collections",
+    "json",
+    "jieba"
+  ],
+  "secret_hook.py": [
+    "core.lib.unified_config",
+    "logging",
+    "os",
+    "re",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "security_hook.py": [
+    "core.lib.unified_config",
+    "json",
+    "logging",
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.config_loader"
+  ],
+  "security_hooks.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "base64",
+    "json",
+    "re",
+    "pathlib",
+    "typing",
+    "cryptography.fernet",
+    "time",
+    "collections"
+  ],
+  "self_tuner.py": [
+    "core.lib.unified_config",
+    "random",
+    "time",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.closed_loop_config",
+    "core.lib.memory_vector"
+  ],
+  "service_config.py": [
+    "core.lib.unified_config"
+  ],
+  "service_locator.py": [
+    "logging",
+    "typing"
+  ],
+  "service_registry.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests",
+    "core.lib.config_helper"
+  ],
+  "service_registry_v2.py": [
+    "json",
+    "threading",
+    "time",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests",
+    "core.lib.config_helper"
+  ],
+  "session_manager.py": [
+    "core.lib.unified_config",
+    "time",
+    "collections",
+    "datetime",
+    "flask",
+    "pathlib"
+  ],
+  "skill_adapter.py": [
+    "core.lib.skill_loader_v3"
+  ],
+  "skill_auto_trigger.py": [
+    "core.lib.unified_config",
+    "core.lib.config_helper",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "re",
+    "requests"
+  ],
+  "skill_chain.py": [
+    "typing",
+    "core.lib.skill_loader_v3"
+  ],
+  "skill_chain_executor.py": [
+    "pathlib",
+    "typing",
+    "yaml",
+    "re",
+    "core.lib.skill_loader_v3"
+  ],
+  "skill_composer.py": [
+    "dataclasses",
+    "enum",
+    "typing",
+    "re"
+  ],
+  "skill_composer_v4.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "logging",
+    "dataclasses",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "skill_composer_v5.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "logging",
+    "dataclasses",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "skill_deps.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "pathlib"
+  ],
+  "skill_evolver.py": [
+    "core.lib.unified_config",
+    "json",
+    "re",
+    "time",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.closed_loop_config",
+    "core.lib.memory_vector",
+    "core.lib.skill_loader_v3",
+    "core.lib.smart_adapter"
+  ],
+  "skill_executor.py": [
+    "re",
+    "sys",
+    "pathlib",
+    "core.lib.skill_loader_v3"
+  ],
+  "skill_lazy_loader.py": [
+    "importlib",
+    "threading",
+    "typing"
+  ],
+  "skill_learner.py": [
+    "json",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "skill_learning.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "yaml"
+  ],
+  "skill_library.py": [
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "typing"
+  ],
+  "skill_loader_v3.py": [
+    "json",
+    "re",
+    "pathlib",
+    "typing",
+    "importlib"
+  ],
+  "skill_market.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "requests"
+  ],
+  "skill_recommender.py": [
+    "json",
+    "subprocess",
+    "pathlib",
+    "typing",
+    "shutil"
+  ],
+  "skill_registry.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "core.lib.config_helper"
+  ],
+  "skill_registry_v2.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib"
+  ],
+  "skill_registry_v4.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "logging",
+    "dataclasses",
+    "pathlib",
+    "typing",
+    "yaml",
+    "importlib.util"
+  ],
+  "skill_registry_v6.py": [
+    "yaml",
+    "pathlib",
+    "typing",
+    "agents.executor_agent.agent_v4"
+  ],
+  "skill_schema.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "dataclasses",
+    "enum",
+    "pathlib",
+    "typing",
+    "datetime"
+  ],
+  "skill_search.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "core.lib.vector_knowledge_center"
+  ],
+  "skill_stats.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "collections",
+    "datetime",
+    "pathlib"
+  ],
+  "skill_validator.py": [
+    "ast",
+    "re",
+    "core.lib.unified_config"
+  ],
+  "skill_validator_v4.py": [
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "logging",
+    "subprocess",
+    "sys",
+    "dataclasses",
+    "pathlib",
+    "typing",
+    "yaml",
+    "importlib.util",
+    "inspect"
+  ],
+  "skill_watcher.py": [
+    "importlib",
+    "os",
+    "threading",
+    "time",
+    "pathlib",
+    "typing"
+  ],
+  "smart_active_loop.py": [
+    "threading",
+    "time",
+    "datetime",
+    "core.lib.proactive_service",
+    "core.lib.smart_active_service"
+  ],
+  "smart_active_service.py": [
+    "hashlib",
+    "threading",
+    "time",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.vector_knowledge_center",
+    "core.lib.agent_communication"
+  ],
+  "smart_adapter.py": [
+    "threading",
+    "time",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.llm_manager"
+  ],
+  "smart_config.py": [
+    "pathlib",
+    "core.lib.unified_config"
+  ],
+  "smart_fallback.py": [
+    "typing",
+    "core.lib.llm_client"
+  ],
+  "smart_intent_router.py": [
+    "typing",
+    "core.lib.agent_intent_router",
+    "pathlib",
+    "yaml"
+  ],
+  "smart_scheduler.py": [
+    "core.lib.unified_config",
+    "importlib.util",
+    "pathlib"
+  ],
+  "smart_scheduler_v1_0_00_20260517.py": [
+    "core.lib.unified_config",
+    "time",
+    "collections",
+    "datetime",
+    "typing",
+    "core.lib.config_driver",
+    "core.lib.success_predictor",
+    "core.lib.task_queue"
+  ],
+  "smart_search.py": [
+    "core.lib.unified_config",
+    "sys",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.agent_knowledge"
+  ],
+  "soul_injector.py": [
+    "pathlib",
+    "json",
+    "random",
+    "datetime",
+    "typing"
+  ],
+  "standalone_cache.py": [
+    "time",
+    "threading"
+  ],
+  "standard_response.py": [
+    "uuid",
+    "datetime",
+    "typing",
+    "dataclasses"
+  ],
+  "startup.py": [
+    "threading",
+    "time",
+    "sys",
+    "pathlib",
+    "core.lib.hardware_probe",
+    "core.lib.llm_client",
+    "core.agents.wisdom.wisdom_factory",
+    "core.lib.federated_bus"
+  ],
+  "structured_logger.py": [
+    "json",
+    "logging",
+    "traceback",
+    "datetime",
+    "typing"
+  ],
+  "success_predictor.py": [
+    "core.lib.unified_config",
+    "re",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "success_predictor_v1_0_00_20260517.py": [
+    "core.lib.unified_config",
+    "json",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.config_driver",
+    "re"
+  ],
+  "success_predictor_v1_0_01_20260517.py": [
+    "core.lib.unified_config",
+    "re",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.config_driver"
+  ],
+  "success_predictor_v1_0_02_20260517.py": [
+    "core.lib.unified_config",
+    "re",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "suggestion_engine.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "system_config.py": [
+    "core.lib.unified_config"
+  ],
+  "system_variables.py": [
+    "datetime",
+    "typing"
+  ],
+  "task_dependency.py": [
+    "core.lib.unified_config",
+    "typing",
+    "core.lib.task_queue"
+  ],
+  "task_generator.py": [
+    "core.lib.unified_config",
+    "hashlib",
+    "random",
+    "time",
+    "datetime",
+    "core.lib.hot_data_source",
+    "core.lib.task_queue"
+  ],
+  "task_quality_scorer.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "typing",
+    "core.lib.config_loader"
+  ],
+  "task_quality_scorer_v1_0_00_20260517.py": [
+    "core.lib.unified_config",
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.error_knowledge_v1_0_00_20260517",
+    "core.lib.memory_simple"
+  ],
+  "task_quality_scorer_v1_0_01_20260517.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "typing",
+    "core.lib.config_driver_v1_0_00_20260517"
+  ],
+  "task_queue.py": [
+    "logging",
+    "queue",
+    "threading",
+    "functools",
+    "typing"
+  ],
+  "task_vars.py": [
+    "re",
+    "pathlib"
+  ],
+  "teach_llm.py": [
+    "core.lib.config_helper",
+    "core.lib.constants",
+    "core.lib.unified_config",
+    "json",
+    "sys",
+    "pathlib",
+    "requests",
+    "core.lib.architect_prompt"
+  ],
+  "template_api.py": [
+    "core.lib.unified_config",
+    "shutil",
+    "pathlib",
+    "yaml",
+    "flask",
+    "core.lib.auth_api"
+  ],
+  "template_vault.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "tenant_config_api.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "pathlib",
+    "yaml",
+    "flask",
+    "core.lib.auth_api"
+  ],
+  "tenant_manager.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "re",
+    "shutil"
+  ],
+  "tenant_middleware.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "os",
+    "functools",
+    "pathlib",
+    "jwt",
+    "flask"
+  ],
+  "tenant_vector.py": [
+    "core.lib.vector_knowledge_center",
+    "hashlib",
+    "time"
+  ],
+  "thread_monitor.py": [
+    "threading",
+    "time",
+    "typing"
+  ],
+  "threejs_knowledge.py": [
+    "core.lib.unified_config",
+    "hashlib",
+    "json",
+    "pathlib",
+    "typing"
+  ],
+  "tool_executor.py": [
+    "subprocess",
+    "json",
+    "pathlib",
+    "typing",
+    "requests"
+  ],
+  "tool_loop_guard_v1.py": [
+    "core.lib.unified_config",
+    "logging",
+    "collections",
+    "datetime",
+    "typing"
+  ],
+  "tool_system.py": [
+    "typing",
+    "agents.translate_agent.agent_v4"
+  ],
+  "tools.py": [
+    "subprocess",
+    "json",
+    "core.lib.safe_calculator",
+    "re",
+    "datetime",
+    "typing"
+  ],
+  "unified_capability_loader.py": [
+    "yaml",
+    "pathlib",
+    "typing"
+  ],
+  "unified_config.py": [
+    "os",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "unified_data_manager.py": [
+    "json",
+    "shutil",
+    "sqlite3",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.unified_config"
+  ],
+  "unified_intent_parser.py": [
+    "yaml",
+    "json",
+    "re",
+    "uuid",
+    "datetime",
+    "pathlib",
+    "string",
+    "typing",
+    "core.lib.llm_client"
+  ],
+  "unified_skill_manager.py": [
+    "typing",
+    "core.lib.skill_loader_v3",
+    "core.lib.skill_registry_v2",
+    "os",
+    "pathlib"
+  ],
+  "unified_vector.py": [
+    "core.lib.knowledge_registry",
+    "core.lib.memory",
+    "core.lib.route_vectorizer",
+    "core.lib.unified_config",
+    "core.tenant.tenant_vector_index"
+  ],
+  "usage_stats.py": [
+    "json",
+    "time",
+    "pathlib",
+    "datetime",
+    "threading"
+  ],
+  "user_butler_data.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "user_config.py": [
+    "core.lib.unified_config"
+  ],
+  "user_config_v2.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "shutil",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "user_context.py": [
+    "threading",
+    "contextlib",
+    "pathlib",
+    "typing"
+  ],
+  "user_crypto.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "base64",
+    "hashlib",
+    "json",
+    "os",
+    "pathlib",
+    "typing",
+    "cryptography.fernet"
+  ],
+  "user_marketplace.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "shutil",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.agents.user_translate_agent"
+  ],
+  "user_secret_manager.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "json",
+    "pickle",
+    "pathlib",
+    "typing"
+  ],
+  "v25_unified_bridge.py": [
+    "sys",
+    "os",
+    "uuid",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.redis_manager",
+    "core.lib.memory_layers",
+    "core.lib.agent_capability_loader",
+    "core.lib.decision_evaluator",
+    "core.lib.capability_recommender",
+    "core.lib.tool_system"
+  ],
+  "claude_code_adapter.py": [
+    "json",
+    "subprocess"
+  ],
+  "claude_http_adapter.py": [
+    "json",
+    "os",
+    "requests"
+  ],
+  "clawsjoy_adapter.py": [
+    "core.agents.wisdom.wisdom_factory",
+    "core.lib.llm_client"
+  ],
+  "deepseek_adapter.py": [
+    "requests"
+  ],
+  "factory.py": [
+    "core.lib.v8.adapters.deepseek_adapter",
+    "core.lib.v8.adapters.claude_code_adapter",
+    "core.lib.v8.adapters.clawsjoy_adapter",
+    "core.lib.v8.adapters.claude_http_adapter"
+  ],
+  "agent_discussion.py": [
+    "copy",
+    "json",
+    "re",
+    "logging",
+    "threading",
+    "typing",
+    "queue",
+    "core.lib.precision_feed",
+    "core.lib.v8.consensus_engine",
+    "core.lib.llm_client",
+    "core.lib.v8.roster_engine",
+    "core.gateway.chat_stream"
+  ],
+  "billing_hook.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib.v8.roster_engine",
+    "core.lib.v8.ledger",
+    "core.lib.v8.adapters.factory",
+    "core.lib.llm_client"
+  ],
+  "consensus_engine.py": [],
+  "drift_detector.py": [
+    "logging",
+    "re",
+    "typing"
+  ],
+  "feedback_collector.py": [
+    "os",
+    "json",
+    "typing",
+    "psycopg2",
+    "psycopg2.extras"
+  ],
+  "ledger.py": [
+    "json",
+    "pathlib",
+    "datetime",
+    "typing",
+    "core.lib.code_entity_extractor"
+  ],
+  "long_loop_state_machine.py": [
+    "json",
+    "logging",
+    "time",
+    "datetime",
+    "typing",
+    "tiktoken",
+    "core.lib.gateway_helpers",
+    "ast",
+    "os",
+    "core.lib.v8.drift_detector",
+    "pathlib",
+    "core.lib.v8.verifier",
+    "re",
+    "core.lib.v8.feedback_collector",
+    "core.lib.code_entity_extractor",
+    "yaml"
+  ],
+  "loop_context_manager.py": [
+    "json",
+    "logging",
+    "os",
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.lib"
+  ],
+  "notifications.py": [
+    "builtins",
+    "json",
+    "os",
+    "threading",
+    "typing"
+  ],
+  "roster_engine.py": [
+    "json",
+    "os",
+    "pathlib",
+    "datetime",
+    "typing",
+    "core.lib.code_entity_extractor"
+  ],
+  "billing.py": [
+    "logging",
+    "flask",
+    "core.lib.v8.ledger"
+  ],
+  "roster.py": [
+    "logging",
+    "flask",
+    "pathlib",
+    "yaml",
+    "core.lib.v8.roster_engine"
+  ],
+  "task.py": [
+    "logging",
+    "flask",
+    "core.lib.v8.task_engine"
+  ],
+  "v8_misc.py": [
+    "logging",
+    "flask",
+    "core.lib.v8.notifications",
+    "json",
+    "pathlib",
+    "time",
+    "requests"
+  ],
+  "task_engine.py": [
+    "json",
+    "pathlib",
+    "datetime",
+    "typing",
+    "core.lib.code_entity_extractor",
+    "core.lib.v8.roster_engine"
+  ],
+  "task_orchestrator.py": [
+    "json",
+    "os",
+    "re",
+    "datetime",
+    "core.lib.code_entity_extractor",
+    "logging",
+    "pathlib",
+    "typing",
+    "core.lib.llm_client",
+    "core.lib.v8.roster_engine",
+    "core.lib.v8.task_engine",
+    "core.lib.v8.agent_discussion",
+    "core.lib.notify",
+    "yaml",
+    "core.lib.os_event_logger",
+    "time",
+    "core.gateway.execute_agent_task",
+    "threading",
+    "core.agents.wisdom.wisdom_factory",
+    "shutil",
+    "core.lib.v8.adapters.factory"
+  ],
+  "verifier.py": [
+    "ast",
+    "json",
+    "typing",
+    "requests",
+    "core.lib.unified_config",
+    "re"
+  ],
+  "video_analyzer.py": [
+    "os",
+    "re",
+    "json",
+    "subprocess",
+    "tempfile",
+    "shutil",
+    "base64",
+    "pathlib",
+    "typing",
+    "requests",
+    "time"
+  ],
+  "weight_adjuster.py": [
+    "os",
+    "math",
+    "typing",
+    "psycopg2",
+    "psycopg2.extras"
+  ],
+  "vector_bank.py": [
+    "json",
+    "numpy",
+    "pathlib",
+    "datetime",
+    "typing",
+    "hashlib",
+    "requests"
+  ],
+  "vector_knowledge_center.py": [
+    "typing",
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "hashlib",
+    "json",
+    "datetime",
+    "pathlib",
+    "chromadb",
+    "chromadb.config"
+  ],
+  "vector_memory_config.py": [
+    "core.lib.config_helper",
+    "pathlib",
+    "core.lib.unified_config",
+    "chromadb.utils.embedding_functions"
+  ],
+  "verification_chain.py": [
+    "ast",
+    "json",
+    "os",
+    "subprocess",
+    "sys",
+    "traceback",
+    "datetime",
+    "pathlib",
+    "typing",
+    "re",
+    "time",
+    "core.lib.progress_manager"
+  ],
+  "version_manager_v1_0_01_20260517.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "version_manager_v1_0_02_20260517.py": [
+    "core.lib.unified_config",
+    "pathlib",
+    "typing",
+    "core.lib.config_driver_v1_0_00_20260517"
+  ],
+  "version_registry.py": [
+    "core.lib.unified_config",
+    "re",
+    "sys",
+    "pathlib",
+    "importlib.util"
+  ],
+  "version_registry_v1.0.01_20260517.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "subprocess",
+    "datetime",
+    "pathlib",
+    "typing",
+    "sys"
+  ],
+  "version_registry_v1.0.02_20260517.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "subprocess",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "sys"
+  ],
+  "version_registry_v1.0.03_20260517.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "re",
+    "subprocess",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "sys"
+  ],
+  "version_registry_v1.0.04_20260523.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "version_registry_v1.0.05_20260524.py": [
+    "core.lib.unified_config",
+    "json",
+    "os",
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "version_registry_v1.0.06_20260524.py": [
+    "core.lib.unified_config",
+    "datetime",
+    "pathlib",
+    "typing",
+    "json"
+  ],
+  "video_planner.py": [
+    "core.lib.unified_config",
+    "json",
+    "subprocess",
+    "core.lib.memory_simple"
+  ],
+  "voice_service.py": [
+    "core.lib.config_helper",
+    "core.lib.unified_config",
+    "subprocess",
+    "tempfile",
+    "pathlib",
+    "typing"
+  ],
+  "checker.py": [
+    "abc",
+    "pathlib",
+    "typing",
+    "subprocess"
+  ],
+  "core.py": [
+    "collections",
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "state.py": [
+    "enum",
+    "dataclasses",
+    "datetime"
+  ],
+  "web_cache.py": [
+    "os",
+    "re",
+    "json",
+    "hashlib",
+    "logging",
+    "pathlib",
+    "datetime",
+    "typing",
+    "urllib.parse",
+    "urllib.request",
+    "urllib.error",
+    "psycopg2",
+    "psycopg2.extras",
+    "core.lib.code_entity_extractor",
+    "sys",
+    "code_entity_extractor"
+  ],
+  "workflow_executor.py": [
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "core.agents.builtin.orchestrator"
+  ],
+  "workspace_manager.py": [
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "base.py": [
+    "abc",
+    "typing"
+  ],
+  "execute_command.py": [
+    "subprocess",
+    "core.gateway.sandbox_git",
+    "core.gateway.shared_state",
+    "core.tools.base",
+    "re",
+    "time",
+    "psycopg2",
+    "core.lib.code_entity_extractor"
+  ],
+  "file_tools.py": [
+    "core.tools.base"
+  ],
+  "query_index.py": [
+    "time",
+    "warnings",
+    "core.gateway.shared_state",
+    "core.tools.base",
+    "re",
+    "json",
+    "tempfile",
+    "os",
+    "core.lib.code_entity_extractor",
+    "core.lib.sag_audit_bridge"
+  ],
+  "read_file.py": [
+    "core.tools.base",
+    "re",
+    "ast"
+  ],
+  "write_file.py": [
+    "core.tools.base",
+    "tempfile",
+    "os",
+    "subprocess"
+  ],
+  "agent_gateway_enhanced.py": [
+    "os",
+    "yaml",
+    "pathlib",
+    "dotenv",
+    "core.lib.gateway_helpers",
+    "core.gateway.shared_state",
+    "core.gateway.sandbox_git",
+    "core.gateway.registry",
+    "core.lib.tool_executor",
+    "core.gateway.state_persist",
+    "core.gateway.execute_agent_task",
+    "core.gateway.archive",
+    "core.gateway.message_assembler",
+    "json",
+    "uuid",
+    "time",
+    "concurrent.futures",
+    "logging",
+    "logging.handlers",
+    "datetime",
+    "typing",
+    "psutil",
+    "flask",
+    "flask_cors",
+    "core.lib.precision_feed",
+    "core.lib.sandbox_tools",
+    "core.gateway.os_monitor",
+    "threading",
+    "core.agents.cortex",
+    "core.lib.llm_client"
+  ],
+  "solution.py": [],
+  "test_core.py": [
+    "unittest",
+    "string_utils"
+  ],
+  "client.py": [
+    "engine.active",
+    "engine.knowledge",
+    "engine.memory",
+    "engine.profile",
+    "engine.reasoning",
+    "engine.semantic"
+  ],
+  "manager.py": [
+    "importlib",
+    "pathlib",
+    "typing"
+  ],
+  "news_engine.py": [
+    "os",
+    "requests",
+    "typing",
+    "dotenv"
+  ],
+  "openclaw.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "orchestrator.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "threading",
+    "typing",
+    "core.lib.unified_config"
+  ],
+  "reasoning.py": [
+    "typing"
+  ],
+  "skill_loader.py": [
+    "sys",
+    "pathlib",
+    "core.lib.skill_loader_v3"
+  ],
+  "tracer.py": [
+    "uuid",
+    "contextvars",
+    "datetime",
+    "typing"
+  ],
+  "atomic_engine_v25.py": [
+    "uuid",
+    "logging",
+    "datetime",
+    "typing",
+    "core.lib.json_standard",
+    "core.lib.json_builder",
+    "core.lib.v25_unified_bridge",
+    "core.agents.wisdom.wisdom_factory",
+    "core.lib.skill_recommender"
+  ],
+  "analyzer.py": [
+    "base64",
+    "tempfile",
+    "pathlib",
+    "typing",
+    "sys",
+    "skills.vision.scripts.main"
+  ],
+  "sd_generator.py": [
+    "base64",
+    "io",
+    "pathlib",
+    "torch",
+    "PIL",
+    "diffusers"
+  ],
+  "enhanced.py": [
+    "datetime",
+    "typing",
+    "engine.embedding.local_embedding",
+    "engine.lib.logger",
+    "re",
+    "core.lib.unified_config"
+  ],
+  "audio.py": [
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "video.py": [
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "vision.py": [
+    "base64",
+    "json",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "task_manager.py": [
+    "json",
+    "dataclasses",
+    "datetime",
+    "enum",
+    "pathlib",
+    "typing",
+    "core.lib.parallel_scheduler",
+    "time",
+    "concurrent.futures",
+    "core.lib.code_entity_extractor"
+  ],
+  "user_friendly.py": [
+    "dataclasses",
+    "datetime",
+    "enum",
+    "typing"
+  ],
+  "smart_qa.py": [
+    "sys",
+    "pathlib",
+    "engine.knowledge",
+    "engine.profile",
+    "engine.semantic"
+  ],
+  "local_embedding.py": [
+    "hashlib",
+    "sys",
+    "pathlib",
+    "typing",
+    "engine.lib.logger",
+    "core.lib.vector_knowledge_center"
+  ],
+  "optimized.py": [
+    "core.lib.unified_config",
+    "typing",
+    "requests"
+  ],
+  "autonomous.py": [
+    "pathlib",
+    "json",
+    "random",
+    "collections",
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "keyword_learner.py": [
+    "json",
+    "re",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "self_learning.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.evolution.keyword_learner"
+  ],
+  "vector_sync.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "auth.py": [
+    "json",
+    "os",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "video_feedback_chain.py": [
+    "re",
+    "subprocess",
+    "sys",
+    "pathlib",
+    "engine.semantic_params.mapper"
+  ],
+  "skill_handlers.py": [
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.event_bus"
+  ],
+  "datamask.py": [
+    "hashlib",
+    "json",
+    "re",
+    "datetime",
+    "typing"
+  ],
+  "desensitize.py": [
+    "typing",
+    "hashlib",
+    "re",
+    "datetime"
+  ],
+  "desensitizer.py": [
+    "re"
+  ],
+  "lifecycle.py": [
+    "json",
+    "shutil",
+    "threading",
+    "time",
+    "datetime",
+    "pathlib",
+    "engine.lib.logger"
+  ],
+  "configurable_engine.py": [
+    "yaml",
+    "pathlib",
+    "typing"
+  ],
+  "skill_creator.py": [
+    "re",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "engine_config.py": [
+    "typing",
+    "core.lib.unified_config"
+  ],
+  "vector_learner.py": [
+    "time",
+    "pathlib",
+    "typing",
+    "core.lib.vector_knowledge_center"
+  ],
+  "config_engine.py": [
+    "time",
+    "pathlib",
+    "typing",
+    "yaml",
+    "engine.semantic.engines.base"
+  ],
+  "llm_engine.py": [
+    "json",
+    "re",
+    "threading",
+    "time",
+    "pathlib",
+    "typing",
+    "yaml",
+    "engine.semantic.engines.base",
+    "core.lib.unified_config",
+    "requests",
+    "core.lib.smart_adapter"
+  ],
+  "rule_engine.py": [
+    "pathlib",
+    "typing",
+    "yaml",
+    "engine.semantic.engines.base",
+    "core.lib.unified_config"
+  ],
+  "vector_engine.py": [
+    "hashlib",
+    "time",
+    "typing",
+    "engine.semantic.engines.base",
+    "core.lib.vector_knowledge_center",
+    "core.lib.unified_config"
+  ],
+  "logger.py": [
+    "logging",
+    "sys",
+    "datetime",
+    "pathlib"
+  ],
+  "integration.py": [
+    "typing",
+    "engine.active",
+    "engine.profile",
+    "engine.semantic"
+  ],
+  "image_mapper.py": [
+    "re"
+  ],
+  "mapper.py": [
+    "re",
+    "typing"
+  ],
+  "spatial_mapper.py": [
+    "re",
+    "typing"
+  ],
+  "video_mapper.py": [
+    "re"
+  ],
+  "generator.py": [
+    "json",
+    "random",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ]
+}

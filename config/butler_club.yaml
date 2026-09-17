@@ -1,0 +1,36 @@
+# 私人管家俱乐部配置
+version: "1.0.0"
+
+# 数据存储
+data:
+  root: "data/butler_club"
+
+# 会员等级
+membership_levels:
+  - name: "bronze"
+    min_interactions: 0
+    color: "#CD7F32"
+    benefits: ["基础服务"]
+  - name: "silver"
+    min_interactions: 100
+    color: "#C0C0C0"
+    benefits: ["基础服务", "优先响应"]
+  - name: "gold"
+    min_interactions: 500
+    color: "#FFD700"
+    benefits: ["基础服务", "优先响应", "个性化设置"]
+  - name: "diamond"
+    min_interactions: 2000
+    color: "#B9F2FF"
+    benefits: ["全部服务", "专属管家", "VIP通道"]
+
+# 俱乐部设置
+settings:
+  default_butler_name: "小管"
+  max_rename_history: 10
+  auto_upgrade: true
+
+# API 配置
+api:
+  prefix: "/api/butler/club"
+  version: "v1"

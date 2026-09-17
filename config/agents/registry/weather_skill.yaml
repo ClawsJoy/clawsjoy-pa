@@ -1,0 +1,20 @@
+capable_of:
+- 天气
+- 气温
+- 预报
+- 温度
+- 下雨
+- 晴天
+- 阴天
+- 气象
+- 会不会下雨
+- 今天天气
+class: WeatherSkill
+description: weather_skill 智能体
+enabled: true
+name: weather_skill
+priority: 25
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

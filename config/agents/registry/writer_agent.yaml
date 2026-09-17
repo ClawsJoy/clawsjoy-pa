@@ -1,0 +1,19 @@
+capable_of:
+- 写故事
+- 写小说
+- 写文章
+- 润色文章
+- 改作文
+- 文学创作
+- 小说情节
+- 人物设定
+- 故事大纲
+class: WriterAgent
+description: writer_agent 智能体
+enabled: true
+name: writer_agent
+priority: 15
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

@@ -1,0 +1,21 @@
+name: manju_maker
+version: 1.0.0
+description: 一键生成漫剧视频
+category: video
+tags:
+  - video
+  - manju
+  - animation
+input_schema:
+  topic:
+    type: string
+    required: true
+  target_duration:
+    type: integer
+    required: false
+    default: 60
+output_schema:
+  success: boolean
+  video: string
+  duration: float
+author: ClawsJoy

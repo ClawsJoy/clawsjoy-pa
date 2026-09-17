@@ -1,0 +1,37 @@
+version: "1.0.0"
+workspaces:
+  chat_agent:
+    enabled: true
+    workspace_path: "agents/chat_agent"
+    module: "core.agents.chat_agent"
+    class: "ChatAgent"
+  orchestrator:
+    enabled: true
+    workspace_path: "agents/orchestrator"
+    module: "core.agents.orchestrator"
+    class: "OrchestratorAgent"
+  collaboration_agent:
+    enabled: true
+    workspace_path: "agents/collaboration_agent"
+    module: "core.agents.collaboration_agent"
+    class: "CollaborationAgent"
+  code_agent:
+    enabled: true
+    workspace_path: "agents/code_agent"
+    module: "core.agents.code_agent"
+    class: "CodeAgent"
+  decision_agent:
+    enabled: true
+    workspace_path: "agents/decision_agent"
+    module: "core.agents.decision_agent"
+    class: "DecisionAgent"
+  executor_agent:
+    enabled: true
+    workspace_path: "agents/executor_agent"
+    module: "core.agents.executor_agent"
+    class: "ExecutorAgent"
+  analysis_agent:
+    enabled: true
+    workspace_path: "agents/analysis_agent"
+    module: "core.agents.analysis_agent"
+    class: "AnalysisAgent"

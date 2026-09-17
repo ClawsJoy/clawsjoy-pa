@@ -1,0 +1,171 @@
+# Ginoor 隐私保护框架配置
+# 符合 GDPR、CCPA、PIPL 等法规要求
+
+version: "2.0.0"
+framework: "Ginoor"
+compliance:
+  - GDPR
+  - CCPA
+  - PIPL
+
+# ============================================
+# 数据分类
+# ============================================
+data_classification:
+  public:
+    description: "公开数据"
+    protection_level: "low"
+  internal:
+    description: "内部数据"
+    protection_level: "medium"
+  confidential:
+    description: "机密数据"
+    protection_level: "high"
+    encryption: true
+  restricted:
+    description: "受限数据"
+    protection_level: "critical"
+    encryption: true
+    access_control: true
+
+# ============================================
+# 数据最小化
+# ============================================
+data_minimization:
+  enabled: true
+  retention_days: 30
+  auto_cleanup: true
+  cleanup_schedule: "0 3 * * *"  # 每天凌晨3点
+  excluded_data:
+    - "anonymized_stats"
+    - "system_logs"
+
+# ============================================
+# 用户同意管理
+# ============================================
+consent:
+  required: true
+  cookie_lifetime: 365
+  withdrawable: true
+  purposes:
+    - id: "analytics"
+      name: "数据分析"
+      required: false
+      description: "用于改进服务体验"
+    - id: "personalization"
+      name: "个性化推荐"
+      required: false
+      description: "根据您的偏好推荐内容"
+    - id: "security"
+      name: "安全防护"
+      required: true
+      description: "保障账户和数据安全"
+    - id: "marketing"
+      name: "营销推广"
+      required: false
+      description: "发送产品更新和优惠信息"
+
+# ============================================
+# 数据加密
+# ============================================
+encryption:
+  at_rest: true
+  in_transit: true
+  algorithm: "AES-256-GCM"
+  key_rotation_days: 90
+  fields:
+    - name: "password"
+      algorithm: "bcrypt"
+    - name: "token"
+      algorithm: "JWT"
+    - name: "personal_info"
+      algorithm: "AES-256-GCM"
+
+# ============================================
+# 数据主体权利
+# ============================================
+user_rights:
+  access: true           # 访问权
+  rectification: true    # 更正权
+  erasure: true          # 删除权（被遗忘权）
+  restriction: true      # 限制处理权
+  portability: true      # 数据可携权
+  objection: true        # 拒绝权
+  automated_decision: true  # 自动化决策权
+  response_time_hours: 72   # 响应时间
+
+# ============================================
+# 隐私政策
+# ============================================
+privacy_policy:
+  url: "/api/v1/privacy/policy"
+  version: "2.0.0"
+  last_updated: "2026-06-01"
+  languages:
+    - zh-CN
+    - en-US
+  contact:
+    email: "privacy@clawsjoy.com"
+    phone: "+86 400-xxx-xxxx"
+
+# ============================================
+# 数据跨境传输
+# ============================================
+data_transfer:
+  cross_border: true
+  standard_contractual_clauses: true
+  adequacy_decisions:
+    - "EU"
+    - "UK"
+  restricted_countries:
+    - "XX"
+
+# ============================================
+# 数据主体请求处理
+# ============================================
+subject_requests:
+  enabled: true
+  auto_process: true
+  notification:
+    email: true
+    sms: false
+  retention_days: 365
+
+# ============================================
+# 隐私影响评估
+# ============================================
+pia:
+  enabled: true
+  required_for_new_features: true
+  review_interval_days: 180
+  approver_role: "DPO"
+
+# ============================================
+# 数据泄露响应
+# ============================================
+breach_response:
+  enabled: true
+  notification_hours: 72
+  contact:
+    email: "security@clawsjoy.com"
+  escalation:
+    - role: "DPO"
+      notification_hours: 1
+    - role: "CISO"
+      notification_hours: 4
+    - role: "Legal"
+      notification_hours: 24
+
+# ============================================
+# 第三方数据处理
+# ============================================
+third_party:
+  processors:
+    - name: "Cloud Provider"
+      purpose: "基础设施"
+      data_categories: ["internal"]
+    - name: "Analytics Service"
+      purpose: "数据分析"
+      data_categories: ["public", "internal"]
+  data_processing_agreements: true
+  subprocessor_consent: true

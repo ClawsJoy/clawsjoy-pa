@@ -1,0 +1,73 @@
+# 大脑调度器 v6.0 _ 适配当前系统
+
+executors:
+  math_executor:
+    enabled: true
+    module: skills.my_calculator.my_calculator_skill
+    class: my_calculator
+    description: 数学计算
+
+  weather:
+    enabled: true
+    module: skills.weather.weather_skill
+    class: weather_skill
+    description: 天气查询
+
+  time:
+    enabled: true
+    module: skills.time.time_skill
+    class: time_skill
+    description: 时间查询
+
+  version:
+    enabled: true
+    module: skills.version.version_skill
+    class: version_skill
+    description: 系统版本
+
+  network:
+    enabled: true
+    module: skills.network.network_skill
+    class: network_skill
+    description: 网络检测
+
+  gpu:
+    enabled: true
+    module: skills.gpu_safe.gpu_safe_skill
+    class: gpu_safe_skill
+    description: GPU状态
+
+  llm_executor:
+    enabled: true
+    module: core.agents.wisdom.wisdom_factory
+    class: wisdom_factory
+    description: LLM兜底
+
+priority:
+  - _name: math
+    keywords: ["计算", "等于", "1+1", "算", "加", "减", "乘", "除"]
+    handler: math_executor
+
+  - _name: weather
+    keywords: ["天气", "气温", "下雨"]
+    handler: weather
+
+  - _name: time
+    keywords: ["时间", "几点了", "今天几号", "星期几"]
+    handler: time
+
+  - _name: version
+    keywords: ["版本", "version"]
+    handler: version
+
+  - _name: network
+    keywords: ["网络", "联网", "在线"]
+    handler: network
+
+  - _name: gpu
+    keywords: ["显卡", "GPU", "显存"]
+    handler: gpu
+
+  - _name: llm
+    default: true
+    handler: llm_executor

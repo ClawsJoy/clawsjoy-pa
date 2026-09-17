@@ -1,0 +1,38 @@
+# 技能进化配置
+version: "1.0.0"
+
+# 技能生成
+generation:
+  enabled: true
+  max_tokens: 2000
+  temperature: 0.7
+  template: |
+    从以下任务经验中，生成一个可复用的原子技能:
+    任务: {task}
+    成功经验: {success_experience}
+    失败教训: {failure_lessons}
+    
+    输出格式:
+    技能名: xxx
+    描述: xxx
+    输入参数: xxx
+    执行步骤: xxx
+    错误处理: xxx
+
+# 试错配置
+trial:
+  max_attempts: 3
+  timeout: 60
+  validation: true
+
+# 学习配置
+learning:
+  feedback_loop: true
+  confidence_threshold: 0.7
+  max_history: 100
+
+# 进化配置
+evolution:
+  max_generations: 5
+  convergence_threshold: 0.9
+  mutation_rate: 0.2

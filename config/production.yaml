@@ -1,0 +1,49 @@
+# 生产环境配置
+version: "1.0.0"
+
+environment: production
+
+# 服务配置
+server:
+  host: 0.0.0.0
+  port: 5002
+  workers: 8
+  threads: 4
+  max_requests: 1000
+  timeout: 120
+
+# 数据库配置
+database:
+  redis:
+    host: redis
+    port: 6379
+    password: ""
+    db: 0
+  postgres:
+    host: postgres
+    port: 5432
+    database: clawsjoy
+    pool_size: 20
+
+# LLM 配置
+llm:
+  ollama:
+    endpoint: http://ollama:11434
+    models:
+      code: deepseek-coder:6.7b
+      chat: qwen2.5:7b-instruct-q4_0-gpu
+      embedding: nomic-embed-text
+
+# 监控配置
+monitoring:
+  metrics: true
+  tracing: true
+  logging:
+    level: INFO
+    format: json
+
+# 安全配置
+security:
+  rate_limit: 100
+  jwt_secret: ${JWT_SECRET}
+  api_key_required: true

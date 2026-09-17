@@ -1,0 +1,48 @@
+{
+  "policy": "每条 skip 必须登记理由与恢复条件; 新增/消失的 skip 都会让 tools/check_test_baseline.py 判红。",
+  "updated": "2026-09-13",
+  "skips": [
+    {
+      "id": "tests/unit/test_browser_hybrid_integration.py::test_baidu_hybrid_e2e",
+      "reason": "百度反爬/网络不可达/浏览器环境不可用(运行期 pytest.skip)",
+      "nature": "环境依赖",
+      "restore": "有真实浏览器 profile + 外网可达时复跑(非逻辑失败)"
+    },
+    {
+      "id": "tests/unit/test_browser_local_p3.py::test_manifest_no_browser_permissions",
+      "reason": "扩展已退役(移 archive), 测试已失效(pytest.mark.skip)",
+      "nature": "已被取代",
+      "restore": "不建议恢复: 建议删除该文件或保留为历史 —— 待老板拍板"
+    },
+    {
+      "id": "tests/unit/test_browser_local_p3.py::test_plugin_no_active_ws",
+      "reason": "扩展已退役(移 archive), 测试已失效",
+      "nature": "已被取代",
+      "restore": "同上(建议删除)"
+    },
+    {
+      "id": "tests/unit/test_browser_local_p3.py::test_plugin_status_via_http",
+      "reason": "扩展已退役(移 archive), 测试已失效",
+      "nature": "已被取代",
+      "restore": "同上(建议删除)"
+    },
+    {
+      "id": "tests/unit/test_browser_local_p3.py::test_sidebar_status_display",
+      "reason": "扩展已退役(移 archive), 测试已失效",
+      "nature": "已被取代",
+      "restore": "同上(建议删除)"
+    },
+    {
+      "id": "tests/unit/test_canary_golden.py::test_canary_02_poc_analysis",
+      "reason": "前置 POC 产物缺失(data/tmp/a11y_elements.json)",
+      "nature": "环境依赖",
+      "restore": "跑一次浏览器 a11y 枚举生成该产物后自动恢复"
+    },
+    {
+      "id": "tests/unit/test_canary_golden.py::test_baseline_recorded",
+      "reason": "前置 POC 产物缺失(a11y_elements.json), golden2 跳过导致不足 5 条",
+      "nature": "环境依赖",
+      "restore": "同上, 补齐 POC 产物后自动恢复"
+    }
+  ]
+}

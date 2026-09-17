@@ -1,0 +1,42 @@
+current: llama3.2:3b
+models:
+- enabled: true
+  endpoint: http://localhost:11434
+  name: qwen2.5:7b-instruct-q4_0-gpu
+  provider: ollama
+  type: chat
+- enabled: true
+  endpoint: http://localhost:11434
+  name: qwen2.5:7b-instruct-q4_0-gpu
+  provider: ollama
+  type: chat
+- enabled: true
+  endpoint: http://localhost:11434
+  name: llama3.2:3b
+  provider: ollama
+  type: chat
+- api_key: "your-api-key"
+  enabled: false
+  endpoint: https://api.openai.com/v1
+  name: gpt-4o
+  provider: openai
+  type: chat
+- api_key: "your-api-key"
+  enabled: false
+  endpoint: https://api.anthropic.com/v1
+  name: claude-3
+  provider: anthropic
+  type: chat
+- api_key: "your-api-key"
+  enabled: false
+  endpoint: https://generativelanguage.googleapis.com/v1
+  name: gemini-pro
+  provider: google
+  type: chat
+routes:
+- intent: "\u804A\u5929|\u5BF9\u8BDD|hello"
+  model: qwen2.5:7b-instruct-q4_0-gpu
+- intent: "\u4EE3\u7801|\u7F16\u7A0B|debug"
+  model: qwen2.5:7b-instruct-q4_0-gpu
+- intent: "\u521B\u610F|\u5199\u4F5C|\u6587\u6848"
+  model: qwen2.5:7b-instruct-q4_0-gpu

@@ -1,0 +1,17 @@
+capable_of:
+- 大语言模型
+- LLM
+- GPT
+- 问答
+- 通用对话
+- 聊天
+- gpt
+class: LlmAgentAgent
+description: llm_agent 智能体
+enabled: true
+name: llm_agent
+priority: 10
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

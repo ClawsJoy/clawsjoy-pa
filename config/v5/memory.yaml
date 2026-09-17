@@ -1,0 +1,5 @@
+enabled: true
+levels:
+  session: 50
+  daily: 100
+  long_term: 500

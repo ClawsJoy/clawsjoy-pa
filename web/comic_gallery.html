@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>狮子山精神 - 漫画图文</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #eee;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+        .comic-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .comic-panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .comic-panel img {
+            width: 100%;
+            display: block;
+        }
+        .comic-caption {
+            padding: 20px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.7);
+            border-top: 3px solid gold;
+        }
+        .comic-title {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .comic-subtitle {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="comic-container">
+        <div class="comic-title">🦁 狮子山精神</div>
+        <div class="comic-subtitle">香港精神的象征 · 永不言弃的信念</div>
+        
+        <div id="comic-gallery">
+            <div style="text-align: center; padding: 50px;">加载漫画中...</div>
+        </div>
+    </div>
+    
+    <script>
+        // 漫画分镜数据
+        const panels = [
+            { img: "/images/comic/comic_opening_*.jpg", caption: "狮子山——香港精神的象征" },
+            { img: "/images/comic/comic_struggle_*.jpg", caption: "携手共进，永不言弃" },
+            { img: "/images/comic/comic_success_*.jpg", caption: "狮子山下，共创未来" },
+            { img: "/images/comic/comic_character_*.jpg", caption: "老一辈的狮子山精神" },
+            { img: "/images/comic/comic_youth_*.jpg", caption: "新一代的传承" }
+        ];
+        
+        // 加载实际图片（简化版）
+        const gallery = document.getElementById('comic-gallery');
+        gallery.innerHTML = panels.map(panel => `
+            <div class="comic-panel">
+                <div class="comic-caption">${panel.caption}</div>
+                <div style="padding: 20px; text-align: center; color: #aaa;">[漫画图片加载中]</div>
+            </div>
+        `).join('');
+    </script>
+
+        <div style="text-align:center; margin:40px 0;">
+            <button id="exportBtn" onclick="exportAssets()" style="
+                background:gold; color:#1a1a2e; border:none; padding:15px 40px;
+                font-size:18px; font-weight:bold; border-radius:30px; cursor:pointer;
+            ">📦 导出漫剧素材包</button>
+            <p id="exportStatus" style="color:#aaa; margin-top:10px;"></p>
+        </div>
+        <script>
+        async function exportAssets() {
+            const btn = document.getElementById('exportBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 打包中...';
+            document.getElementById('exportStatus').textContent = '正在打包...';
+            try {
+                const resp = await fetch('/api/export/comic/AI觉醒');
+                const data = await resp.json();
+                if (data.success) {
+                    const a = document.createElement('a');
+                    a.href = data.download_url;
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    document.getElementById('exportStatus').textContent = '✅ 下载完成';
+            btn.disabled = false;
+            btn.textContent = '📦 导出漫剧素材包';
+                }
+            } catch(e) {
+                document.getElementById('exportStatus').textContent = '❌ 导出失败';
+            btn.disabled = false;
+            btn.textContent = '📦 导出漫剧素材包';
+            }
+        }
+        </script>
+    </div>
+
+</body>
+</html>

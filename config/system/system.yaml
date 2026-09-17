@@ -1,0 +1,47 @@
+# ClawsJoy 系统配置
+version: "5.0.0"
+name: "ClawsJoy"
+environment: "production"
+
+# 服务配置
+services:
+  gateway:
+    host: "0.0.0.0"
+    port: 5002
+  file_service:
+    port: 5003
+  multi_agent:
+    port: 5006
+
+# LLM 配置
+llm:
+  provider: "ollama"
+  endpoint: "http://127.0.0.1:11434"
+  default_model: "qwen2.5:7b-instruct-q4_0-gpu"
+  fast_model: "qwen2.5:7b-instruct-q4_0-gpu"
+  embedding_model: "nomic-embed-text"
+  timeout: 30
+  max_tokens: 512
+  temperature: 0.7
+
+# 路径配置
+paths:
+  data_root: "data"
+  users_dir: "data/users"
+  tenants_dir: "data/tenants"
+  vector_kb: "data/vector_kb"
+  butler_club: "data/butler_club"
+  temp_sessions: "data/temp_sessions"
+  logs: "logs"
+
+# 超时配置
+timeouts:
+  default: 30
+  long: 120
+  llm_generate: 60
+  health_check: 5
+
+# 重试配置
+retry:
+  max_attempts: 3
+  backoff: 2

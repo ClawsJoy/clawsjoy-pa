@@ -1,0 +1,153 @@
+version: 2.0.0
+updated_at: '2026-06-06'
+
+intents:
+  greeting:
+    keywords: ["你好", "您好", "hi", "hello", "在吗"]
+    name: 问候
+    priority: 10
+  farewell:
+    keywords: ["再见", "拜拜", "bye"]
+    name: 告别
+    priority: 10
+  thanks:
+    keywords: ["谢谢", "感谢", "多谢"]
+    name: 感谢
+    priority: 10
+  calculate:
+    keywords: ["计算", "加", "减", "乘", "除", "等于"]
+    name: 计算
+    priority: 25
+  weather:
+    keywords: ["天气", "气温", "预报", "温度"]
+    name: 天气
+    priority: 25
+  translate:
+    keywords: ["翻译", "译成", "translate"]
+    name: 翻译
+    priority: 20
+  code:
+    keywords: ["写代码", "编程", "代码", "函数", "算法"]
+    name: 代码
+    priority: 30
+  download:
+    keywords: ["下载视频", "保存视频", "youtube下载", "下载YouTube"]
+    name: 下载
+    priority: 25
+
+extractors:
+  name:
+    patterns: ["叫([\\u4e00-\\u9fa5]{2,4})", "名字叫([\\u4e00-\\u9fa5]{2,4})"]
+
+  video:
+    keywords:
+    - 分析视频
+    - 视频分析
+    - 视频理解
+    - 处理视频
+    - 裁剪视频
+    - 视频剪辑
+    name: 视频处理
+    priority: 30
+    skills:
+    - video_agent
+
+  panorama:
+    keywords:
+    - 全景
+    - 360度
+    - panorama
+    - 全景图
+    name: 全景生成
+    priority: 30
+    skills:
+    - vision_agent
+
+# Agent 能力声明
+agent_capabilities:
+  video_agent:
+    capable_of:
+      - "搜索视频素材"
+      - "下载视频"
+      - "裁剪视频"
+      - "合并视频"
+      - "添加字幕"
+      - "调整亮度/对比度/饱和度"
+      - "生成全景图"
+      - "分析视频"
+    priority: 10
+    requires_context: false
+
+  vision_agent:
+    capable_of:
+      - "生成图像"
+      - "分析图像"
+      - "优化图像"
+      - "描述图片"
+      - "图片问答"
+      - "生成360度全景图"
+    priority: 10
+    requires_context: false
+
+  writer_agent:
+    capable_of:
+      - "写文章"
+      - "写脚本"
+      - "改写内容"
+      - "总结内容"
+      - "生成标题"
+    priority: 10
+    requires_context: false
+
+  audio_agent:
+    capable_of:
+      - "语音合成TTS"
+      - "语音识别"
+      - "音频剪辑"
+    priority: 10
+    requires_context: false
+
+  executor_agent:
+    capable_of:
+      - "执行命令"
+      - "运行脚本"
+      - "调用工具"
+    priority: 15
+    requires_context: false
+
+  analysis_agent:
+    capable_of:
+      - "数据分析"
+      - "趋势分析"
+      - "报表生成"
+    priority: 10
+    requires_context: true
+
+# 任务完成检测关键词
+task_detection:
+  confirmation_keywords:
+    - "是否确认"
+    - "请确认"
+    - "按此计划"
+    - "确认后执行"
+  write_keywords:
+    - "创建"
+    - "修改"
+    - "完善"
+    - "写入"
+    - "新增"
+    - "添加"
+    - "生成"
+    - "实现"
+    - "编写"
+    - "补充"
+    - "新建"
+  verification_keywords:
+    - "已包含"
+    - "已存在"
+    - "已有"
+    - "无需修改"
+    - "已经实现"
+    - "已完成"
+    - "验证通过"
+    - "功能已完整实现"

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>创建自定义 Agent - ClawsJoy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            font-family: 'Segoe UI', monospace;
+            color: #e0e0ff;
+            padding: 40px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(10,10,30,0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0,243,255,0.3);
+            border-radius: 20px;
+            padding: 30px;
+        }
+        h1 { margin-bottom: 20px; color: #00f3ff; }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #888;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(0,243,255,0.3);
+            border-radius: 8px;
+            color: #e0e0ff;
+            font-family: monospace;
+        }
+        textarea { min-height: 150px; resize: vertical; }
+        .btn-submit {
+            background: linear-gradient(135deg, #00f3ff, #0088cc);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            color: #0a0a1a;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .preview {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(0,243,255,0.2);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>✨ 创建自定义 Agent</h1>
+    <p style="margin-bottom: 20px;">创建自己的 AI 助手，上架商店供他人使用</p>
+    
+    <div class="form-group">
+        <label>Agent 名称</label>
+        <input type="text" id="agentName" placeholder="例如: 语言大师">
+    </div>
+    
+    <div class="form-group">
+        <label>分类</label>
+        <select id="category">
+            <option value="language">语言处理</option>
+            <option value="writing">文案创作</option>
+            <option value="analysis">分析推理</option>
+            <option value="custom">自定义</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>价格 ($)</label>
+        <input type="number" id="price" value="4.99" step="0.01">
+    </div>
+    
+    <div class="form-group">
+        <label>能力标签 (用逗号分隔)</label>
+        <input type="text" id="capabilities" placeholder="翻译,润色,写作">
+    </div>
+    
+    <div class="form-group">
+        <label>描述</label>
+        <textarea id="description" placeholder="描述这个 Agent 的功能和特点..."></textarea>
+    </div>
+    
+    <div class="form-group">
+        <label>系统提示词 (定义 Agent 的行为和角色)</label>
+        <textarea id="prompt" placeholder="例如: 你是语言大师，精通多国语言，擅长翻译、润色、写作..."></textarea>
+    </div>
+    
+    <button class="btn-submit" onclick="createAgent()">🚀 提交审核</button>
+    
+    <div id="result" class="preview" style="display: none;"></div>
+</div>
+
+<script>
+    async function createAgent() {
+        const data = {
+            user_id: "zhangsan",
+            name: document.getElementById('agentName').value,
+            category: document.getElementById('category').value,
+            price: parseFloat(document.getElementById('price').value),
+            capabilities: document.getElementById('capabilities').value.split(',').map(s => s.trim()),
+            description: document.getElementById('description').value,
+            prompt: document.getElementById('prompt').value
+        };
+        
+        if (!data.name) {
+            alert('请输入 Agent 名称');
+            return;
+        }
+        
+        const resp = await fetch('/api/agent/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await resp.json();
+        
+        const resultDiv = document.getElementById('result');
+        if (result.success) {
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h3>✅ 提交成功！</h3>
+                <p>Agent ID: ${result.agent_id}</p>
+                <p>${result.message}</p>
+                <p style="margin-top: 10px; color: #ffaa00;">等待管理员审核通过后，即可在商店中售卖</p>
+            `;
+        } else {
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<h3>❌ 提交失败</h3><p>${result.error}</p>`;
+        }
+    }
+</script>
+</body>
+</html>

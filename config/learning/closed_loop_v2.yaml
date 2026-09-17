@@ -1,0 +1,100 @@
+# ============================================
+# ClawsJoy 6/6闭环系统 v2.0
+# 6个环节: 采集 → 分析 → 决策 → 执行 → 监控 → 优化
+# ============================================
+
+version: "2.0.0"
+
+# 6/6闭环定义
+closed_loop:
+  name: "智能闭环系统"
+  version: "6.0"
+  
+  # 环节1: 采集层 (Collector)
+  stage_1_collect:
+    agent: "collector_agent"
+    function: "数据采集"
+    input:
+      - user_input
+      - system_events
+      - api_calls
+    output: "collected_data"
+    interval: "realtime"
+    
+  # 环节2: 分析层 (Analyzer)
+  stage_2_analyze:
+    agent: "analysis_agent"
+    function: "数据分析"
+    input: "collected_data"
+    output: "analysis_insights"
+    methods:
+      - statistical_analysis
+      - pattern_recognition
+      - anomaly_detection
+      - trend_forecasting
+      
+  # 环节3: 决策层 (Decision)
+  stage_3_decide:
+    agent: "decision_agent"
+    function: "智能决策"
+    input: "analysis_insights"
+    output: "decisions"
+    strategies:
+      - rule_based
+      - ml_based
+      - hybrid
+      
+  # 环节4: 执行层 (Executor)
+  stage_4_execute:
+    agent: "orchestrator"
+    function: "任务执行"
+    input: "decisions"
+    output: "execution_results"
+    targets:
+      - code_agent
+      - chat_agent
+      - custom_agents
+      
+  # 环节5: 监控层 (Monitor)
+  stage_5_monitor:
+    agent: "monitor_agent"
+    function: "效果监控"
+    input: "execution_results"
+    output: "monitoring_metrics"
+    metrics:
+      - success_rate
+      - response_time
+      - user_satisfaction
+      
+  # 环节6: 优化层 (Optimizer)
+  stage_6_optimize:
+    agent: "learning_agent"
+    function: "持续优化"
+    input: "monitoring_metrics"
+    output: "optimization_suggestions"
+    feedback_to: "stage_2_analyze"
+    learning_methods:
+      - reinforcement_learning
+      - feedback_loop
+      - a_b_testing
+
+# 闭环触发器
+triggers:
+  - name: "realtime"
+    condition: "event_driven"
+    priority: 1
+    
+  - name: "scheduled"
+    condition: "cron: */5 * * * *"
+    priority: 2
+    
+  - name: "threshold"
+    condition: "metric > threshold"
+    priority: 3
+
+# 闭环状态存储
+state_storage:
+  type: "local"
+  path: "data/closed_loop/"
+  format: "json"
+  retention_days: 30

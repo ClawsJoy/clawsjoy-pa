@@ -1,0 +1,17 @@
+capable_of:
+- 决策
+- 选择
+- 判断
+- 哪个好
+- 建议
+- 推荐
+- 应该
+class: DecisionAgent
+description: decision_agent 智能体
+enabled: true
+name: decision_agent
+priority: 25
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

@@ -1,0 +1,14 @@
+capable_of:
+- 向量搜索
+- 语义搜索
+- 相似度
+- embedding
+class: PureVectorAgentAgent
+description: pure_vector_agent 智能体
+enabled: true
+name: pure_vector_agent
+priority: 10
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

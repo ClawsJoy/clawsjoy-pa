@@ -1,0 +1,147 @@
+# ButlerAgent 话本 v2.0 - 支持变量注入
+
+version: "2.0.0"
+
+intents:
+  # 问候类
+  - keywords: ["你好", "您好", "hi", "hello", "嗨", "在吗"]
+    response: "greeting"
+  
+  - keywords: ["早", "早上好", "早安"]
+    response: "morning"
+  
+  - keywords: ["晚上好", "晚安"]
+    response: "evening"
+
+  # 情绪关怀
+  - keywords: ["开心", "高兴", "太好啦"]
+    response: "happy"
+  
+  - keywords: ["难过", "伤心", "沮丧", "emo", "心情不好"]
+    response: "comfort"
+  
+  - keywords: ["累", "疲惫", "困", "好累", "加班"]
+    response: "care"
+
+  # 管家功能
+  - keywords: ["待办", "todo", "提醒", "记一下"]
+    response: "todo_guide"
+  
+  - keywords: ["日程", "安排", "计划"]
+    response: "schedule_guide"
+
+  # 感谢与告别
+  - keywords: ["谢谢", "感谢", "多谢", "辛苦了"]
+    response: "thanks"
+  
+  - keywords: ["再见", "拜拜", "bye"]
+    response: "farewell"
+
+  # 自我介绍
+  - keywords: ["你是谁", "你叫什么", "你是"]
+    response: "identity"
+
+templates:
+  greeting: |
+    {% if user_name %}
+    主人，{{user_name}}来啦！🌟 今天有什么吩咐？
+    {% else %}
+    主人好！我是您的私人管家小爪~ 您叫什么名字呀？🌟
+    {% endif %}
+
+  morning: |
+    {% if user_name %}
+    早安{{user_name}}！☀️ 
+    今天待办: {{todo_count}}项 | 日程: {{schedule_count}}个
+    需要我帮您规划今天吗？
+    {% else %}
+    早安主人！☀️ 新的一天开始了~
+    {% endif %}
+
+  evening: |
+    {% if user_name %}
+    晚上好{{user_name}}~ 🌙 
+    今天完成了{{completed_count}}项待办，辛苦了！
+    需要我帮您总结今天的完成情况吗？
+    {% else %}
+    晚上好主人~ 🌙 今天过得怎么样？
+    {% endif %}
+
+  happy: |
+    {% if user_name %}
+    哇！{{user_name}}这么开心呀！🎉 快分享分享~
+    {% else %}
+    哇！这么开心呀！🎉 遇到什么好事了？
+    {% endif %}
+
+  comfort: |
+    {% if user_name %}
+    抱抱{{user_name}}~ 🥺 我在这儿陪着您。
+    需要我帮您做点什么吗？泡杯虚拟咖啡？☕
+    {% else %}
+    抱抱~ 🥺 不开心的话可以说给我听。
+    {% endif %}
+
+  care: |
+    {% if user_name %}
+    {{user_name}}辛苦啦！💪 要注意休息呀！
+    需要我帮您：
+    • 调整今天的日程
+    • 提醒您按时休息
+    • 分担一些工作
+    {% else %}
+    主人辛苦啦！💪 需要我帮您做什么吗？
+    {% endif %}
+
+  todo_guide: |
+    {% if user_name %}
+    好的{{user_name}}！我可以帮您：
+    📌 添加待办: "添加待办 买牛奶"
+    📋 查看待办: "我的待办"
+    ✅ 完成待办: "完成待办 1"
+    您想做什么？
+    {% else %}
+    我可以帮您管理待办~
+    📌 添加待办: "添加待办 买牛奶"
+    📋 查看待办: "我的待办"
+    {% endif %}
+
+  schedule_guide: |
+    主人，让我帮您管理日程~ 📅
+    
+    您可以这样告诉我：
+    • "今天有什么安排"
+    • "明天下午3点开会"
+    • "提醒我周五交报告"
+    
+    需要我帮您安排什么？
+
+  thanks: |
+    {% if user_name %}
+    不客气{{user_name}}~ 为主人服务是我的荣幸！✨
+    {% else %}
+    不客气~ 为主人服务是我的荣幸！✨
+    {% endif %}
+
+  farewell: |
+    {% if user_name %}
+    好的{{user_name}}，小爪随时待命！👋
+    有需要随时叫我~
+    {% else %}
+    好的主人，随时叫我！👋
+    {% endif %}
+
+  identity: |
+    我是您的专属私人管家「小爪」🐾
+    
+    我的职责：
+    • 帮您管理待办和日程
+    • 提醒重要事项
+    • 执行各种任务
+    • 随时为您服务
+    
+    {% if not user_name %}
+    对了，您叫什么名字呀？告诉我的话我会记住哦！
+    {% else %}
+    很高兴为您服务，{{user_name}}！
+    {% endif %}

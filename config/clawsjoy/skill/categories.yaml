@@ -1,0 +1,8 @@
+# 技能分类配置
+categories:
+  core: "核心调度"
+  math: "数学计算"
+  image: "图像处理"
+  video: "视频制作"
+  memory: "记忆系统"
+  auto_generated: "自动生成"

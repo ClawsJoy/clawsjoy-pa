@@ -1,0 +1,260 @@
+# 技能匹配配置 v3.0
+# 用于语义推荐和意图路由
+
+matching:
+  keyword_mapping:
+    # 数学计算
+    计算:
+      - math_enhanced
+      - add
+      - multiply
+      - divide
+    加法:
+      - add
+    减法:
+      - math_enhanced
+    乘法:
+      - multiply
+    除法:
+      - divide
+
+    # 视频处理
+    视频:
+      - video_composer
+      - video_download
+      - manju_maker
+      - complete_video_maker
+    剪辑:
+      - video_composer
+      - manju_maker
+    漫剧:
+      - manju_maker
+    字幕:
+      - add_subtitles
+
+    # 图像处理
+    图像:
+      - vision
+      - image_recognition
+    图片:
+      - spider
+      - vision
+    去背景:
+      - remove_bg
+    识别:
+      - image_recognition
+
+    # 音频处理
+    音频:
+      - audio_generator
+      - tts
+    朗读:
+      - tts
+    转文字:
+      - transcribe
+
+    # 翻译
+    翻译:
+      - translate
+
+    # 天气
+    天气:
+      - get_weather
+
+    # 文件操作
+    文件:
+      - file_processor
+    读取:
+      - read_file
+    写入:
+      - write_file
+
+    # 分析
+    分析:
+      - requirement_analyzer
+      - intent_parser
+      - data_analyzer
+    需求:
+      - requirement_analyzer
+    意图:
+      - intent_parser
+    数据:
+      - data_analyzer
+
+    # 编排
+    编排:
+      - orchestrator
+      - workflow_engine
+    协调:
+      - orchestrator
+    调度:
+      - orchestrator
+
+    # 协作
+    协作:
+      - collaboration
+    合作:
+      - collaboration
+
+    # 决策
+    决策:
+      - decision_maker
+    选择:
+      - decision_maker
+
+    # 记忆
+    记忆:
+      - memory
+      - memory_manager
+    记住:
+      - memory
+
+    # 网络
+    网络:
+      - http_get
+    请求:
+      - http_get
+    下载:
+      - download_file
+
+    # 金融
+    股票:
+      - get_stock
+    汇率:
+      - exchange_rate
+
+    # 健康
+    健康:
+      - health
+    提醒:
+      - reminder
+
+    # 学习
+    学习:
+      - learn_english
+      - learn_math
+    英语:
+      - learn_english
+    数学:
+      - learn_math
+
+  priority_skills:
+    - video_composer
+    - manju_maker
+    - tts
+    - vision
+    - remove_bg
+    - math_enhanced
+    - translate
+    - get_weather
+    - memory
+    - orchestrator
+    - collaboration
+    - decision_maker
+    - requirement_analyzer
+
+  blacklist_skills:
+    - test_skill
+    - example_skill
+    - feeding
+    - story
+    - drawing
+    - backup
+    - light
+    - temperature
+    - Model_Enable_Intel_XPU
+    - my_calc
+    - do_anything
+
+  params:
+    default_n: 3
+    min_similarity: 0.4
+    fallback_to_vector: false
+    hybrid_search: true
+
+    # 分析相关
+    分析:
+      - requirement_analyzer
+      - intent_parser
+    需求:
+      - requirement_analyzer
+    业务:
+      - requirement_analyzer
+    销售:
+      - requirement_analyzer
+    数据:
+      - data_analyzer
+
+    # 协作相关
+    协作:
+      - collaboration
+    合作:
+      - collaboration
+    团队:
+      - collaboration
+    协同:
+      - collaboration
+
+    # 决策相关
+    决策:
+      - decision_maker
+    决定:
+      - decision_maker
+    选择:
+      - decision_maker
+    判断:
+      - decision_maker
+
+    # 开发相关
+    开发:
+      - development
+      - smart_execute
+    编码:
+      - development
+    调试:
+      - development
+
+    # 测试相关
+    测试:
+      - test_skill
+    验证:
+      - test_skill
+
+    # 文件操作
+    文件:
+      - file_processor
+      - read_file
+    读取:
+      - read_file
+    写入:
+      - write_file
+
+    # 网络请求
+    请求:
+      - http_get
+    下载:
+      - download_file
+
+    # 记忆
+    记忆:
+      - memory
+    记住:
+      - memory
+    回忆:
+      - memory
+
+    # 时间
+    时间:
+      - get_time
+    日期:
+      - get_time
+
+    # 视频下载（新增）
+    下载视频:
+      - video_download
+    保存视频:
+      - video_download
+    youtube下载:
+      - video_download
+    YouTube下载:
+      - video_download

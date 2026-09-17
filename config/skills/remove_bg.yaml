@@ -1,0 +1,23 @@
+name: remove_bg
+version: 1.0.0
+description: 移除图片背景，生成透明 PNG
+category: image
+tags:
+  - image
+  - background
+  - remove
+dependencies:
+  - rembg
+  - onnxruntime
+input_schema:
+  input_path:
+    type: string
+    required: true
+  output_path:
+    type: string
+    required: false
+output_schema:
+  success: boolean
+  output_path: string
+  message: string
+author: ClawsJoy

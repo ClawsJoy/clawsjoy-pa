@@ -1,0 +1,59 @@
+# 统一数据源配置
+version: "1.0.0"
+
+data_sources:
+  # 日志数据源
+  logs:
+    enabled: true
+    paths:
+      - "logs/agent.log"
+      - "logs/alerter.log"
+      - "logs/analyzer.log"
+      - "logs/gateway.log"
+    pattern: "*.log"
+    max_lines: 1000
+    
+  # 记忆库数据源
+  memory:
+    enabled: true
+    vector_kb: "data/vector_kb"
+    collections:
+      - "memory_vectors"
+    max_results: 100
+    
+  # 知识库数据源
+  knowledge:
+    enabled: true
+    paths:
+      - "data/knowledge/*/learned.json"
+      - "data/knowledge/*/*.json"
+      
+  # 错误知识库
+  errors:
+    enabled: true
+    paths:
+      - "data/error_knowledge.json"
+      - "data/error_fixes.json"
+      
+  # 性能指标
+  metrics:
+    enabled: true
+    sources:
+      - type: "system"
+        commands: ["cpu", "memory", "disk"]
+      - type: "application"
+        endpoints: ["http://localhost:5002/api/health"]
+        
+  # 用户反馈
+  feedback:
+    enabled: true
+    paths:
+      - "data/users/*/feedback.json"
+      - "data/user_feedback.json"
+
+# 分析配置
+analysis:
+  interval: 300  # 分析间隔（秒）
+  max_insights: 10
+  llm_model: "qwen2.5:7b-instruct-q4_0-gpu
+  temperature: 0.3

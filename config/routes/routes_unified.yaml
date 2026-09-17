@@ -1,0 +1,83 @@
+# 统一路由配置 v3.0
+version: "3.0.0"
+
+routes:
+  # 健康检查
+  - path: "/api/health"
+    method: "GET"
+    handler: "health"
+    enabled: true
+
+  # Agent 管理
+  - path: "/api/admin/agents/list"
+    method: "GET"
+    handler: "admin_list_agents"
+    enabled: true
+  - path: "/api/admin/agents/create"
+    method: "POST"
+    handler: "admin_create_agent"
+    enabled: true
+  - path: "/api/admin/agents/update"
+    method: "POST"
+    handler: "admin_update_agent"
+    enabled: true
+  - path: "/api/admin/agents/toggle"
+    method: "POST"
+    handler: "admin_toggle_agent"
+    enabled: true
+  - path: "/api/admin/agents/delete"
+    method: "POST"
+    handler: "admin_delete_agent"
+    enabled: true
+  - path: "/api/admin/agents/reload"
+    method: "POST"
+    handler: "admin_reload_agents"
+    enabled: true
+
+  # Agent 调用（统一入口）
+  - path: "/api/agent/<agent_name>/message"
+    method: "POST"
+    handler: "agent_message"
+    enabled: true
+
+  # 私人管家（兼容旧接口）
+  - path: "/api/butler/chat"
+    method: "POST"
+    handler: "butler_chat"
+    enabled: true
+  - path: "/api/butler/rename"
+    method: "POST"
+    handler: "butler_rename"
+    enabled: true
+  - path: "/api/butler/todo"
+    method: "GET"
+    handler: "butler_todo"
+    enabled: true
+  - path: "/api/butler/todo"
+    method: "POST"
+    handler: "butler_todo"
+    enabled: true
+  - path: "/api/butler/memory"
+    method: "GET"
+    handler: "butler_memory"
+    enabled: true
+
+  # 市场
+  - path: "/api/marketplace/list"
+    method: "GET"
+    handler: "marketplace_list"
+    enabled: true
+  - path: "/api/marketplace/install"
+    method: "POST"
+    handler: "marketplace_install"
+    enabled: true
+
+  # 技能
+  - path: "/api/skills"
+    method: "GET"
+    handler: "list_skills"
+    enabled: true
+  - path: "/api/skills/execute"
+    method: "POST"
+    handler: "execute_skill"
+    enabled: true

@@ -1,0 +1,26 @@
+# 热重载配置
+version: "1.0.0"
+
+# 向量化配置
+vectorization:
+  enabled: true
+  auto_index: true
+  on_startup: true
+  on_change: true
+  
+# 索引类型
+index_types:
+  skills: true
+  routes: true
+  apis: true
+  
+# 租户配置
+tenants:
+  auto_discover: true
+  isolated_vectors: true
+  
+# 推荐配置
+recommendation:
+  enabled: true
+  top_k: 5
+  min_similarity: 0.3

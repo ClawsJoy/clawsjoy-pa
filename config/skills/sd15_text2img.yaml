@@ -1,0 +1,74 @@
+name: sd15_text2img
+type: atomic
+version: 1.0.0
+description: Stable Diffusion 1.5 文生图原子技能，支持中文提示词
+category: image
+author: ClawsJoy
+compatible_with:
+  - openclaw
+  - clawsjoy
+tags:
+  - image-generation
+  - text-to-image
+  - sd15
+  - stable-diffusion
+
+input_schema:
+  prompt:
+    type: string
+    required: true
+    description: 图像描述提示词（支持中文）
+  negative_prompt:
+    type: string
+    required: false
+    default: "low quality, blurry"
+    description: 负面提示词
+  steps:
+    type: integer
+    required: false
+    default: 20
+    minimum: 1
+    maximum: 50
+    description: 推理步数
+  width:
+    type: integer
+    required: false
+    default: 512
+  height:
+    type: integer
+    required: false
+    default: 512
+  cfg:
+    type: number
+    required: false
+    default: 7.0
+    description: 引导系数
+
+output_schema:
+  success:
+    type: boolean
+    description: 是否成功
+  image_path:
+    type: string
+    description: 图片路径
+  elapsed_time:
+    type: number
+    description: 耗时(秒)
+
+execution:
+  runtime: python3
+  entry: ./tools/sd15_skill.py
+  command_template: "python3 {entry} --prompt '{input.prompt}' --steps {input.steps} --width {input.width} --height {input.height} --cfg {input.cfg} --json"
+
+examples:
+  - input:
+      prompt: "一只可爱的猫咪"
+      steps: 20
+    description: "生成可爱猫咪图"
+  - input:
+      prompt: "a beautiful sunset"
+      width: 768
+      height: 768
+    description: "生成日落风景图"
+
+documentation: ./skills/sd15_text2img.md

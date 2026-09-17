@@ -1,0 +1,27 @@
+actions:
+- vision
+- analyze
+- describe_image
+- detect_objects
+- ocr
+- generate_image
+- optimize_image
+capabilities:
+- description: 描述图像内容
+  name: describe_image
+- description: 检测图像中的物体
+  name: detect_objects
+- description: 图像文字识别（OCR）
+  name: ocr
+- description: 生成图像
+  name: generate_image
+- description: 优化图像质量
+  name: optimize_image
+description: 图像识别与计算机视觉专家
+examples:
+- input: 识别这张图片
+  output: 图像内容描述
+- input: 生成一张风景图
+  output: 风景图像已生成
+name: vision_agent
+type: agent

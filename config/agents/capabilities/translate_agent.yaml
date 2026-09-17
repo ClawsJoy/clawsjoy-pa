@@ -1,0 +1,15 @@
+actions:
+- translate
+capabilities:
+- description: 翻译文本到目标语言
+  name: translate
+- description: 检测文本语言
+  name: detect_language
+description: 多语言翻译专家
+examples:
+- input: 翻译 hello 为中文
+  output: hello 的中文意思是'你好'
+- input: 翻译 你好 为英文
+  output: 你好 的英文是'hello'
+name: translate_agent
+type: agent

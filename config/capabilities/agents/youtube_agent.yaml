@@ -1,0 +1,21 @@
+name: youtube_agent
+description: YouTube 视频专家，搜索、下载、分析频道
+capabilities:
+  - name: search_video
+    description: 搜索 YouTube 视频
+  - name: download_video
+    description: 下载 YouTube 视频
+  - name: get_video_info
+    description: 获取视频信息
+  - name: analyze_channel
+    description: 分析频道
+  - name: generate_title
+    description: 生成视频标题
+  - name: optimize_seo
+    description: SEO优化建议
+examples:
+  - input: "下载 https://youtu.be/xxx"
+    output: "视频已下载到 ~/Downloads/"
+  - input: "视频信息 https://youtu.be/xxx"
+    output: "标题: xxx, 时长: 10:00"
+actions: ['youtube', '视频下载', 'download']

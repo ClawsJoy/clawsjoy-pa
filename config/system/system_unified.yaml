@@ -1,0 +1,216 @@
+agent:
+  memory_enabled: true
+  memory_limit: 100
+  vector_enabled: true
+analyst:
+  data_sources:
+    agent_registry:
+      description: Agent注册
+      enabled: true
+      path: data/agent_registry.json
+      type: json
+    bypass_monitor:
+      description: 旁路监控
+      enabled: true
+      path: data/bypass_monitor/
+      type: directory
+    club_members:
+      description: 俱乐部会员
+      enabled: true
+      path: data/butler_club/members/
+      type: directory
+    club_stats:
+      description: 俱乐部统计
+      enabled: true
+      path: data/butler_club/stats.json
+      type: json
+    customer_skills:
+      description: 客户经营技能
+      enabled: true
+      path: skills/customer/
+      type: directory
+    error_log:
+      description: 错误日志
+      enabled: true
+      path: logs/error.log
+      type: log
+    frontend_errors:
+      description: 前端错误
+      enabled: true
+      path: data/frontend_errors.json
+      type: json
+    frontend_metrics:
+      description: 前端性能指标
+      enabled: true
+      path: data/frontend_metrics/
+      type: directory
+    internal_skills:
+      description: 内部技能库
+      enabled: true
+      path: skills/
+      type: directory
+    memory_metadata:
+      description: 记忆元数据
+      enabled: true
+      path: data/memory_metadata.json
+      type: json
+    skill_stats:
+      description: 技能统计
+      enabled: true
+      path: data/skill_stats.json
+      type: json
+    user_behavior:
+      description: 用户行为
+      enabled: true
+      path: data/user_behavior/
+      type: directory
+butler:
+  features:
+    vector_memory:
+      enabled: true
+      similarity_threshold: 0.5
+      top_k: 5
+  memory:
+    history_limit: 50
+  paths:
+    user_data: data/users/{user_id}/butler_v2
+    vectors_dir: vectors
+cache:
+  enabled: true
+  max_size: 1000
+  ttl: 3600
+client:
+  electron:
+    backgroundColor: '#0a0a1a'
+    window_height: 900
+    window_width: 1400
+  plugin:
+    server_url: http://localhost:5002
+    version: 1.0.0
+closed_loop:
+  complexity:
+    high_threshold: 60
+    keyword_bonus: 20
+    medium_threshold: 30
+    multi_agent_bonus: 30
+  data_sources:
+  - workflow_outcome
+  - error_knowledge
+  - skill_performance
+  - user_feedback
+  - conversation
+  - agent_health
+  - system_metrics
+  enabled: true
+  feedback:
+    failure_trend_threshold: 10
+    satisfaction_critical: 40
+    satisfaction_warning: 60
+    success_rate_critical: 0.5
+    success_rate_warning: 0.7
+  meeting:
+    auto_trigger: true
+    default_agents:
+    - analyst
+    - decision
+    - orchestrator
+    - self_healer
+    high_urgency_agents:
+    - analyst
+    - decision
+    - orchestrator
+    - self_healer
+    - security_agent
+  version: 2.0.0
+environment: production
+hooks:
+  auto_load: true
+  enabled: true
+knowledge:
+  chunk_size: 512
+  collection_name: knowledge_base
+  embedding_model: nomic-embed-text
+  enabled: true
+  top_k: 5
+learning:
+  agent:
+    name: chat_agent
+    use_butler: false
+  auto_learn: true
+  enabled: true
+  min_confidence: 0.6
+  multi_tenant:
+    enabled: true
+    isolation: true
+    shared_patterns: true
+  parameters:
+    context_enabled: false
+    max_history: 50
+    session_ttl: 3600
+llm:
+  default_model: qwen2.5:7b-instruct-q4_0-gpu
+  endpoint: http://127.0.0.1:11434
+  fast_model: qwen2.5:7b-instruct-q4_0-gpu
+  max_tokens: 512
+  provider: ollama
+  temperature: 0.7
+  timeout: 30
+logging:
+  backup_count: 5
+  format: json
+  level: INFO
+  max_size_mb: 100
+paths:
+  config_root: config
+  data_root: data
+  logs_root: logs
+  memory_root: memory
+  skills_root: skills
+rate_limit:
+  default_limit: 10
+  enabled: true
+  time_window: 1
+retry:
+  backoff: 2
+  max_attempts: 3
+  max_backoff: 30
+security:
+  encryption_algorithm: AES-256-GCM
+  key_derivation: PBKDF2
+  key_length: 32
+  salt_length: 32
+services:
+  agent_api:
+    host: 0.0.0.0
+    port: 5010
+  file_service:
+    host: 0.0.0.0
+    port: 5003
+  gateway:
+    debug: false
+    host: 0.0.0.0
+    port: 5002
+  multi_agent:
+    host: 0.0.0.0
+    port: 5006
+skill_recommend:
+  auto_index: true
+  enabled: true
+  min_similarity: 0.3
+  top_k: 5
+timeouts:
+  default: 30
+  download: 60
+  health_check: 5
+  heartbeat: 30
+  llm_generate: 60
+  llm_stream: 120
+  long: 120
+  short: 10
+  upload: 300
+vector:
+  chunk_size: 1024
+  collection_name: memory_vectors
+  embedding_model: nomic-embed-text
+  top_k: 10
+version: 4.0.0

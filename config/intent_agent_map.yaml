@@ -1,0 +1,13 @@
+# 意图到 Agent 的映射
+intent_to_agent:
+  calculate: "calculator_agent"
+  translate: "translate_agent"
+  code: "code_agent"
+  weather: "weather_skill"
+  greeting: "chat_agent"
+  farewell: "chat_agent"
+  thanks: "chat_agent"
+  story: "writer_agent"
+  long_task: "orchestrator"
+  chat: "chat_agent"
+  story: "writer_agent"

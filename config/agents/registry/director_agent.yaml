@@ -1,0 +1,21 @@
+capable_of:
+- 策划
+- 导演
+- 视频策划
+- 内容规划
+- 拍摄计划
+- 制作流程
+- 统筹
+- 安排拍摄
+- 剧本
+- 分镜
+- 漫剧
+class: DirectorAgent
+description: director_agent 智能体
+enabled: true
+name: director_agent
+priority: 25
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

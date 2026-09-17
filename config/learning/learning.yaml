@@ -1,0 +1,38 @@
+# 学习系统统一配置
+version: "2.0.0"
+
+# 学习器配置
+real_learner:
+  enabled: true
+  stats_file: "data/real_stats.json"
+  cache_file: "data/execution_cache.json"
+
+# 技能进化器配置  
+skill_evolver:
+  enabled: true
+  config_file: "config/skill_evolution.yaml"
+  auto_generate: true
+  
+# 学习钩子配置
+learning_hooks:
+  enabled: true
+  log_dir: "data/learning_logs"
+  
+# 自动发现模式
+pattern_discovery:
+  enabled: true
+  patterns:
+    - name: "flex_center"
+      regex: "display:\\s*flex.*justify-content:\\s*center"
+      skill: "layout_flex_center"
+    - name: "grid_responsive"  
+      regex: "display:\\s*grid.*grid-template-columns.*repeat"
+      skill: "layout_grid_responsive"
+    - name: "glow_button"
+      regex: "box-shadow.*0\\s+0.*rgba\\(0,\\s*243,\\s*255"
+      skill: "ui_glow_effect"
+
+# 自动注册
+auto_register:
+  enabled: true
+  registry: "data/skill_registry_v2.json"

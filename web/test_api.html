@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>API Test</title></head>
+<body>
+<h1>API Test</h1>
+<div id="result"></div>
+<script>
+fetch('http://localhost:8084/api/list_engines')
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+  })
+  .catch(err => {
+    document.getElementById('result').innerHTML = 'Error: ' + err.message;
+  });
+</script>
+</body>
+</html>

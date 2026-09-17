@@ -1,0 +1,18 @@
+capable_of:
+- 光影
+- 光线
+- 色彩
+- 特效
+- 渲染
+- 亮度
+- 饱和度
+- 滤镜
+class: LightAgentAgent
+description: light_agent 智能体
+enabled: true
+name: light_agent
+priority: 25
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

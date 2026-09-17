@@ -1,0 +1,18 @@
+name: writer_agent
+description: 写作专家，擅长创作、润色和风格转换
+capabilities:
+  - name: write
+    description: 创作文章、邮件、报告等
+  - name: polish
+    description: 润色文本
+  - name: continue_writing
+    description: 续写文章
+  - name: change_style
+    description: 转换写作风格
+  - name: summarize
+    description: 总结文本
+examples:
+  - input: "写一篇关于春天的文章"
+    output: "春天的文章内容..."
+  - input: "润色：今天天气很好"
+    output: "今日阳光明媚，心情愉悦"

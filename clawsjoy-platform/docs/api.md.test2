@@ -1,0 +1,285 @@
+# ClawsJoy Platform API 文档
+
+> 基础地址：`http://localhost:8080`
+> 所有请求和响应均为 JSON 格式，Content-Type 统一为 `application/json`。
+
+---
+
+## 目录
+
+1. [JWT 认证说明](#jwt-认证说明)
+2. [用户接口](#用户接口)
+   - [POST /api/users/register — 用户注册](#1-post-apiusersregister--用户注册)
+   - [POST /api/users/login — 用户登录](#2-post-apiuserslogin--用户登录)
+3. [Agent 接口](#agent-接口)
+   - [GET /api/agents — Agent 列表](#3-get-apiagents--agent-列表)
+   - [GET /api/agents/{id} — Agent 详情](#4-get-apiagentsid--agent-详情)
+   - [POST /api/agents — 上架 Agent](#5-post-apiagents--上架-agent)
+4. [错误码说明](#错误码说明)
+
+---
+
+## JWT 认证说明
+
+平台使用 **JWT（JSON Web Token）** 进行身份认证。
+
+### Token 获取
+
+调用 `POST /api/users/register` 或 `POST /api/users/login` 成功后，响应中会返回 `token` 字段。
+
+### Token 使用
+
+在需要认证的接口请求头中加入：
+
+```
+Authorization: Bearer <token>
+```
+
+### Token 结构
+
+- 算法：`HS256`
+- 有效期：**24 小时**
+- Payload 包含：`user_id`、`username`、`role`
+
+### Token 解析（Go 示例）
+
+```go
+claims := &Claims{}
+token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+    return []byte("clawsjoy-dev-secret"), nil
+})
+```
+
+> **注意**：生产环境请将 JWT 密钥配置为环境变量，不要硬编码。
+
+---
+
+## 用户接口
+
+### 1. POST /api/users/register — 用户注册
+
+使用用户名和公钥注册新用户。注册成功后自动签发 JWT Token。
+
+**Request**
+
+```json
+{
+    "username": "test",
+    "public_key": "0x..."
+}
+```
+
+| 字段         | 类型   | 必填 | 说明             |
+|-------------|--------|------|------------------|
+| `username`  | string | 是   | 用户名           |
+| `public_key`| string | 是   | 用户公钥地址     |
+
+**Response — `201 Created`**
+
+```json
+{
+    "message": "User registered",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+        "id": 1,
+        "username": "test",
+        "role": "user"
+    }
+}
+```
+
+**cURL 示例**
+
+```bash
+curl -X POST http://localhost:8080/api/users/register \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "username": "test",
+    "public_key": "0x1234567890abcdef"
+  }'
+```
+
+**错误响应**
+
+| 状态码 | 说明           |
+|--------|----------------|
+| 500    | 注册失败（数据库错误） |
+
+---
+
+### 2. POST /api/users/login — 用户登录
+
+使用公钥登录，验证身份后返回 JWT Token。
+
+**Request**
+
+```json
+{
+    "public_key": "0x..."
+}
+```
+
+| 字段         | 类型   | 必填 | 说明         |
+|-------------|--------|------|--------------|
+| `public_key`| string | 是   | 用户公钥地址 |
+
+**Response — `200 OK`**
+
+```json
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+        "id": 1,
+        "username": "test",
+        "role": "user"
+    }
+}
+```
+
+**cURL 示例**
+
+```bash
+curl -X POST http://localhost:8080/api/users/login \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "public_key": "0x1234567890abcdef"
+  }'
+```
+
+**错误响应**
+
+| 状态码 | 说明                      |
+|--------|---------------------------|
+| 400    | 请求体格式错误            |
+| 401    | 用户不存在（公钥未注册）  |
+| 500    | Token 生成失败             |
+
+---
+
+## Agent 接口
+
+### 3. GET /api/agents — Agent 列表
+
+获取平台上所有 Agent 的列表。
+
+**Request — 查询参数（Query Parameters）**
+
+| 参数       | 类型   | 必填 | 默认值 | 说明                                 |
+|-----------|--------|------|--------|--------------------------------------|
+| `search`  | string | 否   | —      | 按名称或描述搜索（当前实现暂未过滤） |
+| `category`| string | 否   | —      | 按分类筛选（当前实现暂未过滤）       |
+| `sort`    | string | 否   | —      | 排序方式（如 `rating`，暂未实现）    |
+
+**Response — `200 OK`**
+
+```json
+{
+    "agents": [
+        {
+            "id": "1",
+            "name": "AI客服",
+            "description": "智能客服机器人，7x24小时在线",
+            "category": "客服",
+            "capabilities": "{}",
+            "price": 99,
+            "version": "1.0.0",
+            "download_count": 0,
+            "created_at": "2025-01-01T00:00:00Z"
+        }
+    ],
+    "total": 1
+}
+```
+
+| 字段                     | 类型    | 说明                          |
+|--------------------------|--------|-------------------------------|
+| `agents[].id`            | string | Agent 唯一 ID                 |
+| `agents[].name`          | string | Agent 名称                    |
+| `agents[].description`   | string | 描述                          |
+| `agents[].category`      | string | 分类                          |
+| `agents[].capabilities`  | string | 能力列表（JSON 字符串）        |
+| `agents[].price`         | number | 价格                          |
+| `agents[].version`       | string | 版本号                        |
+| `agents[].download_count`| int    | 下载次数                      |
+| `agents[].created_at`    | string | 创建时间（ISO 8601）          |
+| `total`                  | int    | Agent 总数                    |
+
+**cURL 示例**
+
+```bash
+# 获取全部列表
+curl http://localhost:8080/api/agents
+
+# 带查询参数
+curl "http://localhost:8080/api/agents?search=%E5%AE%A2%E6%9C%8D&category=%E5%AE%A2%E6%9C%8D&sort=rating"
+```
+
+**错误响应**
+
+| 状态码 | 说明       |
+|--------|------------|
+| 500    | 服务器错误 |
+
+---
+
+### 4. GET /api/agents/{id} — Agent 详情
+
+根据 ID 获取单个 Agent 的详细信息。
+
+**路径参数**
+
+| 参数 | 类型   | 说明        |
+|------|--------|-------------|
+| `id` | string | Agent 唯一ID |
+
+**Response — `200 OK`**
+
+```json
+{
+    "agent": {
+        "id": "1",
+        "name": "AI客服",
+        "description": "智能客服机器人，7x24小时在线",
+        "category": "客服",
+        "capabilities": "{}",
+        "price": 99,
+        "version": "1.0.0",
+        "download_count": 0,
+        "created_at": "2025-01-01T00:00:00Z"
+    }
+}
+```
+
+**cURL 示例**
+
+```bash
+curl http://localhost:8080/api/agents/1
+```
+
+**错误响应**
+
+| 状态码 | 说明          |
+|--------|---------------|
+| 404    | Agent 不存在   |
+| 500    | 服务器错误     |
+
+---
+
+### 5. POST /api/agents — 上架 Agent
+
+> **需要 JWT 认证** — 必须在请求头中携带 `Authorization: Bearer <token>`。
+
+上架一个新的 AI Agent 到平台商店。
+
+**Headers**
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+
+**Request**
+
+```json
+{
+    "name":

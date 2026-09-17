@@ -1,0 +1,40 @@
+# 向量检索优化配置
+
+version: "2.0.0"
+
+# 向量维度
+dimension: 768
+
+# 索引类型 (hnsw, ivf, flat)
+index_type: hnsw
+
+# HNSW 参数 (适合 6GB 显存)
+hnsw:
+  M: 16           # 连接数
+  ef_construction: 200
+  ef_search: 50
+
+# 分片配置
+shards:
+  skills: 1
+  agents: 1
+  memories: 2
+  documents: 2
+
+# 缓存配置
+cache:
+  enabled: true
+  ttl: 3600
+  max_size: 10000
+
+# 检索配置
+search:
+  default_top_k: 10
+  max_top_k: 50
+  similarity_threshold: 0.3
+
+# 批量处理
+batch:
+  enabled: true
+  size: 32
+  delay_ms: 100

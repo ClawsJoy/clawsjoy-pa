@@ -1,0 +1,43 @@
+agent:
+  name: memory_agent
+  display_name: 记忆管家
+  type: builtin
+  enabled: true
+  role:
+    title: "记忆管家"
+    alias: "回忆师"
+    responsibilities:
+      - "L0: 工作区记忆（短期）"
+      - "L1: 会话记忆（当前对话）"
+      - "L2: 长期记忆（向量存储）"
+      - "L3: 语义记忆（知识图谱）"
+      - "L4: 情景记忆（事件记录）"
+      - "L5: 经验记忆（学习反馈）"
+      - "跨会话记忆检索"
+      - "记忆衰减和清理"
+  llm:
+    provider: ollama
+    model: qwen2.5:7b
+    temperature: 0.3
+    max_tokens: 1024
+  capabilities:
+  keywords:
+    - "记住"
+    - "忘记"
+    - "回忆"
+    - "记得"
+    - "之前说过"
+    - "还记得"
+    - "存储"
+    - "记忆"
+    - "生日"
+    - "重要日期"
+    - "偏好"
+    - "习惯"
+    - "生日"
+    - "重要日期"
+    - "偏好"
+    - "习惯"
+  memory_layers:
+    L0: "工作区记忆 - 当前任务上下文"
+    L1: "会话记忆 - 本次对话历史"

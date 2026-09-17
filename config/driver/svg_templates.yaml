@@ -1,0 +1,52 @@
+# SVG 模板配置 v1.0.0
+
+templates:
+  architecture:
+    name: "系统架构图"
+    keywords: ["架构", "architecture", "系统结构", "组件"]
+    viewBox: "0 0 800 500"
+    colors:
+      bg: "#1a1a2e"
+      accent: "#00d4ff"
+      layer_user: "#2ecc71"
+      layer_security: "#e74c3c"
+      layer_agent: "#3498db"
+      layer_skill: "#f39c12"
+      layer_memory: "#9b59b6"
+  
+  roadmap:
+    name: "发展蓝图"
+    keywords: ["蓝图", "roadmap", "路线图", "规划", "阶段"]
+    viewBox: "0 0 1000 400"
+    colors:
+      bg: "#1a1a2e"
+      stage1: "#2ecc71"
+      stage2: "#3498db"
+      stage3: "#f39c12"
+      stage4: "#9b59b6"
+  
+  flowchart:
+    name: "流程图"
+    keywords: ["流程", "flow", "工作流", "步骤"]
+    viewBox: "0 0 600 500"
+  
+  chart:
+    name: "数据图表"
+    keywords: ["图表", "chart", "数据", "统计", "柱状图"]
+    viewBox: "0 0 600 400"
+
+# LLM 配置
+llm:
+  enabled: true
+  model: "qwen2.5:7b-instruct-q4_0-gpu
+  prompt_template: |
+    分析用户需求，提取关键信息：
+    用户说："{user_input}"
+    
+    请返回 JSON：
+    {{
+      "chart_type": "architecture|roadmap|flowchart|chart|generic",
+      "title": "图表标题",
+      "stages": ["阶段1", "阶段2", ...],
+      "metrics": {{"2026": 0, "2027": 200, ...}}
+    }}

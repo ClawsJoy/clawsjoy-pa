@@ -1,0 +1,45 @@
+version: 1.0.0
+developers:
+  dev_test2:
+    id: dev_test2
+    name: 测试
+    email: test2@dev.com
+    registered_at: '2026-05-28T05:04:33.242821'
+    status: active
+    agents: {}
+    stats:
+      total_uploads: 0
+      total_published: 0
+      total_downloads: 0
+  dev_test3:
+    id: dev_test3
+    name: 测试3
+    email: test3@dev.com
+    registered_at: '2026-05-28T05:05:33.527767'
+    status: active
+    agents: {}
+    stats:
+      total_uploads: 0
+      total_published: 0
+      total_downloads: 0
+  dev_new:
+    id: dev_new
+    name: 新开发者
+    email: new@dev.com
+    registered_at: '2026-05-28T05:08:40.203715'
+    status: active
+    agents: {}
+    stats:
+      total_uploads: 0
+      total_published: 0
+      total_downloads: 0
+review_queue: []
+statistics:
+  total_developers: 3
+  total_published_agents: 0
+  total_downloads: 0
+  total_reviews: 0
+config:
+  max_agents_per_developer: 10
+  auto_sanitize: true
+  require_review: true

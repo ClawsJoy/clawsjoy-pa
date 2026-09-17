@@ -1,0 +1,258 @@
+{
+ "baseline": {
+  "updated": "2026-09-14",
+  "command": ".venv/bin/python -m pytest -q（完整集；tools/check_test_baseline.py 同口径）",
+  "failed": 0,
+  "errors": 0,
+  "passed": 1582,
+  "skipped": 7,
+  "xfailed": 1,
+  "note": "批129：出口门 python -c 三条按方案A 修复（同步断言 3 条 + 删三处死分支 + 新增 3 条守卫测试）⇒ 确定性失败 3 → 0，全量 1582 passed / 7 skipped / 1 xfailed / 0 failed / 0 errors（本轮门实测）。此前 20 条全部收敛：17 条环境依赖已装包（批126）、3 条已被取代已同步（批129）。"
+ },
+ "policy": "失败条数不增 + 每条失败必须登记(性质/owner/计划); 未登记的新失败直接判红。skip 同样必须登记。 失败登记必须含 solo_reproducible 列（单跑是否可复现）；solo_reproducible=false → 归入测试脆弱桶。",
+ "known_failures": [],
+ "resolved": [
+  {
+   "id": "tests/integration/test_bridge_loop_init.py::test_bridge_loop_has_init",
+   "item": "①",
+   "nature": "cosmetic",
+   "fix": "AST 取函数体(批1 51f662b)"
+  },
+  {
+   "id": "tests/integration/test_goal_state.py::test_create_reuses_active",
+   "item": "②",
+   "nature": "已被取代",
+   "fix": "目标隔离新语义(批1)"
+  },
+  {
+   "id": "tests/integration/test_goal_state.py::test_goal_context_injection",
+   "item": "③",
+   "nature": "已被取代",
+   "fix": "W3 非 active 也注入(批1)"
+  },
+  {
+   "id": "tests/integration/test_manual_usage.py::test_p2_forbidden_scripts_blocked",
+   "item": "④",
+   "nature": "真bug",
+   "fix": "_classify_command 窄白名单(批3 59d3398)"
+  },
+  {
+   "id": "tests/integration/test_p2_failure_records.py::test_outer_except_recorded",
+   "item": "⑤",
+   "nature": "已被取代",
+   "fix": "换故障注入点(批1)"
+  },
+  {
+   "id": "tests/integration/test_subtask_depth.py::test_route_rejects_depth_exceeded",
+   "item": "⑥",
+   "nature": "已被取代",
+   "fix": "注册 routes.session Blueprint(批1)"
+  },
+  {
+   "id": "tests/integration/test_subtask_executor.py::test_routes_create_and_status",
+   "item": "⑦",
+   "nature": "已被取代",
+   "fix": "注册 routes.session Blueprint(批1)"
+  },
+  {
+   "id": "tests/integration/test_three_layer_context.py::test_hot_window_keeps_recent",
+   "item": "⑧",
+   "nature": "已被取代",
+   "fix": "R2 用户消息永不压缩(批1)"
+  },
+  {
+   "id": "tests/integration/test_three_layer_context.py::test_rolling_layer_semantic_summary",
+   "item": "⑨",
+   "nature": "真bug",
+   "fix": "摘要器喂回 user(批3)"
+  },
+  {
+   "id": "tests/integration/test_three_layer_context.py::test_sag_layer_snapshot_pointer",
+   "item": "⑩",
+   "nature": "已被取代",
+   "fix": "预置超 2KB 摘要(批1)"
+  },
+  {
+   "id": "tests/unit/test_obsidian_knowledge_plugin.py::test_obsidian_dispatch_via_router_read",
+   "item": "⑪",
+   "nature": "环境依赖",
+   "fix": "hermetic tmp vault(批4 691da6f)"
+  },
+  {
+   "id": "tests/unit/test_v9_context_shim.py::test_tool_registry_registered",
+   "item": "⑫",
+   "nature": "已被取代",
+   "fix": "超集断言(批1)"
+  },
+  {
+   "id": "tests/unit/test_workspace_guard_fixes.py::test_approval_tmp_debug_bypass",
+   "item": "⑬",
+   "nature": "已被取代",
+   "fix": "换非白名单路径+正向锁(批1)"
+  },
+  {
+   "id": "tests/unit/test_write_gate_unified.py::test_write_gate_cleaner_registered_in_context",
+   "item": "⑭",
+   "nature": "flaky",
+   "fix": "清理恢复原状态+conftest 快照(批2 dc97612)"
+  },
+  {
+   "id": "tests/unit/test_renderer_concat.py::TestRendererConcat::test_concat_single_file",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_renderer_concat.py::TestRendererConcat::test_concat_multiple_files",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_renderer_concat.py::TestRendererConcat::test_concat_empty_list",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_renderer_speed.py::TestRendererSpeed::test_speed_up",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_renderer_speed.py::TestRendererSpeed::test_slow_down",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_renderer_speed.py::TestRendererSpeed::test_speed_normal",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_renderer_trim.py::TestRendererTrim::test_trim_basic",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_renderer_trim.py::TestRendererTrim::test_trim_custom_times",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_renderer_trim.py::TestRendererTrim::test_trim_zero_duration",
+   "nature": "环境依赖（venv 缺 ffmpeg-python；该包已在 requirements.txt:12 声明但未安装）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: AttributeError: module core.video_studio has no attribute renderer ← core/video_studio/renderer.py:7 import ffmpeg 失败；base 环境同三文件 3+3+3 passed；两态确定性复现"
+  },
+  {
+   "id": "tests/unit/test_v9_context_shim.py::test_extractor_proxy_forwards",
+   "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
+  },
+  {
+   "id": "tests/unit/test_v9_context_shim.py::test_extractor_override_via_container",
+   "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
+  },
+  {
+   "id": "tests/unit/test_precision_inject.py::test_search_candidates_sag_source",
+   "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
+  },
+  {
+   "id": "tests/integration/test_p2_failure_records.py::test_tool_failure_toolexec_recorded",
+   "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
+  },
+  {
+   "id": "tests/integration/test_p2_failure_records.py::test_api_failure_llm_api_recorded",
+   "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
+  },
+  {
+   "id": "tests/integration/test_p2_failure_records.py::test_outer_except_recorded",
+   "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
+  },
+  {
+   "id": "tests/integration/test_p2_failure_records.py::test_failure_record_never_crashes",
+   "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
+  },
+  {
+   "id": "tests/unit/test_wps_office.py::test_pptx_fallback",
+   "nature": "环境依赖（venv 缺 python-pptx / python-docx；**未声明**）",
+   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: assert r.get('success') 为假（无 pptx 模块）；base 环境 3 passed（base pptx 1.0.2 / docx 1.2.0）"
+  },
+  {
+   "id": "tests/unit/test_workspace_guard_fixes.py::test_python_c_write_classified_as_write",
+   "nature": "已被取代（旧假设被证伪后同步断言）",
+   "fix": "批129 方案A：3 条断言同步 d1（任意代码载体一律 write）+ 删三处死分支 + 新增 3 条守卫测试（累计 41 passed）",
+   "evidence": "tests/unit/test_workspace_guard_fixes.py 41 passed；行为矩阵 30 例改前/改后逐条一致（删死代码不改行为）"
+  },
+  {
+   "id": "tests/unit/test_workspace_guard_fixes.py::test_approval_guard_covers_exec_write",
+   "nature": "已被取代（旧假设被证伪后同步断言）",
+   "fix": "批129 方案A：3 条断言同步 d1（任意代码载体一律 write）+ 删三处死分支 + 新增 3 条守卫测试（累计 41 passed）",
+   "evidence": "tests/unit/test_workspace_guard_fixes.py 41 passed；行为矩阵 30 例改前/改后逐条一致（删死代码不改行为）"
+  },
+  {
+   "id": "tests/unit/test_workspace_guard_fixes.py::test_python_script_exec_classified_read",
+   "nature": "已被取代（旧假设被证伪后同步断言）",
+   "fix": "批129 方案A：3 条断言同步 d1（任意代码载体一律 write）+ 删三处死分支 + 新增 3 条守卫测试（累计 41 passed）",
+   "evidence": "tests/unit/test_workspace_guard_fixes.py 41 passed；行为矩阵 30 例改前/改后逐条一致（删死代码不改行为）"
+  }
+ ],
+ "flaky_watch": [
+  {
+   "id": "tests/integration/test_http_audit.py::test_http_exec_route_writes_audit",
+   "nature": "flaky",
+   "scope": "与 live 活动/并发 pytest 共享 data/ 现场",
+   "solo_reproducible": false,
+   "evidence": "单跑 1 passed；仅在全量跑且同时 live 网关正在处理探针 turn 时红（批109 第 2 次门跑出现）",
+   "owner": "待定",
+   "plan": "确认是否被 data/projects 共用现场污染；必要时 hermetic 化(同 test_response_time 做法)"
+  },
+  {
+   "id": "tests/integration/test_subtask_executor.py::test_submit_failure_keeps_site",
+   "nature": "flaky",
+   "scope": "同 test_submit_runs_and_archives(同文件/同 sandbox 现场)",
+   "solo_reproducible": false,
+   "evidence": "单跑 1 passed；全量跑#3 红(同批该文件另一项 #1/#2 均绿)",
+   "owner": "待定",
+   "plan": "并入 test_submit_runs_and_archives 的定位(hermetic 化 data/projects 现场)"
+  },
+  {
+   "id": "tests/integration/test_subtask_executor.py::test_submit_runs_and_archives",
+   "nature": "flaky",
+   "scope": "负载/顺序相关",
+   "solo_reproducible": false,
+   "evidence": "单跑 3/3 绿、本文件 4/4 绿；全量跑#1 红、全量跑#2 全绿(1526 passed)",
+   "owner": "待定",
+   "plan": "定位污染它的前置用例后修，或 hermetic 化（同 test_response_time 做法）"
+  },
+  {
+   "id": "tests/e2e/faults/test_fault_budget_resume_no_context.py::test_FAULT_budget_exhausted_turn_must_persist_resume_context",
+   "nature": "flaky",
+   "scope": "跨进程现场污染（并发 pytest 共用 data/projects/{UID}/{sid}），非用例间顺序污染",
+   "solo_reproducible": false,
+   "evidence": "全量跑：B 块得 0 failed / 1545 passed；DSH 得 1 failed / 1544 passed —— 两次总数都是 1545，差异只在红数分配。单跑本文件 6/6 绿、单跑该条 1/1 绿。机制：共享 UID 下 sid 原不带 pid，并发 pytest 进程互删现场（B 已加 pid 隔离，文件第 34-36/89 行确认在），DSH 那次运行疑似与并发进程重叠",
+   "owner": "B 块（9fb1b9fe，故障注入 #15：预算耗尽→回「继续」→任务链必须接上）",
+   "plan": "pid 隔离已落地。若再现：先确认是否与其它 pytest 进程同跑（跨进程），再考虑同进程内顺序污染。"
+  }
+ ]
+}

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawsJoy Agent 商店</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            font-family: 'Segoe UI', monospace;
+            color: #e0e0ff;
+        }
+        .header {
+            background: linear-gradient(135deg, #0a0a1a, #001a33);
+            border-bottom: 1px solid rgba(0,243,255,0.3);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, #00f3ff, #b000ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00f3ff, #b000ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 280px;
+            background: rgba(10,10,30,0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0,243,255,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            height: fit-content;
+        }
+        .sidebar h3 {
+            color: #00f3ff;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .category-item {
+            padding: 10px;
+            cursor: pointer;
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+            margin-bottom: 5px;
+        }
+        .category-item:hover, .category-item.active {
+            color: #00f3ff;
+            border-left-color: #00f3ff;
+            background: rgba(0,243,255,0.1);
+        }
+        .my-agents {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0,243,255,0.2);
+        }
+        .agent-item {
+            padding: 8px 0;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .main-content {
+            flex: 1;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .product-card {
+            background: rgba(10,10,30,0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0,243,255,0.3);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,243,255,0.1);
+            border-color: #00f3ff;
+        }
+        .product-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .product-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .product-price {
+            color: #00f3ff;
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        .product-price small {
+            font-size: 12px;
+            color: #888;
+        }
+        .product-desc {
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .capabilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .capability {
+            background: rgba(0,243,255,0.1);
+            border: 1px solid rgba(0,243,255,0.3);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 10px;
+        }
+        .btn-install, .btn-uninstall {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+        .btn-install {
+            background: linear-gradient(135deg, #00f3ff, #0088cc);
+            color: #0a0a1a;
+            font-weight: bold;
+        }
+        .btn-install:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(0,243,255,0.5);
+        }
+        .btn-uninstall {
+            background: rgba(255,0,0,0.2);
+            border: 1px solid #ff4444;
+            color: #ff8888;
+        }
+        .installed-badge {
+            background: rgba(0,255,0,0.2);
+            border: 1px solid #4ade80;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: #4ade80;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0,243,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid #00f3ff;
+            border-radius: 8px;
+            padding: 12px 20px;
+            z-index: 1000;
+            animation: fadeInOut 3s ease;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            15% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); }
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo">
+        <h1>✨ ClawsJoy Agent 商店</h1>
+    </div>
+    <div class="user-info">
+        <span id="userName">游客</span>
+        <div class="user-avatar" id="userAvatar">👤</div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="sidebar">
+        <h3>📂 分类</h3>
+        <div id="categories"></div>
+        
+        <div class="my-agents">
+            <h3>📦 我的 Agent</h3>
+            <div id="myAgentsList"></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="productsGrid" class="products-grid"></div>
+    </div>
+</div>
+
+<div id="toast" style="display: none;"></div>
+
+<script>
+    let currentUser = "zhangsan";
+    let products = [];
+    let installed = [];
+    let currentCategory = "all";
+
+    // 加载商品列表
+    async function loadProducts() {
+        const resp = await fetch('/api/marketplace/list');
+        const data = await resp.json();
+        products = data.products || [];
+        renderCategories();
+        renderProducts();
+    }
+
+    // 加载已安装
+    async function loadInstalled() {
+        const resp = await fetch(`/api/marketplace/installed?user_id=${currentUser}`);
+        const data = await resp.json();
+        installed = data.installed || [];
+        renderMyAgents();
+    }
+
+    // 渲染分类
+    function renderCategories() {
+        const categories = [...new Set(products.map(p => p.category))];
+        const html = categories.map(cat => `
+            <div class="category-item ${currentCategory === cat ? 'active' : ''}" onclick="filterByCategory('${cat}')">
+                ${cat === 'development' ? '🔧' : cat === 'data' ? '📊' : cat === 'media' ? '🎬' : '📦'} ${cat}
+            </div>
+        `).join('');
+        document.getElementById('categories').innerHTML = html + `
+            <div class="category-item ${currentCategory === 'all' ? 'active' : ''}" onclick="filterByCategory('all')">
+                📋 全部
+            </div>
+        `;
+    }
+
+    // 筛选
+    function filterByCategory(category) {
+        currentCategory = category;
+        renderCategories();
+        renderProducts();
+    }
+
+    // 检查是否已安装
+    function isInstalled(productId) {
+        return installed.some(i => i.product_id === productId);
+    }
+
+    // 渲染商品
+    function renderProducts() {
+        let filtered = products;
+        if (currentCategory !== 'all') {
+            filtered = products.filter(p => p.category === currentCategory);
+        }
+        
+        const html = filtered.map(p => `
+            <div class="product-card">
+                <div class="product-icon">${getIcon(p.category)}</div>
+                ${isInstalled(p.id) ? '<div class="installed-badge">✅ 已安装</div>' : ''}
+                <div class="product-name">${p.name}</div>
+                <div class="product-price">$${p.price} <small>/ 永久</small></div>
+                <div class="product-desc">${p.description}</div>
+                <div class="capabilities">
+                    ${p.capabilities.slice(0, 3).map(c => `<span class="capability">${c.replace('_', ' ')}</span>`).join('')}
+                    ${p.capabilities.length > 3 ? `<span class="capability">+${p.capabilities.length - 3}</span>` : ''}
+                </div>
+                ${isInstalled(p.id) 
+                    ? `<button class="btn-uninstall" onclick="uninstallAgent('${p.id}')">🗑️ 卸载</button>`
+                    : `<button class="btn-install" onclick="installAgent('${p.id}')">⬇️ 安装 ($${p.price})</button>`
+                }
+            </div>
+        `).join('');
+        
+        document.getElementById('productsGrid').innerHTML = html || '<div style="text-align:center;padding:50px;">暂无商品</div>';
+    }
+
+    // 渲染我的 Agent
+    function renderMyAgents() {
+        if (installed.length === 0) {
+            document.getElementById('myAgentsList').innerHTML = '<div style="color:#666;">暂无安装</div>';
+            return;
+        }
+        
+        const html = installed.map(a => `
+            <div class="agent-item">
+                <span>${getIconByProduct(a.product_id)} ${a.name}</span>
+                <button onclick="uninstallAgent('${a.product_id}')" style="background:none;border:none;color:#ff8888;cursor:pointer;">🗑️</button>
+            </div>
+        `).join('');
+        document.getElementById('myAgentsList').innerHTML = html;
+    }
+
+    // 安装
+    async function installAgent(productId) {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        
+        const resp = await fetch('/api/marketplace/install', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentUser, product_id: productId })
+        });
+        const data = await resp.json();
+        
+        if (data.success) {
+            showToast(`✅ 已安装 ${product.name}`);
+            await loadInstalled();
+            renderProducts();
+        } else {
+            showToast(`❌ ${data.error || '安装失败'}`);
+        }
+    }
+
+    // 卸载
+    async function uninstallAgent(productId) {
+        const product = products.find(p => p.id === productId);
+        if (!confirm(`确定要卸载 ${product?.name} 吗？`)) return;
+        
+        const resp = await fetch('/api/marketplace/uninstall', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentUser, product_id: productId })
+        });
+        const data = await resp.json();
+        
+        if (data.success) {
+            showToast(`🗑️ 已卸载 ${product?.name}`);
+            await loadInstalled();
+            renderProducts();
+        }
+    }
+
+    // 图标
+    function getIcon(category) {
+        const icons = { development: '🔧', data: '📊', media: '🎬' };
+        return icons[category] || '📦';
+    }
+    
+    function getIconByProduct(productId) {
+        const icons = { frontend_master: '🎨', code_assistant: '💻', data_analyst: '📈', video_creator: '🎥' };
+        return icons[productId] || '🤖';
+    }
+
+    // 提示
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+
+    // 初始化
+    loadProducts();
+    loadInstalled();
+</script>
+</body>
+</html>
+<script>
+// 添加使用入口
+async function useAgent(agentId) {
+    // 创建对话窗口
+    showAgentChatWindow(agentId);
+}
+
+function showAgentChatWindow(agentId) {
+    const agentNames = {
+        frontend_master: '前端开发大师',
+        code_assistant: '代码助手',
+        data_analyst: '数据分析师',
+        video_creator: '视频创作大师'
+    };
+    
+    // 移除已有窗口
+    const existing = document.getElementById('agentChatWindow');
+    if (existing) existing.remove();
+    
+    const chatWindow = document.createElement('div');
+    chatWindow.id = 'agentChatWindow';
+    chatWindow.innerHTML = `
+        <div style="position: fixed; bottom: 20px; right: 20px; width: 400px; height: 500px; 
+                    background: #0a0a1a; border: 1px solid #00f3ff; border-radius: 16px; 
+                    backdrop-filter: blur(10px); z-index: 1000; display: flex; flex-direction: column;
+                    box-shadow: 0 0 30px rgba(0,243,255,0.2);">
+            <div style="padding: 15px; border-bottom: 1px solid rgba(0,243,255,0.3); display: flex; justify-content: space-between;">
+                <span style="color: #00f3ff;">🤖 ${agentNames[agentId]}</span>
+                <button onclick="closeChatWindow()" style="background:none;border:none;color:#888;cursor:pointer;">✕</button>
+            </div>
+            <div id="chatMessages" style="flex:1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: rgba(0,243,255,0.1); padding: 8px 12px; border-radius: 12px; align-self: flex-start;">
+                    你好！我是 ${agentNames[agentId]}，有什么可以帮你的？
+                </div>
+            </div>
+            <div style="padding: 15px; border-top: 1px solid rgba(0,243,255,0.3); display: flex; gap: 10px;">
+                <input type="text" id="chatInput" placeholder="输入消息..." style="flex:1; background: rgba(255,255,255,0.1); border: 1px solid rgba(0,243,255,0.3); color: white; padding: 10px; border-radius: 8px;">
+                <button onclick="sendChatMessage('${agentId}')" style="background: #00f3ff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">发送</button>
+            </div>
+            <div style="padding: 10px; border-top: 1px solid rgba(0,243,255,0.2); display: flex; gap: 10px;">
+                <button onclick="quickAction('${agentId}', 'generate', '科幻登录表单')" style="background: rgba(0,243,255,0.2); border: 1px solid #00f3ff; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">🎨 生成表单</button>
+                <button onclick="quickAction('${agentId}', 'modify', '把颜色改成紫色')" style="background: rgba(0,243,255,0.2); border: 1px solid #00f3ff; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">🎨 改紫色</button>
+                <button onclick="quickAction('${agentId}', 'analyze', '')" style="background: rgba(0,243,255,0.2); border: 1px solid #00f3ff; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">📊 性能分析</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(chatWindow);
+}
+
+function closeChatWindow() {
+    const win = document.getElementById('agentChatWindow');
+    if (win) win.remove();
+}
+
+async function sendChatMessage(agentId) {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message) return;
+    
+    // 显示用户消息
+    const messagesDiv = document.getElementById('chatMessages');
+    messagesDiv.innerHTML += `<div style="background: rgba(176,0,255,0.2); padding: 8px 12px; border-radius: 12px; align-self: flex-end;">${escapeHtml(message)}</div>`;
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    // 显示加载中
+    const loadingId = 'loading_' + Date.now();
+    messagesDiv.innerHTML += `<div id="${loadingId}" style="background: rgba(0,243,255,0.1); padding: 8px 12px; border-radius: 12px; align-self: flex-start;">🤔 思考中...</div>`;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    try {
+        const resp = await fetch('/api/user/agent/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: 'zhangsan', agent_id: agentId, message: message })
+        });
+        const data = await resp.json();
+        
+        // 移除加载中
+        document.getElementById(loadingId)?.remove();
+        
+        if (data.success) {
+            messagesDiv.innerHTML += `<div style="background: rgba(0,243,255,0.1); padding: 8px 12px; border-radius: 12px; align-self: flex-start;">${escapeHtml(data.response)}</div>`;
+        } else {
+            messagesDiv.innerHTML += `<div style="background: rgba(255,0,0,0.1); padding: 8px 12px; border-radius: 12px; align-self: flex-start;">❌ 错误: ${data.error}</div>`;
+        }
+    } catch(e) {
+        document.getElementById(loadingId)?.remove();
+        messagesDiv.innerHTML += `<div style="background: rgba(255,0,0,0.1); padding: 8px 12px; border-radius: 12px; align-self: flex-start;">❌ 连接失败</div>`;
+    }
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+async function quickAction(agentId, action, param) {
+    // 快速调用 Agent 功能
+    const messagesDiv = document.getElementById('chatMessages');
+    messagesDiv.innerHTML += `<div style="background: rgba(176,0,255,0.2); padding: 8px 12px; border-radius: 12px; align-self: flex-end;">⚡ ${action}: ${param || '执行'}</div>`;
+    
+    try {
+        const resp = await fetch('/api/user/agent/call', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                user_id: 'zhangsan', 
+                agent_id: agentId, 
+                action: action,
+                params: { requirement: param, instruction: param }
+            })
+        });
+        const data = await resp.json();
+        
+        if (data.success && data.code) {
+            messagesDiv.innerHTML += `<div style="background: rgba(0,243,255,0.1); padding: 8px 12px; border-radius: 12px; align-self: flex-start;">✅ 代码已生成 (${data.code.length} 字符)</div>`;
+            // 可添加预览按钮
+        } else {
+            messagesDiv.innerHTML += `<div style="background: rgba(255,0,0,0.1); padding: 8px 12px; border-radius: 12px; align-self: flex-start;">❌ 执行失败: ${data.error || '未知错误'}</div>`;
+        }
+    } catch(e) {
+        messagesDiv.innerHTML += `<div style="background: rgba(255,0,0,0.1); padding: 8px 12px; border-radius: 12px; align-self: flex-start;">❌ 连接失败</div>`;
+    }
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 修改 myAgents 渲染，添加使用按钮
+const originalRenderMyAgents = renderMyAgents;
+renderMyAgents = function() {
+    if (installed.length === 0) {
+        document.getElementById('myAgentsList').innerHTML = '<div style="color:#666;">暂无安装</div>';
+        return;
+    }
+    
+    const html = installed.map(a => `
+        <div class="agent-item">
+            <span>${getIconByProduct(a.product_id)} ${a.name}</span>
+            <div style="display: flex; gap: 5px;">
+                <button onclick="useAgent('${a.product_id}')" style="background:rgba(0,243,255,0.2);border:none;color:#00f3ff;padding:2px 8px;border-radius:4px;cursor:pointer;">💬</button>
+                <button onclick="uninstallAgent('${a.product_id}')" style="background:none;border:none;color:#ff8888;cursor:pointer;">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+    document.getElementById('myAgentsList').innerHTML = html;
+};
+</script>
+<!-- 添加皮肤/语音商店标签 -->
+<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+    <button id="tabProducts" class="tab-btn active" onclick="switchTab('products')">🤖 Agent</button>
+    <button id="tabSkins" class="tab-btn" onclick="switchTab('skins')">🎨 皮肤</button>
+    <button id="tabVoices" class="tab-btn" onclick="switchTab('voices')">🎤 语音</button>
+</div>
+
+<script>
+// 皮肤数据
+const skins = {
+    default: { name: "经典款", avatar: "🤖", price: "free", color: "#00f3ff" },
+    maid: { name: "女仆款", avatar: "👩‍🍳", price: 4.99, color: "#ff69b4" },
+    sci_fi: { name: "科幻款", avatar: "🤖⚡", price: 4.99, color: "#b000ff" },
+    fantasy: { name: "奇幻款", avatar: "🧙✨", price: 6.99, color: "#ffaa44" },
+    cyberpunk: { name: "赛博款", avatar: "🦾💀", price: 12.99, color: "#ff00ff" },
+    anime: { name: "动漫款", avatar: "🎀✨", price: 6.99, color: "#ff66cc" },
+    minimalist: { name: "极简款", avatar: "⬤", price: 2.99, color: "#ffffff" }
+};
+
+// 语音数据
+const voices = {
+    default: { name: "默认女声", avatar: "🎤", price: "free", desc: "温柔自然" },
+    xiaoyi: { name: "小艺", avatar: "🎵", price: "free", desc: "活泼可爱" },
+    yunxi: { name: "云希", avatar: "🎙️", price: "free", desc: "沉稳男声" },
+    yunjian: { name: "云健", avatar: "🎧", price: 2.99, desc: "专业播音" },
+    xiaochen: { name: "晓晨", avatar: "🎶", price: 2.99, desc: "甜美可爱" },
+    en_us_female: { name: "Jenny", avatar: "🌎", price: 3.99, desc: "美式女声" },
+    en_us_male: { name: "Guy", avatar: "🌍", price: 3.99, desc: "美式男声" }
+};
+
+let currentTab = 'products';
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+    
+    if (tab === 'products') {
+        renderProducts();
+    } else if (tab === 'skins') {
+        renderSkins();
+    } else if (tab === 'voices') {
+        renderVoices();
+    }
+}
+
+function renderSkins() {
+    const html = Object.entries(skins).map(([id, skin]) => `
+        <div class="product-card">
+            <div class="product-icon" style="font-size: 48px;">${skin.avatar}</div>
+            <div class="product-name">${skin.name}</div>
+            <div class="product-price">${skin.price === 'free' ? '免费' : `$${skin.price}`}</div>
+            <div class="product-desc">Agent 外观皮肤</div>
+            <div style="width: 40px; height: 40px; background: ${skin.color}; border-radius: 8px; margin: 10px auto;"></div>
+            <button class="btn-install" onclick="buySkin('${id}')">${skin.price === 'free' ? '免费获取' : `购买 $${skin.price}`}</button>
+        </div>
+    `).join('');
+    document.getElementById('productsGrid').innerHTML = html;
+}
+
+function renderVoices() {
+    const html = Object.entries(voices).map(([id, voice]) => `
+        <div class="product-card">
+            <div class="product-icon" style="font-size: 48px;">${voice.avatar}</div>
+            <div class="product-name">${voice.name}</div>
+            <div class="product-price">${voice.price === 'free' ? '免费' : `$${voice.price}`}</div>
+            <div class="product-desc">${voice.desc}</div>
+            <button class="btn-install" onclick="buyVoice('${id}')">${voice.price === 'free' ? '免费获取' : `购买 $${voice.price}`}</button>
+            <button class="btn-preview" onclick="previewVoice('${id}')" style="margin-top: 10px; background: rgba(0,243,255,0.2); border: 1px solid #00f3ff; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%;">🎧 试听</button>
+        </div>
+    `).join('');
+    document.getElementById('productsGrid').innerHTML = html;
+}
+
+async function buySkin(skinId) {
+    const resp = await fetch('/api/user/buy_skin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser, skin_id: skinId })
+    });
+    const data = await resp.json();
+    showToast(data.message || (data.success ? '购买成功' : '购买失败'));
+    if (data.success) {
+        await applySkin(skinId);
+    }
+}
+
+async function applySkin(skinId) {
+    await fetch('/api/user/set_skin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser, skin_id: skinId })
+    });
+    // 更新 Agent 聊天窗口皮肤
+    document.documentElement.style.setProperty('--neon-cyan', skins[skinId]?.color || '#00f3ff');
+}
+
+async function buyVoice(voiceId) {
+    const resp = await fetch('/api/user/buy_voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser, voice_id: voiceId })
+    });
+    const data = await resp.json();
+    showToast(data.message || (data.success ? '购买成功' : '购买失败'));
+    if (data.success) {
+        await applyVoice(voiceId);
+    }
+}
+
+async function applyVoice(voiceId) {
+    await fetch('/api/user/set_voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser, voice_id: voiceId })
+    });
+}
+
+async function previewVoice(voiceId) {
+    const voice = voices[voiceId];
+    if (!voice) return;
+    // 简单语音预览（使用 Web Speech API）
+    const utterance = new SpeechSynthesisUtterance(`你好，我是${voice.name}，很高兴认识你！`);
+    utterance.lang = voiceId.startsWith('en') ? 'en-US' : 'zh-CN';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+}
+</script>
+<!-- 添加皮肤/语音商店标签 -->
+<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+    <button id="tabProducts" class="tab-btn active" onclick="switchTab('products')">🤖 Agent</button>
+    <button id="tabSkins" class="tab-btn" onclick="switchTab('skins')">🎨 皮肤</button>
+    <button id="tabVoices" class="tab-btn" onclick="switchTab('voices')">🎤 语音</button>
+</div>
+
+<script>
+// 皮肤数据
+const skins = {
+    default: { name: "经典款", avatar: "🤖", price: "free", color: "#00f3ff" },
+    maid: { name: "女仆款", avatar: "👩‍🍳", price: 4.99, color: "#ff69b4" },
+    sci_fi: { name: "科幻款", avatar: "🤖⚡", price: 4.99, color: "#b000ff" },
+    fantasy: { name: "奇幻款", avatar: "🧙✨", price: 6.99, color: "#ffaa44" },
+    cyberpunk: { name: "赛博款", avatar: "🦾💀", price: 12.99, color: "#ff00ff" },
+    anime: { name: "动漫款", avatar: "🎀✨", price: 6.99, color: "#ff66cc" },
+    minimalist: { name: "极简款", avatar: "⬤", price: 2.99, color: "#ffffff" }
+};
+
+// 语音数据
+const voices = {
+    default: { name: "默认女声", avatar: "🎤", price: "free", desc: "温柔自然" },
+    xiaoyi: { name: "小艺", avatar: "🎵", price: "free", desc: "活泼可爱" },
+    yunxi: { name: "云希", avatar: "🎙️", price: "free", desc: "沉稳男声" },
+    yunjian: { name: "云健", avatar: "🎧", price: 2.99, desc: "专业播音" },
+    xiaochen: { name: "晓晨", avatar: "🎶", price: 2.99, desc: "甜美可爱" },
+    en_us_female: { name: "Jenny", avatar: "🌎", price: 3.99, desc: "美式女声" },
+    en_us_male: { name: "Guy", avatar: "🌍", price: 3.99, desc: "美式男声" }
+};
+
+let currentTab = 'products';
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+    
+    if (tab === 'products') {
+        renderProducts();
+    } else if (tab === 'skins') {
+        renderSkins();
+    } else if (tab === 'voices') {
+        renderVoices();
+    }
+}
+
+function renderSkins() {
+    const html = Object.entries(skins).map(([id, skin]) => `
+        <div class="product-card">
+            <div class="product-icon" style="font-size: 48px;">${skin.avatar}</div>
+            <div class="product-name">${skin.name}</div>
+            <div class="product-price">${skin.price === 'free' ? '免费' : `$${skin.price}`}</div>
+            <div class="product-desc">Agent 外观皮肤</div>
+            <div style="width: 40px; height: 40px; background: ${skin.color}; border-radius: 8px; margin: 10px auto;"></div>
+            <button class="btn-install" onclick="buySkin('${id}')">${skin.price === 'free' ? '免费获取' : `购买 $${skin.price}`}</button>
+        </div>
+    `).join('');
+    document.getElementById('productsGrid').innerHTML = html;
+}
+
+function renderVoices() {
+    const html = Object.entries(voices).map(([id, voice]) => `
+        <div class="product-card">
+            <div class="product-icon" style="font-size: 48px;">${voice.avatar}</div>
+            <div class="product-name">${voice.name}</div>
+            <div class="product-price">${voice.price === 'free' ? '免费' : `$${voice.price}`}</div>
+            <div class="product-desc">${voice.desc}</div>
+            <button class="btn-install" onclick="buyVoice('${id}')">${voice.price === 'free' ? '免费获取' : `购买 $${voice.price}`}</button>
+            <button class="btn-preview" onclick="previewVoice('${id}')" style="margin-top: 10px; background: rgba(0,243,255,0.2); border: 1px solid #00f3ff; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%;">🎧 试听</button>
+        </div>
+    `).join('');
+    document.getElementById('productsGrid').innerHTML = html;
+}
+
+async function buySkin(skinId) {
+    const resp = await fetch('/api/user/buy_skin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser, skin_id: skinId })
+    });
+    const data = await resp.json();
+    showToast(data.message || (data.success ? '购买成功' : '购买失败'));
+    if (data.success) {
+        await applySkin(skinId);
+    }
+}
+
+async function applySkin(skinId) {
+    await fetch('/api/user/set_skin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser, skin_id: skinId })
+    });
+    // 更新 Agent 聊天窗口皮肤
+    document.documentElement.style.setProperty('--neon-cyan', skins[skinId]?.color || '#00f3ff');
+}
+
+async function buyVoice(voiceId) {
+    const resp = await fetch('/api/user/buy_voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser, voice_id: voiceId })
+    });
+    const data = await resp.json();
+    showToast(data.message || (data.success ? '购买成功' : '购买失败'));
+    if (data.success) {
+        await applyVoice(voiceId);
+    }
+}
+
+async function applyVoice(voiceId) {
+    await fetch('/api/user/set_voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser, voice_id: voiceId })
+    });
+}
+
+async function previewVoice(voiceId) {
+    const voice = voices[voiceId];
+    if (!voice) return;
+    // 简单语音预览（使用 Web Speech API）
+    const utterance = new SpeechSynthesisUtterance(`你好，我是${voice.name}，很高兴认识你！`);
+    utterance.lang = voiceId.startsWith('en') ? 'en-US' : 'zh-CN';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+}
+</script>

@@ -1,0 +1,37 @@
+# 修改 _load_keyword_mapping 方法
+
+def _load_keyword_mapping(self):
+    """从统一配置加载关键词映射"""
+    keyword_mapping = {}
+    
+    # 优先从统一配置读取
+    config_path = Path("config/keywords.yaml")
+    if config_path.exists():
+        try:
+            with open(config_path, 'r') as f:
+                import yaml
+                config = yaml.safe_load(f)
+                # 从 skills 部分读取
+                skills = config.get('skills', {})
+                for skill_name, skill_config in skills.items():
+                    keywords = skill_config.get('keywords', [])
+                    for keyword in keywords:
+                        if keyword not in keyword_mapping:
+                            keyword_mapping[keyword] = []
+                        keyword_mapping[keyword].append(skill_name)
+        except Exception as e:
+            print(f"从统一配置加载关键词失败: {e}")
+    
+    # 兼容旧配置
+    if not keyword_mapping:
+        matching_file = Path("config/skills/skill_matching.yaml")
+        if matching_file.exists():
+            try:
+                with open(matching_file, 'r') as f:
+                    data = yaml.safe_load(f)
+                    keyword_mapping = data.get('matching', {}).get('keyword_mapping', {})
+            except:
+                pass
+    
+    self.keyword_mapping = keyword_mapping
+    print(f"✅ 加载了 {len(keyword_mapping)} 个关键词映射")

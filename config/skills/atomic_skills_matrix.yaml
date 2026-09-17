@@ -1,0 +1,89 @@
+# 原子技能矩阵 - 元知识
+# 每个原子技能的定义、输入输出、适用场景
+
+version: "1.0.0"
+
+skills:
+  vision:
+    description: "图像识别，提取图片中的内容描述"
+    input: 
+      image_path: "图片路径"
+      prompt: "识别提示词"
+    output: 
+      result: "图片描述文本"
+    category: "感知"
+    tags: ["图像", "视觉", "识别"]
+    
+  translate:
+    description: "文本翻译"
+    input:
+      text: "待翻译文本"
+      target: "目标语言"
+    output:
+      translated: "翻译结果"
+    category: "处理"
+    tags: ["语言", "翻译"]
+
+  add:
+    description: "加法运算"
+    input:
+      a: "数字1"
+      b: "数字2"
+    output:
+      result: "a+b"
+    category: "计算"
+    tags: ["数学"]
+
+  write_file:
+    description: "写入文件"
+    input:
+      path: "文件路径"
+      content: "文件内容"
+    output:
+      success: "是否成功"
+    category: "IO"
+    tags: ["文件"]
+
+  search:
+    description: "搜索信息"
+    input:
+      query: "搜索词"
+    output:
+      results: "搜索结果"
+    category: "获取"
+    tags: ["信息"]
+
+  llm:
+    description: "大语言模型推理"
+    input:
+      prompt: "提示词"
+    output:
+      response: "回复"
+    category: "推理"
+    tags: ["AI"]
+
+  code:
+    description: "执行代码"
+    input:
+      code: "Python代码"
+    output:
+      result: "执行结果"
+    category: "执行"
+    tags: ["编程"]
+
+# 技能组合规则
+composition_rules:
+  - pattern: ["vision", "translate"]
+    description: "图片识别并翻译"
+    output_type: "文本"
+    
+  - pattern: ["search", "llm"]
+    description: "搜索后分析"
+    output_type: "分析结果"
+
+# 元规则
+meta_rules:
+  - condition: "任务涉及外部信息"
+    action: "先执行 search"
+  - condition: "输出需要多种语言"
+    action: "后执行 translate"

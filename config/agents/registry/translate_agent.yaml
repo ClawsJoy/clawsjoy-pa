@@ -1,0 +1,16 @@
+capable_of:
+- 翻译
+- 译成
+- 怎么读
+- 英文怎么说
+- 中文翻译
+- translate
+class: TranslateAgent
+description: translate_agent 智能体
+enabled: true
+name: translate_agent
+priority: 20
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

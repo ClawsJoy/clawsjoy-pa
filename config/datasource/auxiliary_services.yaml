@@ -1,0 +1,22 @@
+# 辅助服务配置（独立进程，不影响主网关）
+
+services:
+  file_service:
+    enabled: true
+    host: "0.0.0.0"
+    port: 5003
+
+  multi_agent:
+    enabled: true
+    host: "0.0.0.0"
+    port: 5006
+
+  web_dashboard:
+    enabled: true
+    host: "0.0.0.0"
+    port: 5008
+
+llm:
+  default_model: "qwen2.5:7b-instruct-q4_0-gpu"
+  fast_model: "qwen2.5:7b-instruct-q4_0-gpu"
+  ollama_host: "http://127.0.0.1"

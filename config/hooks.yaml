@@ -1,0 +1,61 @@
+# Hook 管理器配置 v2.0
+
+security:
+  pre_process:
+    - name: "input_sanitizer"
+      handler: "core.lib.security_hooks.sanitize_input"
+      priority: 100
+      enabled: true
+      
+    - name: "dangerous_check"
+      handler: "core.lib.security_hooks.check_dangerous_patterns"
+      priority: 90
+      enabled: true
+      config:
+        block_execution: true
+        
+    - name: "rate_limiter"
+      handler: "core.lib.security_hooks.check_rate_limit"
+      priority: 80
+      enabled: true
+      config:
+        max_requests_per_minute: 30
+        
+  post_process:
+    - name: "output_sanitizer"
+      handler: "core.lib.security_hooks.sanitize_output"
+      priority: 100
+      enabled: true
+      
+    - name: "sensitive_mask"
+      handler: "core.lib.security_hooks.mask_sensitive_data"
+      priority: 90
+      enabled: true
+
+audit:
+  pre_process:
+    - name: "audit_start"
+      handler: "core.lib.audit_hooks.log_start"
+      priority: 50
+      enabled: true
+      
+  post_process:
+    - name: "audit_end"
+      handler: "core.lib.audit_hooks.log_end"
+      priority: 50
+      enabled: true
+
+order:
+  security_pre:
+    - input_sanitizer
+    - dangerous_check
+    - rate_limiter
+  audit_pre:
+    - audit_start
+  execution:
+    - main
+  audit_post:
+    - audit_end
+  security_post:
+    - output_sanitizer
+    - sensitive_mask

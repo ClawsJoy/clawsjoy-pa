@@ -1,0 +1,92 @@
+# 智能检索配置 v1.0
+
+skill_categories:
+  video:
+    keywords:
+      - 视频
+      - video
+      - 制作
+      - manju
+      - 漫剧
+      - 剪辑
+      - 合成
+      - 字幕
+      - ffmpeg
+    priority: 1
+
+  image:
+    keywords:
+      - 图像
+      - image
+      - 图片
+      - 处理
+      - 去背景
+      - 生成
+      - ai_image
+    priority: 2
+
+  math:
+    keywords:
+      - 计算
+      - 加法
+      - 减法
+      - 乘法
+      - 除法
+      - 平方
+      - 绝对值
+      - 取模
+    priority: 3
+
+  text:
+    keywords:
+      - 文本
+      - 处理
+      - 转换
+      - 大小写
+      - 反转
+      - trim
+    priority: 4
+
+  audio:
+    keywords:
+      - 音频
+      - audio
+      - 语音
+      - tts
+      - whisper
+    priority: 5
+
+skill_mapping:
+  video:
+    - image_slideshow
+    - manju_maker
+    - complete_video_maker
+    - video_uploader
+    - video_composer
+    - llm_video_maker
+    - ffmpeg_video
+    - manju_experience
+
+  image:
+    - ai_image
+    - remove_bg
+    - character_designer
+
+  math:
+    - add
+    - sqrt
+    - abs
+    - mod
+    - divide
+    - power
+    - multiply
+
+  text:
+    - to_upper
+    - to_lower
+    - reverse
+    - trim
+
+  audio:
+    - tts
+    - whisper_transcribe

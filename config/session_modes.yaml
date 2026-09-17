@@ -1,0 +1,33 @@
+# 会话模式配置
+# 加新模式只需在此文件添加，不需要改任何代码
+
+version: "1.0.0"
+
+modes:
+  # 方言相关
+  dialect_training:
+    keywords: ["方言训练", "教方言", "方言学习"]
+    agent: "dialect_agent"
+    exit_keywords: ["退出", "结束", "停止", "关闭"]
+    
+  dialect_practice:
+    keywords: ["方言练习", "练方言"]
+    agent: "dialect_agent"
+    exit_keywords: ["退出", "结束", "停止", "关闭"]
+    
+  dialect_dialogue:
+    keywords: ["讲方言", "方言对话", "方言模式"]
+    agent: "dialect_agent"
+    exit_keywords: ["退出", "结束", "停止", "关闭"]
+
+  # 写作模式（示例，可直接启用）
+  # writing:
+  #   keywords: ["写作模式", "开始写作", "写小说"]
+  #   agent: "writer_agent"
+  #   exit_keywords: ["退出写作", "结束写作", "停止写作"]
+
+  # 代码审查模式（示例）
+  # code_review:
+  #   keywords: ["代码审查", "审查代码", "review模式"]
+  #   agent: "code_agent"
+  #   exit_keywords: ["退出审查", "结束审查", "停止审查"]

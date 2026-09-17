@@ -1,0 +1,27 @@
+# LLM 配置 - 完全可配置
+version: "1.0"
+
+provider: "ollama"
+base_url: "http://localhost:11434"
+default_model: "qwen2.5:7b-instruct-q4_0-gpu"
+timeout: 60
+max_retries: 3
+
+models:
+  chat:
+    name: "qwen2.5:7b-instruct-q4_0-gpu"
+    temperature: 0.7
+    max_tokens: 512
+  decision:
+    name: "qwen2.5:7b-instruct-q4_0-gpu"
+    temperature: 0.3
+    max_tokens: 1024
+  code:
+    name: "deepseek-coder:6.7b"
+    temperature: 0.2
+    max_tokens: 2048
+
+fallback:
+  enabled: true
+  model: "llama3.2:3b"
+  message: "正在使用备用模型，部分功能可能受限"

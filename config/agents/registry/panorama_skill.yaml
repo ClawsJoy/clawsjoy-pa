@@ -1,0 +1,16 @@
+capable_of:
+- 全景
+- 360度
+- 全景图
+- vr
+- 虚拟现实
+- 环视
+class: PanoramaSkillAgent
+description: panorama_skill 智能体
+enabled: true
+name: panorama_skill
+priority: 25
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

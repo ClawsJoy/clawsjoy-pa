@@ -1,0 +1,19 @@
+agent:
+  capabilities:
+  - 回声
+  - 原样返回输入
+  display_name: 回声助手
+  enabled: true
+  keywords:
+  - 回声
+  - echo
+  - 复读
+  llm:
+    max_tokens: 512
+    model: qwen2.5:7b
+    provider: ollama
+    temperature: 0.5
+  name: echo_agent
+  prompts:
+    greeting: 你好！我是回声助手，我会原样重复你说的话。
+  type: echo

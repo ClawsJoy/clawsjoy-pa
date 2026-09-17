@@ -1,0 +1,33 @@
+FROM python:3.13-slim  # 2026-09-08 P0-2: 与 Dockerfile/runtime 3.13 对齐
+
+WORKDIR /app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制依赖文件
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制应用代码
+COPY . .
+
+# 创建必要目录
+RUN mkdir -p logs data
+
+# 暴露端口
+EXPOSE 5002
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:5002/health || exit 1
+
+# 启动命令
+CMD ["gunicorn", "-w", "4", "--threads", "8", "--worker-class", "gthread", \
+     "--bind", "0.0.0.0:5002", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "agent_gateway_enhanced:app"]

@@ -1,0 +1,12 @@
+{
+  "openclaw_version": "1.0.0",
+  "sync_endpoint": "https://openclaw.community/api/skills",
+  "local_registry": "data/skill_registry_v6.json",
+  "last_sync": "2026-05-31T19:58:37.967726",
+  "sync_mode": "bidirectional",
+  "security_policy": {
+    "auto_import": false,
+    "scan_before_import": true,
+    "grade_threshold": "B"
+  }
+}

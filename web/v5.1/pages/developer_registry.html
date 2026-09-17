@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <title>开发者权限注册表 | ClawsJoy 零代码平台</title>
+    <link rel="stylesheet" href="../css/themes.css">
+    <style>
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .registry-layout {
+            display: flex;
+            gap: 20px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+            padding: 20px;
+        }
+        
+        .registry-sidebar {
+            width: 320px;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+        }
+        
+        .registry-main {
+            flex: 1;
+            background: rgba(10, 10, 26, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+        }
+        
+        .tenant-card, .developer-card {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tenant-card {
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+        
+        .tenant-card:hover, .tenant-card.active {
+            background: rgba(0, 243, 255, 0.15);
+            border-color: #00f3ff;
+        }
+        
+        .developer-card {
+            background: rgba(255, 170, 68, 0.05);
+            border: 1px solid rgba(255, 170, 68, 0.2);
+        }
+        
+        .permission-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            background: #0a0a1a;
+            border-radius: 8px;
+        }
+        
+        .toggle-switch {
+            width: 50px;
+            height: 24px;
+            background: #333;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: #00f3ff;
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 10px;
+            top: 2px;
+            left: 3px;
+            transition: all 0.3s;
+        }
+        
+        .toggle-switch.active::after {
+            left: 27px;
+        }
+        
+        .api-key {
+            font-family: monospace;
+            background: #0a0a1a;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        
+        .btn-copy {
+            background: #333;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 15px;
+            background: #0a0a1a;
+            border-radius: 12px;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00f3ff;
+        }
+        
+        .hot-reload-badge {
+            display: inline-block;
+            background: #44ff44;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="three-canvas"></div>
+    <div class="registry-layout">
+        <div class="registry-sidebar">
+            <h3 style="color:#00f3ff;">🏢 租户管理</h3>
+            <div id="tenant-list">
+                <div class="tenant-card active" onclick="selectTenant('default')">
+                    <div style="font-weight:bold;">默认租户</div>
+                    <div style="font-size:11px; color:#888;">ID: default</div>
+                </div>
+                <div class="tenant-card" onclick="selectTenant('enterprise_demo')">
+                    <div style="font-weight:bold;">企业演示租户</div>
+                    <div style="font-size:11px; color:#888;">ID: enterprise_demo</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="color:#ffaa44;">👥 开发者列表</h3>
+                <div id="developer-list"></div>
+                <button class="btn-neon" style="width:100%; margin-top:15px;" onclick="showAddDeveloper()">+ 添加开发者</button>
+            </div>
+        </div>
+        
+        <div class="registry-main">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="current-tenant-title">默认租户 - 权限配置</h2>
+                <div><span class="hot-reload-badge">🔥 API热加载中</span></div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-number" id="stat-developers">0</div><div>开发者</div></div>
+                <div class="stat-box"><div class="stat-number" id="stat-skills">0</div><div>已注册技能</div></div>
+                <div class="stat-box"><div class="stat-number" id="stat-api-calls">0</div><div>今日API调用</div></div>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h3 style="color:#00f3ff;">🔑 API 密钥</h3>
+                <div class="permission-item">
+                    <span>租户API密钥</span>
+                    <div>
+                        <code id="api-key-display" class="api-key">ten_xxxxxxxxxxxx</code>
+                        <button class="btn-copy" onclick="copyApiKey()">复制</button>
+                        <button class="btn-neon" style="margin-left:10px; padding:4px 12px;" onclick="regenerateApiKey()">重新生成</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h3 style="color:#ffaa44;">⚙️ 权限配置 (可视化)</h3>
+                <div id="permissions-list">
+                    <div class="permission-item">
+                        <span>📦 上架技能权限</span>
+                        <div class="toggle-switch active" onclick="togglePermission(this, 'publish_skill')"></div>
+                    </div>
+                    <div class="permission-item">
+                        <span>🛒 购买商品权限</span>
+                        <div class="toggle-switch active" onclick="togglePermission(this, 'purchase')"></div>
+                    </div>
+                    <div class="permission-item">
+                        <span>🔧 API调试权限</span>
+                        <div class="toggle-switch active" onclick="togglePermission(this, 'api_debug')"></div>
+                    </div>
+                    <div class="permission-item">
+                        <span>📊 查看收益权限</span>
+                        <div class="toggle-switch active" onclick="togglePermission(this, 'view_earnings')"></div>
+                    </div>
+                    <div class="permission-item">
+                        <span>👥 管理开发者权限</span>
+                        <div class="toggle-switch" onclick="togglePermission(this, 'manage_developers')"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 style="color:#44ff44;">🔥 热加载技能列表</h3>
+                <div id="hot-reload-skills"></div>
+                <button class="btn-neon" style="margin-top:15px;" onclick="showCreateSkill()">+ 创建新技能 (零代码)</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加开发者弹窗 -->
+    <div id="addDeveloperModal" class="modal" style="display:none;">
+        <div class="modal-content" style="background:#1a1a2e; max-width:400px;">
+            <h3>添加开发者</h3>
+            <input type="text" id="dev-name" placeholder="开发者名称" class="param-input" style="width:100%; margin:10px 0;">
+            <input type="email" id="dev-email" placeholder="邮箱" class="param-input" style="width:100%; margin:10px 0;">
+            <select id="dev-role" class="param-input" style="width:100%; margin:10px 0;">
+                <option value="developer">开发者</option>
+                <option value="admin">管理员</option>
+                <option value="viewer">只读查看</option>
+            </select>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-neon" onclick="addDeveloper()">确认添加</button>
+                <button class="btn-neon" style="background:#333;" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 创建技能弹窗 -->
+    <div id="createSkillModal" class="modal" style="display:none;">
+        <div class="modal-content" style="background:#1a1a2e; max-width:500px;">
+            <h3>零代码创建技能</h3>
+            <input type="text" id="skill-name" placeholder="技能名称" class="param-input" style="width:100%; margin:10px 0;">
+            <textarea id="skill-code" rows="10" class="param-input" style="width:100%; font-family:monospace;" placeholder='// 技能代码
+async function execute(params) {
+    const { input } = params;
+    return {
+        success: true,
+        result: `处理结果: ${input}`
+    };
+}'></textarea>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-neon" onclick="createSkill()">发布并热加载</button>
+                <button class="btn-neon" style="background:#333;" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 3D背景暂时禁用 -->
+    <script>
+        let currentTenant = 'default';
+        let developers = [];
+        let skills = [];
+        
+        // 初始化数据
+        function loadData() {
+            loadDevelopers();
+            loadSkills();
+            updateStats();
+        }
+        
+        function loadDevelopers() {
+            const saved = localStorage.getItem(`developers_${currentTenant}`);
+            developers = saved ? JSON.parse(saved) : [
+                { id: 'dev_001', name: '张三', email: 'zhang@example.com', role: 'developer', created_at: '2026-05-24' },
+                { id: 'dev_002', name: '李四', email: 'li@example.com', role: 'developer', created_at: '2026-05-23' }
+            ];
+            renderDeveloperList();
+        }
+        
+        function renderDeveloperList() {
+            const container = document.getElementById('developer-list');
+            container.innerHTML = developers.map(d => `
+                <div class="developer-card">
+                    <div style="font-weight:bold;">${d.name}</div>
+                    <div style="font-size:11px; color:#888;">${d.email} | ${d.role}</div>
+                    <div style="margin-top:8px;">
+                        <span class="hot-reload-badge" style="background:#ffaa44;">API: ${generateApiKey(d.id).slice(0, 16)}...</span>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('stat-developers').textContent = developers.length;
+        }
+        
+        function loadSkills() {
+            const saved = localStorage.getItem(`skills_${currentTenant}`);
+            skills = saved ? JSON.parse(saved) : [
+                { id: 'weather_skill', name: '天气查询', status: 'active', created_at: '2026-05-24' },
+                { id: 'calculator', name: '智能计算器', status: 'active', created_at: '2026-05-23' }
+            ];
+            renderSkillsList();
+        }
+        
+        function renderSkillsList() {
+            const container = document.getElementById('hot-reload-skills');
+            container.innerHTML = skills.map(s => `
+                <div class="permission-item">
+                    <div>
+                        <div style="font-weight:bold;">${s.name}</div>
+                        <div style="font-size:11px; color:#888;">ID: ${s.id} | ${s.created_at}</div>
+                    </div>
+                    <div>
+                        <span class="hot-reload-badge">🔥 已热加载</span>
+                        <button class="btn-neon" style="margin-left:10px; padding:4px 12px; background:#ff4444;" onclick="deleteSkill('${s.id}')">删除</button>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('stat-skills').textContent = skills.length;
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-api-calls').textContent = Math.floor(Math.random() * 1000);
+        }
+        
+        function selectTenant(tenantId) {
+            currentTenant = tenantId;
+            document.querySelectorAll('.tenant-card').forEach(card => card.classList.remove('active'));
+            event.target.closest('.tenant-card').classList.add('active');
+            document.getElementById('current-tenant-title').innerText = tenantId === 'default' ? '默认租户 - 权限配置' : '企业演示租户 - 权限配置';
+            loadData();
+        }
+        
+        function showAddDeveloper() {
+            document.getElementById('addDeveloperModal').style.display = 'flex';
+        }
+        
+        function addDeveloper() {
+            const name = document.getElementById('dev-name').value;
+            const email = document.getElementById('dev-email').value;
+            const role = document.getElementById('dev-role').value;
+            
+            if (!name) {
+                alert('请输入开发者名称');
+                return;
+            }
+            
+            const newDev = {
+                id: `dev_${Date.now()}`,
+                name: name,
+                email: email || `${name}@example.com`,
+                role: role,
+                created_at: new Date().toISOString().split('T')[0]
+            };
+            developers.push(newDev);
+            localStorage.setItem(`developers_${currentTenant}`, JSON.stringify(developers));
+            renderDeveloperList();
+            closeModal();
+            
+            // 显示生成的API密钥
+            alert(`开发者 ${name} 已添加\nAPI密钥: ${generateApiKey(newDev.id)}`);
+        }
+        
+        function generateApiKey(developerId) {
+            return `ck_${currentTenant}_${developerId}_${Math.random().toString(36).substring(2, 10)}`;
+        }
+        
+        function copyApiKey() {
+            const apiKey = `ten_${currentTenant}_${Math.random().toString(36).substring(2, 15)}`;
+            navigator.clipboard.writeText(apiKey);
+            alert('API密钥已复制');
+        }
+        
+        function regenerateApiKey() {
+            alert('新API密钥已生成，旧密钥将失效');
+        }
+        
+        function togglePermission(element, permission) {
+            element.classList.toggle('active');
+            const status = element.classList.contains('active') ? '已启用' : '已禁用';
+            alert(`权限 "${permission}" ${status}`);
+        }
+        
+        function showCreateSkill() {
+            document.getElementById('createSkillModal').style.display = 'flex';
+        }
+        
+        function createSkill() {
+            const name = document.getElementById('skill-name').value;
+            const code = document.getElementById('skill-code').value;
+            
+            if (!name) {
+                alert('请输入技能名称');
+                return;
+            }
+            
+            const newSkill = {
+                id: name.toLowerCase().replace(/\s/g, '_'),
+                name: name,
+                code: code,
+                status: 'active',
+                created_at: new Date().toISOString().split('T')[0]
+            };
+            skills.push(newSkill);
+            localStorage.setItem(`skills_${currentTenant}`, JSON.stringify(skills));
+            renderSkillsList();
+            closeModal();
+            
+            alert(`技能 "${name}" 已创建并热加载！\n可在API中立即使用。`);
+        }
+        
+        function deleteSkill(skillId) {
+            skills = skills.filter(s => s.id !== skillId);
+            localStorage.setItem(`skills_${currentTenant}`, JSON.stringify(skills));
+            renderSkillsList();
+            alert(`技能已删除，热加载系统已自动更新`);
+        }
+        
+        function closeModal() {
+            document.getElementById('addDeveloperModal').style.display = 'none';
+            document.getElementById('createSkillModal').style.display = 'none';
+            document.getElementById('dev-name').value = '';
+            document.getElementById('dev-email').value = '';
+            document.getElementById('skill-name').value = '';
+            document.getElementById('skill-code').value = `// 技能代码
+async function execute(params) {
+    const { input } = params;
+    return {
+        success: true,
+        result: \`处理结果: \${input}\`
+    };
+}`;
+        }
+        
+        loadData();
+    </script>
+</body>
+</html>

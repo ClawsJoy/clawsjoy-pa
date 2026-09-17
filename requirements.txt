@@ -1,0 +1,38 @@
+# ===== 运行依赖（必需） =====
+
+# Web 服务
+flask>=3.1.2
+flask-cors>=4.0.0
+requests>=2.32.5
+pyyaml>=6.0.2
+
+# 数据处理与图像
+numpy>=2.3.3
+Pillow>=11.3.0
+ffmpeg-python>=0.2.0
+
+# 认证 / 缓存 / 监控
+pyjwt
+redis>=5.0.0
+watchdog>=4.0.0
+
+# ===== 可选依赖（AI/ML，按需安装） =====
+
+# 深度学习与模型
+torch>=2.10.0
+transformers>=5.5.0
+diffusers>=0.38.0
+ollama>=0.6.2
+
+# 向量检索 / 图像处理
+chromadb>=1.5.9
+rembg>=2.0.75
+fasttext>=0.9.3
+
+# ===== 批126 补齐：这三个包此前**没有任何声明**，新机器 pip install -r 也补不上，
+# 会让 tests 里 8 个文件（17 条）直接红/收集失败（见 tests/baseline/failure_ledger.json）
+# ffmpeg-python 已在上方声明（第 12 行），此处不重复
+# 说明：代码 import 的模块名分别是 psycopg2 / pptx / docx
+psycopg2-binary>=2.9.12
+python-pptx>=1.0.2
+python-docx>=1.2.0

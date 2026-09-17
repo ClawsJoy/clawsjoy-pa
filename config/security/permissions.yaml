@@ -1,0 +1,15 @@
+# 权限配置（新增，不影响原有）
+version: "1.0.0"
+
+levels:
+  level1:  # 系统管理员
+    roles: ["system_admin"]
+    routes: ["/api/admin/*", "/api/config/*", "/api/system/*"]
+    
+  level2:  # 租户用户
+    roles: ["tenant_admin", "developer", "user"]
+    routes: ["/api/butler/*", "/api/skills/*", "/api/memory/*"]
+
+  level0:  # 公开
+    roles: ["public"]
+    routes: ["/api/health", "/api/auth/*"]

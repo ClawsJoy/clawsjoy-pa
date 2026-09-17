@@ -1,0 +1,18 @@
+# 本地Agent路由配置
+routes:
+  - path: "/api/local/test"
+    method: "GET"
+    handler: "local_agent_test"
+    enabled: true
+  - path: "/api/local/agents"
+    method: "GET"
+    handler: "local_agent_list"
+    enabled: true
+  - path: "/api/local/register"
+    method: "POST"
+    handler: "local_agent_register"
+    enabled: true
+  - path: "/api/local/call"
+    method: "POST"
+    handler: "local_agent_call"
+    enabled: true

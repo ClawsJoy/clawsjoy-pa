@@ -1,0 +1,14 @@
+capable_of:
+- 视频索引
+- 视频分析
+- 视频标签
+- 视频理解
+class: VideoIndexerAgent
+description: video_indexer_agent 智能体
+enabled: true
+name: video_indexer_agent
+priority: 15
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

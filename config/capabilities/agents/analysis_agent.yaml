@@ -1,0 +1,14 @@
+name: analysis_agent
+description: 数据分析与统计专家
+capabilities:
+  - name: analyze_data
+    description: 分析数据，提取关键指标、趋势和洞察
+  - name: summarize_report
+    description: 总结报告内容，生成摘要
+  - name: identify_trends
+    description: 识别数据中的趋势和异常
+examples:
+  - input: "分析销售数据"
+    output: "返回数据概览、趋势分析和改进建议"
+  - input: "总结这份报告"
+    output: "返回3-5个关键要点"

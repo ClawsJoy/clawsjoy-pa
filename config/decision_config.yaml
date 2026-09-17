@@ -1,0 +1,33 @@
+# 决策层统一配置 v1.0
+
+cache:
+  ttl_seconds: 60
+  max_size: 500
+
+performance:
+  evidence_timeout_seconds: 2.0
+  thread_pool_workers: 3
+
+weights:
+  analyst: 0.30
+  semantic: 0.40
+  llm: 0.20
+  historical: 0.10
+  heuristic: 0.05
+
+routes:
+  A: "chat_agent"
+  B: "executor_agent"
+  C: "orchestrator"
+
+semantic_intent_mapping:
+  A: ["chat", "greeting", "farewell", "thanks"]
+  B: ["calculate", "weather", "translate", "download"]
+  C: ["analysis", "recommend", "trend", "write"]
+
+# 技能路由规则（B 类直接执行）
+skill_routing:
+  download:
+    route: B
+    agent: executor_agent
+    skill: video_download

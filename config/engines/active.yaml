@@ -1,0 +1,16 @@
+# active 引擎配置
+# 自动生成，请根据实际情况修改
+
+version: "1.0.0"
+
+engine:
+  name: active
+  enabled: true
+  log_level: "INFO"
+  timeout: 30
+  retry_count: 3
+
+# 引擎特定配置
+settings:
+  # 在此添加引擎特定配置
+  pass

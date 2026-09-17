@@ -1,0 +1,14 @@
+capable_of:
+- 生活
+- 日常
+- 助手
+- 管家
+class: LivingAgentAgent
+description: living_agent 智能体
+enabled: true
+name: living_agent
+priority: 10
+requires_context: true
+type: custom
+version: 2.0.0
+wake_interval: 300

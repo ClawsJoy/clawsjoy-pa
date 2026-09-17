@@ -1,0 +1,153 @@
+"""统一配置管理器 - 支持多路径查找"""
+
+import yaml
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional
+
+
+class UnifiedConfig:
+    """统一配置管理器 - 单例模式"""
+
+    _instance = None
+    _config: Dict = {}
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._load()
+        return cls._instance
+
+    def _find_file(self, candidates: list) -> Optional[Path]:
+        """在多个候选路径中查找文件"""
+        for candidate in candidates:
+            path = Path(candidate)
+            if path.exists():
+                return path
+        return None
+
+    def _load_yaml(self, path: Path, key: str = None):
+        """加载 YAML 文件"""
+        try:
+            with open(path, 'r') as f:
+                data = yaml.safe_load(f)
+                if key:
+                    self._config[key] = data
+                else:
+                    self._config.update(data)
+            print(f"[CONFIG] 加载: {path}")
+            return True
+        except Exception as e:
+            print(f"[CONFIG] 加载失败 {path}: {e}")
+            return False
+
+    def _load(self):
+        """加载所有配置 - 支持多路径查找"""
+        print("[CONFIG] 初始化统一配置管理器")
+
+        # 1. 主配置文件 (system_unified.yaml)
+        main_paths = [
+            "config/system/system_unified.yaml",
+            "config/system/system_unified.yaml",
+        ]
+        main_file = self._find_file(main_paths)
+        if main_file:
+            self._load_yaml(main_file)
+
+        # 2. 路由配置
+        routes_paths = [
+            "config/routes/routes.yaml",
+            "config/routes/routes.yaml",
+        ]
+        routes_file = self._find_file(routes_paths)
+        if routes_file:
+            self._load_yaml(routes_file, 'routes')
+
+        # 3. Agent 灵魂配置
+        soul_paths = [
+            "config/agents_soul/agents_soul.yaml",
+            "config/agents_soul/agents_soul.yaml",
+        ]
+        soul_file = self._find_file(soul_paths)
+        if soul_file:
+            self._load_yaml(soul_file, 'agents_soul')
+
+        # 4. 确保必要字段存在
+        if 'services' not in self._config:
+            self._config['services'] = {}
+        if 'gateway' not in self._config['services']:
+            self._config['services']['gateway'] = {}
+        self._config['services']['gateway']['port'] = int(os.environ.get('GATEWAY_PORT', 5002))
+
+        if 'llm' not in self._config:
+            self._config['llm'] = {}
+        if 'endpoint' not in self._config['llm']:
+            self._config['llm']['endpoint'] = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
+
+        print(f"[CONFIG] 加载完成，配置键: {list(self._config.keys())}")
+
+    def get(self, path: str, default=None):
+        """获取配置值，支持点号路径"""
+        keys = path.split('.')
+        value = self._config
+        for key in keys:
+            if isinstance(value, dict):
+                value = value.get(key)
+            else:
+                return default
+        return value if value is not None else default
+
+    
+    def reload(self):
+        """重新加载配置"""
+        self._load()
+        print("[CONFIG] 配置已重载")
+        return True
+
+    def get_all(self) -> Dict:
+        """获取所有配置"""
+        return self._config
+
+    def get_service_port(self, service_name: str) -> int:
+        """获取服务端口"""
+        services = self._config.get('services', {})
+        service = services.get(service_name, {})
+        if 'port' in service:
+            return service['port']
+        
+        ports = self._config.get('ports', {})
+        if service_name in ports:
+            return ports[service_name]
+        
+        default_ports = {
+            'gateway': 5002,
+            'ollama': 11434,
+            'redis': 6379,
+        }
+        return default_ports.get(service_name, 5002)
+
+
+# 全局实例
+unified_config = UnifiedConfig()
+
+    @property
+    def ROOT(self) -> str:
+        """项目根目录"""
+        from pathlib import Path
+        return str(Path(__file__).parent.parent.parent.absolute())
+
+    @property
+    def HOST(self) -> str:
+        """服务主机"""
+        return self.get("services.host", "localhost")
+
+    @property
+    def ROOT(self) -> str:
+        """项目根目录"""
+        from pathlib import Path
+        return str(Path(__file__).parent.parent.parent.absolute())
+
+    @property
+    def HOST(self) -> str:
+        """服务主机"""
+        return self.get("services.host", "localhost")

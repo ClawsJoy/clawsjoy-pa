@@ -1,0 +1,58 @@
+# 智能适配器配置
+
+default:
+  model: qwen2.5:7b-instruct-q4_0-gpu
+  provider: ollama
+  timeout: 120
+
+performance:
+  max_retries: 3
+  timeout: 120
+
+task_types:
+  code:
+    keywords:
+      - 写代码
+      - 编程
+      - python
+      - java
+      - javascript
+      - 函数
+      - 算法
+    model: deepseek-coder:6.7b
+    provider: ollama
+    temperature: 0.3
+    max_tokens: 4096
+    timeout: 120
+    system_prompt: "你是一个代码生成助手，只输出代码，不要解释。"
+
+  translate:
+    keywords:
+      - 翻译
+      - 译成
+      - translate
+    model: qwen2.5:7b-instruct-q4_0-gpu
+    provider: ollama
+    temperature: 0.5
+    max_tokens: 1024
+    timeout: 30
+
+  analysis:
+    keywords:
+      - 分析
+      - 统计
+      - 总结
+      - 优缺点
+    model: qwen2.5:7b-instruct-q4_0-gpu
+    provider: ollama
+    temperature: 0.4
+    max_tokens: 2048
+    timeout: 120
+
+  qa:
+    keywords: []
+    model: qwen2.5:7b-instruct-q4_0-gpu
+    provider: ollama
+    temperature: 0.7
+    max_tokens: 1024
+    timeout: 30

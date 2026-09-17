@@ -1,0 +1,55 @@
+# 多租户配置 v1.0 - 驱动配置
+version: "1.0.0"
+
+# 租户隔离配置
+tenant:
+  enabled: true
+  isolation_mode: "directory"  # directory / database / redis
+  base_path: "data/tenants"
+  
+  # 默认租户
+  default_tenant:
+    id: "default"
+    name: "默认租户"
+    quota:
+      max_users: 10
+      max_concurrent: 5
+      rate_limit: 100
+      storage_mb: 1024
+
+# 租户列表（配置驱动）
+tenants:
+  - id: "default"
+    name: "默认租户"
+    status: "active"
+    created_at: "2026-01-01"
+    
+  - id: "demo"
+    name: "演示租户"
+    status: "active"
+    created_at: "2026-05-01"
+    quota:
+      max_users: 5
+      max_concurrent: 3
+      rate_limit: 50
+
+# 租户创建规则
+creation_rules:
+  auto_create: true
+  require_approval: false
+  naming_pattern: "^[a-z0-9_]{3,32}$"
+  max_tenants_per_user: 1
+
+# 租户配额默认值
+default_quota:
+  max_users: 10
+  max_concurrent: 5
+  rate_limit: 100
+  storage_mb: 1024
+  backup_enabled: false
+
+# 跨租户访问控制
+cross_tenant:
+  enabled: false
+  require_approval: true
+  allowed_operations: []

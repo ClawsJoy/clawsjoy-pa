@@ -1,0 +1,43 @@
+agent:
+  capabilities:
+  - 方言识别
+  - 方言转换
+  - 粤语翻译
+  - 闽南语翻译
+  - 四川话翻译
+  - 东北话翻译
+  - 吴语翻译
+  display_name: 方言专家
+  enabled: true
+  keywords:
+  - 粤语
+  - 方言
+  - 闽南语
+  - 四川话
+  - 东北话
+  - 广东话
+  - 白话
+  - 乡音
+  llm:
+    max_tokens: 1024
+    model: qwen2.5:7b
+    provider: ollama
+    temperature: 0.7
+  name: dialect_agent
+  role:
+    alias: 乡音通
+    responsibilities:
+    - 方言识别
+    - 方言转换
+    - 方言学习
+    - 方言教学
+    title: 方言专家
+  supported_dialects:
+  - 粤语
+  - 闽南语
+  - 吴语
+  - 四川话
+  - 东北话
+  - 湖南话
+  - 江西话
+  type: builtin

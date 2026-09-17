@@ -1,0 +1,17 @@
+capable_of:
+- 前端
+- 界面
+- UI
+- 页面
+- HTML
+- CSS
+- React
+class: FrontendAgentAgent
+description: frontend_agent 智能体
+enabled: true
+name: frontend_agent
+priority: 20
+requires_context: false
+type: custom
+version: 2.0.0
+wake_interval: 300

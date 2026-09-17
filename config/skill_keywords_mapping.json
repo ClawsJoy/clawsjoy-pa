@@ -1,0 +1,29 @@
+{
+  "code_agent": {
+    "keywords": ["代码", "编程", "写代码", "python", "java", "javascript", "函数", "算法", "coding"]
+  },
+  "code": {
+    "keywords": ["代码", "编程", "写代码", "python"]
+  },
+  "calculator": {
+    "keywords": ["计算", "数学", "加", "减", "乘", "除", "等于"]
+  },
+  "weather": {
+    "keywords": ["天气", "气温", "预报", "下雨", "晴天"]
+  },
+  "weather_skill": {
+    "keywords": ["天气", "气温", "预报"]
+  },
+  "translate": {
+    "keywords": ["翻译", "语言", "英文", "中文", "日语"]
+  },
+  "video": {
+    "keywords": ["视频", "制作视频", "剪辑", "ffmpeg"]
+  },
+  "image": {
+    "keywords": ["图片", "图像", "生成图片", "ai绘画"]
+  },
+  "audio": {
+    "keywords": ["音频", "语音", "tts", "朗读"]
+  }
+}

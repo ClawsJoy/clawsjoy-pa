@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>ClawsJoy - 开源与商业化</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#1e1e2e;color:#fff}
+.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px;border-bottom:1px solid #333}
+h1{font-size:64px;color:#667eea;margin-bottom:20px}
+h2{font-size:42px;color:#667eea;margin-bottom:20px}
+h3{font-size:28px;margin-bottom:15px}
+p{font-size:20px;line-height:1.5;max-width:900px;text-align:center;color:#ccc}
+ul{font-size:18px;max-width:800px;text-align:left}
+li{margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:30px;max-width:1000px}
+.card{background:#2a2a3e;padding:25px;border-radius:20px}
+.card h3{font-size:22px;margin-bottom:10px}
+.card p{font-size:16px;text-align:left}
+.highlight{color:#10b981}
+.warning{color:#f59e0b}
+.split{display:flex;gap:40px;max-width:1000px;margin-top:30px}
+.split-half{flex:1;background:#2a2a3e;padding:30px;border-radius:20px}
+.split-half h3{text-align:center}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{padding:12px;text-align:left;border-bottom:1px solid #444}
+th{color:#667eea}
+</style>
+</head>
+<body>
+
+<div class="slide">
+<h1>开源 vs 商业化</h1>
+<p>不冲突，是放大器</p>
+<p style="margin-top:30px;font-size:18px;color:#888">开源让更多人用 → 更多人开发技能 → 技能商店更丰富 → 更多人付费 → 我们一起赚钱</p>
+</div>
+
+<div class="slide">
+<h2>经典模式对比</h2>
+<table>
+<tr><th>模式</th><th>开源内容</th><th>商业化内容</th><th>代表</th></tr>
+<tr><td>开放核心</td><td>基础功能</td><td>高级功能、企业版</td><td>GitLab, MongoDB</td></tr>
+<tr><td>托管服务</td><td>全部代码</td><td>帮你部署、运维</td><td>Supabase, WordPress.com</td></tr>
+<tr><td>应用商店</td><td>平台代码</td><td>第三方技能、插件</td><td>WordPress, Slack</td></tr>
+<tr><td>支持/咨询</td><td>全部代码</td><td>技术支持、定制</td><td>Red Hat</td></tr>
+</table>
+</div>
+
+<div class="slide">
+<h2>ClawsJoy 推荐模式</h2>
+<div class="split">
+<div class="split-half"><h3 style="color:#10b981">📦 开源</h3>
+<ul><li>✅ API 网关</li><li>✅ 用户管理/认证/计费</li><li>✅ 大脑学习框架</li><li>✅ 技能框架 + 示例</li><li>✅ 本地部署脚本</li></ul>
+</div>
+<div class="split-half"><h3 style="color:#667eea">💰 商业化</h3>
+<ul><li>💎 技能商店（抽成30%）</li><li>💎 企业版（多租户、SSO）</li><li>💎 托管服务</li><li>💎 技术支持/定制</li><li>💎 私有化部署</li></ul>
+</div></div>
+</div>
+
+<div class="slide">
+<div class="card" style="max-width:800px;margin:0 auto">
+<h3 style="text-align:center">🔄 技能商店商业逻辑</h3>
+<div style="display:flex;justify-content:space-between;margin:30px 0">
+<div style="text-align:center"><span style="font-size:48px">👤</span><br>开发者A<br><span style="font-size:12px">开发技能上架</span></div>
+<span style="font-size:48px">→</span>
+<div style="text-align:center"><span style="font-size:48px">🏪</span><br>技能商店<br><span style="font-size:12px">定价0.99元</span></div>
+<span style="font-size:48px">→</span>
+<div style="text-align:center"><span style="font-size:48px">👥</span><br>用户B<br><span style="font-size:12px">购买使用</span></div>
+</div>
+<p style="font-size:18px">平台抽成30%（0.3元） | 开发者得70%（0.69元）</p>
+<p style="margin-top:20px;color:#888">WordPress年收入数亿美元，就是这个模式</p>
+</div>
+</div>
+
+<div class="slide">
+<h2>为什么这样不冲突</h2>
+<div class="grid">
+<div class="card"><h3>👤 个人开发者</h3><p>免费自部署 ✅<br>开发技能上架赚钱 ✅<br>代码可审计 ✅</p></div>
+<div class="card"><h3>🏢 企业用户</h3><p>不想折腾？买托管 ✅<br>需要企业功能？买企业版 ✅<br>私有化部署？付费 ✅</p></div>
+<div class="card"><h3>🦞 ClawsJoy团队</h3><p>开源吸引用户 ✅<br>技能抽成持续收入 ✅<br>企业版高利润 ✅</p></div>
+</div>
+</div>
+
+<div class="slide">
+<h2>需要避免的坑</h2>
+<table>
+<tr><th>❌ 危险行为</th><th>✅ 正确做法</th></tr>
+<tr><td>核心功能收费</td><td>基础功能永久免费</td></tr>
+<tr><td>突然闭源</td><td>开源协议明确（AGPL）</td></tr>
+<tr><td>禁止商用插件</td><td>鼓励插件开发，分钱</td></tr>
+<tr><td>锁定用户数据</td><td>数据可导出/导入</td></tr>
+</table>
+</div>
+
+<div class="slide">
+<h2>开源协议建议</h2>
+<div style="display:flex;gap:30px;margin-top:30px">
+<div style="flex:1;background:#2a2a3e;padding:25px;border-radius:20px">
+<h3>🦞 ClawsJoy平台</h3>
+<p style="font-size:32px;color:#667eea;margin:15px 0">AGPL v3</p>
+<p>保护平台不被闭源fork</p>
+</div>
+<div style="flex:1;background:#2a2a3e;padding:25px;border-radius:20px">
+<h3>🔧 技能SDK</h3>
+<p style="font-size:32px;color:#10b981;margin:15px 0">MIT</p>
+<p>鼓励开发者使用</p>
+</div>
+</div>
+</div>
+
+<div class="slide">
+<h2>成功案例</h2>
+<table>
+<tr><th>公司</th><th>开源</th><th>商业模式</th><th>年收入</th></tr>
+<tr><td>GitLab</td><td>社区版</td><td>企业版</td><td>~5亿美元</td></tr>
+<tr><td>MongoDB</td><td>社区版</td><td>Atlas云服务</td><td>~15亿美元</td></tr>
+<tr><td>WordPress</td><td>全部</td><td>插件/主题市场</td><td>~10亿美元</td></tr>
+<tr><td>Supabase</td><td>全部</td><td>托管服务</td><td>~5000万美元</td></tr>
+</table>
+<p style="margin-top:30px;color:#888">他们都是开源+商业化的成功案例</p>
+</div>
+
+<div class="slide">
+<h2>ClawsJoy 路线图</h2>
+<ul>
+<li><strong>Phase 1（现在）</strong> - 全部代码开源，个人免费，技能商店框架</li>
+<li><strong>Phase 2（3个月）</strong> - 技能商店上线，企业版，托管服务</li>
+<li><strong>Phase 3（6个月）</strong> - 技能交易抽成30%，企业版订阅，托管服务</li>
+</ul>
+</div>
+
+<div class="slide">
+<h1 style="font-size:56px">开源是放大器</h1>
+<p>不是削弱器</p>
+<p style="margin-top:30px">开源让更多人用 → 更多人开发技能 → 技能商店更丰富 → 更多人付费</p>
+<p style="margin-top:30px;color:#667eea">社区和我们，一起赚钱</p>
+</div>
+
+</body>
+</html>

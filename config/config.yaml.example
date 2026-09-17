@@ -1,0 +1,43 @@
+# ClawsJoy 配置模板
+# 复制为 config.yaml 并修改
+
+version: "3.0"
+environment: development
+
+services:
+  gateway:
+    port: 5002
+    host: 0.0.0.0
+  file_service:
+    port: 5003
+  multi_agent:
+    port: 5006
+  doc_generator:
+    port: 5008
+  agent_api:
+    port: 5010
+
+paths:
+  data: ./data
+  skills: ./skills
+  output: ./output
+  logs: ./logs
+
+llm:
+  provider: ollama
+  endpoint: http://127.0.0.1:11434
+  default_model: qwen2.5:7b
+  fallback_model: qwen2.5:7b-instruct-q4_0-gpu
+  timeout: 60
+  max_retries: 3
+
+memory:
+  type: json
+  file: ./data/memory_simple.json
+  max_items: 1000
+  auto_save: true
+
+logging:
+  level: INFO
+  format: json
+  file: ./logs/clawsjoy.log
