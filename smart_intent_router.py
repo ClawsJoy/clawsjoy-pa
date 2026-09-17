@@ -32,7 +32,7 @@ class SmartIntentRouter:
 
         config_path = Path("config/intent_agent_map.yaml")
         if config_path.exists():
-            with open(config_path) as f:
+            with open(config_path, encoding="utf-8") as f:
                 config = yaml.safe_load(f)
                 cls.INTENT_TO_AGENT = config.get("intent_to_agent", {})
         return cls.INTENT_TO_AGENT

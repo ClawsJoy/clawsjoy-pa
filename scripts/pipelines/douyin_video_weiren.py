@@ -88,7 +88,7 @@ def main():
             "-pix_fmt", "yuv420p", "-shortest", seg_mp4], timeout=120)
         seg_mp4s.append(seg_mp4)
     lst = os.path.abspath(os.path.join(OUT_DIR, "wr_list.txt"))
-    with open(lst, "w") as f:
+    with open(lst, "w", encoding="utf-8") as f:
         for m in seg_mp4s:
             f.write("file '%s'" % os.path.abspath(m) + chr(10))
     sh(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", OUT_MP4], timeout=120)

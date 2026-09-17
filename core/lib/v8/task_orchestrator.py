@@ -442,7 +442,7 @@ class TaskOrchestrator:
                     spec_dir = brief_file.parent / "specs"
                     if spec_dir.exists():
                         for spec_file in spec_dir.glob("*.md"):
-                            brief_content += f"\n---\n{spec_file.read_text()}\n"
+                            brief_content += f"\n---\n{spec_file.read_text(encoding="utf-8")}\n"
                     break
         except Exception:
             pass
@@ -459,7 +459,7 @@ class TaskOrchestrator:
                         if t.get("created_by") == created_by and t.get("output_file"):
                             prev_path = project_dir / t["output_file"]
                             if prev_path.exists():
-                                previous_files += f"\n【前序任务：{t['title']}】\n{prev_path.read_text()[:1000]}\n"
+                                previous_files += f"\n【前序任务：{t['title']}】\n{prev_path.read_text(encoding="utf-8")[:1000]}\n"
                     break
         except Exception:
             pass

@@ -19,7 +19,7 @@ API_BASE = "https://discord.com/api/v10"
 import hashlib
 PID_FILE = runtime_tmp_path("clawsjoy_bot_%s.pid" % hashlib.md5(DISCORD_TOKEN.encode()).hexdigest()[:8])
 if os.path.exists(PID_FILE):
-    with open(PID_FILE) as f:
+    with open(PID_FILE, encoding="utf-8") as f:
         old_pid = f.read().strip()
     try:
         os.kill(int(old_pid), 0)
@@ -27,7 +27,7 @@ if os.path.exists(PID_FILE):
         exit(1)
     except (OSError, ValueError):
         os.remove(PID_FILE)
-with open(PID_FILE, "w") as f:
+with open(PID_FILE, "w", encoding="utf-8") as f:
     f.write(str(os.getpid()))
 
 if not DISCORD_TOKEN:

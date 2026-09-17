@@ -11,7 +11,7 @@ def prepare_training_data():
         print("数据集不存在，请先创建")
         return
     
-    with open(dataset_path) as f:
+    with open(dataset_path, encoding="utf-8") as f:
         data = json.load(f)
     
     training_data = []
@@ -27,7 +27,7 @@ def prepare_training_data():
     
     # 保存为训练格式
     output_path = Path("data/training/training_data.json")
-    with open(output_path, 'w') as f:
+    with open(output_path, 'w', encoding="utf-8") as f:
         json.dump(training_data, f, indent=2)
     print(f"✅ 训练数据已保存: {output_path}")
     
@@ -53,7 +53,7 @@ PARAMETER top_p 0.9
 PARAMETER num_predict 32
 '''
     
-    with open("Modelfile.intent", "w") as f:
+    with open("Modelfile.intent", "w", encoding="utf-8") as f:
         f.write(modelfile)
     print("\n✅ 已生成 Modelfile.intent")
     print("运行以下命令创建自定义模型:")

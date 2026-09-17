@@ -126,7 +126,7 @@ class ExecutorAgentV4(BusinessAgent):
                 return self._resp("❌ 请指定文件路径")
             if not path.exists():
                 return self._resp(f"❌ 文件不存在: {path}")
-            return self._resp(f"📄 文件内容:\n{path.read_text()[:1000]}")
+            return self._resp(f"📄 文件内容:\n{path.read_text(encoding="utf-8")[:1000]}")
         elif op == "write":
             if len(parts) < 3:
                 return self._resp("❌ 请指定: write <文件> <内容>")
