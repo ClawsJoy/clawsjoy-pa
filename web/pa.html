@@ -329,6 +329,7 @@ body.hide-top .left.drawer-open,body.hide-top .side.drawer-open{top:0}
     <div id="paQuotaBanner" class="pa-quota-banner" role="status" aria-live="polite">
       <span id="paQuotaText"></span>
       <button onclick="paExportArchive()" title="导出全部归档与会话为 JSON 文件（不删除任何数据）">导出归档 JSON</button>
+      <button onclick="paArchiveCleanup()" title="手动清理最早的归档（需二次确认；不会自动执行；建议先导出备份）">🧹 手动清理归档</button>
     </div>
     <div class="timeline" id="timeline">
       <div class="tl-head">
@@ -429,6 +430,7 @@ let state = { mode:'chat', threads:[], activeThread:null };
       写 `#modeHint` 又会被 setMode 重画覆盖 ⇒ 用户看不到）。
    **不推断**：只报可从数据算出的数（字节、归档条数）；**不写「还能撑几天」**这类估算。 */
 const PA_QUOTA_GUARD_BYTES = 4 * 1024 * 1024;   /* 4 MiB：浏览器 ~5 MB 上限之前提前告警 */
+const PA_ARCHIVE_HINT_COUNT = 100;              /* W-09 按条数提示：归档到这条线就在横幅里提醒（**只提示**，不裁剪） */
 let PA_LAST_SAVE_BYTES = null;                  /* 上次写盘的字节数（模块变量：**不进 state**，不给存档增重） */
 function paQuotaBytes(raw){
   /* 口径＝**UTF-8 字节**（与测试侧/DSH 线口径对齐，便于对账）。
@@ -461,6 +463,12 @@ function paQuotaWarnText(bytes){
        + '你可以：① 归档旧会话（先「导出归档 JSON」备份，导出不删数据）；② 清理历史。'
        + '当前已归档 '+archived+' 条（最早的可清理；本版不会自动删除 —— 裁剪规则待老板拍）。';
 }
+function paArchiveHintText(n){
+  /* W-09 按条数提示：把「归档已经很多」变成**看得见**的一句（原实现只在 console + 线程消息里）。
+     只报能算出的数（条数、可清理量），**不推断**「还能撑多久」。 */
+  return '⚠ 本地归档已 '+n+' 条（提示阈值 '+PA_ARCHIVE_HINT_COUNT+' 条）：存储接近上限时新建会话/归档可能不生效。'
+       + '你可以：① 「导出归档 JSON」备份（只读、不删数据）；② 「手动清理归档」（需要你二次确认，本版不会自动删除）。';
+}
 function paQuotaGuard(){
   /* 启动即测一次：**提前告警**，不等到写失败才发现（W-08）。 */
   const u = paQuotaUsage();
@@ -469,6 +477,7 @@ function paQuotaGuard(){
   if(u.saveError) return paQuotaNotice('⚠ 本地写入已被拒绝（'+u.saveError+'）。本次新内容刷新后可能不生效：'
        + '请先「导出归档 JSON」备份，再清理历史（本版不自动删）。');
   if(u.over) return paQuotaNotice(paQuotaWarnText(u.bytes));
+  if(u.archived >= PA_ARCHIVE_HINT_COUNT) return paQuotaNotice(paArchiveHintText(u.archived));
   return paQuotaNotice('');
 }
 function saveState(){
@@ -511,6 +520,48 @@ function paExportArchive(){
   }catch(e){ console.warn('[PA] 导出失败:', e); return false; }
 }
 
+/* ---- W-09 手动清理入口（老板 2026-09-18 拍：**不自动裁** + 手动清理 + 可导出回溯 ----
+   为什么放在守卫区域**之外**：守卫（W-08/W-10）是**只读提示**，有静态判据钉死「不得出现任何删除动作」；
+   删除只能走这里，且**唯一触发路径 = 老板点按钮**（无自动/定时/超限触发）。
+   三条纪律：
+   1. **先可回溯、再删**：确认框写明不可撤销 + 建议先「导出归档 JSON」；
+   2. **一次只清最早 N 条**（PA_ARCHIVE_CLEAN_BATCH），**不提供「全清」** —— 全清不是清理，是丢数据；
+   3. **删了什么要留痕**：被删项的 id / archived_at 记进消息日志（内容本身不可恢复，**不谎称可还原**）。 */
+const PA_ARCHIVE_CLEAN_BATCH = 100;   /* 一次手动清理「最早 N 条」 */
+function paArchiveStats(){
+  /* 只读：给确认框与日志用的计数（不碰数据）。 */
+  const total = (state && Array.isArray(state.archived)) ? state.archived.length : 0;
+  const n = Math.min(PA_ARCHIVE_CLEAN_BATCH, total);
+  return { total: total, remove: n, keep: total - n, batch: PA_ARCHIVE_CLEAN_BATCH };
+}
+function paArchiveCleanup(){
+  try{
+    const st = paArchiveStats();
+    if(!st.total){ addLog('🧹 没有可清理的归档（0 条）', 'warn', true); return false; }
+    const ok = window.confirm(
+      '手动清理归档（不可撤销）' + String.fromCharCode(10) + String.fromCharCode(10)
+      + '当前归档：' + st.total + ' 条' + String.fromCharCode(10)
+      + '本次删除：最早的 ' + st.remove + ' 条' + String.fromCharCode(10)
+      + '清理后保留：' + (st.keep ? ('最新 ' + st.keep + ' 条')
+                          : '0 条（即全部归档，本次会清空归档）')
+      + String.fromCharCode(10) + String.fromCharCode(10)
+      + '建议先点「导出归档 JSON」备份（只读、不删数据）。' + String.fromCharCode(10)
+      + '确认删除这 ' + st.remove + ' 条？'
+    );
+    if(!ok){ addLog('🧹 已取消手动清理（未删除任何数据）', 'warn', true); return false; }
+    const removed = state.archived.slice(0, st.remove).map(function(x){
+      return { id:(x && x.id) || null, archived_at:(x && x.archived_at) || null };
+    });
+    /* 只有老板在确认框里点了「确定」才会到这里 —— 这是全仓**唯一**的归档删除点。 */
+    state.archived = state.archived.slice(st.remove);
+    saveState();
+    console.log('[PA][ARCHIVE] 手动清理最早 ' + st.remove + ' 条（保留 ' + st.keep + ' 条）：' + JSON.stringify(removed));
+    addLog('🧹 已手动清理最早的 ' + st.remove + ' 条归档（保留 ' + st.keep + ' 条）。'
+         + '⚠ 被删内容不可恢复；本条日志留有被删项的 id / 时间戳', 'warn', true);
+    paQuotaGuard();   /* 清理后立刻复算并更新横幅 */
+    return true;
+  }catch(e){ console.warn('[PA][ARCHIVE] 手动清理失败:', e); return false; }
+}
 function paParseStateTolerant(raw){
   if(!raw || raw==='null'){ return {ok:false, data:null, reason:'本地记录为空'}; }
   try{ return {ok:true, data:JSON.parse(raw)}; }catch(e){}
@@ -842,14 +893,16 @@ function newThread(silent){
     /* 批219 修（我上一版引入的丢失点）：**不得静默裁剪归档** —— 上限调高到 50，且**裁剪必须可见**（console + 页面提示）。
        真到写不进时，由 saveState() 的失败上报负责（不静默）。 */
         /* 批221·A（老板拍板）：**归档不设上限、不裁剪** —— "不丢数据"优先。
-       溢出（>100 条）改为：①可见提示（写入活动线程 msgs，随渲染存活）②提供导出函数。
+       溢出（>PA_ARCHIVE_HINT_COUNT 条）改为：①可见提示（写入活动线程 msgs，随渲染存活）②提供导出函数。
        若 localStorage 真的写不进，由 saveState() 的失败上报兜底（不静默）。 */
-    if((state.archived||[]).length > 100){
+    if((state.archived||[]).length > PA_ARCHIVE_HINT_COUNT){
       try{ console.warn('[PA] 归档已 '+state.archived.length+' 条，建议导出（paExportArchive()）'); }catch(_e){}
       try{
         const _at=(state.threads||[]).find(function(x){ return x.id===state.activeThread; });
-        if(_at && !(_at.msgs||[]).some(function(m){ return (m.content||'').indexOf('归档已超过 100 条')>=0; })){
-          _at.msgs=(_at.msgs||[]).concat([{role:'sys', content:'⚠ 本地归档已超过 100 条（'+state.archived.length+'）。为保证不丢，请在控制台执行 paExportArchive() 导出备份；localStorage 写满时会另有失败提示。'}]);
+        const _mark='归档已超过 '+PA_ARCHIVE_HINT_COUNT+' 条';
+        /* W-09：提示不再指「去控制台跑函数」（用户看不见控制台），改指**横幅上的两个按钮**。 */
+        if(_at && !(_at.msgs||[]).some(function(m){ return (m.content||'').indexOf(_mark)>=0; })){
+          _at.msgs=(_at.msgs||[]).concat([{role:'sys', content:'⚠ 本地归档已超过 '+PA_ARCHIVE_HINT_COUNT+' 条（'+state.archived.length+'）。为保证不丢，请点横幅上的「导出归档 JSON」备份；如需腾空间，可点「手动清理归档」（需你二次确认，不会自动删除）。'}]);
         }
       }catch(_e2){}
     }
