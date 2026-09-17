@@ -1,0 +1,10 @@
+{
+  "note": "X-03「文件编码显式化债务」防复发基线（门禁只报不改；新增即告警）",
+  "updated": "2026-09-18",
+  "expected_count": 0,
+  "allow": [],
+  "caliber": "AST；计入 内建 open(文本模式,无 encoding) / .read_text|.write_text(无 encoding) / 可证明 pathlib 的 .open()；不计入 模块接收者的 .open()、二进制模式、data/ 等",
+  "why_expected_zero": "2026-09-18 本批修完产品侧最后 11 处（757e4cd）⇒ 仓库内产品代码应为 0；任何新增即为新债务",
+  "evidence": "codex/2026-09-18-x03-p2-encoding-explicit-batch.md; codex/2026-09-18-x03-anti-recurrence-ast-guard.md",
+  "scanner": "tools/check_encoding_explicit.py"
+}

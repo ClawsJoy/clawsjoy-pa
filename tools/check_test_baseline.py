@@ -24,6 +24,11 @@
 #   ⇒ 门禁自称的 PASS 严格只能算 **reported PASS**，第四问（收集阶段有无异常）
 #   必须人工补齐后另记 **human_confirmed_pass**。
 #   证据等级: 【实测】D:\clawsjoy_v9 · Windows 11 + PowerShell 5.1 + Python 3.12 · 2026-09-17。
+#
+# X-03 防复发(2026-09-18 · 老板拍定「做」):
+#   新增「文件编码显式化债务」AST 扫描(tools/check_encoding_explicit.py), 同样**只告警不改判定**;
+#   结果进 warnings + last_run.json 的 encoding_debt 字段, 不进 bad 列表、不改退出码。
+#   为什么: X-03 存量(产品侧 11 处)修完后必须防新增, 否则下一批代码又长出同类债务。
 import argparse
 import datetime
 import json
@@ -128,6 +133,30 @@ def main():
             warnings.append(f"已统计 {_accounted} < 收集数 {collected}：差额 {collected - _accounted} 条未归类（常见: xfailed/xpassed/error）")
     if collect_errors:
         warnings.append(f"收集期错误行 {len(collect_errors)} 条: " + "; ".join(collect_errors[:3]))
+    # --- X-03 防复发（2026-09-18）：文件编码显式化债务 —— 与 G-02 同一规矩：**只告警，不改判定** ---
+    #   判据在 tools/check_encoding_explicit.py（AST，只报不改）；基线台账 tests/baseline/encoding_explicit_baseline.json。
+    #   为什么: X-03 存量修完后必须防**新增**，否则下一批代码又会长出 `open()` 不带 encoding 的同类债务。
+    #   边界: 新增只进 warnings 与 last_run.json 的 encoding_debt 字段，**不进 bad 列表、不改退出码**（老板 2026-09-18 拍定）。
+    encoding_debt = None
+    try:
+        _enc_spec = _importlib_util.spec_from_file_location(
+            "_cj_encoding_scan", _REPO / "tools" / "check_encoding_explicit.py")
+        _enc_mod = _importlib_util.module_from_spec(_enc_spec)
+        _enc_spec.loader.exec_module(_enc_mod)
+        encoding_debt = _enc_mod.scan_summary(_REPO)
+        print("[GATE] X-03 编码扫描(只报): %d 个 .py / 命中 %d / 基线内 %d / 新增 %d / 未判定 %d"
+              % (encoding_debt["scanned_files"], encoding_debt["total"], encoding_debt["allowed"],
+                 len(encoding_debt["new_findings"]), encoding_debt["unresolved_attr_open"]))
+        if encoding_debt["new_findings"]:
+            _shown = ", ".join("%s:%d" % (f["file"], f["line"]) for f in encoding_debt["new_findings"][:5])
+            warnings.append("X-03 编码显式化债务新增 %d 处: %s%s（请补 encoding=\"utf-8\"；口径见 tools/check_encoding_explicit.py）"
+                            % (len(encoding_debt["new_findings"]), _shown,
+                               " …" if len(encoding_debt["new_findings"]) > 5 else ""))
+        elif encoding_debt["baseline_state"] != "ok":
+            warnings.append("X-03 编码基线不可读(%s) —— 新增债务无法对照，请检查 tests/baseline/encoding_explicit_baseline.json"
+                            % encoding_debt["baseline_state"])
+    except Exception as _e:  # 扫描器自身出问题也不能把门禁搞红（只告警）
+        warnings.append("X-03 编码扫描未执行: %r" % (_e,))
     for _w in warnings:
         print(f"[GATE][WARN] {_w}")
     print("[GATE] 证据范围: 上行 PASS 仅覆盖 ①②③ 三问；第④问（收集阶段）只留痕不判定，见 last_run.json")
@@ -164,6 +193,7 @@ def main():
                 "collected": collected,
                 "collect_errors": collect_errors,
                 "warnings": warnings,
+                "encoding_debt": encoding_debt,
                 "reported_pass": not bad,
                 "human_confirmed_pass": None,
                 "human_confirmed_note": "需人工补齐第④问（收集数/退出码/末行形态）后填写；"
