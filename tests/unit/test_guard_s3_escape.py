@@ -3,7 +3,7 @@ import os
 import sys
 
 sys.path.insert(0, ".")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL", "postgresql://test:test@127.0.0.1:5432/test")
 
 from pathlib import Path
 

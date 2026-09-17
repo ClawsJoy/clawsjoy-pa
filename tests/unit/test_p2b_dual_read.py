@@ -1,7 +1,7 @@
 """P2b-A: 双读对比 — 补记守卫注入 + 投影一致性"""
 import sys, os
 sys.path.insert(0, ".")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL", "postgresql://test:test@127.0.0.1:5432/test")
 
 import pytest
 from core.gateway.session_log import SessionLog, log_event, get_session_log, EV_USER_MESSAGE

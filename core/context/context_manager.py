@@ -14,7 +14,7 @@ def retrieve_related_history(user_id, session_id, current_task, limit=3):
     try:
         import psycopg2
 
-        conn = psycopg2.connect("postgresql://clawsjoy:clawsjoy_secret@localhost:5432/clawsjoy_dev")
+        conn = psycopg2.connect("postgresql://clawsjoy:clawsjoy_secret@127.0.0.1:5432/clawsjoy_dev")
         cur = conn.cursor()
         cur.execute(
             "SELECT entity_name, signature, created_at FROM code_entities "
@@ -242,7 +242,7 @@ def query_tool_flow(query, limit=5):
     try:
         import psycopg2
 
-        conn = psycopg2.connect("postgresql://clawsjoy:clawsjoy_secret@localhost:5432/clawsjoy_dev")
+        conn = psycopg2.connect("postgresql://clawsjoy:clawsjoy_secret@127.0.0.1:5432/clawsjoy_dev")
         cur = conn.cursor()
         cur.execute(
             "SELECT entity_name, signature FROM code_entities "
@@ -366,7 +366,7 @@ def _get_skeleton_by_path(filepath, user_id="default", session_id="default"):
     if not _state_file.exists():
         return None
     try:
-        _state = json.loads(_state_file.read_text())
+        _state = json.loads(_state_file.read_text(encoding="utf-8"))
         _wm = _state.get("world_model", {})
         if isinstance(_wm, str):
             try:
@@ -405,7 +405,7 @@ def _is_repeat_read_attempt_v2(filepath, user_id="default", session_id="default"
     if not _state_file.exists():
         return False
     try:
-        _state = json.loads(_state_file.read_text())
+        _state = json.loads(_state_file.read_text(encoding="utf-8"))
         _artifacts = _state.get("artifacts", [])
         _count = 0
         for _a in _artifacts:

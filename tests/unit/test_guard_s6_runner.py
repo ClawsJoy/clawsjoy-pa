@@ -1,7 +1,7 @@
 """P1 S6: 守卫执行器统一入口测试 — runner + 子任务免审批 scope"""
 import sys, os
 sys.path.insert(0, ".")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL", "postgresql://test:test@127.0.0.1:5432/test")
 
 import pytest
 import core.os.context as oc

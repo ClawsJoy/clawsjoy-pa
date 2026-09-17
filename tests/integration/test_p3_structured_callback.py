@@ -1,7 +1,7 @@
 """P3: 结构化失败回调 on_fail 携带 {code, message} + 兼容降级"""
 import sys, os
 sys.path.insert(0, ".")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")  # import task_orchestrator 链式实例化 extractor
+os.environ.setdefault("DATABASE_URL", "postgresql://test:test@127.0.0.1:5432/test")  # import task_orchestrator 链式实例化 extractor
 import pytest
 
 from core.gateway.execute_agent_task import _notify_fail_impl, _notify_fail_to_text

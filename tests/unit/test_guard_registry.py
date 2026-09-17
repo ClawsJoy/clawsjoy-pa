@@ -1,7 +1,7 @@
 """P1 S1: 守卫基座 + 注册表骨架测试(未接现有守卫, 零行为变化)"""
 import sys, os
 sys.path.insert(0, ".")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL", "postgresql://test:test@127.0.0.1:5432/test")
 
 import pytest
 from core.os.context import V9Context

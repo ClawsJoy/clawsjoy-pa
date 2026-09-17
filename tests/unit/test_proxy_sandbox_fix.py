@@ -16,10 +16,11 @@ def test_sandbox_env_passes_proxy_values(monkeypatch):
     """代理变量应透传进 _SANDBOX_ENV"""
     monkeypatch.setenv("http_proxy", "http://127.0.0.1:7890")
     monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:7890")
-    se = {k: v for k, v in os.environ.items() if k in {
-        "PATH", "HOME", "http_proxy", "HTTPS_PROXY"}}
-    assert se.get("http_proxy") == "http://127.0.0.1:7890"
-    assert se.get("HTTPS_PROXY") == "http://127.0.0.1:7890"
+    # Windows(2026-09-17): os.environ 的键名大小写不敏感 —— setenv("http_proxy") 在
+    # Windows 上实际写成 HTTP_PROXY, 按字面小写名过滤 items() 会漏掉。改用
+    # os.environ.get()(内部 encodekey 会大写化) 取值, 语义跨平台一致。
+    assert os.environ.get("http_proxy") == "http://127.0.0.1:7890"
+    assert os.environ.get("HTTPS_PROXY") == "http://127.0.0.1:7890"
 
 
 def test_env_file_proxy_enabled():

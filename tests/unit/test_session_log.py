@@ -1,7 +1,7 @@
 """P2a: 会话事件溯源日志骨架测试"""
 import sys, os, json
 sys.path.insert(0, ".")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL", "postgresql://test:test@127.0.0.1:5432/test")
 
 import pytest
 from pathlib import Path

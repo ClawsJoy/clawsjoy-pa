@@ -1,7 +1,7 @@
 """P2b 修复: 用户消息写入日志 → derive_messages 投影"""
 import sys, os
 sys.path.insert(0, ".")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL", "postgresql://test:test@127.0.0.1:5432/test")
 
 import pytest
 from pathlib import Path

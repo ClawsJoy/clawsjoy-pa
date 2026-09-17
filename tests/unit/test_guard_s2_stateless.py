@@ -1,7 +1,7 @@
 """P1 S2: 无状态守卫收编测试 — 与原内联逻辑行为一致"""
 import sys, os
 sys.path.insert(0, ".")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+os.environ.setdefault("DATABASE_URL", "postgresql://test:test@127.0.0.1:5432/test")
 
 import pytest
 from core.os.context import V9Context

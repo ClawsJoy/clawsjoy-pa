@@ -4,7 +4,7 @@ default: &default
   adapter: postgresql
   encoding: unicode
   pool: 10
-  host: localhost
+  host: 127.0.0.1
   port: 5432
   username: clawsjoy
   password: clawsjoy_local
