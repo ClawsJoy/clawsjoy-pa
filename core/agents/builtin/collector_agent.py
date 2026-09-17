@@ -82,7 +82,7 @@ class CollectorAgent(SmartAgent):
         )
         pref_file = Path(storage)
         if pref_file.exists():
-            with open(pref_file, "r") as f:
+            with open(pref_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {}
 
@@ -95,7 +95,7 @@ class CollectorAgent(SmartAgent):
         )
         pref_file = Path(storage)
         pref_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(pref_file, "w") as f:
+        with open(pref_file, "w", encoding="utf-8") as f:
             json.dump(self.user_preferences, f, indent=2, ensure_ascii=False)
 
     def start_session(

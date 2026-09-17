@@ -64,7 +64,7 @@ def _get_ft_model():
             import fasttext
 
             _stderr = sys.stderr
-            _devnull = open(os.devnull, "w")
+            _devnull = open(os.devnull, "w", encoding="utf-8")
             sys.stderr = _devnull
             # 批176 · D2 修复：重定向必须**成对还原**。此前还原语句在 try 体内，
             # 而 fasttext.load_model('models/intent_classifier.bin') 会抛异常（该模型文件不存在）
@@ -863,7 +863,7 @@ class AgentCortex:
         if cap_dir.exists():
             for f in cap_dir.glob("*.yaml"):
                 try:
-                    data = yaml.safe_load(f.read_text())
+                    data = yaml.safe_load(f.read_text(encoding="utf-8"))
                     agent = data.get("agent", data)
                     name = agent.get("name", f.stem)
                     actions = agent.get("actions", [])
@@ -880,7 +880,7 @@ class AgentCortex:
         if skill_cap_dir.exists():
             for f in skill_cap_dir.glob("*.yaml"):
                 try:
-                    data = yaml.safe_load(f.read_text())
+                    data = yaml.safe_load(f.read_text(encoding="utf-8"))
                     name = data.get("name", f.stem)
                     actions = data.get("actions", [])
                     if actions:
@@ -895,7 +895,7 @@ class AgentCortex:
 
         config_path = Path("config/session_modes.yaml")
         if config_path.exists():
-            data = yaml.safe_load(config_path.read_text())
+            data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
             return data.get("modes", {})
         return {}
 
@@ -1093,7 +1093,7 @@ class AgentCortex:
                 "extracted": extracted,
                 "ts": datetime.now().isoformat(),
             }
-            with open(Path(f"data/users/{user_id}/history.jsonl"), "a") as f:
+            with open(Path(f"data/users/{user_id}/history.jsonl"), "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
             ctx_mgr.add_turn(user_input, response, action, extracted)
             if extracted:
@@ -1110,8 +1110,8 @@ class AgentCortex:
                 train_file.parent.mkdir(parents=True, exist_ok=True)
                 label = f"__label__{action}"
                 line = f"{label} {user_input[:200].strip()}\n"
-                if not train_file.exists() or line not in train_file.read_text():
-                    with open(train_file, "a") as f:
+                if not train_file.exists() or line not in train_file.read_text(encoding="utf-8"):
+                    with open(train_file, "a", encoding="utf-8") as f:
                         f.write(line)
         except Exception:
             pass
@@ -1119,7 +1119,7 @@ class AgentCortex:
     def get_learning_stats(self, user_id: str = None) -> Dict:
         feedback_file = Path("data/feedback.json")
         if feedback_file.exists():
-            data = json.loads(feedback_file.read_text())
+            data = json.loads(feedback_file.read_text(encoding="utf-8"))
             return {
                 "total": len(data.get("success", [])) + len(data.get("failure", [])),
                 "success_rate": round(

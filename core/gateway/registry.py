@@ -26,7 +26,7 @@ def _init_registries():
     _total = 0
     for _yaml_path, _top_key, _entity_type, _id_field in _registry_map:
         try:
-            with open(_yaml_path) as f:
+            with open(_yaml_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             items = data.get(_top_key, [])
             for item in items:
@@ -55,7 +55,7 @@ def _init_registries():
     # 扫描 config/orchestration/templates.yaml 入库 SAG（plan_template：拆解模板库积累）
     _template_yaml = "config/orchestration/templates.yaml"
     try:
-        with open(_template_yaml) as _f:
+        with open(_template_yaml, encoding="utf-8") as _f:
             _tmpl_data = yaml.safe_load(_f) or {}
         _tmpl_total = 0
         for _tmpl_name, _tmpl_body in (_tmpl_data.get("templates", {}) or {}).items():
@@ -103,7 +103,7 @@ def _init_registries():
     # 扫描 keywords.yaml 入库 SAG（作为关键词统一入口）
     _keyword_yaml = "config/keywords.yaml"
     try:
-        with open(_keyword_yaml) as _f:
+        with open(_keyword_yaml, encoding="utf-8") as _f:
             _kw_data = yaml.safe_load(_f)
         _kw_total = 0
         # intents 节点：遍历每个意图的关键词

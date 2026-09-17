@@ -255,7 +255,7 @@ def build_tools_and_trim(
     if state_file.exists():
         try:
             try:
-                state = json.loads(state_file.read_text())
+                state = json.loads(state_file.read_text(encoding="utf-8"))
 
             except Exception:
                 state = {}
@@ -278,7 +278,7 @@ def build_tools_and_trim(
             restored = []
             for bak in base.rglob("*.bak"):
                 orig = bak.with_suffix("")
-                orig.write_text(bak.read_text())
+                orig.write_text(bak.read_text(encoding="utf-8"), encoding="utf-8")
                 bak.unlink()
                 restored.append(str(orig.name))
             return {
@@ -386,7 +386,7 @@ def inject_context_and_flags(
             _state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
             if _state_file.exists():
                 try:
-                    _state = json.loads(_state_file.read_text())
+                    _state = json.loads(_state_file.read_text(encoding="utf-8"))
                     if _state.get("last_task_status") == "done":
                         return {
                             "short_circuit": {"reply": "上次任务已完成。请下达新指令。", "status": "previous_done"},
@@ -453,8 +453,8 @@ def inject_context_and_flags(
             _st_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
             _last_task = (
                 (
-                    json.loads(_st_file.read_text()).get("last_task")
-                    or json.loads(_st_file.read_text()).get("_last_task", "")
+                    json.loads(_st_file.read_text(encoding="utf-8")).get("last_task")
+                    or json.loads(_st_file.read_text(encoding="utf-8")).get("_last_task", "")
                 )
                 if _st_file.exists()
                 else ""
@@ -520,7 +520,7 @@ def preload_code_and_history(*, data, messages, user_id, session_id):
         state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
         if state_file.exists():
             try:
-                agent_state = json.loads(state_file.read_text())
+                agent_state = json.loads(state_file.read_text(encoding="utf-8"))
 
             except Exception:
                 agent_state = {}
@@ -556,7 +556,7 @@ def preload_code_and_history(*, data, messages, user_id, session_id):
         state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
         if state_file.exists():
             try:
-                agent_state = json.loads(state_file.read_text())
+                agent_state = json.loads(state_file.read_text(encoding="utf-8"))
 
             except Exception:
                 agent_state = {}
@@ -750,7 +750,7 @@ def build_prompt(
                 )
 
     # 加载 Prompt 模板
-    prompt_template = Path("config/prompts/agent_system.md").read_text()
+    prompt_template = Path("config/prompts/agent_system.md").read_text(encoding="utf-8")
     # 注入工具声明段（#150）：替换 <!-- TOOL_DECLARATIONS_START/END --> 占位标记
     try:
         from core.lib.v8.loop_context_manager import LoopContextManager
@@ -768,7 +768,7 @@ def build_prompt(
     if state_file.exists():
         try:
             try:
-                state = json.loads(state_file.read_text())
+                state = json.loads(state_file.read_text(encoding="utf-8"))
 
             except Exception:
                 state = {}
@@ -841,7 +841,7 @@ def build_prompt(
                     try:
                         import ast as _ast_pre2
 
-                        _fc = _found2.read_text()
+                        _fc = _found2.read_text(encoding="utf-8")
                         if _found2.suffix == ".py":
                             _ast_pre2.parse(_fc)
                         # 前置检测防误判：计划文本不作为"文件已包含功能"依据

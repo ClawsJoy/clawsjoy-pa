@@ -37,7 +37,7 @@ class MetacognitiveAgent:
 
     def _load_reflections(self):
         if self.reflection_log.exists():
-            with open(self.reflection_log, "r") as f:
+            with open(self.reflection_log, "r", encoding="utf-8") as f:
                 self.reflections = json.load(f)
         else:
             self.reflections = []
@@ -77,7 +77,7 @@ class MetacognitiveAgent:
         return "保持当前风格"
 
     def _save(self):
-        with open(self.reflection_log, "w") as f:
+        with open(self.reflection_log, "w", encoding="utf-8") as f:
             json.dump(self.reflections[-100:], f, indent=2, ensure_ascii=False)
 
     def get_insights(self) -> dict:

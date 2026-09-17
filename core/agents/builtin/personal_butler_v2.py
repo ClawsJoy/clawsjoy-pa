@@ -35,7 +35,7 @@ class PersonalButlerV2(SmartAgent):
         pref_file = user_dir / "butler_preferences.json"
         if pref_file.exists():
             try:
-                with open(pref_file) as f:
+                with open(pref_file, encoding="utf-8") as f:
                     data = json.load(f)
                     self.preferences = data.get("preferences", {})
                     self.user_context = data.get("context", {})
@@ -48,7 +48,7 @@ class PersonalButlerV2(SmartAgent):
         user_dir.mkdir(parents=True, exist_ok=True)
         pref_file = user_dir / "butler_preferences.json"
         try:
-            with open(pref_file, "w") as f:
+            with open(pref_file, "w", encoding="utf-8") as f:
                 json.dump(
                     {"preferences": self.preferences, "context": self.user_context},
                     f,

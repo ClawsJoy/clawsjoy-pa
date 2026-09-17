@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
         skills_file = Path(f"{get_data_root()}/skill_registry_v2.json")
         if skills_file.exists():
-            with open(skills_file, "r") as f:
+            with open(skills_file, "r", encoding="utf-8") as f:
                 skills = json.load(f)
         else:
             skills = {}
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
         skills_file = Path(f"{get_data_root()}/skill_registry_v2.json")
         if skills_file.exists():
-            with open(skills_file, "r") as f:
+            with open(skills_file, "r", encoding="utf-8") as f:
                 skills = json.load(f)
         else:
             skills = {}

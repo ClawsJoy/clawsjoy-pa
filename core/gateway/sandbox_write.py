@@ -60,7 +60,7 @@ def v9_sandbox_write_handler():
         # 按行修改模式：支持单行和多行替换
         if lines_start > 0 and lines_end > 0 and lines_end >= lines_start:
             # 显式区间替换：用 content 替换 lines_start 到 lines_end 的行
-            original = target.read_text() if target.exists() else ""
+            original = target.read_text(encoding="utf-8") if target.exists() else ""
             original_lines = original.split('\n')
             # 硬约束：>500 行文件禁止区间替换（与 line 分支硬约束一致）
             if len(original_lines) > 500:
@@ -95,7 +95,7 @@ def v9_sandbox_write_handler():
             else:
                 return jsonify({"success": False, "error": f"区间 {lines_start}-{lines_end} 超出文件范围 (1-{len(original_lines)})"})
         elif line > 0 and content:
-            original = target.read_text() if target.exists() else ""
+            original = target.read_text(encoding="utf-8") if target.exists() else ""
             original_lines = original.split('\n')
             # 硬约束：>200 行文件禁止 line 参数 → 自动降级为全量替换
             if len(original_lines) > 500:
@@ -131,7 +131,7 @@ def v9_sandbox_write_handler():
                 # JS 文件写入后语法校验，失败则回滚
                 if str(target).endswith('.js'):
                     import subprocess as _sp
-                    _result = _sp.run(['node', '-c', str(target)], capture_output=True, text=True, timeout=10)
+                    _result = _sp.run(['node', '-c', str(target)], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
                     if _result.returncode != 0:
                         target.write_text('\n'.join(original_lines), encoding='utf-8')
                         _key = str(target)
@@ -157,7 +157,7 @@ def v9_sandbox_write_handler():
         if not content.strip():
             return jsonify({"success": False, "error": "content 为空，写入失败。请检查内容是否正确。"})
         if target.exists():
-            original = target.read_text()
+            original = target.read_text(encoding="utf-8")
             _orig_lines = original.split(chr(10))
             _new_lines = content.split(chr(10))
             # 保护：content 行数远少于原文件，可能丢失内容
@@ -169,7 +169,7 @@ def v9_sandbox_write_handler():
                     "hint": f"write_file(path='{str(target)}', line=N, content='{_example_line.strip()[:80]}')"
                 })
             backup = target.with_suffix(target.suffix + '.bak')
-            backup.write_text(original)
+            backup.write_text(original, encoding="utf-8")
         # #98 修复：write_file 自动创建父目录（此前父目录缺失直接 ENOENT，agent 被迫绕 heredoc）
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding='utf-8')
@@ -420,7 +420,7 @@ def v9_sandbox_write_finalize_handler():
     _content = target.read_text(encoding='utf-8')
     _update_world_model(str(target), _content, user_id, session_id)
     import json as _j2
-    _st = _j2.loads(Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json").read_text()) if Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json").exists() else {}
+    _st = _j2.loads(Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json").read_text(encoding="utf-8")) if Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json").exists() else {}
     _ec_wf = _st.get("_last_entity_count", 0)
     _hint_wf = f"[SAG] {_ec_wf}个实体已入库" if _ec_wf > 0 else ""
     return jsonify({"success": True, "path": str(target), "size": len(_content), "hint": _hint_wf})

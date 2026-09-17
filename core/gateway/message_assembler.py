@@ -539,7 +539,7 @@ def _get_model_context_window(model):
     try:
         import yaml
 
-        with open("config/v8/available_models.yaml") as f:
+        with open("config/v8/available_models.yaml", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         for m in (data or {}).get("models", []) or []:
             if m.get("value") == model and m.get("context_window"):

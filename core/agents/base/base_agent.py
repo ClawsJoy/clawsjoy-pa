@@ -225,7 +225,7 @@ class BaseAgent(ABC):
         _merged = {}
         if memory_file.exists():
             try:
-                _merged.update(json.loads(memory_file.read_text()))
+                _merged.update(json.loads(memory_file.read_text(encoding="utf-8")))
             except Exception:
                 pass
         # 方案A: 精确 key 未命中时合并所有同 name 历史文件(恢复旧 user_id 的记忆)
@@ -241,8 +241,7 @@ class BaseAgent(ABC):
     def _save_permanent_memory(self):
         try:
             self._get_memory_file().write_text(
-                json.dumps(self._permanent_memory, indent=2, ensure_ascii=False)
-            )
+                json.dumps(self._permanent_memory, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception as e:
             print(f"⚠ 保存记忆失败: {e}")
 

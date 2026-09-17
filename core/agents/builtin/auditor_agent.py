@@ -45,7 +45,7 @@ class AuditorAgent(SmartAgent):
         record_file = Path(f"{get_data_root()}/audit_records.json")
         if record_file.exists():
             try:
-                with open(record_file, "r") as f:
+                with open(record_file, "r", encoding="utf-8") as f:
                     self.records = json.load(f)
             except Exception:
                 self._init_records()
@@ -60,7 +60,7 @@ class AuditorAgent(SmartAgent):
         """保存审计记录"""
         record_file = Path(f"{get_data_root()}/audit_records.json")
         record_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(record_file, "w") as f:
+        with open(record_file, "w", encoding="utf-8") as f:
             json.dump(self.records, f, indent=2)
 
     def audit(self, operation: str, data: Dict) -> bool:

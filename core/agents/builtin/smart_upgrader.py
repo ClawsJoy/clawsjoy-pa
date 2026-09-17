@@ -45,7 +45,7 @@ class SmartUpgrader(ConfigUpgrader):
         # 3. 检查配置是否已经是最优
         config_file = Path(f"agents/{agent_name}/config.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
             current_temp = (

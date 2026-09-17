@@ -12,7 +12,7 @@ def _record_path_pattern(original, resolved, user_id="default", session_id="defa
     """记录路径使用模式（成功或修正）"""
     _state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
     try:
-        _state = json.loads(_state_file.read_text()) if _state_file.exists() else {}
+        _state = json.loads(_state_file.read_text(encoding="utf-8")) if _state_file.exists() else {}
         _patterns = _state.get("known_patterns", [])
         if not isinstance(_patterns, list):
             _patterns = []
@@ -27,7 +27,7 @@ def _record_path_pattern(original, resolved, user_id="default", session_id="defa
         })
         _state["known_patterns"] = _patterns[-20:]
         _tmp = _state_file.with_suffix(".tmp")
-        _tmp.write_text(json.dumps(_state, ensure_ascii=False, indent=2))
+        _tmp.write_text(json.dumps(_state, ensure_ascii=False, indent=2), encoding="utf-8")
         _tmp.replace(_state_file)
     except Exception:
         pass

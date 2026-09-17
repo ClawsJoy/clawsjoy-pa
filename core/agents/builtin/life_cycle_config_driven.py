@@ -59,7 +59,7 @@ class LifeCycleConfigDriven:
     def _load_config(self) -> Dict:
         config_file = Path("config/driver/life_cycle.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 return unified_config.get("agent_lifecycle", {})
         return {
             "reflection": {

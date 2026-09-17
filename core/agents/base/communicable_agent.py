@@ -221,7 +221,7 @@ class CommunicableAgent(BaseAgent):
     def _load_audit_log(self):
         if self._audit_file.exists():
             try:
-                self._audit_log = json.loads(self._audit_file.read_text())
+                self._audit_log = json.loads(self._audit_file.read_text(encoding="utf-8"))
             except Exception:
                 self._audit_log = []
 
@@ -230,8 +230,7 @@ class CommunicableAgent(BaseAgent):
             return
         try:
             self._audit_file.write_text(
-                json.dumps(self._audit_log, indent=2, ensure_ascii=False)
-            )
+                json.dumps(self._audit_log, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception:
             pass
 

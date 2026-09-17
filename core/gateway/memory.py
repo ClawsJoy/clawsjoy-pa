@@ -158,7 +158,7 @@ def persist_session_learning_state(*, messages, user_id, session_id, tokens, _ta
         state = {}
         if state_file.exists():
             try:
-                state = json.loads(state_file.read_text())
+                state = json.loads(state_file.read_text(encoding="utf-8"))
 
             except Exception:
                 state = {}

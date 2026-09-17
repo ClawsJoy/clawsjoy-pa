@@ -100,7 +100,7 @@ def _load_modes_config() -> dict:
         from pathlib import Path as _P
         _rules_path = _P("config/v8/audit_rules.yaml")
         if _rules_path.exists():
-            _rules = _y.safe_load(_rules_path.read_text()) or {}
+            _rules = _y.safe_load(_rules_path.read_text(encoding="utf-8")) or {}
             _modes_cfg = _rules.get("modes") or {}
             if isinstance(_modes_cfg, dict) and _modes_cfg:
                 _modes_config_cache = _modes_cfg
@@ -143,7 +143,7 @@ def _check_discuss_token_budget(user_id: str, server_id: str = "default", model:
     try:
         _rules_path = _P("config/v8/audit_rules.yaml")
         if _rules_path.exists():
-            _rules = _y.safe_load(_rules_path.read_text()) or {}
+            _rules = _y.safe_load(_rules_path.read_text(encoding="utf-8")) or {}
             _budget = _rules.get("token_budget", {}).get("per_day", 0)
         else:
             _budget = 0
@@ -155,7 +155,7 @@ def _check_discuss_token_budget(user_id: str, server_id: str = "default", model:
             return (False, 0, _budget)
         _today = _dt.now().strftime("%Y-%m-%d")
         _total = 0
-        with open(_billing_file) as _bf:
+        with open(_billing_file, encoding="utf-8") as _bf:
             for _line in _bf:
                 try:
                     _entry = json.loads(_line)

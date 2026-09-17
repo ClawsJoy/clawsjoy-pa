@@ -47,7 +47,7 @@ class MeetingSystem:
     def _load_meetings(self):
         meeting_file = Path(f"{get_data_root()}/meeting_records.json")
         if meeting_file.exists():
-            with open(meeting_file, "r") as f:
+            with open(meeting_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 # 确保数据结构正确
                 if isinstance(data, list):
@@ -66,7 +66,7 @@ class MeetingSystem:
     def _save_meetings(self):
         meeting_file = Path(f"{get_data_root()}/meeting_records.json")
         meeting_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(meeting_file, "w") as f:
+        with open(meeting_file, "w", encoding="utf-8") as f:
             json.dump(self.meetings, f, indent=2, default=str)
 
     def trigger_meeting(self, issue: Dict, level: MeetingLevel) -> Dict:

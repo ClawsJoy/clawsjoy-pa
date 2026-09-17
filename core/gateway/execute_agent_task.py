@@ -549,7 +549,7 @@ def _execute_agent_task(
             _save_data["last_task_status"] = status  # "done" 或 "paused"
             _save_data["last_task_at"] = time.time()
         state_file.parent.mkdir(parents=True, exist_ok=True)  # V9 修复：首次执行时目录可能不存在
-        state_file.write_text(_safe_serialize_state(_save_data))
+        state_file.write_text(_safe_serialize_state(_save_data), encoding="utf-8")
         # ===== BRIEF.md 执行进度同步：步骤完成/失败/暂停 → update_progress =====
         try:
             from core.lib.brief_manager import get_brief_manager
@@ -934,7 +934,7 @@ def _execute_agent_task(
         try:
             _state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
             if _state_file.exists():
-                _state_data = json.loads(_state_file.read_text())
+                _state_data = json.loads(_state_file.read_text(encoding="utf-8"))
                 _agent_name_task = _state_data.get("agent_name", "")
                 if _agent_name_task:
                     _member_task = roster_engine.get("default", _agent_name_task)
@@ -1135,7 +1135,7 @@ def _execute_agent_task(
                         try:
                             import ast as _ast_pre
 
-                            _content = _found.read_text()
+                            _content = _found.read_text(encoding="utf-8")
                             if _found.suffix == ".py":
                                 _ast_pre.parse(_content)
                             # 前置检测防误判：计划文本（执行计划/修改计划/步骤列表等）不作为"文件已包含功能"依据
@@ -1753,7 +1753,7 @@ def _execute_agent_task(
                                 ["git", "-C", str(_agent_dir_deg), "diff", "--name-only"],
                                 capture_output=True,
                                 text=True,
-                                timeout=10,
+                                timeout=10, encoding="utf-8", errors="replace"
                             )
                             _changed_py_deg = [
                                 ln.strip() for ln in _diff_deg.stdout.splitlines() if ln.strip().endswith(".py")
@@ -1801,11 +1801,11 @@ def _execute_agent_task(
                     }
                 state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
                 try:
-                    _existing = json.loads(state_file.read_text()) if state_file.exists() else {}
+                    _existing = json.loads(state_file.read_text(encoding="utf-8")) if state_file.exists() else {}
                 except Exception:
                     _existing = {}
                 _existing.update(_sync_save)
-                state_file.write_text(json.dumps(_existing, ensure_ascii=False, indent=2))
+                state_file.write_text(json.dumps(_existing, ensure_ascii=False, indent=2), encoding="utf-8")
                 ledger.record_event(
                     server_id="default",
                     agent_name=_agent_name_task,
@@ -2229,7 +2229,7 @@ def _update_world_model(filepath, content, user_id="default", session_id="defaul
 
     global _last_read_fingerprints  # 借用全局变量声明位置
     _state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
-    _state = json.loads(_state_file.read_text()) if _state_file.exists() else {}
+    _state = json.loads(_state_file.read_text(encoding="utf-8")) if _state_file.exists() else {}
     _wm = _state.get("world_model")
     if isinstance(_wm, str):
         try:
@@ -2343,7 +2343,7 @@ def _update_world_model(filepath, content, user_id="default", session_id="defaul
         _uj_eat(_state_file, lambda _d: _d.update({"world_model": _state.get("world_model")}))
         return
     _state["world_model"]["last_updated"] = datetime.now().isoformat()
-    _state_file.write_text(_safe_serialize_state(_state))
+    _state_file.write_text(_safe_serialize_state(_state), encoding="utf-8")
 
     # 代码实体自动抽取入库，返回实体数量
     _entity_count = 0
@@ -2379,7 +2379,7 @@ def _update_world_model(filepath, content, user_id="default", session_id="defaul
             _pg.close()
         except Exception:
             pass
-    _state_file.write_text(_safe_serialize_state(_state))
+    _state_file.write_text(_safe_serialize_state(_state), encoding="utf-8")
 
 
 # ===== 从 agent_gateway_enhanced.py 迁移的帮助函数 =====

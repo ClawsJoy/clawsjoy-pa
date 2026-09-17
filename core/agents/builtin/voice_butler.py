@@ -51,13 +51,13 @@ class VoiceButler:
             + "/{self.user_id}/butler_v2/key.secret"
         )
         if key_file.exists():
-            return key_file.read_text().strip()
+            return key_file.read_text(encoding="utf-8").strip()
         else:
             import secrets
 
             key = secrets.token_urlsafe(32)
             key_file.parent.mkdir(parents=True, exist_ok=True)
-            key_file.write_text(key)
+            key_file.write_text(key, encoding="utf-8")
             return key
 
     def process_voice(self, audio_file: str) -> Dict:

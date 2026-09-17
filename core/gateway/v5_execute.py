@@ -70,7 +70,7 @@ def v5_execute_handler():
     _task_state = {}
     if _task_state_file.exists():
         try:
-            _task_state = json.loads(_task_state_file.read_text())
+            _task_state = json.loads(_task_state_file.read_text(encoding="utf-8"))
         except Exception as e:
             logger.warning(f"读取任务状态文件失败: {e}")
     current_task_id = _task_state.get("task_id", "")
@@ -108,7 +108,7 @@ def v5_execute_handler():
 
     _task_state = {"task_id": current_task_id, "updated_at": time.time()}
     _task_state_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(_task_state_file, "w") as f:
+    with open(_task_state_file, "w", encoding="utf-8") as f:
         json.dump(_task_state, f)
     # ========== /任务边界检测 ==========
 

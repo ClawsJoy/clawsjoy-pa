@@ -24,7 +24,7 @@ def _v9_inject_context(messages, user_id, session_id):
         try:
             _st_f = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
             if _st_f.exists():
-                _st_d = json.loads(_st_f.read_text())
+                _st_d = json.loads(_st_f.read_text(encoding="utf-8"))
                 _done_n = len(((_st_d.get("task_progress", {}) or {}).get("completed_steps", [])) or [])
                 _step_num = _done_n + 1
         except Exception:

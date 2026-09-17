@@ -78,7 +78,7 @@ class LivingAgent:
     # ==================== 1. 感知层 ====================
     def _load_perception(self) -> Dict:
         if self.perception_file.exists():
-            with open(self.perception_file, "r") as f:
+            with open(self.perception_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
             "awareness": 0.0,  # 自我意识程度
@@ -88,7 +88,7 @@ class LivingAgent:
         }
 
     def _save_perception(self):
-        with open(self.perception_file, "w") as f:
+        with open(self.perception_file, "w", encoding="utf-8") as f:
             json.dump(self.perception, f, indent=2)
 
     def update_from_cortex(self, fatigue_data: Dict) -> float:
@@ -157,7 +157,7 @@ class LivingAgent:
     # ==================== 2. 记忆层 ====================
     def _load_memory(self) -> Dict:
         if self.memory_file.exists():
-            with open(self.memory_file, "r") as f:
+            with open(self.memory_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
             "short_term": [],
@@ -168,7 +168,7 @@ class LivingAgent:
         }
 
     def _save_memory(self):
-        with open(self.memory_file, "w") as f:
+        with open(self.memory_file, "w", encoding="utf-8") as f:
             json.dump(self.memory, f, indent=2, ensure_ascii=False)
 
     def remember(self, user_input: str, response: str, importance: float = 0.5):
@@ -270,12 +270,12 @@ class LivingAgent:
     # ==================== 4. 行动层 ====================
     def _load_actions(self) -> List:
         if self.action_file.exists():
-            with open(self.action_file, "r") as f:
+            with open(self.action_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return []
 
     def _save_actions(self):
-        with open(self.action_file, "w") as f:
+        with open(self.action_file, "w", encoding="utf-8") as f:
             json.dump(self.actions, f, indent=2)
 
     def act(self, action_type: str, params: Dict, result: str):
@@ -296,7 +296,7 @@ class LivingAgent:
     # ==================== 5. 学习层 ====================
     def _load_learning(self) -> Dict:
         if self.learning_file.exists():
-            with open(self.learning_file, "r") as f:
+            with open(self.learning_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
             "patterns": defaultdict(int),
@@ -309,7 +309,7 @@ class LivingAgent:
         # 转换 defaultdict
         learning_copy = dict(self.learning)
         learning_copy["patterns"] = dict(self.learning["patterns"])
-        with open(self.learning_file, "w") as f:
+        with open(self.learning_file, "w", encoding="utf-8") as f:
             json.dump(learning_copy, f, indent=2, ensure_ascii=False)
 
     def learn(self, user_input: str, response: str, success: bool):
@@ -344,12 +344,12 @@ class LivingAgent:
     # ==================== 6. 反思层 ====================
     def _load_reflection(self) -> Dict:
         if self.reflection_file.exists():
-            with open(self.reflection_file, "r") as f:
+            with open(self.reflection_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"insights": [], "self_assessment": [], "evolution": []}
 
     def _save_reflection(self):
-        with open(self.reflection_file, "w") as f:
+        with open(self.reflection_file, "w", encoding="utf-8") as f:
             json.dump(self.reflection, f, indent=2, ensure_ascii=False)
 
     def reflect(self):

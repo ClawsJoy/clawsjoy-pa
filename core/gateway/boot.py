@@ -92,7 +92,7 @@ def run_gateway_startup(app):
                         _recovered_tasks.append(f"{_srv31}:{_tid31}")
                         _dirty31 = True
                 if _dirty31:
-                    _tf31.write_text(json.dumps(_data31, ensure_ascii=False, indent=2))
+                    _tf31.write_text(json.dumps(_data31, ensure_ascii=False, indent=2), encoding="utf-8")
             except Exception:
                 continue
         if _recovered_tasks:
@@ -129,7 +129,7 @@ def run_gateway_startup(app):
                         _stale_total += 1
                         _dirty314 = True
                 if _dirty314:
-                    _tf314.write_text(json.dumps(_d314, ensure_ascii=False, indent=2))
+                    _tf314.write_text(json.dumps(_d314, ensure_ascii=False, indent=2), encoding="utf-8")
             except Exception:
                 continue
         if _stale_total:

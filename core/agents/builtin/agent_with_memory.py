@@ -57,7 +57,7 @@ class MemoryAgent:
     def _load_session(self) -> List[Dict]:
         """加载会话记忆（短期）"""
         if self.session_file.exists():
-            with open(self.session_file, "r") as f:
+            with open(self.session_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return []
 
@@ -66,18 +66,18 @@ class MemoryAgent:
         # 只保留最近 50 条
         if len(self.session_history) > 50:
             self.session_history = self.session_history[-50:]
-        with open(self.session_file, "w") as f:
+        with open(self.session_file, "w", encoding="utf-8") as f:
             json.dump(self.session_history, f, indent=2)
 
     def _load_long_memory(self) -> Dict:
         """加载长期记忆"""
         if self.long_memory_file.exists():
-            with open(self.long_memory_file, "r") as f:
+            with open(self.long_memory_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"preferences": {}, "learned_patterns": [], "facts": []}
 
     def _save_long_memory(self):
-        with open(self.long_memory_file, "w") as f:
+        with open(self.long_memory_file, "w", encoding="utf-8") as f:
             json.dump(self.long_memory, f, indent=2)
 
     def _get_context(self, user_input: str, limit: int = 5) -> str:

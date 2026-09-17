@@ -207,7 +207,7 @@ def chat_stream_handler():
             try:
                 _rules_path = Path("config/v8/audit_rules.yaml")
                 if _rules_path.exists():
-                    with open(_rules_path) as _f:
+                    with open(_rules_path, encoding="utf-8") as _f:
                         _rules = yaml.safe_load(_f) or {}
                 else:
                     _rules = {}

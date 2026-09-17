@@ -42,7 +42,7 @@ class TrialAgent:
         if self.learning_file.exists():
             import json
 
-            with open(self.learning_file, "r") as f:
+            with open(self.learning_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"successful_plans": [], "failed_patterns": []}
 
@@ -50,7 +50,7 @@ class TrialAgent:
         """保存经验"""
         import json
 
-        with open(self.learning_file, "w") as f:
+        with open(self.learning_file, "w", encoding="utf-8") as f:
             json.dump(self.experiences, f, indent=2)
 
     def execute(self, goal: str, context: Dict = None) -> Dict:

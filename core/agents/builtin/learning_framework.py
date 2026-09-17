@@ -28,13 +28,13 @@ class LearningFramework:
 
     def load(self):
         if self.knowledge_file.exists():
-            with open(self.knowledge_file) as f:
+            with open(self.knowledge_file, encoding="utf-8") as f:
                 self.knowledge = json.load(f)
         else:
             self.knowledge = {"learned": [], "success_rate": 0, "last_learned": None}
 
     def save(self):
-        with open(self.knowledge_file, "w") as f:
+        with open(self.knowledge_file, "w", encoding="utf-8") as f:
             json.dump(self.knowledge, f, indent=2)
 
     def learn(self, new_item, source):

@@ -122,7 +122,7 @@ def prepare_chat_entry(*, data, resolve_session_id_fn):
     try:
         _snap_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.task_state.json")
         if _snap_file.exists():
-            _snap = json.loads(_snap_file.read_text())
+            _snap = json.loads(_snap_file.read_text(encoding="utf-8"))
             _snap_msgs = _snap.get("messages", [])
             _snap_task = _snap.get("task_name", "")
             if _snap_msgs and len(_snap_msgs) > len(messages):

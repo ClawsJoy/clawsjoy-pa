@@ -40,7 +40,7 @@ class AgentManager:
             if config_file.name.endswith(".bak"):
                 continue
             try:
-                with open(config_file, "r") as f:
+                with open(config_file, "r", encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                     agent_name = data.get("name")
                     if agent_name and data.get("enabled", True):

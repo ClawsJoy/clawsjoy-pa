@@ -50,7 +50,7 @@ class ConfigMixin:
         )
         if config_file.exists():
             try:
-                with open(config_file, "r") as f:
+                with open(config_file, "r", encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                     return data if data is not None else {}
             except Exception:
@@ -62,7 +62,7 @@ class ConfigMixin:
         user_config_file = Path(f"{get_data_root()}/users/{self.user_id}/config.yaml")
         if user_config_file.exists():
             try:
-                with open(user_config_file, "r") as f:
+                with open(user_config_file, "r", encoding="utf-8") as f:
                     config = yaml.safe_load(f)
                     if config and self.name in config:
                         return config[self.name]
@@ -115,13 +115,13 @@ class ConfigMixin:
         existing = {}
         if user_config_file.exists():
             try:
-                with open(user_config_file, "r") as f:
+                with open(user_config_file, "r", encoding="utf-8") as f:
                     existing = yaml.safe_load(f) or {}
             except Exception:
                 pass
 
         existing[self.name] = self._config
-        with open(user_config_file, "w") as f:
+        with open(user_config_file, "w", encoding="utf-8") as f:
             yaml.dump(existing, f)
 
     def reload_config(self):

@@ -18,7 +18,7 @@ def _git_toplevel(cwd):
         import subprocess
 
         _r = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"], cwd=str(cwd), capture_output=True, text=True, timeout=5
+            ["git", "rev-parse", "--show-toplevel"], cwd=str(cwd), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         _o = (_r.stdout or "").strip()
         return Path(_o) if _r.returncode == 0 and _o else None
@@ -61,17 +61,17 @@ def safe_git_commit(base, files, message, *, require_toplevel=None, timeout=15):
             return False, _det
     try:
         _add = subprocess.run(
-            ["git", "add", "--"] + _files, cwd=str(base), capture_output=True, text=True, timeout=timeout
+            ["git", "add", "--"] + _files, cwd=str(base), capture_output=True, text=True, timeout=timeout, encoding="utf-8", errors="replace"
         )
         if _add.returncode != 0:
             _det["reason"] = f"git add 失败: {(_add.stderr or _add.stdout).strip()[:200]}"
             return False, _det
         _st = subprocess.run(
-            ["git", "diff", "--cached", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=timeout
+            ["git", "diff", "--cached", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=timeout, encoding="utf-8", errors="replace"
         )
         _staged = [x.strip() for x in (_st.stdout or "").splitlines() if x.strip()]
         _pr = subprocess.run(
-            ["git", "rev-parse", "--show-prefix"], cwd=str(base), capture_output=True, text=True, timeout=5
+            ["git", "rev-parse", "--show-prefix"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         _prefix = (_pr.stdout or "").strip() if _pr.returncode == 0 else ""
         _want_set = {(_prefix + f).replace("//", "/") for f in _files} | set(_files)
@@ -85,12 +85,12 @@ def safe_git_commit(base, files, message, *, require_toplevel=None, timeout=15):
             logger.info(f"[SAFE_COMMIT] 拒绝提交: {_det['reason']} extra={_extra[:5]}")
             return False, _det
         _c = subprocess.run(
-            ["git", "commit", "-m", str(message)[:200]], cwd=str(base), capture_output=True, text=True, timeout=timeout
+            ["git", "commit", "-m", str(message)[:200]], cwd=str(base), capture_output=True, text=True, timeout=timeout, encoding="utf-8", errors="replace"
         )
         if _c.returncode != 0:
             _det["reason"] = f"git commit 失败: {(_c.stderr or _c.stdout).strip()[:200]}"
             return False, _det
-        _h = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5)
+        _h = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
         _det["commit"] = (_h.stdout or "").strip()
         return True, _det
     except Exception as _e:
@@ -129,7 +129,7 @@ def _sandbox_git_pre_write(user_id, session_id, sandbox_base=None):
     if not (base / ".git").exists():
         return None
     try:
-        r = subprocess.run(["git", "stash", "create"], cwd=str(base), capture_output=True, text=True, timeout=5)
+        r = subprocess.run(["git", "stash", "create"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
         return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else None
     except Exception:
         return None
@@ -158,7 +158,7 @@ def _sandbox_git_post_write(user_id, session_id, filepath, stash_ref, sandbox_ba
         except (SyntaxError, py_compile.PyCompileError) as e:
             if stash_ref:
                 subprocess.run(
-                    ["git", "stash", "apply", stash_ref], cwd=str(base), capture_output=True, text=True, timeout=5
+                    ["git", "stash", "apply", stash_ref], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
                 )
             raise Exception(f"语法检查失败，已自动回滚: {e}")
 
@@ -167,7 +167,7 @@ def _sandbox_git_post_write(user_id, session_id, filepath, stash_ref, sandbox_ba
         _git_filepath = filepath.replace("clawsjoy_dev/", "", 1) if filepath.startswith("clawsjoy_dev/") else filepath
         # 只 add 目标文件，不用 -A 避免提交无关变更
         result_add = subprocess.run(
-            ["git", "add", _git_filepath], cwd=str(base), capture_output=True, text=True, timeout=5
+            ["git", "add", _git_filepath], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         if result_add.returncode != 0:
             logger.info(f"[GIT] add 失败: {result_add.stdout} | {result_add.stderr}")
@@ -183,7 +183,7 @@ def _sandbox_git_post_write(user_id, session_id, filepath, stash_ref, sandbox_ba
                 cwd=str(base),
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=5, encoding="utf-8", errors="replace"
             )
             if _rd.returncode == 0 and _rd.stdout.strip():
                 _bn = filepath.split("/")[-1]
@@ -225,10 +225,10 @@ def _sandbox_git_post_exec(user_id, session_id, command):
     try:
         # 检查工作区是否有实际变更，无变更则不 commit
         result_diff = subprocess.run(
-            ["git", "diff", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=5
+            ["git", "diff", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         result_staged = subprocess.run(
-            ["git", "diff", "--cached", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=5
+            ["git", "diff", "--cached", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         if not result_diff.stdout.strip() and not result_staged.stdout.strip():
             return  # 无变更，跳过 commit
@@ -312,7 +312,7 @@ def _track_git_commit(user_id, session_id, committed_files=None):
 
         base = _get_sandbox_base(user_id, session_id)
         _rl = subprocess.run(
-            ["gi" + "t", "log", "-1", "--format=%h %s"], cwd=str(base), capture_output=True, text=True, timeout=5
+            ["gi" + "t", "log", "-1", "--format=%h %s"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         if _rl.returncode == 0 and _rl.stdout.strip():
             _trk["last_commit"] = _rl.stdout.strip()
@@ -343,7 +343,7 @@ def _git_status(user_id, session_id, sandbox_base=None):
     if (base / ".git").exists():
         try:
             _ru = subprocess.run(
-                ["gi" + "t", "status", "--porcelain"], cwd=str(base), capture_output=True, text=True, timeout=5
+                ["gi" + "t", "status", "--porcelain"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
             )
             if _ru.returncode == 0:
                 for _line in _ru.stdout.splitlines():

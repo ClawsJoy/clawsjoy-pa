@@ -62,12 +62,12 @@ def _os_event_monitor():
             _timeout_minutes = 30
             _ttl_hours = 72
             if _audit_rules_path.exists():
-                _rules = yaml.safe_load(_audit_rules_path.read_text()) or {}
+                _rules = yaml.safe_load(_audit_rules_path.read_text(encoding="utf-8")) or {}
                 _timeout_minutes = _rules.get("discussion", {}).get("timeout_minutes", 30)
                 _ttl_hours = _rules.get("archive", {}).get("discussion_ttl_hours", 72)
             _orch_path = Path("data/v8/orchestrations.json")
             if _orch_path.exists():
-                _orch = json.loads(_orch_path.read_text())
+                _orch = json.loads(_orch_path.read_text(encoding="utf-8"))
                 _modified = False
                 for _channel, _entry in _orch.items():
                     _discussion = _entry.get("_discussion", [])
@@ -97,7 +97,7 @@ def _os_event_monitor():
                             from core.lib.os_event_logger import write_os_event
                             write_os_event(event_type="archive", operation="execute", os_action="blocked", reason="discussion_ttl_expired", command=f"archive:{_channel}", detail={"channel": _channel, "age_hours": round(_age_hours, 1), "ttl_hours": _ttl_hours, "archived_at": datetime.now().isoformat()})
                 if _modified:
-                    _orch_path.write_text(json.dumps(_orch, ensure_ascii=False, indent=2))
+                    _orch_path.write_text(json.dumps(_orch, ensure_ascii=False, indent=2), encoding="utf-8")
         except Exception:
             pass
 

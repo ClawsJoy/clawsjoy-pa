@@ -48,7 +48,7 @@ class UserTranslateAgent:
         """加载用户自己的翻译记忆"""
         memory_file = self.user_dir / "memory.json"
         if memory_file.exists():
-            with open(memory_file, "r") as f:
+            with open(memory_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.custom_vocab = data.get("custom_vocab", {})
                 self.translation_history = data.get("history", [])
@@ -62,7 +62,7 @@ class UserTranslateAgent:
     def _save_memory(self):
         """保存用户记忆"""
         memory_file = self.user_dir / "memory.json"
-        with open(memory_file, "w") as f:
+        with open(memory_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "custom_vocab": self.custom_vocab,

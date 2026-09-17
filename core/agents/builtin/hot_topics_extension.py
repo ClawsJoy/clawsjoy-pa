@@ -34,7 +34,7 @@ class HotTopicsExtension:
         signals_file = Path(f"{get_data_root()}/hot_db/hot_signals.json")
         if signals_file.exists():
             try:
-                with open(signals_file, "r") as f:
+                with open(signals_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 signals = data.get("signals", data) if isinstance(data, dict) else data
                 if isinstance(signals, list):

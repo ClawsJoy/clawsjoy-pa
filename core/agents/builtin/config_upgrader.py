@@ -23,13 +23,13 @@ class ConfigUpgrader:
 
     def _load_history(self):
         if self.upgrade_log.exists():
-            with open(self.upgrade_log, "r") as f:
+            with open(self.upgrade_log, "r", encoding="utf-8") as f:
                 self.history = json.load(f)
         else:
             self.history = []
 
     def _save_history(self):
-        with open(self.upgrade_log, "w") as f:
+        with open(self.upgrade_log, "w", encoding="utf-8") as f:
             json.dump(self.history[-500:], f, indent=2, ensure_ascii=False)
 
     def _get_current_config_summary(self, agent_name: str) -> str:
@@ -39,7 +39,7 @@ class ConfigUpgrader:
             return "未找到配置文件"
 
         try:
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
         except Exception as e:
             print(f"⚠️ 配置文件解析失败: {e}")
@@ -202,7 +202,7 @@ class ConfigUpgrader:
         print(f"📦 已备份到: {backup_file}")
 
         try:
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
             if "agent" not in config:
@@ -238,7 +238,7 @@ class ConfigUpgrader:
                 and suggestions["prompt_improvements"].strip()
             ):
                 prompt_file = Path(f"agents/{agent_name}/prompt_suggestions.txt")
-                with open(prompt_file, "a") as f:
+                with open(prompt_file, "a", encoding="utf-8") as f:
                     f.write(f"\n--- {datetime.now().isoformat()} ---\n")
                     f.write(suggestions["prompt_improvements"])
                     f.write("\n")
@@ -248,7 +248,7 @@ class ConfigUpgrader:
                 print("ℹ️ 没有需要应用的更改")
                 return False
 
-            with open(config_file, "w") as f:
+            with open(config_file, "w", encoding="utf-8") as f:
                 yaml.dump(config, f, allow_unicode=True, default_flow_style=False)
 
             print(f"✅ 已应用升级: {', '.join(changes_made)}")

@@ -35,17 +35,17 @@ class SelfUpgradingAgent:
         self.improvements = []
 
         if self.reflections_file.exists():
-            with open(self.reflections_file, "r") as f:
+            with open(self.reflections_file, "r", encoding="utf-8") as f:
                 self.reflections = json.load(f)
         if self.improvements_file.exists():
-            with open(self.improvements_file, "r") as f:
+            with open(self.improvements_file, "r", encoding="utf-8") as f:
                 self.improvements = json.load(f)
 
     def _save_data(self):
         """保存数据"""
-        with open(self.reflections_file, "w") as f:
+        with open(self.reflections_file, "w", encoding="utf-8") as f:
             json.dump(self.reflections[-500:], f, indent=2, ensure_ascii=False)
-        with open(self.improvements_file, "w") as f:
+        with open(self.improvements_file, "w", encoding="utf-8") as f:
             json.dump(self.improvements[-200:], f, indent=2, ensure_ascii=False)
 
     def _persist_learning_insight(
@@ -223,7 +223,7 @@ class SelfUpgradingAgent:
         new_value = improvement.get("new_value", "")
 
         # 读取配置
-        with open(config_file, "r") as f:
+        with open(config_file, "r", encoding="utf-8") as f:
             if config_file.suffix == ".json":
                 config = json.load(f)
             else:
@@ -239,7 +239,7 @@ class SelfUpgradingAgent:
         target[keys[-1]] = new_value
 
         # 写回
-        with open(config_file, "w") as f:
+        with open(config_file, "w", encoding="utf-8") as f:
             if config_file.suffix == ".json":
                 json.dump(config, f, indent=2, ensure_ascii=False)
             else:

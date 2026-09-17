@@ -58,7 +58,7 @@ class CompleteMemoryAgent:
 
     def _load_short_term(self) -> Dict:
         if self.short_term_file.exists():
-            with open(self.short_term_file, "r") as f:
+            with open(self.short_term_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
             "name": None,
@@ -68,7 +68,7 @@ class CompleteMemoryAgent:
         }
 
     def _save_short_term(self):
-        with open(self.short_term_file, "w") as f:
+        with open(self.short_term_file, "w", encoding="utf-8") as f:
             json.dump(self.short_term, f, indent=2)
 
     def _store_short_term(self, key: str, value):

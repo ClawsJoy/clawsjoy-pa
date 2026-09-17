@@ -34,7 +34,7 @@ class MemoryMixin:
         memory_file = self.memory_dir / "memory.json"
         if memory_file.exists():
             try:
-                with open(memory_file, "r") as f:
+                with open(memory_file, "r", encoding="utf-8") as f:
                     self._memory = json.load(f)
             except Exception:
                 self._memory = {}
@@ -46,7 +46,7 @@ class MemoryMixin:
         if not hasattr(self, "memory_dir"):
             return
         memory_file = self.memory_dir / "memory.json"
-        with open(memory_file, "w") as f:
+        with open(memory_file, "w", encoding="utf-8") as f:
             json.dump(self._memory, f, indent=2)
 
     def remember(self, key: str, value: Any):

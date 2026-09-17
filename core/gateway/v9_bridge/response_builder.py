@@ -154,7 +154,7 @@ def build_bridge_response(
                         ["python3", "-c", f'compile(open("{_target}").read(), "{_target}", "exec")'],
                         capture_output=True,
                         text=True,
-                        timeout=10,
+                        timeout=10, encoding="utf-8", errors="replace"
                     )
                     if _syntax_result.returncode != 0:
                         _args[

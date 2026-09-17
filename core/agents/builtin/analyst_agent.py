@@ -28,7 +28,7 @@ class AnalystAgent(SmartAgent):
         if not unknown_file.exists():
             return {"has_unknown": False, "suggestions": []}
 
-        with open(unknown_file, "r") as f:
+        with open(unknown_file, "r", encoding="utf-8") as f:
             unknown = json.load(f)
 
         # 找出问过3次以上的问题

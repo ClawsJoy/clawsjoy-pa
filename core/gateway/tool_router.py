@@ -252,13 +252,13 @@ def _execute_sandbox_tool(tool_name, args, user_id, session_id, sandbox_base=Non
             from core.gateway.sandbox_git import safe_git_commit as _sgc
 
             _st = subprocess.run(
-                ["git", "status", "--porcelain"], cwd=str(base), capture_output=True, text=True, timeout=10
+                ["git", "status", "--porcelain"], cwd=str(base), capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace"
             )
             _files = [ln[3:].strip() for ln in (_st.stdout or "").splitlines() if len(ln) > 3 and ln[3:].strip()]
             _ok_t, _det_t = _sgc(base, _files, _msg, require_toplevel=base)
             if not _ok_t:
                 return {"success": False, "error": "拒绝提交: %s" % _det_t.get("reason")}
-            _r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5)
+            _r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
             return {"success": True, "hash": _r.stdout.strip()}
         elif tool_name == "sandbox_rollback":
             import subprocess
@@ -267,9 +267,9 @@ def _execute_sandbox_tool(tool_name, args, user_id, session_id, sandbox_base=Non
             if not (base / ".git").exists():
                 return {"success": False, "error": "沙箱 Git 仓库未初始化"}
             subprocess.run(
-                ["git", "reset", "--hard", _target], cwd=str(base), capture_output=True, text=True, timeout=10
+                ["git", "reset", "--hard", _target], cwd=str(base), capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace"
             )
-            _r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5)
+            _r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
             return {"success": True, "current": _r.stdout.strip()}
         # #12 工具优先级抢占: 每工具执行前检查更高优先级请求 → 打断当前低优工具
         try:
