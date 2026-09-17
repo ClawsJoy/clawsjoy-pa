@@ -13,6 +13,9 @@ import os
 import sys
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from core.lib.paths import runtime_tmp_path
 from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:5002"
@@ -36,7 +39,7 @@ window.__paStates = [];
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--task", default="在沙箱 data/reports 下新建一个 hello187.md，内容写「批187 前端自检」，然后读回来给我看")
-    ap.add_argument("--out", default="/tmp/p187_shots")
+    ap.add_argument("--out", default=runtime_tmp_path("p187_shots"))
     ap.add_argument("--wait-approval", type=int, default=150)
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)

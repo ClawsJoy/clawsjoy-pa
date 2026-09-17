@@ -6,6 +6,8 @@ import time
 import requests
 from dotenv import load_dotenv
 
+from core.lib.paths import runtime_tmp_path
+
 load_dotenv("config/.env")
 
 # ========== 配置 ==========
@@ -15,7 +17,7 @@ API_BASE = "https://discord.com/api/v10"
 
 # PID 锁：同一 Token 禁止多开
 import hashlib
-PID_FILE = f"/tmp/clawsjoy_bot_{hashlib.md5(DISCORD_TOKEN.encode()).hexdigest()[:8]}.pid"
+PID_FILE = runtime_tmp_path("clawsjoy_bot_%s.pid" % hashlib.md5(DISCORD_TOKEN.encode()).hexdigest()[:8])
 if os.path.exists(PID_FILE):
     with open(PID_FILE) as f:
         old_pid = f.read().strip()

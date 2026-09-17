@@ -9,8 +9,14 @@ from typing import Dict, Optional, Tuple
 
 from core.agents.business.business_agent import BusinessAgent
 from core.lib.notify import notify as _notify
+from core.lib.paths import runtime_tmp_path
 
 _sketch_lock = threading.Lock()
+
+
+def _subtitle_file() -> str:
+    """字幕临时文件路径（两处调用共用，保证同值）"""
+    return runtime_tmp_path("subtitles.txt")
 
 
 class VisionAgentV4(BusinessAgent):
@@ -80,7 +86,7 @@ class VisionAgentV4(BusinessAgent):
 
             threading.Thread(
                 target=_async_analyze,
-                args=(video_path, "/tmp/subtitles.txt" if os.path.exists("/tmp/subtitles.txt") else None),
+                args=(video_path, _subtitle_file() if os.path.exists(_subtitle_file()) else None),
                 daemon=True,
             ).start()
             return self._resp("🔍 正在分析视频，请稍候...")
@@ -584,7 +590,7 @@ class VisionAgentV4(BusinessAgent):
         from core.lib.v8.video_analyzer import VideoAnalyzer
 
         analyzer = VideoAnalyzer()
-        subtitle_path = "/tmp/subtitles.txt"
+        subtitle_path = _subtitle_file()
 
         result = analyzer.analyze(str(video_path), subtitle_path if os.path.exists(subtitle_path) else None)
 

@@ -14,7 +14,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from core.lib.paths import vault_root
+from core.lib.paths import runtime_tmp_dir, runtime_tmp_path, vault_root
 
 
 def _vault_root() -> Path:
@@ -207,7 +207,7 @@ def process_youtube(source_url: str, note_path: str = "", title: str = "") -> Di
             if _has_transcript(note_fp.read_text(encoding="utf-8", errors="ignore")):
                 return {"success": True, "skipped": True, "reason": "已含字幕", "note_path": str(note_fp)}
         # yt-dlp 下载音频(绕死代理: 环境 HTTP_PROXY=127.0.0.1:7890 但代理未监听)
-        _tmp_dir = Path("/tmp/yt_dl_" + str(int(time.time())))
+        _tmp_dir = runtime_tmp_dir() / ("yt_dl_" + str(int(time.time())))
         _tmp_dir.mkdir(parents=True, exist_ok=True)
         _audio_path = None
         _env = {
@@ -215,8 +215,10 @@ def process_youtube(source_url: str, note_path: str = "", title: str = "") -> Di
             for k, v in os.environ.items()
             if k.upper() not in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY")
         }
-        _env["XDG_CACHE_HOME"] = "/tmp/ytcache"
-        _env["HOME"] = "/tmp/ytcache"
+        _cache_dir = runtime_tmp_path("ytcache")
+        os.makedirs(_cache_dir, exist_ok=True)
+        _env["XDG_CACHE_HOME"] = _cache_dir
+        _env["HOME"] = _cache_dir
         _dl_cmd = [
             "yt-dlp",
             "--remote-components",

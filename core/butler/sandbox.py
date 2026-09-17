@@ -8,12 +8,14 @@ import re
 from pathlib import Path
 from typing import Dict
 
+from core.lib.paths import runtime_tmp_dir
+
 class UserSandbox:
     """用户沙箱 - 安全执行代码"""
     
     def __init__(self, user_id: str):
         self.user_id = user_id
-        self.work_dir = Path(f"/tmp/sandbox/{user_id}")
+        self.work_dir = runtime_tmp_dir() / "sandbox" / user_id
         self.work_dir.mkdir(parents=True, exist_ok=True)
     
     def execute_code(self, code: str, timeout: int = 10) -> Dict:

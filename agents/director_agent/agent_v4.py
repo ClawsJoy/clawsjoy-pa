@@ -10,6 +10,8 @@ from typing import Dict, Optional, Tuple
 
 from core.agents.business.business_agent import BusinessAgent
 
+from core.lib.paths import runtime_tmp_path
+
 
 @dataclass
 class FilmProject:
@@ -137,7 +139,7 @@ class DirectorAgentV4(BusinessAgent):
         )
 
     def _export(self) -> Dict:
-        path = f"/tmp/{self._project.title}_剧本.txt"
+        path = runtime_tmp_path(f"{self._project.title}_剧本.txt")
         with open(path, "w", encoding="utf-8") as f:
             f.write(self._project.script)
         return self._resp(f"✅ 已导出到 {path}（{len(self._project.script)}字）")
@@ -282,7 +284,8 @@ class DirectorAgentV4(BusinessAgent):
             )
             processed.append(out_frame)
 
-        with open("/tmp/processed_frames.txt", "w", encoding="utf-8") as f:
+        _frames_list = runtime_tmp_path("processed_frames.txt")
+        with open(_frames_list, "w", encoding="utf-8") as f:
             for p in processed:
                 f.write("file '{}'\n".format(p))
         subprocess.run(
@@ -294,7 +297,7 @@ class DirectorAgentV4(BusinessAgent):
                 "-safe",
                 "0",
                 "-i",
-                "/tmp/processed_frames.txt",
+                _frames_list,
                 "-c:v",
                 "libx264",
                 "-pix_fmt",

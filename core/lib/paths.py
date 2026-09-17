@@ -15,6 +15,7 @@
 ``PA_VAULT_DIR`` / ``PLAYWRIGHT_BROWSERS_PATH`` / ``COMSPEC``。
 """
 import os
+import tempfile
 from pathlib import Path
 
 WSL_VAULT = "/mnt/d/Obsidian/ClawsJoy/ClawsJoy"
@@ -74,6 +75,50 @@ def cmd_exe():
     if IS_WINDOWS:
         return os.environ.get("COMSPEC") or WIN_CMD_EXE
     return WSL_CMD_EXE
+
+
+def runtime_tmp_dir():
+    """宿主**运行时临时根目录**（带 clawsjoy 命名空间）。
+
+    为什么需要它：历史代码把 Linux 临时目录写死成 ``/tmp/...``。Windows 上
+    ``/tmp/x`` 会解析成 ``<当前盘符>:\\tmp\\x``（本机 ``D:\\tmp`` **不存在**）——
+    不抛错、但写到别处（**静默写错位置**，比报错更难排查）。
+
+    **WSL 侧行为零变化**：``tempfile.gettempdir()`` 在 Linux/WSL 上就是 ``/tmp``
+    （故本函数在 WSL 返回 ``/tmp/clawsjoy``，与既有语义同域），Windows 侧是 ``%TEMP%``。
+    覆盖：``PA_RUNTIME_TMP``。
+    """
+    env = os.environ.get("PA_RUNTIME_TMP")
+    base = Path(env) if env else Path(tempfile.gettempdir()) / "clawsjoy"
+    # 目录不存在时创建（幂等）；只读/受限环境下静默降级，不因临时目录不可建而中断
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    return base
+
+
+def runtime_tmp_path(*parts):
+    """``runtime_tmp_dir()`` 下的一个路径，**返回正斜杠字符串**。
+
+    为什么返回正斜杠：这些路径会经 JSON / 工具参数传给 agent 再回传
+    （如 ``write_finalize(temp_path=...)``），**反斜杠在 JSON 与模型回抄时容易被吞**。
+    Windows API（``open`` / ``Path``）接受正斜杠。
+    """
+    return runtime_tmp_dir().joinpath(*[str(x) for x in parts]).as_posix()
+
+
+def map_linux_tmp(path):
+    """把外部（文本 / agent 给出）的 ``/tmp/...`` 映射到宿主运行时临时目录；其它原样返回。
+
+    只映射**前缀**，不改写其余内容。POSIX 侧 ``/tmp/x`` 与 ``runtime_tmp_dir()/x``
+    本来就是同一处 ⇒ 本函数在 WSL 上是**恒等映射**；Windows 侧把 ``D:\\tmp\\x``
+    这类误写纠正到真实位置。
+    """
+    p = str(path or "")
+    if not p.startswith("/tmp/"):
+        return p
+    return runtime_tmp_path(p[len("/tmp/"):])
 
 
 def to_host_path(path):

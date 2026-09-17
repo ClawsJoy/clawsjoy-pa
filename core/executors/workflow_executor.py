@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from core.lib.paths import map_linux_tmp
 from core.lib.skill_chain_executor import skill_chain
 
 
@@ -45,11 +46,11 @@ class WorkflowExecutor:
         else:
             path_match = re.search(r"(/tmp/[^\s]+)", goal)
             if path_match:
-                exec_params["input_image"] = path_match.group()
+                exec_params["input_image"] = map_linux_tmp(path_match.group())
 
         # 如果没有找到图片路径，使用默认
         if "input_image" not in exec_params:
-            exec_params["input_image"] = "/tmp/valid_image.jpg"
+            exec_params["input_image"] = map_linux_tmp("/tmp/valid_image.jpg")
 
         print(f"[WorkflowExecutor] 参数: {exec_params}")
 

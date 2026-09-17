@@ -5,6 +5,7 @@ from core.gateway.path_utils import _resolve_path, _normalize_path
 from core.gateway.sag_feedback import _record_path_pattern
 from core.gateway.sandbox_git import _git_status, _sandbox_git_post_write, _sandbox_git_pre_write
 from core.gateway.shared_state import _consecutive_reads, _read_cache, _last_read_fingerprints, _js_rollback_count, _search_file_cache, _session_artifacts, _session_write_tracker, _content_hashes, _tracker_setdefault
+from core.lib.paths import runtime_tmp_path
 import json
 import logging
 from datetime import datetime
@@ -397,9 +398,10 @@ def v9_sandbox_write_begin_handler():
     import uuid as _uuid
     data = request.json or {}
     _temp_name = f"agent_write_{_uuid.uuid4().hex[:12]}.py"
-    _temp_path = Path(f"/tmp/clawsjoy_temp/{_temp_name}")
+    _temp_str = runtime_tmp_path("clawsjoy_temp", _temp_name)
+    _temp_path = Path(_temp_str)
     _temp_path.parent.mkdir(parents=True, exist_ok=True)
-    return jsonify({"success": True, "temp_path": str(_temp_path)})
+    return jsonify({"success": True, "temp_path": _temp_str})
 
 def v9_sandbox_write_finalize_handler():
     """将临时文件移动到目标路径"""

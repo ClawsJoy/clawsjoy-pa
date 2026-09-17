@@ -13,6 +13,8 @@ import json
 import os
 from pathlib import Path
 
+from core.lib.paths import runtime_tmp_path
+
 
 def prepare_chat_entry(*, data, resolve_session_id_fn):
     """归档层：请求体诊断 → 单数 message 兼容 → TaskContract waiting_user 短路 → 快照恢复 → RC 剥离。"""
@@ -51,7 +53,7 @@ def prepare_chat_entry(*, data, resolve_session_id_fn):
                 for m in messages
             ],
         }
-        with open("/tmp/v9_req_dump.json", "w", encoding="utf-8") as _f_reqdbg:
+        with open(runtime_tmp_path("v9_req_dump.json"), "w", encoding="utf-8") as _f_reqdbg:
             _f_reqdbg.write(json.dumps(_reqdbg, ensure_ascii=False, indent=1))
     except Exception:
         pass

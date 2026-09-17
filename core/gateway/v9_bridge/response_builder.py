@@ -15,6 +15,7 @@ from core.gateway.context_validator import _classify_task_type, _is_plan_message
 from core.gateway.execute_agent_task import _update_world_model
 from core.gateway.path_utils import _resolve_path
 from core.lib.gateway_helpers import _get_sandbox_base, cleanup_task_context
+from core.lib.paths import runtime_tmp_path
 
 
 def build_bridge_response(
@@ -177,12 +178,13 @@ def build_bridge_response(
                         import uuid as _uuid2
 
                         _temp_name = f"agent_write_{_uuid2.uuid4().hex[:12]}.py"
-                        _temp_path = Path(f"/tmp/clawsjoy_temp/{_temp_name}")
+                        _temp_str = runtime_tmp_path("clawsjoy_temp", _temp_name)
+                        _temp_path = Path(_temp_str)
                         _temp_path.parent.mkdir(parents=True, exist_ok=True)
                         _temp_path.write_text(_content, encoding="utf-8")
                         _args[
                             "content"
-                        ] = f"[超长内容已写入临时文件] 请调用 write_finalize(path='{_path}', temp_path='{_temp_path}') 完成写入。"
+                        ] = f"[超长内容已写入临时文件] 请调用 write_finalize(path='{_path}', temp_path='{_temp_str}') 完成写入。"
                         _tc["function"]["arguments"] = json.dumps(_args, ensure_ascii=False)
             except Exception:
                 pass
