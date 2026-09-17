@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Code Agent - Continue风格代码编辑界面"""
 
+import sys
+_PY = sys.executable or "python3"  # Windows(2026-09-17): 本机无 python3, 用当前解释器
+
 import subprocess
 import tempfile
 from pathlib import Path
@@ -71,7 +74,7 @@ if st.session_state.get("run_code"):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
-            result = subprocess.run(["python3", f.name], capture_output=True, text=True)
+            result = subprocess.run([_PY, f.name], capture_output=True, text=True, encoding="utf-8", errors="replace")
             st.code(result.stdout if result.stdout else result.stderr)
     st.session_state.run_code = False
 

@@ -35,6 +35,8 @@ class VectorMemory:
         _default_kb = str(Path(f"{get_data_root()}/vector_kb").resolve())
         if str(self.persist_dir.resolve()) == _default_kb:
             self.client = _vkc.get_client()
+            # 共享 VKC 的 client: 生命周期归 VKC, 本实例不得关闭它
+            self._owns_client = False
         else:
             from chromadb.config import Settings
 
@@ -42,8 +44,44 @@ class VectorMemory:
             self.client = chromadb.PersistentClient(
                 path=str(self.persist_dir), settings=Settings(anonymized_telemetry=False, allow_reset=True)
             )
+            self._owns_client = True
         self.collection_name = "conversation"
         self.collection = self.client.get_or_create_collection(name=self.collection_name)
+
+    def close(self) -> None:
+        """释放本实例持有的 Chroma 资源。
+
+        Windows 上 hnswlib 会一直持有 <persist_dir>/<uuid>/data_level0.bin 的文件句柄，
+        不显式释放就无法删除持久化目录 —— 临时目录清理会抛
+        PermissionError [WinError 32]。Linux 允许删除已打开的文件，所以不会暴露该问题。
+
+        仅当 client 由本实例创建时才真正 stop；默认库复用 VectorKnowledgeCenter
+        的共享 client，关闭它会破坏整个进程的向量知识中心。
+        """
+        client = getattr(self, "client", None)
+        owns_client = getattr(self, "_owns_client", False)
+        self.collection = None
+        self.client = None
+        if client is None or not owns_client:
+            return
+        system = getattr(client, "_system", None)
+        if system is not None and hasattr(system, "stop"):
+            try:
+                system.stop()
+            except Exception:
+                pass
+        try:
+            from chromadb.api.shared_system_client import SharedSystemClient
+
+            SharedSystemClient.clear_system_cache()
+        except Exception:
+            pass
+
+    def __enter__(self) -> "VectorMemory":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.close()
 
     def add(self, text: str, category: str = "general", metadata: dict = None) -> str:
         """添加向量记忆"""

@@ -29,7 +29,14 @@ def test_execute_command_huge_output_truncated():
         normalize_path=lambda *a: base, check_sandbox_read=lambda c: None,
         sandbox_env=dict(os_environ_placeholder=""),
     )
-    r = ExecuteCommandPlugin().execute({"command": "python3 -c \"print('x'*20000)\""}, ctx)
+    # Windows(2026-09-17): 本机没有 python3 这个名字, 用当前解释器(sys.executable)
+    _py = sys.executable or "python3"
+    # Windows(2026-09-17): 本机没有 python3 这个名字(且 Win 下 -c 引号嵌套易碎),
+    # 改成"当前解释器 + 临时脚本文件"的跨平台写法, 断言意图不变。
+    _py = sys.executable or "python3"
+    _emit = base / "emit_huge.py"
+    _emit.write_text("print('x' * 20000)\n", encoding="utf-8")
+    r = ExecuteCommandPlugin().execute({"command": '"%s" "%s"' % (_py, _emit)}, ctx)
     assert r.get("success") is True
     out = r.get("stdout", "")
     assert len(out) <= _CMD_STDOUT_LIMIT + 200, f"stdout 应截断: {len(out)}"

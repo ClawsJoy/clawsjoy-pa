@@ -79,7 +79,7 @@ class CodeExecutor:
 
         try:
             result = subprocess.run(
-                ["python3", temp_file], capture_output=True, text=True, timeout=30
+                ["python3", temp_file], capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace"
             )
             output = result.stdout
             if result.stderr:

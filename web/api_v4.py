@@ -6,6 +6,9 @@
 @date: 2026-5-31
 """
 
+import sys
+_PY = sys.executable or "python3"  # Windows(2026-09-17): 本机无 python3, 用当前解释器
+
 
 from flask import Blueprint, jsonify, request
 
@@ -66,7 +69,7 @@ def export_comic(project):
     if not os.path.exists(script):
         return {"success": False, "error": "导出脚本不存在"}
     
-    result = subprocess.run(["python3", script], capture_output=True, text=True)
+    result = subprocess.run([_PY, script], capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode == 0:
         return {
             "success": True,
