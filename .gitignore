@@ -116,3 +116,6 @@ zhihu_cookies.txt
 # ===== 日志 =====
 *.log
 logs/
+
+# 外部工具(paseo)写回的工作区快照: 含用户提示词原文, 不入库、不删除
+paseo.json

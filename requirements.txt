@@ -16,6 +16,14 @@ pyjwt
 redis>=5.0.0
 watchdog>=4.0.0
 
+# Windows 化(2026-09-17) 补齐: 以下三个在主路径**顶层 import** 却从未声明 ——
+# agent_gateway_enhanced.py 第 13 行 python-dotenv、第 325 行 flasgger、
+# 第 312 行 prometheus_client(以及 core/lib/metrics.py 等)。新机器
+# pip install -r requirements.txt 后网关直接 ImportError。
+flasgger>=0.9.7
+python-dotenv>=1.0.0
+prometheus_client>=0.20.0
+
 # ===== 可选依赖（AI/ML，按需安装） =====
 
 # 深度学习与模型
@@ -27,7 +35,10 @@ ollama>=0.6.2
 # 向量检索 / 图像处理
 chromadb>=1.5.9
 rembg>=2.0.75
-fasttext>=0.9.3
+# Windows 直装: 官方 fasttext 源码分发需要 C++ 编译链(无 MSVC 时 pip 直接失败),
+# fasttext-wheel 是同一上游的预编译 wheel, **导入名仍是 fasttext**, 功能一致。
+# pyproject.toml 第 24 行早已声明 fasttext-wheel, 此处对齐(原写 fasttext>=0.9.3, 二者矛盾)。
+fasttext-wheel>=0.9.2
 
 # ===== 批126 补齐：这三个包此前**没有任何声明**，新机器 pip install -r 也补不上，
 # 会让 tests 里 8 个文件（17 条）直接红/收集失败（见 tests/baseline/failure_ledger.json）
