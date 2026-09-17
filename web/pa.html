@@ -92,6 +92,10 @@ body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Seg
 .pa-card-hint.show{display:block}
 /* M2-A 卡片「不持久化」标注（老板 2026-09-18 拍：加标注，不加持久化） */
 .pa-card-note{margin-top:6px;color:var(--sub);font-size:10.5px;line-height:1.45;opacity:.9}
+/* W-08/W-09/W-10（老板 2026-09-18 拍：三件提级，各自版本内）：配额横幅 */
+.pa-quota-banner{display:none;margin:0 14px 6px;padding:8px 10px;border:1px solid #d2991d;border-radius:8px;background:#241f14;color:#d2991d;font-size:11.5px;line-height:1.5}
+.pa-quota-banner.show{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.pa-quota-banner button{flex-shrink:0;border:1px solid #d2991d;background:transparent;color:#d2991d;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer}
 /* M2-A · Step 3.1：阻断卡（**无动作按钮**：不许把「重试」当万能解） */
 .pa-block-card{margin:8px 12px;padding:12px;border:1px solid #f0883e;border-radius:8px;background:#1c2128}
 .pa-block-card .pbc-head{color:#f0883e;font-weight:600;margin-bottom:6px}
@@ -317,6 +321,13 @@ body.hide-top .left.drawer-open,body.hide-top .side.drawer-open{top:0}
       <span style="margin-left:auto" id="connDot">● 就绪</span>
       <span class="chip" id="connStart" onclick="paStartLocalClient()" title="启动 Windows 桌面 agent_client（命令与参数由后端硬编码，页面改不了）" style="display:none;margin-left:8px;cursor:pointer">🚀 启动本地浏览器</span>
     </div>
+    <!-- W-08/W-09/W-10（老板 2026-09-18 拍：三件提级，各自版本内）：配额横幅。
+         用**专用元素**，不写 #modeHint —— #modeHint 会被 setMode/saveState 重画覆盖（批221 同类事故：
+         提示被重画 ⇒ 用户看不到 ⇒ 等于静默）。按钮只做**导出**（paExportArchive 既有能力，只读、不删数据）。 -->
+    <div id="paQuotaBanner" class="pa-quota-banner" role="status" aria-live="polite">
+      <span id="paQuotaText"></span>
+      <button onclick="paExportArchive()" title="导出全部归档与会话为 JSON 文件（不删除任何数据）">导出归档 JSON</button>
+    </div>
     <div class="timeline" id="timeline">
       <div class="tl-head">
         <span class="tl-title">📋 任务时间轴</span>
@@ -405,14 +416,83 @@ const MODES = {"chat":{"ic":"💬","label":"聊天","hint":"就事论事 · 目�
 
 /* ---- 状态 ---- */
 let state = { mode:'chat', threads:[], activeThread:null };
+/* ---- W-08 · 产品侧配额守卫（老板 2026-09-18 拍：W-08/W-09/W-10 三件提级、同批、各自版本内）------
+   现场实测根因：`pa_state` 撑到配额上限 ⇒ `setItem` 抛 `QuotaExceededError` ⇒ **写入被拒**
+   ⇒ 刷新后读不到 ⇒ 用户看到的是「消息日志消失」（不是渲染问题，是**存储写入失败**）。
+   三条纪律：
+   1. **阈值是常量**（`PA_QUOTA_GUARD_BYTES`，便于调）：不散落魔数；
+   2. **只提示、不自动删**：老板 批221·A 已拍「归档不设上限、不裁剪（不丢数据优先）」
+      ⇒ 裁剪规则**仍属老板判断**（W-09）⇒ 本函数**不删任何数据**，只做可见性 + 计数 + 指向既有导出出口；
+   3. **不静默、也不吵**：超限 / 写入已被拒 ⇒ 进 UI（W-10：原实现只有 console.warn，
+      写 `#modeHint` 又会被 setMode 重画覆盖 ⇒ 用户看不到）。
+   **不推断**：只报可从数据算出的数（字节、归档条数）；**不写「还能撑几天」**这类估算。 */
+const PA_QUOTA_GUARD_BYTES = 4 * 1024 * 1024;   /* 4 MiB：浏览器 ~5 MB 上限之前提前告警 */
+let PA_LAST_SAVE_BYTES = null;                  /* 上次写盘的字节数（模块变量：**不进 state**，不给存档增重） */
+function paQuotaBytes(raw){
+  /* 口径＝**UTF-8 字节**（与测试侧/DSH 线口径对齐，便于对账）。
+     如实标注：浏览器 DOM storage 配额口径并不公开保证按 UTF-8 计 ⇒ 本值只作**提前告警的近似**，
+     真值以 setItem 是否抛 QuotaExceededError 为准。 */
+  try{ if(typeof TextEncoder !== 'undefined') return new TextEncoder().encode(raw).length; }catch(e){}
+  return raw.length * 2;   /* 退化口径（无 TextEncoder）：UTF-16 码元 → 字节 */
+}
+function paQuotaUsage(){
+  let raw = ''; try{ raw = localStorage.getItem('pa_state') || ''; }catch(e){ raw = ''; }
+  const bytes = paQuotaBytes(raw);
+  const archived = (state && Array.isArray(state.archived)) ? state.archived.length : 0;
+  return { bytes:bytes, threshold:PA_QUOTA_GUARD_BYTES, over:bytes >= PA_QUOTA_GUARD_BYTES,
+           archived:archived, saveError:(state && state._saveError) || null };
+}
+function paQuotaNotice(text){
+  /* 只写专用横幅；**不写 #modeHint**（会被 setMode 重画覆盖）。text 走 textContent ⇒ 不注入 HTML。 */
+  try{
+    const banner = document.getElementById('paQuotaBanner');
+    const span = document.getElementById('paQuotaText');
+    if(!banner || !span) return false;
+    span.textContent = text || '';
+    banner.classList.toggle('show', !!text);
+    return !!text;
+  }catch(e){ return false; }
+}
+function paQuotaWarnText(bytes){
+  const archived = (state && Array.isArray(state.archived)) ? state.archived.length : 0;
+  return '⚠ 存储接近上限（'+bytes+' 字节 / 阈值 '+PA_QUOTA_GUARD_BYTES+'）：新建会话/归档可能不生效。'
+       + '你可以：① 归档旧会话（先「导出归档 JSON」备份，导出不删数据）；② 清理历史。'
+       + '当前已归档 '+archived+' 条（最早的可清理；本版不会自动删除 —— 裁剪规则待老板拍）。';
+}
+function paQuotaGuard(){
+  /* 启动即测一次：**提前告警**，不等到写失败才发现（W-08）。 */
+  const u = paQuotaUsage();
+  try{ console.log('[PA][QUOTA] pa_state '+u.bytes+' 字节 / 阈值 '+u.threshold+'；archived '+u.archived+' 条'
+                   + (u.saveError ? '；上次写入失败：'+u.saveError : '')); }catch(e){}
+  if(u.saveError) return paQuotaNotice('⚠ 本地写入已被拒绝（'+u.saveError+'）。本次新内容刷新后可能不生效：'
+       + '请先「导出归档 JSON」备份，再清理历史（本版不自动删）。');
+  if(u.over) return paQuotaNotice(paQuotaWarnText(u.bytes));
+  return paQuotaNotice('');
+}
 function saveState(){
   /* 批219 修：**写入失败必须上报**（原来静默 ⇒ 用户以为存了）。不用 addMsg（可能回调 saveState ⇒ 递归）。 */
-  try{ localStorage.setItem('pa_state', JSON.stringify(state)); state._saveError=null; }
+  try{
+    const _j = JSON.stringify(state);
+    /* W-08 提前告警：**先廉价预筛再算字节**（saveState 在热路径上，每次 addMsg/工具行都会调）。
+       UTF-8 字节数 ≤ 3 × UTF-16 码元数 恒成立 ⇒ `3*len < 阈值` 时真字节数必然也小于阈值
+       （**不会漏报**），此时直接用码元数当保守下界，省掉一次全量编码。 */
+    PA_LAST_SAVE_BYTES = (_j.length * 3 >= PA_QUOTA_GUARD_BYTES) ? paQuotaBytes(_j) : _j.length;
+    localStorage.setItem('pa_state', _j); state._saveError=null;
+  }
   catch(e){
     state._saveError=String(e).slice(0,140);
     try{ console.warn('[PA] 本地会话写入失败（刷新后可能丢失）:', e); }catch(_){}
     try{ const el=document.getElementById('modeHint'); if(el){ el.textContent='⚠ 本地存储写入失败：本次会话刷新后可能丢失'; } }catch(_){}
+    /* W-10：失败提示**必须进 UI**（不只 Console）——专用横幅，不会被 setMode 重画覆盖。 */
+    try{ paQuotaNotice('⚠ 本地写入已被拒绝（'+state._saveError+'）。本次新内容刷新后可能不生效：'
+                       + '请先「导出归档 JSON」备份，再清理历史（本版不自动删除）。'); }catch(_){}
   }
+  /* 接近阈值（但还没写失败）也要提前告警 */
+  try{
+    if(!state._saveError && PA_LAST_SAVE_BYTES != null && PA_LAST_SAVE_BYTES >= PA_QUOTA_GUARD_BYTES){
+      paQuotaNotice(paQuotaWarnText(PA_LAST_SAVE_BYTES));
+    }
+  }catch(_){}
   syncThreads();
 }
 async function syncThreads(){ /* 批189 · #3：POST /v9/pa/threads 已关闭（单线程）⇒ 改为 no-op；状态落 localStorage（前端）+ 会话日志（后端权威） */ }
@@ -2295,6 +2375,8 @@ function paCollapseToSingleThread(){
   }catch(e){}
 }
   paCollapseToSingleThread();
+  /* W-08：收敛之后再测一次（读的是收敛后的实际体积）；走 _boot ⇒ 失败也 fail-loud（批192 口径）。 */
+  _boot("paQuotaGuard", paQuotaGuard);
   /* 批192 · 缺陷修：启动步骤**逐步 fail-loud** —— 一个 null 写入（如 #threadList）曾静默中断整段启动，
      且因是 promise rejection 而页内无感。现在每步独立捕获并显式报告（控制台 + 页面内 sys 消息）。 */
   function _bootErr(step, e){
