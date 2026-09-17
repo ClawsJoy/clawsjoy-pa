@@ -45,7 +45,7 @@ class ClubStatsCollector:
             # 读取现有统计
             stats = {}
             if self.stats_file.exists():
-                with open(self.stats_file, "r") as f:
+                with open(self.stats_file, "r", encoding="utf-8") as f:
                     stats = json.load(f)
 
             stats.update(
@@ -56,7 +56,7 @@ class ClubStatsCollector:
                 }
             )
 
-            with open(self.stats_file, "w") as f:
+            with open(self.stats_file, "w", encoding="utf-8") as f:
                 json.dump(stats, f, indent=2)
 
         except Exception as e:

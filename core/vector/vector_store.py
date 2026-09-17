@@ -43,7 +43,7 @@ class VectorStore:
         file_path = self.base_path / "store.json"
         if file_path.exists():
             try:
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     self.documents = data.get("documents", [])
                     self.embeddings = [np.array(e) for e in data.get("embeddings", [])]
@@ -51,7 +51,7 @@ class VectorStore:
                 pass
 
     def _save(self):
-        with open(self.base_path / "store.json", "w") as f:
+        with open(self.base_path / "store.json", "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "documents": self.documents,

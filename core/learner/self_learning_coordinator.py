@@ -70,14 +70,14 @@ class SelfLearningCoordinator:
         stats_file = self.memory_dir / "learning_stats.json"
         if stats_file.exists():
             try:
-                with open(stats_file) as f:
+                with open(stats_file, encoding="utf-8") as f:
                     self.stats = json.load(f)
             except Exception as e:
                 pass
 
     def _save_stats(self):
         stats_file = self.memory_dir / "learning_stats.json"
-        with open(stats_file, "w") as f:
+        with open(stats_file, "w", encoding="utf-8") as f:
             json.dump(self.stats, f, indent=2)
 
     def learn_from_scenario(self, scenario: Dict) -> Dict:
@@ -146,7 +146,7 @@ class SelfLearningCoordinator:
     def _store_success_case(self, user_input: str, response: str, scenario_type: str):
         """存储成功案例到长期记忆"""
         memory_file = self.memory_dir / f"success_{int(time.time())}.json"
-        with open(memory_file, "w") as f:
+        with open(memory_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "timestamp": datetime.now().isoformat(),

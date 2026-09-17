@@ -75,7 +75,7 @@ class ExecuteCommandPlugin(ToolPlugin):
             except Exception:
                 _exec_cwd = base
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=_tool_timeout_s, cwd=str(_exec_cwd), env=_SANDBOX_ENV)
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=_tool_timeout_s, cwd=str(_exec_cwd), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
         except subprocess.TimeoutExpired:
             # P1-2: 长时间测试超时引导 — 不要 nohup 后台 + sleep 轮询
             return {"success": False, "stdout": "",
@@ -102,7 +102,7 @@ class ExecuteCommandPlugin(ToolPlugin):
                 if _abs_pre.exists():
                     _abs_pre.stat()
             try:
-                _res_h = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=_tool_timeout_s, cwd=str(base), env=_SANDBOX_ENV)
+                _res_h = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=_tool_timeout_s, cwd=str(base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
             except subprocess.TimeoutExpired:
                 return {"success": False, "stdout": "",
                         "stderr": f"命令执行超时(>{int(_tool_timeout_s)}s)。如需运行长时间测试，请改用 timeout 300 同步等待，不要 nohup 后台 + sleep 轮询。",

@@ -53,7 +53,7 @@ class SmartMemoryManager:
 
         config_file = Path("config/butler/butler.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = yaml.safe_load(f)
         else:
             self.config = {"features": {"memory": {"max_history": 50}}}
@@ -63,31 +63,31 @@ class SmartMemoryManager:
         # 加载偏好
         pref_file = self.base_path / "preferences.json"
         if pref_file.exists():
-            with open(pref_file, "r") as f:
+            with open(pref_file, "r", encoding="utf-8") as f:
                 self.preferences = json.load(f)
 
         # 加载知识
         knowledge_file = self.base_path / "knowledge.json"
         if knowledge_file.exists():
-            with open(knowledge_file, "r") as f:
+            with open(knowledge_file, "r", encoding="utf-8") as f:
                 self.knowledge = json.load(f)
 
         # 加载长期记忆
         long_file = self.base_path / "long_term.json"
         if long_file.exists():
-            with open(long_file, "r") as f:
+            with open(long_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.l2_long = [MemoryItem(**item) for item in data]
 
     def _save(self):
         """保存持久化数据"""
-        with open(self.base_path / "preferences.json", "w") as f:
+        with open(self.base_path / "preferences.json", "w", encoding="utf-8") as f:
             json.dump(self.preferences, f, indent=2, ensure_ascii=False)
 
-        with open(self.base_path / "knowledge.json", "w") as f:
+        with open(self.base_path / "knowledge.json", "w", encoding="utf-8") as f:
             json.dump(self.knowledge, f, indent=2, ensure_ascii=False)
 
-        with open(self.base_path / "long_term.json", "w") as f:
+        with open(self.base_path / "long_term.json", "w", encoding="utf-8") as f:
             data = [asdict(item) for item in self.l2_long]
             json.dump(data, f, indent=2, ensure_ascii=False)
 

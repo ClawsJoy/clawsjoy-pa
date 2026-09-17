@@ -24,7 +24,7 @@ class DialectLearner:
     def _load(self):
         """加载映射库"""
         if self.storage_file.exists():
-            with open(self.storage_file, "r") as f:
+            with open(self.storage_file, "r", encoding="utf-8") as f:
                 self.mappings = json.load(f)
         else:
             self.mappings = {
@@ -35,7 +35,7 @@ class DialectLearner:
 
     def _save(self):
         """保存映射库"""
-        with open(self.storage_file, "w") as f:
+        with open(self.storage_file, "w", encoding="utf-8") as f:
             json.dump(self.mappings, f, indent=2, ensure_ascii=False)
 
     def learn(self, user_id: str, dialect_word: str, standard_word: str):

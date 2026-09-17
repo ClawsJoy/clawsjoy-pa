@@ -35,7 +35,7 @@ class ConfigEngine(BaseEngine):
         mtime = self._config_path.stat().st_mtime
         if self._config and mtime == self._mtime:
             return
-        with open(self._config_path) as f:
+        with open(self._config_path, encoding="utf-8") as f:
             self._config = yaml.safe_load(f)
             self._mtime = mtime
 
@@ -64,7 +64,7 @@ class ConfigEngine(BaseEngine):
         return {"success": False, "reason": "already exists"}
 
     def _save(self):
-        with open(self._config_path, "w") as f:
+        with open(self._config_path, "w", encoding="utf-8") as f:
             yaml.dump(self._config, f, allow_unicode=True)
 
     def reload(self):

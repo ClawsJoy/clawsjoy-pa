@@ -22,14 +22,14 @@ class ReinforcementEngine:
 
     def _load(self):
         if self.learning_log.exists():
-            with open(self.learning_log, "r") as f:
+            with open(self.learning_log, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.q_table = defaultdict(lambda: defaultdict(float))
                 for k, v in data.get("q_table", {}).items():
                     self.q_table[k] = defaultdict(float, v)
 
     def _save(self):
-        with open(self.learning_log, "w") as f:
+        with open(self.learning_log, "w", encoding="utf-8") as f:
             json.dump(
                 {"q_table": {k: dict(v) for k, v in self.q_table.items()}}, f, indent=2
             )

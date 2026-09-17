@@ -42,7 +42,7 @@ class ExperienceStorage:
         # 加载经验
         if self.experience_file.exists():
             try:
-                with open(self.experience_file, "r") as f:
+                with open(self.experience_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     for exp_id, exp_data in data.get("experiences", {}).items():
                         self._experiences[exp_id] = Experience.from_dict(exp_data)
@@ -52,7 +52,7 @@ class ExperienceStorage:
         # 加载传承链
         if self.chains_file.exists():
             try:
-                with open(self.chains_file, "r") as f:
+                with open(self.chains_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     for chain_id, chain_data in data.get("chains", {}).items():
                         self._chains[chain_id] = ExperienceChain(
@@ -65,7 +65,7 @@ class ExperienceStorage:
     def _save(self):
         """保存数据"""
         # 保存经验
-        with open(self.experience_file, "w") as f:
+        with open(self.experience_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "user_id": self.user_id,
@@ -82,7 +82,7 @@ class ExperienceStorage:
             )
 
         # 保存传承链
-        with open(self.chains_file, "w") as f:
+        with open(self.chains_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "user_id": self.user_id,

@@ -28,7 +28,7 @@ class OpenClawEngine:
 
     def _load_sync_state(self):
         if self.sync_file.exists():
-            with open(self.sync_file, "r") as f:
+            with open(self.sync_file, "r", encoding="utf-8") as f:
                 self.state = json.load(f)
         else:
             self.state = {
@@ -39,7 +39,7 @@ class OpenClawEngine:
             }
 
     def _save_sync_state(self):
-        with open(self.sync_file, "w") as f:
+        with open(self.sync_file, "w", encoding="utf-8") as f:
             json.dump(self.state, f, indent=2)
 
     def export_skill(self, skill_name: str, skill_data: Dict) -> Dict:
@@ -59,11 +59,11 @@ class OpenClawEngine:
         }
 
         export_file = self.export_dir / f"{skill_name}.json"
-        with open(export_file, "w") as f:
+        with open(export_file, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2, ensure_ascii=False)
 
         skill_md = self.export_dir / f"{skill_name}.md"
-        skill_md.write_text(self._generate_skill_md(manifest))
+        skill_md.write_text(self._generate_skill_md(manifest), encoding="utf-8")
 
         if skill_name not in self.state["exported_skills"]:
             self.state["exported_skills"].append(skill_name)
@@ -123,17 +123,17 @@ openclaw_version: {manifest['openclaw_version']}
         if not import_file.exists():
             return {"success": False, "error": f"Skill {skill_name} not found"}
 
-        with open(import_file, "r") as f:
+        with open(import_file, "r", encoding="utf-8") as f:
             manifest = json.load(f)
 
         skill_dir = Path(f"skills/{skill_name}")
         skill_dir.mkdir(exist_ok=True)
 
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(self._generate_skill_md(manifest))
+        skill_md.write_text(self._generate_skill_md(manifest), encoding="utf-8")
 
         manifest_file = skill_dir / "manifest.json"
-        with open(manifest_file, "w") as f:
+        with open(manifest_file, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
         if skill_name not in self.state["imported_skills"]:

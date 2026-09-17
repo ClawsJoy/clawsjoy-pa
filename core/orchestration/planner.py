@@ -438,7 +438,7 @@ class ProgressTracker:
         """保存进度"""
         import json
 
-        with open(self.storage_dir / f"{plan_id}.json", "w") as f:
+        with open(self.storage_dir / f"{plan_id}.json", "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
     def load(self, plan_id: str) -> Dict:
@@ -447,7 +447,7 @@ class ProgressTracker:
 
         file = self.storage_dir / f"{plan_id}.json"
         if file.exists():
-            with open(file, "r") as f:
+            with open(file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {}
 

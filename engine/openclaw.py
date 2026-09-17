@@ -52,7 +52,7 @@ class OpenClawCompatibility:
         # 读取 manifest.json
         manifest_file = skill_path / "manifest.json"
         if manifest_file.exists():
-            with open(manifest_file, "r") as f:
+            with open(manifest_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 manifest.update(data)
 
@@ -73,11 +73,11 @@ class OpenClawCompatibility:
 
         # 创建 SKILL.md
         skill_md = skill_dir / "SKILL.md"
-        skill_md.write_text(self._generate_skill_md(skill_manifest))
+        skill_md.write_text(self._generate_skill_md(skill_manifest), encoding="utf-8")
 
         # 创建 manifest.json
         manifest_file = skill_dir / "manifest.json"
-        with open(manifest_file, "w") as f:
+        with open(manifest_file, "w", encoding="utf-8") as f:
             json.dump(skill_manifest, f, indent=2)
 
         print(f"✅ 从 OpenClaw 导入技能: {skill_name}")

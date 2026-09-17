@@ -116,7 +116,7 @@ with col1:
     if st.button("💾 保存工作流"):
         import json
 
-        with open("workflow_save.json", "w") as f:
+        with open("workflow_save.json", "w", encoding="utf-8") as f:
             json.dump(st.session_state.workflow, f)
         st.success("工作流已保存")
 with col2:

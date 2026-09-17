@@ -26,7 +26,7 @@ class PermissionVectorizer:
         """加载权限规则配置"""
         config_file = Path("config/permissions.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self._rules = yaml.safe_load(f)
         else:
             # 默认权限规则

@@ -57,7 +57,7 @@ class SecurityAuditor:
             }
 
             # 写入审计日志
-            with open(self.audit_log, "a") as f:
+            with open(self.audit_log, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry) + "\n")
 
             # 更新风险评分
@@ -101,7 +101,7 @@ class SecurityAuditor:
         """获取最近操作"""
         recent = []
         try:
-            with open(self.audit_log, "r") as f:
+            with open(self.audit_log, "r", encoding="utf-8") as f:
                 for line in f:
                     entry = json.loads(line)
                     if entry["actor"] == actor:
@@ -121,7 +121,7 @@ class SecurityAuditor:
         """获取审计轨迹"""
         trail = []
         try:
-            with open(self.audit_log, "r") as f:
+            with open(self.audit_log, "r", encoding="utf-8") as f:
                 for line in f:
                     entry = json.loads(line)
                     if not actor or entry["actor"] == actor:

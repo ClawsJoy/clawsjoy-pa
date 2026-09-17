@@ -25,10 +25,10 @@ st.sidebar.info(
 
 # 加载对应页面
 if page == "💬 Chat Agent":
-    exec(open("web/chat_interface.py").read())
+    exec(open("web/chat_interface.py", encoding="utf-8").read())
 elif page == "💻 Code Agent":
-    exec(open("web/code_interface.py").read())
+    exec(open("web/code_interface.py", encoding="utf-8").read())
 elif page == "🎨 Vision Agent":
-    exec(open("web/vision_interface.py").read())
+    exec(open("web/vision_interface.py", encoding="utf-8").read())
 else:
-    exec(open("web/upgrade_dashboard_enhanced.py").read())
+    exec(open("web/upgrade_dashboard_enhanced.py", encoding="utf-8").read())

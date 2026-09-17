@@ -45,7 +45,7 @@ class DriverManager:
         """加载所有驱动配置"""
         for yaml_file in self.driver_path.glob("*.yaml"):
             try:
-                with open(yaml_file, "r") as f:
+                with open(yaml_file, "r", encoding="utf-8") as f:
                     config = unified_config.get("drivers", {})
                     driver_name = config.get("driver_name", yaml_file.stem)
                     self.drivers[driver_name] = config

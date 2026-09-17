@@ -24,7 +24,7 @@ class MarketplaceEngine:
 
     def _load_registry(self):
         if self.registry_file.exists():
-            with open(self.registry_file, "r") as f:
+            with open(self.registry_file, "r", encoding="utf-8") as f:
                 self.registry = json.load(f)
         else:
             self.registry = {
@@ -34,7 +34,7 @@ class MarketplaceEngine:
             }
 
     def _save_registry(self):
-        with open(self.registry_file, "w") as f:
+        with open(self.registry_file, "w", encoding="utf-8") as f:
             json.dump(self.registry, f, indent=2)
 
     def publish_package(
@@ -65,7 +65,7 @@ class MarketplaceEngine:
         }
 
         # 保存清单
-        with open(package_dir / "manifest.json", "w") as f:
+        with open(package_dir / "manifest.json", "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
         # 注册

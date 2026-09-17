@@ -50,7 +50,7 @@ class SafetyChecker:
         if whitelist_file.exists():
             return [
                 line.strip()
-                for line in whitelist_file.read_text().splitlines()
+                for line in whitelist_file.read_text(encoding="utf-8").splitlines()
                 if line.strip()
             ]
         return [

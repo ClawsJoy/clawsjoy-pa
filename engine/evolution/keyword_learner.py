@@ -28,7 +28,7 @@ class KeywordLearner:
 
     def _load(self):
         if self.auto_keywords_file.exists():
-            with open(self.auto_keywords_file, "r") as f:
+            with open(self.auto_keywords_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.auto_keywords = data.get("learned_keywords", {})
                 self.suggestions = data.get("suggestions", [])
@@ -37,7 +37,7 @@ class KeywordLearner:
             self.suggestions = []
 
     def _save(self):
-        with open(self.auto_keywords_file, "w") as f:
+        with open(self.auto_keywords_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "learned_keywords": self.auto_keywords,

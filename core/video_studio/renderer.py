@@ -56,7 +56,7 @@ def concat(clip_paths: List[str], output_path: str) -> str:
     # 创建临时文件列表
     list_path = output_path + ".concat_list.txt"
     try:
-        with open(list_path, "w") as f:
+        with open(list_path, "w", encoding="utf-8") as f:
             for path in clip_paths:
                 f.write(f"file '{os.path.abspath(path)}'\n")
 

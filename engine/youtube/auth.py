@@ -31,7 +31,7 @@ class YouTubeAuth:
         cred_file = Path("config/secrets/youtube_credentials.json")
         if cred_file.exists():
             try:
-                with open(cred_file, "r") as f:
+                with open(cred_file, "r", encoding="utf-8") as f:
                     self.credentials = json.load(f)
                     self.authenticated = True
                     engine_logger.get().info("🔑 YouTube API 已从配置文件加载")

@@ -29,7 +29,7 @@ class SmartLLMClient:
     def _load_config(self) -> Dict:
         config_file = Path("config/butler/butler.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f).get("llm", {})
         return {
             "provider": "ollama",

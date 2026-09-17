@@ -22,12 +22,12 @@ class SkillIncrementalLearner:
 
     def _load(self):
         if self.learning_log.exists():
-            with open(self.learning_log, "r") as f:
+            with open(self.learning_log, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.usage_stats.update(data.get("usage_stats", {}))
 
     def _save(self):
-        with open(self.learning_log, "w") as f:
+        with open(self.learning_log, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "usage_stats": dict(self.usage_stats),

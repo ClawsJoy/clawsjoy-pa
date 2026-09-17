@@ -33,7 +33,7 @@ class ConfigLoader:
         # 优先加载统一配置
         for config_path in self.config_paths:
             if config_path.exists():
-                with open(config_path, "r") as f:
+                with open(config_path, "r", encoding="utf-8") as f:
                     self.keywords_config = yaml.safe_load(f)
                     print(f"✅ 从 {config_path} 加载配置")
                     break
@@ -42,12 +42,12 @@ class ConfigLoader:
         if self.config_dir.exists():
             main_file = self.config_dir / "engines.yaml"
             if main_file.exists():
-                with open(main_file, "r") as f:
+                with open(main_file, "r", encoding="utf-8") as f:
                     self.main_config = yaml.safe_load(f)
 
             for yaml_file in self.config_dir.glob("*.yaml"):
                 if yaml_file.name not in ["engines.yaml", "keywords.yaml"]:
-                    with open(yaml_file, "r") as f:
+                    with open(yaml_file, "r", encoding="utf-8") as f:
                         self.engine_configs[yaml_file.stem] = yaml.safe_load(f)
 
     def reload(self):

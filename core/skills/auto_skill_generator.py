@@ -25,7 +25,7 @@ class AutoSkillGenerator:
 
     def _load_combos(self):
         if self.combos_file.exists():
-            with open(self.combos_file, "r") as f:
+            with open(self.combos_file, "r", encoding="utf-8") as f:
                 self.combos = json.load(f)
         else:
             self.combos = {"combos": [], "stats": {}}
@@ -157,7 +157,7 @@ skill = {class_name}()
     def _generate_skill_md(self, skill_name: str, description: str, skills: list):
         """生成 SKILL.md"""
         md_file = self.generated_dir / "SKILL.md"
-        existing = md_file.read_text() if md_file.exists() else ""
+        existing = md_file.read_text(encoding="utf-8") if md_file.exists() else ""
 
         skill_entry = f"""
 ## {skill_name}
@@ -179,7 +179,7 @@ skill = {class_name}()
                 skill_entry += f"\n- {skill}: 接收所有参数"
 
         if skill_name not in existing:
-            with open(md_file, "a") as f:
+            with open(md_file, "a", encoding="utf-8") as f:
                 f.write(skill_entry)
 
 

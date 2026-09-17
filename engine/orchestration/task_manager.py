@@ -292,7 +292,7 @@ class TaskManager:
                 for t in plan.tasks
             ],
         }
-        with open(self.storage_dir / f"{plan.id}.json", "w") as f:
+        with open(self.storage_dir / f"{plan.id}.json", "w", encoding="utf-8") as f:
             json.dump(plan_data, f, indent=2, ensure_ascii=False)
 
     def get_plan_status(self, plan_id: str) -> Dict:
@@ -317,7 +317,7 @@ class TaskManager:
         try:
             from core.lib.code_entity_extractor import extractor
 
-            with open(json_path, "r") as f:
+            with open(json_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             tasks = data if isinstance(data, list) else data.get("tasks", [])
             count = 0

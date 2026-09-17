@@ -81,7 +81,7 @@ class RuleEngine(BaseEngine):
         for scriptbook in Path("agents").glob("*/scriptbook.yaml"):
             if scriptbook.exists():
                 try:
-                    with open(scriptbook) as f:
+                    with open(scriptbook, encoding="utf-8") as f:
                         data = yaml.safe_load(f)
                         if isinstance(data, dict):
                             for name, content in data.items():

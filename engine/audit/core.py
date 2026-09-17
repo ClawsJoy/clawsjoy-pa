@@ -21,7 +21,7 @@ class AuditEngine:
     def _load(self):
         if self.log_file.exists():
             try:
-                with open(self.log_file, "r") as f:
+                with open(self.log_file, "r", encoding="utf-8") as f:
                     for line in f:
                         try:
                             self.audit_log.append(json.loads(line))

@@ -35,12 +35,12 @@ class FrontendCollector:
             self._save_errors([])
 
     def _save_errors(self, errors):
-        with open(self.errors_file, "w") as f:
+        with open(self.errors_file, "w", encoding="utf-8") as f:
             json.dump(errors, f, indent=2)
 
     def _load_errors(self):
         if self.errors_file.exists():
-            with open(self.errors_file, "r") as f:
+            with open(self.errors_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return []
 
@@ -61,14 +61,14 @@ class FrontendCollector:
 
             existing = []
             if file_path.exists():
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     existing = json.load(f)
 
             existing.append(metric)
             # 保留最近1000条
             existing = existing[-1000:]
 
-            with open(file_path, "w") as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(existing, f, indent=2)
 
             return {"success": True, "collected": "page_view"}
@@ -105,13 +105,13 @@ class FrontendCollector:
 
             existing = []
             if file_path.exists():
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     existing = json.load(f)
 
             existing.append(behavior)
             existing = existing[-2000:]
 
-            with open(file_path, "w") as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(existing, f, indent=2)
 
             return {"success": True, "collected": "behavior"}

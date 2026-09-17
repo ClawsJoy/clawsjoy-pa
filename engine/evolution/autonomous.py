@@ -23,13 +23,13 @@ class AutonomousEvolutionEngine:
 
     def _load(self):
         if self.evolution_log.exists():
-            with open(self.evolution_log, "r") as f:
+            with open(self.evolution_log, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.mutations = data.get("mutations", [])
                 self.performance_history = data.get("performance_history", [])
 
     def _save(self):
-        with open(self.evolution_log, "w") as f:
+        with open(self.evolution_log, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "mutations": self.mutations[-100:],

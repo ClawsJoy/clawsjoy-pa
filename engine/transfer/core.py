@@ -22,12 +22,12 @@ class TransferEngine:
 
     def _load(self):
         if self.knowledge_file.exists():
-            with open(self.knowledge_file, "r") as f:
+            with open(self.knowledge_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.knowledge_base.update(data.get("knowledge", {}))
 
     def _save(self):
-        with open(self.knowledge_file, "w") as f:
+        with open(self.knowledge_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "knowledge": dict(self.knowledge_base),

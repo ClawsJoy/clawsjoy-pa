@@ -70,7 +70,7 @@ class DecisionConsumer:
 
         task_file = task_files[0]
         try:
-            with open(task_file, "r") as f:
+            with open(task_file, "r", encoding="utf-8") as f:
                 task = json.load(f)
         except Exception as e:
             print(f"读取失败: {e}")
@@ -117,7 +117,7 @@ class DecisionConsumer:
         }
 
         response_path = self.response_dir / f"resp_{task_file.stem}.json"
-        with open(response_path, "w") as f:
+        with open(response_path, "w", encoding="utf-8") as f:
             json.dump(response_task, f, indent=2)
 
         # 主动推送

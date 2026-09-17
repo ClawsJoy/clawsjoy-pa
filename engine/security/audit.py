@@ -40,7 +40,7 @@ class AuditLogger:
         }
 
         with self._lock:
-            with open(self.audit_file, "a") as f:
+            with open(self.audit_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
         return entry
@@ -59,7 +59,7 @@ class AuditLogger:
         if not self.audit_file.exists():
             return results
 
-        with open(self.audit_file, "r") as f:
+        with open(self.audit_file, "r", encoding="utf-8") as f:
             for line in f:
                 try:
                     entry = json.loads(line)
@@ -81,7 +81,7 @@ class AuditLogger:
         """获取统计"""
         count = 0
         if self.audit_file.exists():
-            with open(self.audit_file, "r") as f:
+            with open(self.audit_file, "r", encoding="utf-8") as f:
                 count = sum(1 for _ in f)
         return {"total_logs": count, "status": "active"}
 

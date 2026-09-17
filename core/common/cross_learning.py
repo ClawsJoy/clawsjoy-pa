@@ -35,10 +35,10 @@ class CrossLearning:
         queue_file = self.shared_memory / f"{from_agent}_to_{to_agent}.json"
         data = []
         if queue_file.exists():
-            with open(queue_file, "r") as f:
+            with open(queue_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
         data.append(record)
-        with open(queue_file, "w") as f:
+        with open(queue_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
         print(f"📤 {from_agent} 分享知识给 {to_agent}")
@@ -51,14 +51,14 @@ class CrossLearning:
 
         results = []
         for f in glob.glob(str(queue_file)):
-            with open(f, "r") as fp:
+            with open(f, "r", encoding="utf-8") as fp:
                 data = json.load(fp)
                 for item in data:
                     if item.get("status") == "pending":
                         item["status"] = "received"
                         results.append(item)
             # 更新状态
-            with open(f, "w") as fp:
+            with open(f, "w", encoding="utf-8") as fp:
                 json.dump(data, fp, indent=2)
 
         if results:

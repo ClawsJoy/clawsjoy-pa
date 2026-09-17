@@ -89,7 +89,7 @@ class SyntheticGenerator:
         for intent in self.templates.keys():
             result[intent] = self.generate(intent, samples_per_intent)
         self.generated_data = result
-        with open(self.data_file, "w") as f:
+        with open(self.data_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "generated_at": datetime.now().isoformat(),

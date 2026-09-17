@@ -282,7 +282,7 @@ class DirectorAgentV4(BusinessAgent):
             )
             processed.append(out_frame)
 
-        with open("/tmp/processed_frames.txt", "w") as f:
+        with open("/tmp/processed_frames.txt", "w", encoding="utf-8") as f:
             for p in processed:
                 f.write("file '{}'\n".format(p))
         subprocess.run(
@@ -321,7 +321,7 @@ class DirectorAgentV4(BusinessAgent):
         log_file = f"data/assets/novels/{self._project.title}/director_log.jsonl"
         Path(log_file).parent.mkdir(parents=True, exist_ok=True)
         log = {"time": datetime.now().isoformat(), "episode": episode, "version": version, **data}
-        with open(log_file, "a") as f:
+        with open(log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(log, ensure_ascii=False) + "\n")
 
 

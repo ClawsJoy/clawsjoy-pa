@@ -15,7 +15,7 @@ class ConfigPlanner:
     def _load_templates(self) -> Dict:
         if not self.config_path.exists():
             return {}
-        with open(self.config_path, "r") as f:
+        with open(self.config_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
             return data.get("templates", {})
 

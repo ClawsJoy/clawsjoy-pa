@@ -17,13 +17,13 @@ class ConfigurableEngine:
     def _load_config(self, config_path: Optional[str]) -> Dict:
         """加载配置文件"""
         if config_path and Path(config_path).exists():
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         
         # 默认配置路径
         default_path = Path(f"config/engines/{self.name}.yaml")
         if default_path.exists():
-            with open(default_path, 'r') as f:
+            with open(default_path, 'r', encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         return {}
     

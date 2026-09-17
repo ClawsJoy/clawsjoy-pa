@@ -105,7 +105,7 @@ class WriteFilePlugin(ToolPlugin):
         # D4 单一真源(2026-08-30): SOP 沙箱镜像文件(docs/reports 下)只读 —
         # Agent 写 SOP 必须走 obsidian_knowledge(update_sop), 防三份副本漂移
         try:
-            _tgt_str = str(target)
+            _tgt_str = str(target).replace(chr(92), "/")  # Windows: 统一正斜杠再做 SOP 镜像判据
             _sop_mirror = ("docs/reports/platform_publish_workflow.md" in _tgt_str
                            or "docs/reports/fanqie_promotion_sop.md" in _tgt_str
                            or "docs/reports/bilibili_video_script.md" in _tgt_str)
@@ -169,7 +169,7 @@ class WriteFilePlugin(ToolPlugin):
                 target.write_text("\n".join(original_lines), encoding="utf-8")
                 if str(target).endswith('.js'):
                     import subprocess as _sp
-                    _result = _sp.run(['node', '-c', str(target)], capture_output=True, text=True, timeout=10)
+                    _result = _sp.run(['node', '-c', str(target)], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
                     if _result.returncode != 0:
                         target.write_text("\n".join(original_lines), encoding="utf-8")
                         _key = str(target)
@@ -211,7 +211,7 @@ class WriteFilePlugin(ToolPlugin):
                             pass
                         # data/tmp 调试脚本(2026-08-30): 免审批区同样跳过相似度保护 —
                         # Agent 重写已存在的调试脚本(改逻辑)时相似度低属正常, 不应被拒
-                        _tmp_override = "data/tmp/" in str(target)
+                        _tmp_override = "data/tmp/" in str(target).replace(chr(92), "/")
                         if similarity < 0.3 and not _approved_override and not _tmp_override:
                             return {"success": False, "error": f"完整写入模式下新旧内容相似度仅 {similarity:.0%}，原文件 {len(orig_lines)} 行，新文件 {len(new_lines)} 行。如果确认需要覆盖请分步写入。",
                                     "hint": "看起来你想修改文件中的某一行/片段。请用 line 参数精确修改单行(write_file(path=..., line=N, content=...))，或先 read_file 完整读取后用完整内容重写，不要只提交片段。"}

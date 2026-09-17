@@ -283,7 +283,7 @@ class WriterAgentV4(BusinessAgent):
             ),
             "timestamp": datetime.now().isoformat(),
         }
-        with open(session_file, "a") as f:
+        with open(session_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
     # ================================================================
@@ -1257,7 +1257,7 @@ class WriterAgentV4(BusinessAgent):
 
         for sf in session_files:
             try:
-                data = json.loads(sf.read_text())
+                data = json.loads(sf.read_text(encoding="utf-8"))
                 if not isinstance(data, list):
                     continue
 

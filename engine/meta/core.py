@@ -27,14 +27,14 @@ class MetaEngine:
 
     def _load(self):
         if self.meta_file.exists():
-            with open(self.meta_file, "r") as f:
+            with open(self.meta_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.strategy_performance = defaultdict(
                     list, data.get("performance", {})
                 )
 
     def _save(self):
-        with open(self.meta_file, "w") as f:
+        with open(self.meta_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "performance": dict(self.strategy_performance),

@@ -64,7 +64,7 @@ class DecisionAgentV4(BusinessAgent):
             spec_dir = Path(f"data/projects/{created_by}") if created_by else None
             if spec_dir and spec_dir.exists():
                 for spec_file in spec_dir.rglob("*.md"):
-                    spec += spec_file.read_text() + "\n"
+                    spec += spec_file.read_text(encoding="utf-8") + "\n"
         except Exception:
             pass
 
@@ -108,7 +108,7 @@ class DecisionAgentV4(BusinessAgent):
             review_dir = Path(f"data/projects/{created_by}/reviews")
             review_dir.mkdir(parents=True, exist_ok=True)
             review_file = review_dir / f"{task_id}_review.md"
-            review_file.write_text(content)
+            review_file.write_text(content, encoding="utf-8")
             print(f"[Review] 审查记录已保存: {review_file}")
         except Exception as e:
             print(f"[Review] 保存审查记录失败: {e}")

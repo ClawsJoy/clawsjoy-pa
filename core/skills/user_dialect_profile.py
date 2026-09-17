@@ -27,7 +27,7 @@ class UserDialectProfile:
         """获取用户方言画像"""
         profile_path = self._get_profile_path(user_id)
         if profile_path.exists():
-            with open(profile_path, "r") as f:
+            with open(profile_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
             "user_id": user_id,
@@ -44,7 +44,7 @@ class UserDialectProfile:
         profile_path = self._get_profile_path(user_id)
         profile_path.parent.mkdir(parents=True, exist_ok=True)
         profile["updated_at"] = datetime.now().isoformat()
-        with open(profile_path, "w") as f:
+        with open(profile_path, "w", encoding="utf-8") as f:
             json.dump(profile, f, indent=2, ensure_ascii=False)
 
     def set_location(self, user_id: str, location: str):
@@ -66,7 +66,7 @@ class UserDialectProfile:
 
         config_file = Path("config/dialect_learning.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
                 dialects = config.get("dialects", {})
                 for dialect, info in dialects.items():

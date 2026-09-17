@@ -144,7 +144,7 @@ class HotReloadManager:
             manifest_file = skills_dir / f"{skill_id}.manifest.json"
 
             if manifest_file.exists():
-                with open(manifest_file, "r") as f:
+                with open(manifest_file, "r", encoding="utf-8") as f:
                     skill_config = json.load(f)
             else:
                 skill_config = {
@@ -206,7 +206,7 @@ class HotReloadManager:
         manifest_file = skills_dir / f"{skill_id}.manifest.json"
 
         if manifest_file.exists():
-            with open(manifest_file, "r") as f:
+            with open(manifest_file, "r", encoding="utf-8") as f:
                 skill_config = json.load(f)
         else:
             skill_config = {"name": skill_id, "entry": f"{skill_id}.py"}
@@ -220,7 +220,7 @@ class HotReloadManager:
         manifest_dir.mkdir(parents=True, exist_ok=True)
         manifest_file = manifest_dir / f"{skill_id}.manifest.json"
 
-        with open(manifest_file, "w") as f:
+        with open(manifest_file, "w", encoding="utf-8") as f:
             json.dump(skill, f, indent=2, ensure_ascii=False)
 
     def _remove_skill_manifest(self, tenant_id: str, skill_id: str):

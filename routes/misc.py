@@ -135,7 +135,7 @@ def submit_feedback():
 
     # ========== 1. 原有逻辑：存入 feedback.json ==========
     feedback_file = Path("data/feedback.json")
-    existing = json.loads(feedback_file.read_text()) if feedback_file.exists() else {"success": [], "failure": []}
+    existing = json.loads(feedback_file.read_text(encoding="utf-8")) if feedback_file.exists() else {"success": [], "failure": []}
     category = "success" if rating >= 4 else "failure"
     existing[category].append(
         {
@@ -146,12 +146,12 @@ def submit_feedback():
             "timestamp": datetime.now().isoformat(),
         }
     )
-    feedback_file.write_text(json.dumps(existing, indent=2, ensure_ascii=False))
+    feedback_file.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # ========== 2. 新增：存入统一训练数据集 ==========
     train_file = Path("data/training/training_data.json")
     if train_file.exists():
-        with open(train_file, "r") as f:
+        with open(train_file, "r", encoding="utf-8") as f:
             train_data = json.load(f)
     else:
         train_data = []
@@ -169,7 +169,7 @@ def submit_feedback():
                 "timestamp": datetime.now().isoformat(),
             }
         )
-        with open(train_file, "w") as f:
+        with open(train_file, "w", encoding="utf-8") as f:
             json.dump(train_data, f, indent=2, ensure_ascii=False)
         print(f"[Feedback] 新增训练数据: {question[:30]}... (总数: {len(train_data)})")
 

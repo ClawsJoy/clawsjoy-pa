@@ -143,7 +143,7 @@ class VisionAgentV4(BusinessAgent):
                     analyzed_files = set()
                     results_file = f"{dir_path}/_batch_results.jsonl"
                     if os.path.exists(results_file):
-                        with open(results_file) as f:
+                        with open(results_file, encoding="utf-8") as f:
                             for line in f:
                                 try:
                                     item = json.loads(line)
@@ -171,7 +171,7 @@ class VisionAgentV4(BusinessAgent):
                         results.append({"file": os.path.basename(img), "analysis": desc[:300]})
                         # 持久化到文件
                         results_file = f"{dir_path}/_batch_results.jsonl"
-                        with open(results_file, "a") as f:
+                        with open(results_file, "a", encoding="utf-8") as f:
                             f.write(
                                 json.dumps({"file": os.path.basename(img), "analysis": desc[:300]}, ensure_ascii=False)
                                 + "\n"
@@ -216,7 +216,7 @@ class VisionAgentV4(BusinessAgent):
                                 )
                                 tags = llm_client.generate(tag_prompt).strip()
                                 tag_data[r["file"]] = {"tags": tags, "analysis": r["analysis"][:200]}
-                        with open(tags_file, "w") as f:
+                        with open(tags_file, "w", encoding="utf-8") as f:
                             json.dump(tag_data, f, ensure_ascii=False, indent=2)
                         _notify("图片分析", f"🏷 标签已保存至 _tags.json")
                     except Exception as e:
@@ -246,7 +246,7 @@ class VisionAgentV4(BusinessAgent):
 
                         tags_file = f"{dir_path}/_tags.json"
                         if os.path.exists(tags_file):
-                            with open(tags_file) as f:
+                            with open(tags_file, encoding="utf-8") as f:
                                 tag_data = _json.load(f)
                             mapping = {}
                             for fname, info in tag_data.items():
@@ -278,13 +278,13 @@ class VisionAgentV4(BusinessAgent):
                     results_file = f"{dir_path}/_batch_results.jsonl"
                     results = []
                     if os.path.exists(results_file):
-                        with open(results_file) as f:
+                        with open(results_file, encoding="utf-8") as f:
                             for line in f:
                                 results.append(json.loads(line))
                     _notify("图片分析", f"📄 results示例: {results[0] if results else '空'}")
                     if re.search(r"导出|报告|report", user_input) and results:
                         report_file = f"{dir_path}/_analysis_report.md"
-                        with open(report_file, "w") as f:
+                        with open(report_file, "w", encoding="utf-8") as f:
                             f.write(f"# 图片分析报告\n\n")
                             f.write(f"目录: {dir_path}\n")
                             f.write(f"图片数: {len(images)}\n")
@@ -615,7 +615,7 @@ class VisionAgentV4(BusinessAgent):
         import json
 
         results = []
-        with open(results_file) as f:
+        with open(results_file, encoding="utf-8") as f:
             for line in f:
                 results.append(json.loads(line))
 
@@ -625,7 +625,7 @@ class VisionAgentV4(BusinessAgent):
         report_file = f"{dir_path}/_analysis_report.md"
         from datetime import datetime
 
-        with open(report_file, "w") as f:
+        with open(report_file, "w", encoding="utf-8") as f:
             f.write(f"# 图片分析报告\n\n")
             f.write(f"目录: {dir_path}\n")
             f.write(f"图片数: {len(results)}\n")
@@ -654,7 +654,7 @@ class VisionAgentV4(BusinessAgent):
         import json
         import shutil
 
-        with open(tags_file) as f:
+        with open(tags_file, encoding="utf-8") as f:
             tag_data = json.load(f)
 
         mapping = {}

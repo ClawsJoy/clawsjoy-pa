@@ -32,7 +32,7 @@ class InheritanceManager:
 
         config_file = Path("config/inheritance.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = yaml.safe_load(f)
         else:
             self.config = {

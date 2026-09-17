@@ -23,7 +23,7 @@ def v9_save_task_progress():
 
     state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
     try:
-        state = json.loads(state_file.read_text())
+        state = json.loads(state_file.read_text(encoding="utf-8"))
     except Exception:
         state = {} if state_file.exists() else {}
 
@@ -35,7 +35,7 @@ def v9_save_task_progress():
         "total_rounds": progress.get("total_rounds", 0),
         "paused_at": datetime.now().isoformat(),
     }
-    state_file.write_text(_safe_serialize_state(state))
+    state_file.write_text(_safe_serialize_state(state), encoding="utf-8")
     return jsonify({"ok": True})
 
 
@@ -53,11 +53,11 @@ def v9_task_set_mode():
         mode_data = {}
         if mode_file.exists():
             try:
-                mode_data = json.loads(mode_file.read_text())
+                mode_data = json.loads(mode_file.read_text(encoding="utf-8"))
             except Exception:
                 mode_data = {}
         mode_data[user_id] = {"mode": mode, "updated_at": datetime.now().isoformat()}
-        mode_file.write_text(json.dumps(mode_data, ensure_ascii=False, indent=2))
+        mode_file.write_text(json.dumps(mode_data, ensure_ascii=False, indent=2), encoding="utf-8")
         return jsonify({"ok": True, "mode": mode, "user_id": user_id})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -72,12 +72,12 @@ def v9_task_status():
 
     async_state_file = Path(f"data/projects/{user_id}/{session_id}/.task_state.json")
     if async_state_file.exists():
-        async_state = _json.loads(async_state_file.read_text())
+        async_state = _json.loads(async_state_file.read_text(encoding="utf-8"))
         return jsonify({"success": True, "status": async_state.get("status", "running"), "async_task": async_state})
 
     state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
     if state_file.exists():
-        state = _json.loads(state_file.read_text())
+        state = _json.loads(state_file.read_text(encoding="utf-8"))
         tp = state.get("task_progress", {})
         if isinstance(tp, str):
             try:

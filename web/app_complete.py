@@ -44,10 +44,10 @@ st.sidebar.markdown("[🐾 v5.1 门户](http://localhost:5002/v5.1)")
 st.sidebar.markdown("[📖 工具箱](http://localhost:5002/web/clawsjoy_story.html)")
 # 加载页面
 if page == "💬 Chat Agent":
-    exec(open("web/chat_interface.py").read())
+    exec(open("web/chat_interface.py", encoding="utf-8").read())
 elif page == "💻 Code Agent":
-    exec(open("web/code_interface_backend.py").read())
+    exec(open("web/code_interface_backend.py", encoding="utf-8").read())
 elif page == "🎨 Vision Agent":
-    exec(open("web/vision_interface.py").read())
+    exec(open("web/vision_interface.py", encoding="utf-8").read())
 else:
-    exec(open("web/upgrade_dashboard_enhanced.py").read())
+    exec(open("web/upgrade_dashboard_enhanced.py", encoding="utf-8").read())

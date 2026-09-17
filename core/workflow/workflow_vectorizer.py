@@ -34,7 +34,7 @@ class WorkflowVectorizer:
             print("   ⚠️ 未找到工作流配置")
             return
 
-        with open(workflow_file, "r") as f:
+        with open(workflow_file, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
 
         workflows = config.get("workflows", [])

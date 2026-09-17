@@ -63,7 +63,7 @@ class FileAgent(BusinessAgent):
             filename = match.group(1)
             file_path = self.work_dir / filename
             if file_path.exists():
-                content = file_path.read_text()
+                content = file_path.read_text(encoding="utf-8")
                 return {
                     "success": True,
                     "response": f"📄 {filename}:\n{content[:500]}",
@@ -132,7 +132,7 @@ class FileAgent(BusinessAgent):
 
             # 4. 保存文件
             file_path = self.work_dir / filename
-            file_path.write_text(content)
+            file_path.write_text(content, encoding="utf-8")
 
             # 5. 审计日志
             self.audit("file_save", {"filename": filename, "size": len(content)})

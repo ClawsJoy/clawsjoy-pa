@@ -20,13 +20,13 @@ class ActiveLearningEngine:
 
     def _load(self):
         if self.request_file.exists():
-            with open(self.request_file, "r") as f:
+            with open(self.request_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.pending_requests = data.get("pending", [])
                 self.approved_samples = data.get("approved", [])
 
     def _save(self):
-        with open(self.request_file, "w") as f:
+        with open(self.request_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "pending": self.pending_requests,

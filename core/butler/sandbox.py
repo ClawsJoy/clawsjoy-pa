@@ -32,7 +32,7 @@ class UserSandbox:
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=str(self.work_dir)
+                cwd=str(self.work_dir), encoding="utf-8", errors="replace"
             )
             
             os.unlink(temp_file)
@@ -75,7 +75,7 @@ class UserSandbox:
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=str(self.work_dir)
+                cwd=str(self.work_dir), encoding="utf-8", errors="replace"
             )
             return {
                 "success": result.returncode == 0,

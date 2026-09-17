@@ -26,13 +26,13 @@ class EngineMarket:
 
     def _load_registry(self):
         if self.registry_file.exists():
-            with open(self.registry_file, "r") as f:
+            with open(self.registry_file, "r", encoding="utf-8") as f:
                 self.engines = json.load(f)
         else:
             self.engines = {}
 
     def _save_registry(self):
-        with open(self.registry_file, "w") as f:
+        with open(self.registry_file, "w", encoding="utf-8") as f:
             json.dump(self.engines, f, indent=2)
 
     def register(

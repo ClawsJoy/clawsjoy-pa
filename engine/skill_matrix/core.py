@@ -40,7 +40,7 @@ class SkillMatrixEngine:
         config_path = Path("config/keywords.yaml")
         if config_path.exists():
             try:
-                with open(config_path, "r") as f:
+                with open(config_path, "r", encoding="utf-8") as f:
                     import yaml
 
                     config = yaml.safe_load(f)

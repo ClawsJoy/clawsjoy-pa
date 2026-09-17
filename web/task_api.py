@@ -51,7 +51,7 @@ def task_history():
     log_file = Path("logs/task_history.jsonl")
     history = []
     if log_file.exists():
-        with open(log_file, "r") as f:
+        with open(log_file, "r", encoding="utf-8") as f:
             for line in f:
                 try:
                     history.append(json.loads(line))

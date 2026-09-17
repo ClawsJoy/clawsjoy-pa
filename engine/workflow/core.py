@@ -23,7 +23,7 @@ class WorkflowEngine:
                 continue
             for json_file in wf_dir.glob("*.json"):
                 try:
-                    with open(json_file, "r") as f:
+                    with open(json_file, "r", encoding="utf-8") as f:
                         data = json.load(f)
                         name = data.get("name", json_file.stem)
                         self.workflows[name] = data

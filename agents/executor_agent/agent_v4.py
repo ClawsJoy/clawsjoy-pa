@@ -77,7 +77,7 @@ class ExecutorAgentV4(BusinessAgent):
                 capture_output=True,
                 text=True,
                 cwd=self.work_dir,
-                timeout=60
+                timeout=60, encoding="utf-8", errors="replace"
             )
             output = result.stdout or result.stderr
             if result.returncode == 0:
@@ -132,7 +132,7 @@ class ExecutorAgentV4(BusinessAgent):
                 return self._resp("❌ 请指定: write <文件> <内容>")
             path = Path(parts[1])
             content = parts[2]
-            path.write_text(content)
+            path.write_text(content, encoding="utf-8")
             return self._resp(f"✅ 已写入: {path}")
         else:
             return self._resp(f"❌ 不支持的操作: {op}")

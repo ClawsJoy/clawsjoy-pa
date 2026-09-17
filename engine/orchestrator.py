@@ -37,12 +37,12 @@ class CollaborationOrchestrator:
             self._save([])
 
     def _save(self, data):
-        with open(self.collaboration_log, "w") as f:
+        with open(self.collaboration_log, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
     def _load(self):
         if self.collaboration_log.exists():
-            with open(self.collaboration_log, "r") as f:
+            with open(self.collaboration_log, "r", encoding="utf-8") as f:
                 return json.load(f)
         return []
 

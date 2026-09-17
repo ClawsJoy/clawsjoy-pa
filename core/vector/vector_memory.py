@@ -30,14 +30,14 @@ class VectorMemory:
         file_path = self.base_path / "memories.json"
         if file_path.exists():
             try:
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 pass
         return []
 
     def _save(self):
-        with open(self.base_path / "memories.json", "w") as f:
+        with open(self.base_path / "memories.json", "w", encoding="utf-8") as f:
             json.dump(self.memories, f, indent=2)
 
     def _tokenize(self, text: str) -> List[str]:

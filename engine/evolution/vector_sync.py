@@ -17,7 +17,7 @@ class VectorSyncEngine:
 
     def _load_log(self):
         if self.sync_log.exists():
-            with open(self.sync_log, "r") as f:
+            with open(self.sync_log, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.last_sync = data.get("last_sync")
                 self.synced_count = data.get("synced_count", 0)
@@ -26,7 +26,7 @@ class VectorSyncEngine:
             self.synced_count = 0
 
     def _save_log(self):
-        with open(self.sync_log, "w") as f:
+        with open(self.sync_log, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "last_sync": datetime.now().isoformat(),

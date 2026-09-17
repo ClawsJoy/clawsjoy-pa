@@ -26,7 +26,7 @@ class VideoIndexerAgent(BusinessAgentV2):
     def _load_index(self):
         """加载视频索引"""
         if self.index_path.exists():
-            with open(self.index_path) as f:
+            with open(self.index_path, encoding="utf-8") as f:
                 self.index = json.load(f)
         else:
             self.index = {}
@@ -34,7 +34,7 @@ class VideoIndexerAgent(BusinessAgentV2):
     def _save_index(self):
         """保存视频索引"""
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.index_path, "w") as f:
+        with open(self.index_path, "w", encoding="utf-8") as f:
             json.dump(self.index, f, indent=2)
 
     def _execute_business(self, user_input: str, context: dict = None) -> dict:

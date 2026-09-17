@@ -20,7 +20,7 @@ if "messages" not in st.session_state:
 if "training_data" not in st.session_state:
     training_file = Path("data/training_data.json")
     if training_file.exists():
-        with open(training_file, "r") as f:
+        with open(training_file, "r", encoding="utf-8") as f:
             st.session_state.training_data = json.load(f)
     else:
         st.session_state.training_data = []

@@ -17,7 +17,7 @@ class SelfLearningEngine:
 
     def _load_stats(self):
         if self.learning_log.exists():
-            with open(self.learning_log, "r") as f:
+            with open(self.learning_log, "r", encoding="utf-8") as f:
                 self.stats = json.load(f)
         else:
             self.stats = {
@@ -29,7 +29,7 @@ class SelfLearningEngine:
 
     def _save_stats(self):
         self.stats["last_learning"] = datetime.now().isoformat()
-        with open(self.learning_log, "w") as f:
+        with open(self.learning_log, "w", encoding="utf-8") as f:
             json.dump(self.stats, f, indent=2)
 
     def learn_from_interaction(
