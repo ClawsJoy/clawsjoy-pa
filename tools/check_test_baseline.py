@@ -17,6 +17,13 @@
   python3 tools/check_test_baseline.py --pytest-args "tests/unit -q --tb=no"
 退出码: 0 通过 / 1 不通过
 """
+# G-02 留痕/告警（2026-09-17 · Windows 侧第一版）:
+#   只**记录/告警**, **不参与判定** —— 判据仍是下方 4 条 bad 规则 + 退出码逻辑，未改一行。
+#   记录: pytest 退出码 / 收集数 / 收集期错误行 / warnings / reported_pass / human_confirmed_pass（留空待人工）。
+#   为什么: 失败可能被“吞”——部分收集失败时 rc!=1、收集错误行无 `::` 不进 failed 名单
+#   ⇒ 门禁自称的 PASS 严格只能算 **reported PASS**，第四问（收集阶段有无异常）
+#   必须人工补齐后另记 **human_confirmed_pass**。
+#   证据等级: 【实测】D:\clawsjoy_v9 · Windows 11 + PowerShell 5.1 + Python 3.12 · 2026-09-17。
 import argparse
 import datetime
 import json
@@ -44,7 +51,10 @@ _cj_shim.ensure_utf8_console()
 _LEDGER = _REPO / "tests" / "baseline"
 _RUN_DIR = _REPO / "data" / "test_baseline"
 _STATUS_RE = re.compile(r"^(\S+::\S+)\s+(PASSED|FAILED|SKIPPED|ERROR|XFAIL|XPASS)\b")
-_SUMMARY_RE = re.compile(r"(\d+) (failed|passed|skipped|error)")
+# G-02(2026-09-17): 一并计入 xfailed/xpassed/errors —— 否则正常跑会因「收集 1756 > 已统计 1755」
+# 报假警告（简单说就是那 1 条 xfailed）。仅影响留痕统计，不参与判定。
+_SUMMARY_RE = re.compile(r"(\d+) (failed|passed|skipped|errors?|xfailed|xpassed)")
+_COLLECTED_RE = re.compile(r"collected (\d+) items")
 
 
 def _load(path):
@@ -78,7 +88,14 @@ def _run_pytest(extra):
     tail = p.stdout.strip().splitlines()[-1] if p.stdout.strip() else ""
     for n, k in _SUMMARY_RE.findall(tail):
         counts[k] = int(n)
-    return failed, skipped, counts, tail, p.returncode
+    # G-02 留痕: 收集数 + 收集期错误行（无 `::`，故不会进 failed 名单）
+    collected = None
+    _m_col = _COLLECTED_RE.search(p.stdout)
+    if _m_col:
+        collected = int(_m_col.group(1))
+    collect_errors = [s for s in (l.strip() for l in p.stdout.splitlines())
+                      if s.startswith("ERROR ") and "::" not in s]
+    return failed, skipped, counts, tail, p.returncode, collected, collect_errors
 
 
 def main():
@@ -96,8 +113,24 @@ def main():
         print("[GATE] --no-run: 台账格式 OK")
         return 0
 
-    failed, skipped, counts, tail, rc = _run_pytest(a.pytest_args)
+    failed, skipped, counts, tail, rc, collected, collect_errors = _run_pytest(a.pytest_args)
     print(f"[GATE] {tail}")
+
+    # --- G-02 留痕/告警：只记录与告警，**不改判定**（bad 列表与退出码逻辑未动）---
+    warnings = []
+    if rc not in (0, 1):
+        warnings.append(f"pytest 退出码 {rc}（非 0/1：中断/内部错误/用法错误）—— 本轮结果可能不完整")
+    if collected is None:
+        warnings.append("未能解析收集数（collected N items 缺失）—— 是否部分收集失败需人工确认")
+    else:
+        _accounted = sum(counts.values())
+        if _accounted < collected:
+            warnings.append(f"已统计 {_accounted} < 收集数 {collected}：差额 {collected - _accounted} 条未归类（常见: xfailed/xpassed/error）")
+    if collect_errors:
+        warnings.append(f"收集期错误行 {len(collect_errors)} 条: " + "; ".join(collect_errors[:3]))
+    for _w in warnings:
+        print(f"[GATE][WARN] {_w}")
+    print("[GATE] 证据范围: 上行 PASS 仅覆盖 ①②③ 三问；第④问（收集阶段）只留痕不判定，见 last_run.json")
 
     bad = []
     # 1) 条数
@@ -127,6 +160,14 @@ def main():
                 "counts": counts,
                 "failed": failed,
                 "skipped": skipped,
+                "pytest_rc": rc,
+                "collected": collected,
+                "collect_errors": collect_errors,
+                "warnings": warnings,
+                "reported_pass": not bad,
+                "human_confirmed_pass": None,
+                "human_confirmed_note": "需人工补齐第④问（收集数/退出码/末行形态）后填写；"
+                                       "门禁自报的 reported_pass 不可单独用于验收",
                 "registry": {"known_failures": len(known), "known_skips": len(known_skip)},
                 "verdict": "PASS" if not bad else "FAIL",
             },
@@ -142,7 +183,8 @@ def main():
         for b in bad:
             print("  - " + b)
         return 1
-    print("\n[GATE] ✅ 通过(失败 0 · skip 全部登记 · 台账与实际一致)")
+    print(f"\n[GATE] ✅ 通过(reported PASS): 失败 {len(failed)} 条全部已登记 · skip {len(skipped)} 条全部已登记 · 台账与实际一致")
+    print("[GATE] 注: 上行为 reported PASS（门禁自报），不等于 human_confirmed_pass（人工确认）")
     return 0
 
 
