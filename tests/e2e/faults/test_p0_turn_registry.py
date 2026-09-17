@@ -81,16 +81,46 @@ def test_PASS_lifecycle_create_heartbeat_finish(reg):
     assert reg.get_turn(k)["status"] == "COMPLETED"
 
 
-def test_heartbeat_async_is_batched(reg):
-    """热路径心跳只入队，由批量 flush 落库（不拖慢 SSE）。"""
+def test_heartbeat_async_is_batched(reg, monkeypatch):
+    """热路径心跳只入队，由批量 flush 落库（不拖慢 SSE）。
+
+    隔离（A2，2026-09-18 · 老板/DS 拍）：
+    `heartbeat_async()` 会 `_start_flusher()` 起一个**进程级 daemon 线程**
+    （`HEARTBEAT_FLUSH_SEC = 2.0`；`reset_for_test()` 既不复位 `_flusher_started`、
+    也不停线程）⇒ 它可能抢在本用例的显式 `_flush_once()` 之前
+    清空 `_pending_hb`。反例证明（`data/tmp/hb_proof_a3.py`：把 tick 压到 20ms）：
+    **原样断言 300 次失败 26 次**；本版 **300 次 0 失败**、再跑 1000 次仍 0 失败
+    （只做 A2 / 只做 A1 的中间版本各残 1–3/300 ⇒ 二者互补、都必须）。
+    这里把**后台线程的 tick** 换成 no-op，`_pending_hb` 的消费者只剩本用例自己。
+    残留（诚实标注）：打补丁那一瞬**已经在真函数里**的 tick 仍可能吃掉这一轮
+    （20ms tick 压测下 300 次里 1–3 次）⇒ 用「**至多 3 轮**」把它压到 ~1e-8；彻底消除需产品侧停线程（另开小批 B）。
+    """
+    real_flush_once = reg._flush_once
+    monkeypatch.setattr(reg, "_flush_once", lambda: 0)   # 后台 flusher 的 tick 不再消费
+
     k = reg.create_turn("s_hb")
-    before = reg.get_turn(k)["heartbeat_at"]
-    reg.heartbeat_async(k)
-    reg.heartbeat_async(k)
-    assert reg.get_turn(k)["heartbeat_at"] == before  # 尚未落库
-    n = reg._flush_once()
-    assert n >= 1
-    assert reg.get_turn(k)["heartbeat_at"] > before
+    observed = False
+    for _ in range(3):
+        reg._pending_hb.clear()
+        before = reg.get_turn(k)["heartbeat_at"]
+        reg.heartbeat_async(k)
+        reg.heartbeat_async(k)
+        if reg.get_turn(k)["heartbeat_at"] != before:
+            # 本轮被「**打补丁那一瞬已经在真函数里**」的后台 tick 抢跑污染（µs 级窗口）
+            # ⇒ 换一轮（**不放宽判据**：若 heartbeat_async 变成**同步落库**，
+            #   每一轮都会走到这里 ⇒ 3 轮后下面的 `assert observed` 失败）
+            continue
+        # 到这里 ⇒ ① 只入队：**尚未落库**（不拖慢 SSE 的契约）
+        # ② 批量 flush 落库（A1：按「最终落库」表达 —— 极罕见的残留抢跑用**幂等重入队**兜住）
+        n, deadline = 0, time.time() + 2.0
+        while n < 1 and time.time() < deadline:
+            reg.heartbeat_async(k)                    # 热路径幂等：重复入队是允许的
+            n = real_flush_once()
+        assert n >= 1, "批量 flush 未把心跳落库（等待 2s）"
+        assert reg.get_turn(k)["heartbeat_at"] > before   # ③ 心跳前进
+        observed = True
+        break
+    assert observed, "未观察到「先只入队、后批量落库」（同步落库会走到这里）"
 
 
 def test_FAULT_stale_scan_marks_dead_turns(reg):
