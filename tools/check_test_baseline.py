@@ -44,11 +44,19 @@
 #   判定 B」积累实测数据)。**判定层/退出码/台账一行未动**(老板 2026-09-18 拍: 只做 A, B 等数据)。
 #   为什么不加 WARN: 汇总既然能从全文找到 ⇒ 此处**没有问题**, 报警即「假警报」(与假绿同等有害)。
 #   证据等级: 【实测】2026-09-18 · data/tmp/gate_r5|r6|r7.txt; 反例证明 data/tmp/g02_proof_a.py。
+#
+# G-02 子项⑥ 续(2026-09-18 · 老板/DS 拍「做」): **证据不完整时把原始 stdout 落盘**。
+#   为什么要: 漏解析/汇总缺失时日志里只有「差额 1」, **看不到那一行长什么样** ⇒ 机制无法定位
+#   (本批 5 次跑 3 次命中「汇总 N / 解析 N-1」, 却始终拿不到被污染的那一行)。
+#   口径: **纯留痕** —— 不改判定/退出码/台账; 只在「证据可能不完整」时留存(时间戳文件, 只留最新
+#   _RAW_KEEP 份); 正常跑不堆积(只留一份滚动 raw_last.txt, 在 data/ = gitignored)。
+#   证据等级: 【实测】2026-09-18 · tests/unit/test_gate_raw_stdout_kept.py; 门禁 data/tmp/gate_r12.txt。
 import argparse
 import datetime
 import json
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 
@@ -79,6 +87,8 @@ _SUMMARY_RE = re.compile(r"(\d+) (failed|passed|skipped|errors?|xfailed|xpassed)
 # 与**参数化 id**(例 `t[3 passed cases] PASSED`)上都会误配 ⇒ 单靠它挑不出「哪一行才是汇总行」。
 _SUMMARY_LINE_RE = re.compile(r"\d+ (?:failed|passed|skipped|errors?|xfailed|xpassed)\b.*\bin \d")
 _COLLECTED_RE = re.compile(r"collected (\d+) items")
+# 子项⑥ 续: 证据不完整时留存的原始 stdout 最多保留几份（文件名以时间戳开头 ⇒ 按名排序即按时间）
+_RAW_KEEP = 5
 
 
 def _load(path):
@@ -142,8 +152,45 @@ def _run_pytest(extra):
         collected = int(_m_col.group(1))
     collect_errors = [s for s in (l.strip() for l in p.stdout.splitlines())
                       if s.startswith("ERROR ") and "::" not in s]
+    # 子项⑥ 续: 先落一份**滚动**原始 stdout（data/ 是 gitignored）。是否**留存**由 main 按
+    # 「证据是否完整」决定 ⇒ 正常跑不堆积。写失败不打扰判定（最外层 try）。
+    try:
+        _RUN_DIR.mkdir(parents=True, exist_ok=True)
+        (_RUN_DIR / "raw_last.txt").write_text(p.stdout, encoding="utf-8")
+    except Exception:
+        pass
     return (failed, skipped, counts, summary, tail, off_last_line,
             p.returncode, collected, collect_errors)
+
+
+def _keep_raw_stdout(gaps):
+    """G-02 子项⑥ 续（2026-09-18 拍）：证据不完整时把**原始 stdout** 留存一份。
+
+    为什么：漏解析 / 汇总缺失时，日志里只有「差额 1」，**看不到那一行长什么样** ⇒ 机制无法定位。
+    口径：**纯留痕**（不改判定 / 退出码 / 台账）；只保留最新 `_RAW_KEEP` 份（文件名以时间戳开头，
+    按名排序即按时间）；正常跑不留存（不堆积）。
+
+    返回：留存件的**仓库相对路径**；源文件（滚动副本）不存在时返回 None。
+    """
+    src = _RUN_DIR / "raw_last.txt"
+    if not src.exists():
+        return None
+    d = _RUN_DIR / "raw"
+    d.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+    dst = d / ("%s_%s.txt" % (stamp, "-".join(gaps) or "evidence"))
+    shutil.copyfile(str(src), str(dst))
+    olds = sorted(d.glob("*.txt"))
+    if _RAW_KEEP > 0:
+        for old in olds[:-_RAW_KEEP]:
+            try:
+                old.unlink()
+            except OSError:
+                pass
+    try:
+        return str(dst.relative_to(_REPO))
+    except ValueError:
+        return str(dst)
 
 
 def _parse_selfcheck(counts, failed):
@@ -193,22 +240,29 @@ def main():
     # 子项⑥: 印**汇总行**（全文都没找到才印末行）。旧写法一律印末行 ⇒ 末行被顶掉时，
     # 门禁的头条会变成一条无关输出（实测就是那行 cp936 报错），读的人无从判断。
     print(f"[GATE] {summary or tail}")
+    # 子项⑥ 续: 收集「证据可能不完整」的**理由**；空 ⇒ 正常跑，不必留存原始 stdout
+    gaps = []
     if off_last_line:
         print("[GATE] 注: 汇总行不在末行（已从全文定位；末行另有输出）"
               " —— 旧「只读末行」口径在这里会把 counts 读空（**不是告警**，判定未受影响）")
+        gaps.append("summary_off_last_line")
 
     # --- G-02 留痕/告警：只记录与告警，**不改判定**（bad 列表与退出码逻辑未动）---
     warnings = []
     if rc not in (0, 1):
         warnings.append(f"pytest 退出码 {rc}（非 0/1：中断/内部错误/用法错误）—— 本轮结果可能不完整")
+        gaps.append("pytest_rc")
     if collected is None:
         warnings.append("未能解析收集数（collected N items 缺失）—— 是否部分收集失败需人工确认")
+        gaps.append("collected_missing")
     else:
         _accounted = sum(counts.values())
         if _accounted < collected:
             warnings.append(f"已统计 {_accounted} < 收集数 {collected}：差额 {collected - _accounted} 条未归类（常见: xfailed/xpassed/error）")
+            gaps.append("counts_short")
     if collect_errors:
         warnings.append(f"收集期错误行 {len(collect_errors)} 条: " + "; ".join(collect_errors[:3]))
+        gaps.append("collect_errors")
     # --- X-03 防复发（2026-09-18）：文件编码显式化债务 —— 与 G-02 同一规矩：**只告警，不改判定** ---
     #   判据在 tools/check_encoding_explicit.py（AST，只报不改）；基线台账 tests/baseline/encoding_explicit_baseline.json。
     #   为什么: X-03 存量修完后必须防**新增**，否则下一批代码又会长出 `open()` 不带 encoding 的同类债务。
@@ -237,8 +291,19 @@ def main():
     _selfcheck = _parse_selfcheck(counts, failed)
     if _selfcheck:
         warnings.append(_selfcheck)
+        gaps.append("parse_selfcheck")
     for _w in warnings:
         print(f"[GATE][WARN] {_w}")
+    # 子项⑥ 续（2026-09-18 拍）：证据不完整 ⇒ 把原始 stdout **留存**一份（纯留痕，不改判定）
+    _raw_kept = None
+    if gaps:
+        try:
+            _raw_kept = _keep_raw_stdout(gaps)
+        except Exception as _e:      # 留存失败也不能把门禁搞红（与 X-03 扫描同规矩）
+            warnings.append("原始 stdout 留存失败: %r" % (_e,))
+        if _raw_kept:
+            print(f"[GATE] 注: 证据可能不完整({', '.join(gaps)}) ⇒ 原始 stdout 已留存: {_raw_kept}"
+                  "（**不是告警**，判定未受影响）")
     print("[GATE] 证据范围: 上行 PASS 仅覆盖 ①②③ 三问；第④问（收集阶段）只留痕不判定，见 last_run.json")
 
     bad = []
@@ -274,6 +339,8 @@ def main():
                 "pytest_rc": rc,
                 "collected": collected,
                 "collect_errors": collect_errors,
+                "evidence_gaps": gaps,
+                "raw_stdout_kept": _raw_kept,
                 "warnings": warnings,
                 "encoding_debt": encoding_debt,
                 "reported_pass": not bad,
