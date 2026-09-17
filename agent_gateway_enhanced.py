@@ -490,6 +490,10 @@ app.register_blueprint(_session_bp)
 from routes.audit import bp as _audit_bp
 
 app.register_blueprint(_audit_bp)
+
+from routes.pes import bp as _pes_bp  # M2-A Step 1：PES 只读投影
+
+app.register_blueprint(_pes_bp)
 from routes.balance import bp as _balance_bp
 
 app.register_blueprint(_balance_bp)
