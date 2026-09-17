@@ -27,7 +27,7 @@ class RosterEngine:
         for f in self.data_dir.glob("roster_*.json"):
             server_id = f.stem.replace("roster_", "")
             try:
-                self.roster[server_id] = json.loads(f.read_text())
+                self.roster[server_id] = json.loads(f.read_text(encoding="utf-8"))
             except:
                 self.roster[server_id] = {"members": {}}
             self._cache[server_id] = self.roster[server_id]
@@ -36,8 +36,7 @@ class RosterEngine:
         if server_id not in self.roster:
             self.roster[server_id] = {"members": {}}
         self._file(server_id).write_text(
-            json.dumps(self.roster[server_id], indent=2, ensure_ascii=False)
-        )
+            json.dumps(self.roster[server_id], indent=2, ensure_ascii=False), encoding="utf-8")
         self._cache[server_id] = self.roster[server_id]
 
     # ========== 生命周期 ==========

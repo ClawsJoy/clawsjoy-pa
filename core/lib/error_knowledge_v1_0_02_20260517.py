@@ -36,7 +36,7 @@ class ErrorKnowledge:
     def _load_errors(self) -> List[Dict]:
         if self.error_file.exists():
             try:
-                with open(self.error_file, "r") as f:
+                with open(self.error_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     return data.get("learned_errors", [])
             except Exception as e:
@@ -44,7 +44,7 @@ class ErrorKnowledge:
         return []
 
     def _save_errors(self, errors: List[Dict]):
-        with open(self.error_file, "w") as f:
+        with open(self.error_file, "w", encoding="utf-8") as f:
             json.dump({"learned_errors": errors}, f, indent=2, ensure_ascii=False)
 
     def query(self, task_name: str, error_msg: str = None) -> Optional[Dict]:

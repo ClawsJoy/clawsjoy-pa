@@ -39,14 +39,14 @@ class IntentLearner:
     def _load(self):
         """加载学习数据"""
         if self.learning_file.exists():
-            with open(self.learning_file, "r") as f:
+            with open(self.learning_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.patterns = defaultdict(int, data.get("patterns", {}))
                 self.user_history = defaultdict(list, data.get("user_history", {}))
 
     def _save(self):
         """保存学习数据"""
-        with open(self.learning_file, "w") as f:
+        with open(self.learning_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
                     "patterns": dict(self.patterns),

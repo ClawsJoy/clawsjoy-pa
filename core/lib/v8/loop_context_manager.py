@@ -262,7 +262,7 @@ class LoopContextManager:
 
         entries = []
         try:
-            with open(recap_file) as f:
+            with open(recap_file, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line:
@@ -530,7 +530,7 @@ class LoopContextManager:
 
         entries = []
         try:
-            with open(sag_file) as f:
+            with open(sag_file, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line:
@@ -713,7 +713,7 @@ class LoopContextManager:
             return ""
 
         try:
-            with open(filepath) as f:
+            with open(filepath, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             # 尝试提取 review_prompt 或 description
             prompt = (
@@ -805,7 +805,7 @@ class LoopContextManager:
             return []
 
         try:
-            with open(feed_path) as f:
+            with open(feed_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             self._feeds_config = data.get("feeds", [])
             return self._feeds_config
@@ -935,7 +935,7 @@ class LoopContextManager:
         """读取 jsonl 文件，按 max_items 和 max_chars 截断。"""
         lines = []
         try:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 for i, line in enumerate(f):
                     if i >= max_items:
                         break

@@ -26,7 +26,7 @@ class AutoTuner:
     def _load_config(self):
         config_file = Path("config/self_tuning.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
         return {}
 

@@ -28,7 +28,7 @@ class SoulInjector:
         path = Path(f"data/relationship/{self.user_id}.json")
         if path.exists():
             try:
-                with open(path, 'r') as f:
+                with open(path, 'r', encoding="utf-8") as f:
                     self.data = json.load(f)
                 return
             except:
@@ -43,7 +43,7 @@ class SoulInjector:
     def _save(self):
         path = Path(f"data/relationship/{self.user_id}.json")
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             json.dump(self.data, f, indent=2)
 
     def set_user_name(self, name: str):

@@ -29,7 +29,7 @@ class AgentSkinSystem:
         """加载皮肤配置"""
         config_file = Path("config/agent_skins.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 return unified_config.get("agent_skins")
         return self._get_default_skins()
 
@@ -37,7 +37,7 @@ class AgentSkinSystem:
         """加载动画配置"""
         config_file = Path("config/agent_animations.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 return unified_config.get("agent_skins")
         return self._get_default_animations()
 

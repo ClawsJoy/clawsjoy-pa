@@ -36,21 +36,21 @@ class CodeGenerator:
     def _load_config(self) -> Dict:
         config_file = Path("config/code_agent.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 return unified_config.get("code_generator", {})
         return {}
 
     def _load_memory(self) -> Dict:
         memory_file = Path(f"{get_data_root()}/code_agent_memory.json")
         if memory_file.exists():
-            with open(memory_file, "r") as f:
+            with open(memory_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"user_preferences": {}, "generation_count": 0}
 
     def _save_memory(self):
         memory_file = Path(f"{get_data_root()}/code_agent_memory.json")
         memory_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(memory_file, "w") as f:
+        with open(memory_file, "w", encoding="utf-8") as f:
             json.dump(self.memory, f, indent=2)
 
     def _load_templates(self) -> Dict:
@@ -61,7 +61,7 @@ class CodeGenerator:
         for name, cfg in templates_config.items():
             template_file = Path(cfg.get("file", ""))
             if template_file.exists():
-                with open(template_file, "r") as f:
+                with open(template_file, "r", encoding="utf-8") as f:
                     templates[name] = f.read()
             else:
                 # 使用内置模板

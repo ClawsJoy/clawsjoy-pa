@@ -23,7 +23,7 @@ class AgentSelfEvaluator:
         self.history_file = self.eval_dir / "history.json"
         if self.history_file.exists():
             try:
-                with open(self.history_file, 'r') as f:
+                with open(self.history_file, 'r', encoding="utf-8") as f:
                     self.history = json.load(f)
             except:
                 self.history = {"evaluations": [], "stats": {"total": 0, "avg_score": 0}}
@@ -32,7 +32,7 @@ class AgentSelfEvaluator:
 
     def _save_history(self):
         """保存评估历史"""
-        with open(self.history_file, 'w') as f:
+        with open(self.history_file, 'w', encoding="utf-8") as f:
             json.dump(self.history, f, indent=2, ensure_ascii=False)
 
     def evaluate(self, user_input: str, response: str, context: Dict = None) -> Dict:

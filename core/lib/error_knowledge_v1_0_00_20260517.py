@@ -36,7 +36,7 @@ class ErrorKnowledge:
         """加载错误知识库"""
         if self.error_file.exists():
             try:
-                with open(self.error_file, "r") as f:
+                with open(self.error_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     return data.get("learned_errors", [])
             except Exception as e:
@@ -45,7 +45,7 @@ class ErrorKnowledge:
 
     def _save_errors(self, errors: List[Dict]):
         """保存错误知识库"""
-        with open(self.error_file, "w") as f:
+        with open(self.error_file, "w", encoding="utf-8") as f:
             json.dump({"learned_errors": errors}, f, indent=2, ensure_ascii=False)
 
     def _calculate_similarity(self, error1: str, error2: str) -> float:

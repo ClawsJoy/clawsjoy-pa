@@ -110,7 +110,7 @@ class FederatedBus:
 
         for file in self._storage_dir.glob("*.json"):
             try:
-                entries = json.loads(file.read_text())
+                entries = json.loads(file.read_text(encoding="utf-8"))
                 if not isinstance(entries, list):
                     entries = [entries]
                 for entry in entries:
@@ -134,7 +134,7 @@ class FederatedBus:
         sources = set()
         for f in knowledge_files:
             try:
-                data = json.loads(f.read_text())
+                data = json.loads(f.read_text(encoding="utf-8"))
                 if isinstance(data, list):
                     total_entries += len(data)
                     for e in data:
@@ -166,7 +166,7 @@ class FederatedBus:
         file = self._storage_dir / f"{safe_name}.json"
         if file.exists():
             try:
-                return json.loads(file.read_text())
+                return json.loads(file.read_text(encoding="utf-8"))
             except Exception:
                 pass
         return None
@@ -177,7 +177,7 @@ class FederatedBus:
         safe_name = hashlib.md5(key.encode()).hexdigest()[:16]
         file = self._storage_dir / f"{safe_name}.json"
         try:
-            file.write_text(json.dumps(entries, indent=2, ensure_ascii=False))
+            file.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception as e:
             print(f"[FederatedBus] 保存失败: {e}")
 

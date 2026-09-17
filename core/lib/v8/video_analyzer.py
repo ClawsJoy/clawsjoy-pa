@@ -54,7 +54,7 @@ class VideoAnalyzer:
             "vfr",
             output_pattern,
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
 
         # 解析 stderr 中的 showinfo 时间戳
         timestamps = []
@@ -156,7 +156,7 @@ class VideoAnalyzer:
 
     def _align_subtitles(self, scenes: List[dict], subtitle_path: str):
         """把字幕按时间戳分配到对应场景"""
-        with open(subtitle_path) as f:
+        with open(subtitle_path, encoding="utf-8") as f:
             lines = f.readlines()
 
         subtitles = []

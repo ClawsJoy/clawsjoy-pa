@@ -32,7 +32,7 @@ class PortManager:
         self._ports = {}
         config_path = Path("config/ports.yaml")
         if config_path.exists():
-            with open(config_path) as f:
+            with open(config_path, encoding="utf-8") as f:
                 config = unified_config.get("port_manager", {})
                 self._ports = config.get("ports", {})
 

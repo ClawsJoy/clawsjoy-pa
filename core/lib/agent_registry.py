@@ -37,7 +37,7 @@ class AgentRegistry:
     def _load(self) -> Dict:
         """加载注册表"""
         if self.registry_file.exists():
-            with open(self.registry_file, "r") as f:
+            with open(self.registry_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 # 兼容不同格式
                 if isinstance(data, dict) and "agents" in data:
@@ -48,7 +48,7 @@ class AgentRegistry:
     def _save(self):
         """保存注册表"""
         self.registry_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.registry_file, "w") as f:
+        with open(self.registry_file, "w", encoding="utf-8") as f:
             json.dump(self.agents, f, indent=2)
 
     def register(self, agent_id: str, agent_info: Dict) -> bool:

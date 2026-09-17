@@ -45,7 +45,7 @@ def register_tenant_config_routes(app):
         config_file = tenant_dir / "settings.yaml"
         config = {}
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config = unified_config.get("tenant_api", {})
         return jsonify({"success": True, "config": config, "tenant_id": g.tenant_id})
 
@@ -62,13 +62,13 @@ def register_tenant_config_routes(app):
         # 加载现有配置
         existing = {}
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 existing = unified_config.get("tenant_api", {}) or {}
 
         # 合并配置
         existing.update(new_config)
 
-        with open(config_file, "w") as f:
+        with open(config_file, "w", encoding="utf-8") as f:
             yaml.dump(existing, f)
 
         return jsonify(
@@ -83,7 +83,7 @@ def register_tenant_config_routes(app):
         config_file = tenant_dir / "settings.yaml"
         config = {}
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config = unified_config.get("tenant_api", {}) or {}
         return jsonify(
             {
@@ -107,12 +107,12 @@ def register_tenant_config_routes(app):
         # 加载现有配置
         config = {}
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config = unified_config.get("tenant_api", {}) or {}
 
         config[key] = value
 
-        with open(config_file, "w") as f:
+        with open(config_file, "w", encoding="utf-8") as f:
             yaml.dump(config, f)
 
         return jsonify(

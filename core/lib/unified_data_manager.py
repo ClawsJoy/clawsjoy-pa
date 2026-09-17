@@ -30,7 +30,7 @@ class UnifiedDataManager:
         identity["user_id"] = self.user_id
         identity_file = self.butler_path / "identity.json"
         temp_file = identity_file.with_suffix(".tmp")
-        with open(temp_file, "w") as f:
+        with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(identity, f, indent=2, ensure_ascii=False)
         temp_file.replace(identity_file)
         self._sync_to_conversation(identity)
@@ -38,18 +38,18 @@ class UnifiedDataManager:
 
     def _sync_to_conversation(self, identity: Dict):
         memory_file = self.conversation_path / "memory.json"
-        memory = json.load(open(memory_file)) if memory_file.exists() else {}
+        memory = json.load(open(memory_file, encoding="utf-8")) if memory_file.exists() else {}
         memory["butler"] = {
             "name": identity.get("name"),
             "name_changed_at": identity.get("updated_at"),
         }
-        with open(memory_file, "w") as f:
+        with open(memory_file, "w", encoding="utf-8") as f:
             json.dump(memory, f, indent=2, ensure_ascii=False)
 
     def get_butler_identity(self) -> Dict:
         identity_file = self.butler_path / "identity.json"
         if identity_file.exists():
-            return json.load(open(identity_file))
+            return json.load(open(identity_file, encoding="utf-8"))
         return {"name": "小管"}
 
 

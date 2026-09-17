@@ -33,9 +33,9 @@ class UserButlerData:
         for template_file in template_dir.glob("*.yaml"):
             user_file = self.data_dir / template_file.name
             if not user_file.exists():
-                with open(template_file, "r") as f:
+                with open(template_file, "r", encoding="utf-8") as f:
                     content = f.read()
-                with open(user_file, "w") as f:
+                with open(user_file, "w", encoding="utf-8") as f:
                     f.write(content)
 
     # ========== 覆盖系统预设 ==========
@@ -188,11 +188,11 @@ class UserButlerData:
     def _load_yaml(self, filename: str) -> Dict:
         filepath = self.data_dir / filename
         if filepath.exists():
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         return {}
 
     def _save_yaml(self, filename: str, data: Dict):
         filepath = self.data_dir / filename
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True)

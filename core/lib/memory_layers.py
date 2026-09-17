@@ -117,12 +117,12 @@ class MemoryLayers:
     # ========== 辅助方法 ==========
     def _load_json(self, file_path):
         if file_path.exists():
-            with open(file_path, "r") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return []
 
     def _save_json(self, file_path, data):
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     # ========== 记忆晋升 ==========

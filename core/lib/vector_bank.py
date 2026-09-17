@@ -29,7 +29,7 @@ class VectorBank:
         f = self.dir / "vectors.json"
         if f.exists():
             try:
-                data = json.loads(f.read_text())
+                data = json.loads(f.read_text(encoding="utf-8"))
                 self._store = {k: {**v, "vector": np.array(v["vector"])} for k, v in data.items()}
             except Exception:
                 pass
@@ -38,7 +38,7 @@ class VectorBank:
         if not self._dirty:
             return
         data = {k: {**v, "vector": v["vector"].tolist()} for k, v in self._store.items()}
-        (self.dir / "vectors.json").write_text(json.dumps(data, ensure_ascii=False))
+        (self.dir / "vectors.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
         self._dirty = False
     
     # ========== 向量化 ==========

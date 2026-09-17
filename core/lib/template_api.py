@@ -27,7 +27,7 @@ def register_template_routes(app):
         """列出所有模板"""
         templates = []
         for f in TEMPLATES_DIR.glob("*.yaml"):
-            with open(f, "r") as file:
+            with open(f, "r", encoding="utf-8") as file:
                 content = unified_config.get("templates", {})
                 templates.append(
                     {
@@ -46,7 +46,7 @@ def register_template_routes(app):
         if not template_file.exists():
             return jsonify({"error": "模板不存在"}), 404
 
-        with open(template_file, "r") as f:
+        with open(template_file, "r", encoding="utf-8") as f:
             content = unified_config.get("template_api", {})
         return jsonify({"template": content})
 
@@ -61,7 +61,7 @@ def register_template_routes(app):
         if not template_file.exists():
             return jsonify({"error": "模板不存在"}), 404
 
-        with open(template_file, "r") as f:
+        with open(template_file, "r", encoding="utf-8") as f:
             template = unified_config.get("template_api", {})
 
         target_type = request.json.get("target", "agent")
@@ -69,13 +69,13 @@ def register_template_routes(app):
         if target_type == "agent":
             # 应用到 agents.yaml
             agents_file = Path("config/agents.yaml")
-            with open(agents_file, "r") as f:
+            with open(agents_file, "r", encoding="utf-8") as f:
                 agents_config = unified_config.get("template_api", {})
 
             agent_name = template.get("name", name)
             agents_config["agents"][agent_name] = template.get("config", {})
 
-            with open(agents_file, "w") as f:
+            with open(agents_file, "w", encoding="utf-8") as f:
                 yaml.dump(agents_config, f)
 
         return jsonify(

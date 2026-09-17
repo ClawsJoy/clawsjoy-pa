@@ -52,7 +52,7 @@ def _generate_project_tree(user_id="default", session_id="default"):
         # 3. world_model 补充（可能有 write_file 过但磁盘尚未写入的 — 会话沙箱状态）
         _state_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev") / ".agent_state.json"
         if _state_file.exists():
-            _state = json.loads(_state_file.read_text())
+            _state = json.loads(_state_file.read_text(encoding="utf-8"))
             _wm = _state.get("world_model", {})
             if isinstance(_wm, str):
                 _wm = json.loads(_wm)
@@ -92,7 +92,7 @@ def _generate_project_tree(user_id="default", session_id="default"):
                         _all_nodes[_parent].append(_node)
             _meta = {}
             try:
-                _wm = json.loads(_state_file.read_text()).get("world_model", {})
+                _wm = json.loads(_state_file.read_text(encoding="utf-8")).get("world_model", {})
                 if isinstance(_wm, str):
                     _wm = json.loads(_wm)
                 for _fp, _info in _wm.get("modules", {}).items():
@@ -115,7 +115,7 @@ def _generate_project_tree(user_id="default", session_id="default"):
                     try:
                         _disk_f = _base / _p
                         if _disk_f.exists() and _disk_f.suffix == '.py':
-                            _fc = _disk_f.read_text()
+                            _fc = _disk_f.read_text(encoding="utf-8")
                             _fc_lines = len(_fc.split('\n'))
                             import re as _re_meta
                             _fc_funcs = _re_meta.findall(r'^def\s+(\w+)', _fc, _re_meta.MULTILINE)

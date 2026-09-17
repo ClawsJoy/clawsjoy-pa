@@ -34,12 +34,12 @@ class SuggestionEngine:
 
     def _load(self):
         if self.suggestions_file.exists():
-            with open(self.suggestions_file, "r") as f:
+            with open(self.suggestions_file, "r", encoding="utf-8") as f:
                 self.suggestions = json.load(f)
 
     def _save(self):
         self.suggestions_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.suggestions_file, "w") as f:
+        with open(self.suggestions_file, "w", encoding="utf-8") as f:
             json.dump(self.suggestions, f, indent=2, default=str)
 
     def generate(self, context: Dict) -> List[Dict]:

@@ -34,7 +34,7 @@ class SelfTuner:
     def _load_config(self):
         config_file = Path(__file__).parent.parent / "config/self_tuning.yaml"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = unified_config.get("self_tuner", {})
         else:
             self.config = {"tunable_params": [], "strategy": {}}

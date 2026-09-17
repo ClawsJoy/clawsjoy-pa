@@ -38,7 +38,7 @@ class RealLearner:
     def _load(self):
         """加载真实数据"""
         if self.stats_file.exists():
-            with open(self.stats_file, "r") as f:
+            with open(self.stats_file, "r", encoding="utf-8") as f:
                 self.stats = json.load(f)
         else:
             self.stats = {
@@ -49,7 +49,7 @@ class RealLearner:
             }
 
         if self.cache_file.exists():
-            with open(self.cache_file, "r") as f:
+            with open(self.cache_file, "r", encoding="utf-8") as f:
                 self.cache = json.load(f)
         else:
             self.cache = {}
@@ -60,10 +60,10 @@ class RealLearner:
         stats_copy = dict(self.stats)
         stats_copy["task_counts"] = dict(self.stats["task_counts"])
 
-        with open(self.stats_file, "w") as f:
+        with open(self.stats_file, "w", encoding="utf-8") as f:
             json.dump(stats_copy, f, indent=2)
 
-        with open(self.cache_file, "w") as f:
+        with open(self.cache_file, "w", encoding="utf-8") as f:
             json.dump(self.cache, f, indent=2)
 
     def record_request(

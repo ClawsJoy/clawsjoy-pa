@@ -34,7 +34,7 @@ class EvolutionLogger:
 
     def _load(self):
         if self.log_file.exists():
-            with open(self.log_file, "r") as f:
+            with open(self.log_file, "r", encoding="utf-8") as f:
                 self.log = json.load(f)
         else:
             self.log = {"events": [], "stats": {"total": 0}}
@@ -45,7 +45,7 @@ class EvolutionLogger:
             self.log["stats"] = {"total": 0}
 
     def _save(self):
-        with open(self.log_file, "w") as f:
+        with open(self.log_file, "w", encoding="utf-8") as f:
             json.dump(self.log, f, indent=2)
 
     def log_evolution(self, event_type: str, data: Dict):

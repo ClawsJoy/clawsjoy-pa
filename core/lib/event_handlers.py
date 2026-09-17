@@ -45,7 +45,7 @@ def check_hot_topics_count():
     if topics_file.exists():
         import json
 
-        with open(topics_file, "r") as f:
+        with open(topics_file, "r", encoding="utf-8") as f:
             data = json.load(f)
             return len(data) if isinstance(data, list) else 0
     return 0

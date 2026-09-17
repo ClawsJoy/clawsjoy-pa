@@ -30,12 +30,12 @@ class HotDB:
 
     def _load(self):
         if self.db_path.exists():
-            with open(self.db_path, "r") as f:
+            with open(self.db_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"signals": [], "topics": {}, "last_updated": None}
 
     def _save(self):
-        with open(self.db_path, "w") as f:
+        with open(self.db_path, "w", encoding="utf-8") as f:
             json.dump(self.data, f, indent=2, ensure_ascii=False)
 
     def add_signal(self, keyword, source, 热度=0, context=""):

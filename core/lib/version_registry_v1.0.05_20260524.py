@@ -39,7 +39,7 @@ class VersionRegistry:
 
     def _load_registry(self) -> Dict:
         if self.json_file.exists():
-            with open(self.json_file, "r") as f:
+            with open(self.json_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
             "version": self.VERSION,
@@ -53,7 +53,7 @@ class VersionRegistry:
     def _save_registry(self):
         self.registry["last_updated"] = datetime.now().isoformat()
         self.registry["system_version"] = self._get_system_version()
-        with open(self.json_file, "w") as f:
+        with open(self.json_file, "w", encoding="utf-8") as f:
             json.dump(self.registry, f, indent=2, ensure_ascii=False)
         self._export_yaml()
 
@@ -61,14 +61,14 @@ class VersionRegistry:
         if not YAML_AVAILABLE:
             return
         try:
-            with open(self.yaml_file, "w") as f:
+            with open(self.yaml_file, "w", encoding="utf-8") as f:
                 yaml.dump(self.registry, f, default_flow_style=False, allow_unicode=True)
         except Exception:
             pass
 
     def _get_system_version(self) -> str:
         if self.system_version_file.exists():
-            return self.system_version_file.read_text().strip()
+            return self.system_version_file.read_text(encoding="utf-8").strip()
         return "5.0.0"
 
     def register_module(self, module_name: str, module_path: str, module_type: str = "core") -> Dict:

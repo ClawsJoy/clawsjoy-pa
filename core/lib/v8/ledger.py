@@ -36,7 +36,7 @@ class Ledger:
             "task_id": task_id,
             "summary": summary,
         }
-        with open(self._billing_file(server_id), "a") as f:
+        with open(self._billing_file(server_id), "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         return entry
 
@@ -49,7 +49,7 @@ class Ledger:
             return {"total": 0, "by_agent": {}, "entries": []}
 
         entries = []
-        with open(billing_file) as f:
+        with open(billing_file, encoding="utf-8") as f:
             for line in f:
                 try:
                     e = json.loads(line)
@@ -96,7 +96,7 @@ class Ledger:
             "cost": cost,
             "status": status,         # completed | failed | in_progress
         }
-        with open(self._events_file(server_id), "a") as f:
+        with open(self._events_file(server_id), "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         # V9 注入：同步写入 agent_actions 表
         try:
@@ -121,7 +121,7 @@ class Ledger:
             return []
 
         entries = []
-        with open(events_file) as f:
+        with open(events_file, encoding="utf-8") as f:
             for line in f:
                 try:
                     entries.append(json.loads(line))
@@ -136,7 +136,7 @@ class Ledger:
             return []
 
         results = []
-        with open(events_file) as f:
+        with open(events_file, encoding="utf-8") as f:
             for line in f:
                 try:
                     e = json.loads(line)

@@ -39,7 +39,7 @@ class ActiveLearner:
     def load_memory(self):
         """加载学习记忆"""
         if self.memory_file.exists():
-            with open(self.memory_file, "r") as f:
+            with open(self.memory_file, "r", encoding="utf-8") as f:
                 self.memory = json.load(f)
         else:
             self.memory = {
@@ -51,7 +51,7 @@ class ActiveLearner:
 
     def save_memory(self):
         """保存学习记忆"""
-        with open(self.memory_file, "w") as f:
+        with open(self.memory_file, "w", encoding="utf-8") as f:
             json.dump(self.memory, f, indent=2, ensure_ascii=False)
 
     def learn_from_feedback(self, task: str, output: str, feedback: str, score: int):

@@ -22,7 +22,7 @@ class PlatformClient:
     def _load_or_create_key(self) -> Dict:
         """加载或创建 Ed25519 密钥对"""
         if self.key_file.exists():
-            return json.loads(self.key_file.read_text())
+            return json.loads(self.key_file.read_text(encoding="utf-8"))
         from cryptography.hazmat.primitives.asymmetric import ed25519
         private_key = ed25519.Ed25519PrivateKey.generate()
         public_key = private_key.public_key()
@@ -36,7 +36,7 @@ class PlatformClient:
             ).decode(),
         }
         self.key_file.parent.mkdir(parents=True, exist_ok=True)
-        self.key_file.write_text(json.dumps(key))
+        self.key_file.write_text(json.dumps(key), encoding="utf-8")
         return key
 
     # ===== 平台通信 =====

@@ -27,7 +27,7 @@ class SkillChainExecutor:
         if not workflow_file.exists():
             return {"success": False, "error": f"工作流不存在: {workflow_name}"}
 
-        with open(workflow_file, "r") as f:
+        with open(workflow_file, "r", encoding="utf-8") as f:
             workflow = yaml.safe_load(f)
 
         print(f"🚀 执行工作流: {workflow.get('name', workflow_name)}")

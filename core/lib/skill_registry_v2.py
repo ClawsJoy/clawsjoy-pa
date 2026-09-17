@@ -30,12 +30,12 @@ class SkillRegistryV2:
 
     def _load(self):
         if self.registry_file.exists():
-            with open(self.registry_file, "r") as f:
+            with open(self.registry_file, "r", encoding="utf-8") as f:
                 self.skills = json.load(f)
 
     def _save(self):
         self.registry_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.registry_file, "w") as f:
+        with open(self.registry_file, "w", encoding="utf-8") as f:
             json.dump(self.skills, f, indent=2)
 
     def register(self, name, category, version="1.0.0"):

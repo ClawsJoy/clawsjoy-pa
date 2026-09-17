@@ -37,7 +37,7 @@ class FileQueue:
             "status": "pending",
         }
 
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(record, f, indent=2)
 
         return filename
@@ -55,7 +55,7 @@ class FileQueue:
 
         filepath = files[0]
 
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             record = json.load(f)
 
         if mark_processing:
@@ -73,7 +73,7 @@ class FileQueue:
         processing_dir = self.queue_dir / "processing"
         filepath = processing_dir / filename
         if filepath.exists():
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 record = json.load(f)
             record["status"] = "completed"
             record["result"] = result
@@ -81,7 +81,7 @@ class FileQueue:
 
             # 移动到完成目录（保留在 exchange 根目录）
             new_path = self.queue_dir / filename
-            with open(new_path, "w") as f:
+            with open(new_path, "w", encoding="utf-8") as f:
                 json.dump(record, f, indent=2)
             filepath.unlink()
 

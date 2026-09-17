@@ -64,7 +64,7 @@ class DataSourceManager:
         if sources_file.exists():
             import yaml
 
-            with open(sources_file, "r") as f:
+            with open(sources_file, "r", encoding="utf-8") as f:
                 data = unified_config.get("data_source_manager", {})
                 for src in data.get("sources", []):
                     self.sources.append(DataSource(**src))
@@ -117,7 +117,7 @@ class DataSourceManager:
                     if path.suffix == ".json":
                         import json
 
-                        with open(path, "r") as f:
+                        with open(path, "r", encoding="utf-8") as f:
                             data = json.load(f)
                     else:
                         data = {"path": str(path), "size": path.stat().st_size}

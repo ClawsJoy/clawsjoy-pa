@@ -109,7 +109,7 @@ class ToolExecutor:
                     if not f.is_file() or f.suffix not in ('.tsx', '.ts', '.js', '.jsx', '.go', '.py', '.md', '.sql', '.yaml', '.yml', '.json', '.html', '.css'):
                         continue
                     try:
-                        content = f.read_text()
+                        content = f.read_text(encoding="utf-8")
                         if query in content:
                             content_results.append(str(f))
                             if len(content_results) >= 10:

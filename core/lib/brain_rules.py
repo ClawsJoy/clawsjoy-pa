@@ -27,7 +27,7 @@ class BrainRules:
     def _load(self):
         config_file = Path(__file__).parent.parent / "config/brain_rules.yaml"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self._config = unified_config.get("brain_rules")
         else:
             self._config = self._default()

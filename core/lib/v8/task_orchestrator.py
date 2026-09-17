@@ -91,7 +91,7 @@ class TaskOrchestrator:
         try:
             rules_path = Path("config/v8/audit_rules.yaml")
             if rules_path.exists():
-                with open(rules_path) as f:
+                with open(rules_path, encoding="utf-8") as f:
                     rules = yaml.safe_load(f) or {}
                 return rules
         except Exception as e:
@@ -123,7 +123,7 @@ class TaskOrchestrator:
             pos_dir = Path("config/v8/positions")
             if pos_dir.exists():
                 for f in pos_dir.glob("*.yaml"):
-                    with open(f) as fp:
+                    with open(f, encoding="utf-8") as fp:
                         pos = yaml.safe_load(fp)
                         positions[f.stem] = pos
         except Exception as e:
@@ -133,13 +133,13 @@ class TaskOrchestrator:
     def _load_orchestrations(self):
         if ORCHESTRATIONS_FILE.exists():
             try:
-                self._orchestrations = json.loads(ORCHESTRATIONS_FILE.read_text())
+                self._orchestrations = json.loads(ORCHESTRATIONS_FILE.read_text(encoding="utf-8"))
             except Exception as e:
                 logger.warning(f"[TaskOrchestrator] 加载 orchestrations 失败: {e}")
 
     def _save_orchestrations(self):
         ORCHESTRATIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        ORCHESTRATIONS_FILE.write_text(json.dumps(self._orchestrations, ensure_ascii=False, indent=2))
+        ORCHESTRATIONS_FILE.write_text(json.dumps(self._orchestrations, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _refresh_workers(self, server_id="default"):
         workers = {}
@@ -216,10 +216,10 @@ class TaskOrchestrator:
                 shutil.copytree(template_dir, project_dir, dirs_exist_ok=True)
                 brief_file = project_dir / "BRIEF.md"
                 if brief_file.exists():
-                    content = brief_file.read_text()
+                    content = brief_file.read_text(encoding="utf-8")
                     content = content.replace("{项目名称}", user_input[:30])
                     content = content.replace("{老板的原始需求}", user_input)
-                    brief_file.write_text(content)
+                    brief_file.write_text(content, encoding="utf-8")
 
         subtasks = self._decompose(user_input)
         if not subtasks:
@@ -429,7 +429,7 @@ class TaskOrchestrator:
         try:
             rules_path = Path("config/RULES.md")
             if rules_path.exists():
-                rules = rules_path.read_text()
+                rules = rules_path.read_text(encoding="utf-8")
         except Exception:
             pass
 
@@ -438,7 +438,7 @@ class TaskOrchestrator:
             user_project_dir = Path(f"data/projects/{created_by}")
             if user_project_dir.exists():
                 for brief_file in user_project_dir.rglob("BRIEF.md"):
-                    brief_content += brief_file.read_text() + "\n"
+                    brief_content += brief_file.read_text(encoding="utf-8") + "\n"
                     spec_dir = brief_file.parent / "specs"
                     if spec_dir.exists():
                         for spec_file in spec_dir.glob("*.md"):
@@ -537,7 +537,7 @@ ClawsJoy 是一个本地 AI 劳动力管理平台。一人公司老板在 Discor
                     if user_project_dir.exists():
                         for brief_file in user_project_dir.rglob("BRIEF.md"):
                             out_path = brief_file.parent / output_file
-                            out_path.write_text(_resp_text)
+                            out_path.write_text(_resp_text, encoding="utf-8")
                             break
                 except Exception:
                     pass
@@ -581,7 +581,7 @@ ClawsJoy 是一个本地 AI 劳动力管理平台。一人公司老板在 Discor
             spec_dir = Path(f"data/projects/{created_by}")
             if spec_dir.exists():
                 for spec_file in spec_dir.rglob("*.md"):
-                    spec += spec_file.read_text() + "\n"
+                    spec += spec_file.read_text(encoding="utf-8") + "\n"
         except Exception:
             pass
 
@@ -678,11 +678,11 @@ ClawsJoy 是一个本地 AI 劳动力管理平台。一人公司老板在 Discor
                     "related_entities": [],
                     "file_path": ""
                 }, project_id=task_data.get("created_by", ""))
-                review_file.write_text(f"✅ 审查通过\n\n{review}")
+                review_file.write_text(f"✅ 审查通过\n\n{review}", encoding="utf-8")
                 self.start_next(task_data)
             elif retry_count >= 2:
                 notify("老板", f"❌「{title}」返工{retry_count}次未通过")
-                with open(review_file, "a") as f:
+                with open(review_file, "a", encoding="utf-8") as f:
                     f.write(f"\n---\n❌ 返工{retry_count+1}次，标记失败\n{review}\n")
                 task_engine.transition(server_id, task_id, "failed", "审查多次不通过")
                 self._extractor.update_task_progress(
@@ -705,7 +705,7 @@ ClawsJoy 是一个本地 AI 劳动力管理平台。一人公司老板在 Discor
                 }, project_id=task_data.get("created_by", ""))
             else:
                 notify(worker, f"🔄「{title}」返工第{retry_count+1}次")
-                with open(review_file, "a") as f:
+                with open(review_file, "a", encoding="utf-8") as f:
                     f.write(f"\n---\n🔄 返工第{retry_count+1}次\n{review}\n")
                 task_data["_retry_count"] = retry_count + 1
                 print(f"[ORCH] 返工 {worker} {title} 第{retry_count+1}次")
@@ -1009,7 +1009,7 @@ ClawsJoy 是一个本地 AI 劳动力管理平台。一人公司老板在 Discor
             _session_tokens = 0
             _day_tokens = 0
             if _billing_file.exists():
-                with open(_billing_file) as _bf:
+                with open(_billing_file, encoding="utf-8") as _bf:
                     for _line in _bf:
                         try:
                             _entry = json.loads(_line)

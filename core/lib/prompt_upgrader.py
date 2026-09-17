@@ -37,7 +37,7 @@ class PromptUpgrader:
         version_file = self.data_dir / "versions.json"
         if version_file.exists():
             try:
-                with open(version_file, 'r') as f:
+                with open(version_file, 'r', encoding="utf-8") as f:
                     return json.load(f)
             except:
                 pass
@@ -54,7 +54,7 @@ class PromptUpgrader:
     
     def _save_versions(self):
         """保存版本"""
-        with open(self.data_dir / "versions.json", 'w') as f:
+        with open(self.data_dir / "versions.json", 'w', encoding="utf-8") as f:
             json.dump(self.prompt_versions, f, indent=2)
     
     def get_prompt(self, context: Dict) -> tuple:

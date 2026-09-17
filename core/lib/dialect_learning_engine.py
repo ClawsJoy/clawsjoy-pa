@@ -27,32 +27,32 @@ class DialectLearningEngine:
 
     def _load_vocabulary(self) -> dict:
         if self.db_path.exists():
-            data = json.loads(self.db_path.read_text())
+            data = json.loads(self.db_path.read_text(encoding="utf-8"))
             return data.get("vocabulary", data)
         return {}
 
     def _save_vocabulary(self):
         data = {"vocabulary": self.vocabulary, "version": "2.0"}
-        self.db_path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+        self.db_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _load_actions(self) -> dict:
         path = Path(f"data/dialects/{self.user_id}_actions.json")
         if path.exists():
-            return json.loads(path.read_text())
+            return json.loads(path.read_text(encoding="utf-8"))
         return {}
 
     def _save_actions(self):
         path = Path(f"data/dialects/{self.user_id}_actions.json")
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self.action_templates, ensure_ascii=False, indent=2))
+        path.write_text(json.dumps(self.action_templates, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _load_replies(self) -> dict:
         if self.reply_path.exists():
-            return json.loads(self.reply_path.read_text())
+            return json.loads(self.reply_path.read_text(encoding="utf-8"))
         return {}
 
     def _save_replies(self):
-        self.reply_path.write_text(json.dumps(self.reply_templates, ensure_ascii=False, indent=2))
+        self.reply_path.write_text(json.dumps(self.reply_templates, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def learn(self, dialect_text: str, mandarin_meaning: str, dialect_type: str = "未知"):
         now = datetime.now().isoformat()

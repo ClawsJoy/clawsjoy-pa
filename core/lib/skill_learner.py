@@ -33,23 +33,23 @@ class SkillLearner:
 
     def _load(self):
         if self.combos_file.exists():
-            with open(self.combos_file, "r") as f:
+            with open(self.combos_file, "r", encoding="utf-8") as f:
                 self.combos = json.load(f)
         else:
             self.combos = {"combos": [], "stats": {}}
 
         if self.generated_file.exists():
-            with open(self.generated_file, "r") as f:
+            with open(self.generated_file, "r", encoding="utf-8") as f:
                 self.generated = json.load(f)
         else:
             self.generated = {"skills": []}
 
     def _save_combos(self):
-        with open(self.combos_file, "w") as f:
+        with open(self.combos_file, "w", encoding="utf-8") as f:
             json.dump(self.combos, f, indent=2, default=str)
 
     def _save_generated(self):
-        with open(self.generated_file, "w") as f:
+        with open(self.generated_file, "w", encoding="utf-8") as f:
             json.dump(self.generated, f, indent=2)
 
     def record_success(self, intent: str, skills: list, task: str = ""):
@@ -109,13 +109,13 @@ skill = {skill_name.title().replace('_', '')}Skill()
 
         skill_file = Path(f"skills/auto_generated/{skill_name}.py")
         skill_file.parent.mkdir(parents=True, exist_ok=True)
-        skill_file.write_text(code)
+        skill_file.write_text(code, encoding="utf-8")
 
         import json
 
         registry_file = Path(f"{get_data_root()}/skill_registry_v2.json")
         if registry_file.exists():
-            with open(registry_file, "r") as f:
+            with open(registry_file, "r", encoding="utf-8") as f:
                 registry = json.load(f)
         else:
             registry = {}
@@ -130,7 +130,7 @@ skill = {skill_name.title().replace('_', '')}Skill()
             "composed_skills": skills,
         }
 
-        with open(registry_file, "w") as f:
+        with open(registry_file, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2)
 
         self.generated["skills"].append(

@@ -103,7 +103,7 @@ def v8_discussions_list():
     records = []
     for f in sorted(discussions_dir.glob("*.json"), reverse=True):
         try:
-            data = json.loads(f.read_text())
+            data = json.loads(f.read_text(encoding="utf-8"))
             records.append({
                 "topic": data.get("topic", ""),
                 "timestamp": data.get("timestamp") or data.get("time", f.stem),
@@ -136,7 +136,7 @@ def v8_discussions_save():
         "history": data.get("history", []),
     }
     filepath = discussions_dir / f"{record_id}.json"
-    filepath.write_text(json.dumps(record, ensure_ascii=False, indent=2))
+    filepath.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     return jsonify({"success": True, "id": record_id})
 
 
@@ -149,7 +149,7 @@ def v8_discussions_get():
     if not filepath.exists():
         return jsonify({"success": False, "error": "记录不存在"}), 404
     try:
-        data = json.loads(filepath.read_text())
+        data = json.loads(filepath.read_text(encoding="utf-8"))
         return jsonify({"success": True, "record": data})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

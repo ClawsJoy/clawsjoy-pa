@@ -25,12 +25,12 @@ class FeedbackHandler:
 
     def _load(self):
         if self.feedback_file.exists():
-            with open(self.feedback_file, "r") as f:
+            with open(self.feedback_file, "r", encoding="utf-8") as f:
                 self.feedback_list = json.load(f)
 
     def _save(self):
         self.feedback_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.feedback_file, "w") as f:
+        with open(self.feedback_file, "w", encoding="utf-8") as f:
             json.dump(self.feedback_list, f, indent=2, default=str)
 
     def collect(self, feedback: Dict) -> Dict:

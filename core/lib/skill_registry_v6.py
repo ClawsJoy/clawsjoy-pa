@@ -24,7 +24,7 @@ class SkillRegistryV6:
 
         for yf in skill_dir.glob("*.yaml"):
             try:
-                data = yaml.safe_load(yf.read_text())
+                data = yaml.safe_load(yf.read_text(encoding="utf-8"))
                 name = data.get("name", yf.stem)
                 if not data.get("actions"):
                     continue

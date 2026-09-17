@@ -35,7 +35,7 @@ class ConfigValidator:
             return [f"配置文件不存在: {config_path}"]
 
         try:
-            with open(config_path, "r") as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
         except yaml.YAMLError as e:
             return [f"YAML解析错误: {e}"]

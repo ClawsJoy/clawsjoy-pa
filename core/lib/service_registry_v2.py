@@ -33,13 +33,13 @@ class ServiceRegistryV2:
 
     def _load(self):
         if self.registry_file.exists():
-            with open(self.registry_file, "r") as f:
+            with open(self.registry_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {}
 
     def _save(self):
         self.registry_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.registry_file, "w") as f:
+        with open(self.registry_file, "w", encoding="utf-8") as f:
             json.dump(self.services, f, indent=2)
 
     def _start_heartbeat_checker(self):

@@ -26,14 +26,14 @@ class IntentParserV2:
     def _load_config(self):
         """加载配置文件"""
         if self._config_file.exists():
-            with open(self._config_file, "r") as f:
+            with open(self._config_file, "r", encoding="utf-8") as f:
                 self._config = yaml.safe_load(f)
                 self._last_modified = self._config_file.stat().st_mtime
         else:
             # 兼容旧配置
             old_file = Path("config/intents.yaml")
             if old_file.exists():
-                with open(old_file, "r") as f:
+                with open(old_file, "r", encoding="utf-8") as f:
                     self._config = yaml.safe_load(f)
                     print("⚠️ 使用旧配置文件，建议迁移到 config/keywords.yaml")
             else:

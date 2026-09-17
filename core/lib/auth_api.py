@@ -64,13 +64,13 @@ class AuthManager:
 
     def _load_users(self):
         if USER_DB.exists():
-            with open(USER_DB, "r") as f:
+            with open(USER_DB, "r", encoding="utf-8") as f:
                 self.users = json.load(f)
         else:
             self.users = {}
 
     def _save_users(self):
-        with open(USER_DB, "w") as f:
+        with open(USER_DB, "w", encoding="utf-8") as f:
             json.dump(self.users, f, indent=2)
 
     def _hash_password(self, password: str) -> str:

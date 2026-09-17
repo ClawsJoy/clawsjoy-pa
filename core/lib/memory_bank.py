@@ -43,14 +43,14 @@ class MemoryBank:
         """读取完整的 permanent_memory dict"""
         if self.file.exists():
             try:
-                return json.loads(self.file.read_text())
+                return json.loads(self.file.read_text(encoding="utf-8"))
             except:
                 pass
         return {}
 
     def _write(self, data: Dict):
         """写入完整的 permanent_memory dict"""
-        self.file.write_text(json.dumps(data, indent=2, ensure_ascii=False))
+        self.file.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
     def remember(self, what: str, content: str):
         """保留旧接口"""

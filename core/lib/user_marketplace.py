@@ -86,14 +86,14 @@ class UserMarketplace:
         for pkg in packages:
             pkg_file = self.marketplace_dir / f"{pkg['id']}.json"
             if not pkg_file.exists():
-                with open(pkg_file, "w") as f:
+                with open(pkg_file, "w", encoding="utf-8") as f:
                     json.dump(pkg, f, indent=2)
 
     def list_available(self, type_filter: str = None) -> List[Dict]:
         """列出可安装的包"""
         packages = []
         for pkg_file in self.marketplace_dir.glob("*.json"):
-            with open(pkg_file, "r") as f:
+            with open(pkg_file, "r", encoding="utf-8") as f:
                 pkg = json.load(f)
                 if not type_filter or pkg.get("type") == type_filter:
                     packages.append(pkg)
@@ -108,7 +108,7 @@ class UserMarketplace:
         if not pkg_file.exists():
             return {"success": False, "error": "包不存在"}
 
-        with open(pkg_file, "r") as f:
+        with open(pkg_file, "r", encoding="utf-8") as f:
             pkg = json.load(f)
 
         # 用户安装目录
@@ -130,7 +130,7 @@ class UserMarketplace:
             "status": "active",
         }
 
-        with open(user_install_dir / "install.json", "w") as f:
+        with open(user_install_dir / "install.json", "w", encoding="utf-8") as f:
             json.dump(install_info, f, indent=2)
 
         # 如果是 Agent，创建用户实例
@@ -177,7 +177,7 @@ class UserMarketplace:
             "created_at": datetime.now().isoformat(),
         }
 
-        with open(user_skill_dir / "config.json", "w") as f:
+        with open(user_skill_dir / "config.json", "w", encoding="utf-8") as f:
             json.dump(skill_config, f, indent=2)
 
         print(f"✅ 用户 {user_id} 的技能 {pkg['name']} 已安装")
@@ -193,7 +193,7 @@ class UserMarketplace:
             for install_dir in user_install_base.iterdir():
                 install_file = install_dir / "install.json"
                 if install_file.exists():
-                    with open(install_file, "r") as f:
+                    with open(install_file, "r", encoding="utf-8") as f:
                         installed.append(json.load(f))
         return installed
 

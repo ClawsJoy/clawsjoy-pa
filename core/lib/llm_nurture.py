@@ -25,7 +25,7 @@ class LLMNurture:
     def _load(self):
         """加载所有数据"""
         if self.profile_file.exists():
-            with open(self.profile_file, 'r') as f:
+            with open(self.profile_file, 'r', encoding="utf-8") as f:
                 self.profile = json.load(f)
         else:
             self.profile = {
@@ -37,13 +37,13 @@ class LLMNurture:
             }
         
         if self.memory_file.exists():
-            with open(self.memory_file, 'r') as f:
+            with open(self.memory_file, 'r', encoding="utf-8") as f:
                 self.memories = json.load(f)
         else:
             self.memories = []
         
         if self.stats_file.exists():
-            with open(self.stats_file, 'r') as f:
+            with open(self.stats_file, 'r', encoding="utf-8") as f:
                 self.stats = json.load(f)
         else:
             self.stats = {
@@ -56,20 +56,20 @@ class LLMNurture:
             }
         
         if self.reflections_file.exists():
-            with open(self.reflections_file, 'r') as f:
+            with open(self.reflections_file, 'r', encoding="utf-8") as f:
                 self.reflections = json.load(f)
         else:
             self.reflections = []
 
     def _save(self):
         """保存所有数据"""
-        with open(self.profile_file, 'w') as f:
+        with open(self.profile_file, 'w', encoding="utf-8") as f:
             json.dump(self.profile, f, indent=2, ensure_ascii=False)
-        with open(self.memory_file, 'w') as f:
+        with open(self.memory_file, 'w', encoding="utf-8") as f:
             json.dump(self.memories[-200:], f, indent=2, ensure_ascii=False)
-        with open(self.stats_file, 'w') as f:
+        with open(self.stats_file, 'w', encoding="utf-8") as f:
             json.dump(self.stats, f, indent=2, ensure_ascii=False)
-        with open(self.reflections_file, 'w') as f:
+        with open(self.reflections_file, 'w', encoding="utf-8") as f:
             json.dump(self.reflections[-50:], f, indent=2, ensure_ascii=False)
 
     def record_interaction(self, user_input: str, response: str, success: bool, agent: str = None):

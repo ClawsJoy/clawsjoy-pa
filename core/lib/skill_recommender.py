@@ -180,7 +180,7 @@ class SkillRecommender:
                 ["git", "clone", repo_url, str(target_path)],
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=120, encoding="utf-8", errors="replace"
             )
 
             if result.returncode == 0:

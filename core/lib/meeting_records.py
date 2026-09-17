@@ -36,7 +36,7 @@ class MeetingRecords:
         if self.records_file.exists():
             import json
 
-            with open(self.records_file, "r") as f:
+            with open(self.records_file, "r", encoding="utf-8") as f:
                 self.records = json.load(f)
         else:
             self.records = {"meetings": [], "stats": {"total": 0}}
@@ -44,7 +44,7 @@ class MeetingRecords:
     def _save(self):
         import json
 
-        with open(self.records_file, "w") as f:
+        with open(self.records_file, "w", encoding="utf-8") as f:
             json.dump(self.records, f, indent=2)
 
     def add_record(self, meeting_id: str, topic: str, decisions: List[Dict]):

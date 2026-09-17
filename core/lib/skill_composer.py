@@ -29,7 +29,7 @@ class SkillComposer:
 
     def _load(self):
         if self.combos_file.exists():
-            with open(self.combos_file, "r") as f:
+            with open(self.combos_file, "r", encoding="utf-8") as f:
                 self.combos = json.load(f)
         else:
             self.combos = {"combos": []}
@@ -47,7 +47,7 @@ class SkillComposer:
 
     def _save(self):
         self.combos_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.combos_file, "w") as f:
+        with open(self.combos_file, "w", encoding="utf-8") as f:
             json.dump(self.combos, f, indent=2)
 
     def recommend_combo(self, task: str) -> list:

@@ -45,7 +45,7 @@ class UnifiedIntentParser:
 
     def _load_spec(self, path: str) -> Dict:
         try:
-            with open(path, 'r') as f:
+            with open(path, 'r', encoding="utf-8") as f:
                 return yaml.safe_load(f)
         except Exception:
             return {}
@@ -53,7 +53,7 @@ class UnifiedIntentParser:
     def _load_prompt_template(self) -> Template:
         prompt_path = Path("prompts/unified_intent.prompt")
         if prompt_path.exists():
-            with open(prompt_path, 'r') as f:
+            with open(prompt_path, 'r', encoding="utf-8") as f:
                 return Template(f.read())
         else:
             default_template = """

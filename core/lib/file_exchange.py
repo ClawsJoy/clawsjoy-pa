@@ -70,7 +70,7 @@ class FileExchange:
         )
         target_dir = self.dirs.get(f"to_{to_agent}", self.dirs["incoming"])
         file_path = target_dir / message_id
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         return message_id
 
@@ -78,7 +78,7 @@ class FileExchange:
         source_dir = self.dirs.get(f"to_{from_agent}", self.dirs["incoming"])
         for file_path in source_dir.glob("*.json"):
             try:
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 shutil.move(
                     str(file_path), str(self.dirs["processing"] / file_path.name)

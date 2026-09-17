@@ -27,13 +27,13 @@ class ConfigInherit:
             for parent in inherit_from:
                 parent_path = Path(parent)
                 if parent_path.exists():
-                    with open(parent_path, "r") as f:
+                    with open(parent_path, "r", encoding="utf-8") as f:
                         parent_config = yaml.safe_load(f)
                         self._deep_merge(result, parent_config)
 
         # 2. 加载当前配置
         if config_path.exists():
-            with open(config_path, "r") as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 current_config = yaml.safe_load(f)
                 self._deep_merge(result, current_config)
 

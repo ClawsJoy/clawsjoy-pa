@@ -112,7 +112,7 @@ skill = {skill_name.capitalize()}Skill()
         skill_name = name_match.group(1) if name_match else f"skill_{int(time.time())}"
 
         skill_file = skills_dir / f"{skill_name}.py"
-        skill_file.write_text(code)
+        skill_file.write_text(code, encoding="utf-8")
 
         return skill_name
 
@@ -202,7 +202,7 @@ skill = {skill_name.capitalize()}Skill()
         if not skill_file.exists():
             return None
 
-        original_code = skill_file.read_text()
+        original_code = skill_file.read_text(encoding="utf-8")
 
         prompt = f"""
 原始技能代码:
@@ -230,7 +230,7 @@ skill = {skill_name.capitalize()}Skill()
             f".v{len(self.evolution_history) + 1}.py.bak"
         )
         skill_file.rename(backup_file)
-        skill_file.write_text(new_code)
+        skill_file.write_text(new_code, encoding="utf-8")
 
         # 记录进化
         self.evolution_history.append(

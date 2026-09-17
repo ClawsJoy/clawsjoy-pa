@@ -29,7 +29,7 @@ class RouteManager:
     def _load(self):
         config_file = Path("config/routes/routes.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 data = unified_config.get("routes", {})
                 self._routes = data.get("routes", [])
         else:

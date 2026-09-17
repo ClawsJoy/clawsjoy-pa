@@ -20,7 +20,7 @@ def _get_model_context_window(model):
     """
     try:
         import yaml
-        with open("config/v8/available_models.yaml") as f:
+        with open("config/v8/available_models.yaml", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         for m in (data or {}).get("models", []) or []:
             if m.get("value") == model and m.get("context_window"):
@@ -33,7 +33,7 @@ def _get_model_context_window(model):
 
 def v8_models_list():
     import yaml
-    with open("config/v8/available_models.yaml") as f:
+    with open("config/v8/available_models.yaml", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return jsonify(data.get("models", []))
 
@@ -45,7 +45,7 @@ def v8_roster_hire():
     model = data.get("model", "")
     budget = data.get("budget", 0)
     try:
-        with open(f"config/v8/positions/{position_id}.yaml") as f:
+        with open(f"config/v8/positions/{position_id}.yaml", encoding="utf-8") as f:
             pos = yaml.safe_load(f)
         if model:
             pos["model"] = model
@@ -127,7 +127,7 @@ def v8_positions_list():
     except Exception:
         pass
     for f in pos_dir.glob("*.yaml"):
-        with open(f) as fp:
+        with open(f, encoding="utf-8") as fp:
             pos = yaml.safe_load(fp)
             pos["id"] = f.stem
             # 合并花名册实时状态

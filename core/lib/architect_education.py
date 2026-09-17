@@ -166,7 +166,7 @@ class ArchitectEducation:
             print(f"✅ 完成\n{answer[:200]}...")
 
         # 保存训练结果
-        with open(f"{get_data_root()}/architect_training.json", "w") as f:
+        with open(f"{get_data_root()}/architect_training.json", "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
 
         return results

@@ -40,7 +40,7 @@ class TenantManager:
         """加载租户配置"""
         config_file = Path("config/tenant.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 return unified_config.get("tenant_manager", {})
         return {"tenant": {"enabled": True, "base_path": f"{get_data_root()}/tenants"}}
 
@@ -112,7 +112,7 @@ class TenantManager:
             "quota": self.config.get("default_quota", {}),
         }
 
-        with open(tenant_dir / "config.json", "w") as f:
+        with open(tenant_dir / "config.json", "w", encoding="utf-8") as f:
             json.dump(tenant_config, f, indent=2)
 
         return {"success": True, "tenant_id": tenant_id, "path": str(tenant_dir)}

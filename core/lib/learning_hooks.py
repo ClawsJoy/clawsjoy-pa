@@ -46,7 +46,7 @@ class LearningHooks:
     def _load_stats(self):
         stats_file = self.log_dir / "learning_stats.json"
         if stats_file.exists():
-            with open(stats_file, "r") as f:
+            with open(stats_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 self.stats.update(data)
                 # 恢复 defaultdict
@@ -59,7 +59,7 @@ class LearningHooks:
         # 转换 defaultdict 为普通 dict
         save_data = dict(self.stats)
         save_data["user_preferences"] = dict(save_data["user_preferences"])
-        with open(stats_file, "w") as f:
+        with open(stats_file, "w", encoding="utf-8") as f:
             json.dump(save_data, f, indent=2, default=str)
 
     # ========== 日志钩子 ==========
@@ -84,7 +84,7 @@ class LearningHooks:
             "learned": False,
         }
 
-        with open(log_file, "a") as f:
+        with open(log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
 
         # 更新统计
@@ -189,7 +189,7 @@ class LearningHooks:
         log_file = self.log_dir / f"{user_id}_{datetime.now().strftime('%Y%m%d')}.jsonl"
 
         if log_file.exists():
-            with open(log_file, "r") as f:
+            with open(log_file, "r", encoding="utf-8") as f:
                 lines = f.readlines()[-10:]  # 最近10条
                 for line in lines:
                     try:

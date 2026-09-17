@@ -30,21 +30,21 @@ class DecisionEvaluator:
     def _load_config(self):
         config_file = Path(__file__).parent.parent / "config/decision.yaml"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = unified_config.get("decision_evaluator", {})
         else:
             self.config = {"risk": {"levels": {}}, "execution": {}}
 
     def _load_history(self):
         if self.history_file.exists():
-            with open(self.history_file, "r") as f:
+            with open(self.history_file, "r", encoding="utf-8") as f:
                 self.history = json.load(f)
         else:
             self.history = {"decisions": [], "stats": {"total": 0, "success": 0}}
 
     def _save_history(self):
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.history_file, "w") as f:
+        with open(self.history_file, "w", encoding="utf-8") as f:
             json.dump(self.history, f, indent=2)
 
     def evaluate(self, suggestion: str) -> Dict:

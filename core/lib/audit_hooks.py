@@ -39,13 +39,13 @@ class AuditHooks:
         existing = []
         if audit_file.exists():
             try:
-                with open(audit_file, 'r') as f:
+                with open(audit_file, 'r', encoding="utf-8") as f:
                     existing = json.load(f)
             except:
                 pass
         
         existing.append(entry)
-        with open(audit_file, 'w') as f:
+        with open(audit_file, 'w', encoding="utf-8") as f:
             json.dump(existing, f, indent=2, ensure_ascii=False)
 
 

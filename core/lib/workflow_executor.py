@@ -29,7 +29,7 @@ class WorkflowExecutor:
 
         for f in self.workflows_dir.glob("*.yaml"):
             try:
-                with open(f, "r") as fp:
+                with open(f, "r", encoding="utf-8") as fp:
                     self._workflows[f.stem] = yaml.safe_load(fp)
             except Exception as e:
                 print(f"⚠️ 加载工作流失败 {f.name}: {e}")

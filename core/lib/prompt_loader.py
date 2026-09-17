@@ -31,7 +31,7 @@ class PromptLoader:
     def _load(self):
         config_file = Path(__file__).parent.parent / "config/prompts.yaml"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self._prompts = unified_config.get("prompt_loader", {})
         else:
             self._prompts = self._get_default()

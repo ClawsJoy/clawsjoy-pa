@@ -58,7 +58,7 @@ class GrowthEngine:
             "result_preview": result[:150],       # 处理结果预览
             "timestamp": datetime.now().isoformat(),
         }
-        with open(self.examples_file, 'a') as f:
+        with open(self.examples_file, 'a', encoding="utf-8") as f:
             f.write(json.dumps(example, ensure_ascii=False) + '\n')
     
     def get_examples(self, user_input: str, limit: int = 3) -> str:
@@ -138,7 +138,7 @@ class GrowthEngine:
             self._rewrite_rules()
         else:
             rule["count"] = 1
-            with open(self.rules_file, 'a') as f:
+            with open(self.rules_file, 'a', encoding="utf-8") as f:
                 f.write(json.dumps(rule, ensure_ascii=False) + '\n')
     
     def get_rules(self, user_input: str, limit: int = 3) -> str:
@@ -223,8 +223,7 @@ class GrowthEngine:
             key = f"{r.get('action')}:{r.get('pattern')[:30]}"
             seen[key] = r
         self.rules_file.write_text(
-            '\n'.join(json.dumps(v, ensure_ascii=False) for v in seen.values()) + '\n'
-        )
+            '\n'.join(json.dumps(v, ensure_ascii=False) for v in seen.values()) + '\n', encoding="utf-8")
     
     # ========== Schema层 ==========
     
@@ -232,7 +231,7 @@ class GrowthEngine:
         """扩展action的字段定义"""
         schema = {}
         if self.schema_file.exists():
-            schema = json.loads(self.schema_file.read_text())
+            schema = json.loads(self.schema_file.read_text(encoding="utf-8"))
         
         if action not in schema:
             schema[action] = {"fields": [], "created": datetime.now().isoformat()}
@@ -242,12 +241,12 @@ class GrowthEngine:
                 schema[action]["fields"].append(f)
         
         schema[action]["updated"] = datetime.now().isoformat()
-        self.schema_file.write_text(json.dumps(schema, indent=2, ensure_ascii=False))
+        self.schema_file.write_text(json.dumps(schema, indent=2, ensure_ascii=False), encoding="utf-8")
     
     def get_schema(self, action: str = None) -> dict:
         if not self.schema_file.exists():
             return {}
-        schema = json.loads(self.schema_file.read_text())
+        schema = json.loads(self.schema_file.read_text(encoding="utf-8"))
         if action:
             return schema.get(action, {})
         return schema
@@ -272,7 +271,7 @@ class GrowthEngine:
     
     def _read_tail(self, filepath: Path, n: int) -> list:
         try:
-            lines = filepath.read_text().strip().split('\n')
+            lines = filepath.read_text(encoding="utf-8").strip().split('\n')
             return lines[-n:]
         except Exception:
             return []

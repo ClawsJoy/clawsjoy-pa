@@ -48,16 +48,16 @@ class CodeIndexer:
 
     def _load(self):
         if self.keyword_file.exists():
-            with open(self.keyword_file, "r") as f:
+            with open(self.keyword_file, "r", encoding="utf-8") as f:
                 self._keyword_index = json.load(f)
         if self.filehash_file.exists():
-            with open(self.filehash_file, "r") as f:
+            with open(self.filehash_file, "r", encoding="utf-8") as f:
                 self._file_hashes = json.load(f)
 
     def _save(self):
-        with open(self.keyword_file, "w") as f:
+        with open(self.keyword_file, "w", encoding="utf-8") as f:
             json.dump(self._keyword_index, f, ensure_ascii=False, indent=2)
-        with open(self.filehash_file, "w") as f:
+        with open(self.filehash_file, "w", encoding="utf-8") as f:
             json.dump(self._file_hashes, f, ensure_ascii=False, indent=2)
 
     def _file_hash(self, filepath: str) -> str:
@@ -74,7 +74,7 @@ class CodeIndexer:
         if Path(filepath).suffix.lower() != ".py":
             return self._parse_doc_file(filepath)
         try:
-            with open(full_path, "r") as f:
+            with open(full_path, "r", encoding="utf-8") as f:
                 source = f.read()
             tree = ast.parse(source)
         except SyntaxError:
@@ -235,7 +235,7 @@ class CodeIndexer:
             return []
         full_path = self.project_root / filepath
         try:
-            with open(full_path, "r") as f:
+            with open(full_path, "r", encoding="utf-8") as f:
                 source = f.read()
         except Exception:
             return []

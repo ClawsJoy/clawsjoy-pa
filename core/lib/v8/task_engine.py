@@ -38,13 +38,12 @@ class TaskEngine:
     def _load(self, server_id: str) -> dict:
         f = self._tasks_file(server_id)
         if f.exists():
-            return json.loads(f.read_text())
+            return json.loads(f.read_text(encoding="utf-8"))
         return {"tasks": {}, "next_id": 1}
 
     def _save(self, server_id: str, data: dict):
         self._tasks_file(server_id).write_text(
-            json.dumps(data, indent=2, ensure_ascii=False)
-        )
+            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # ========== 钩子注册 ==========
 

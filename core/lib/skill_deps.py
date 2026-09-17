@@ -28,7 +28,7 @@ class SkillDependency:
 
     def _load(self):
         if self.deps_file.exists():
-            with open(self.deps_file, "r") as f:
+            with open(self.deps_file, "r", encoding="utf-8") as f:
                 self.deps = json.load(f)
         else:
             # 预定义依赖关系
@@ -73,7 +73,7 @@ class SkillDependency:
 
     def _save(self):
         self.deps_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.deps_file, "w") as f:
+        with open(self.deps_file, "w", encoding="utf-8") as f:
             json.dump(self.deps, f, indent=2)
 
 

@@ -38,7 +38,7 @@ class RouteRegistry:
     def _load_from_file(self, file_path: Path):
         """从文件加载路由"""
         try:
-            with open(file_path, "r") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
 
             routes = []

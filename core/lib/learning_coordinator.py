@@ -45,7 +45,7 @@ class LearningCoordinator:
     def _load_config(self):
         config_file = Path("config/learning.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = unified_config.get("learning_coordinator", {})
         else:
             self.config = {}
@@ -88,7 +88,7 @@ class LearningCoordinator:
         registry_file = Path(f"{get_data_root()}/skill_registry_v2.json")
 
         if registry_file.exists():
-            with open(registry_file, "r") as f:
+            with open(registry_file, "r", encoding="utf-8") as f:
                 registry = json.load(f)
         else:
             registry = {}
@@ -105,7 +105,7 @@ class LearningCoordinator:
                 }
                 print(f"📚 自动注册新技能: {skill_name}")
 
-        with open(registry_file, "w") as f:
+        with open(registry_file, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2)
 
 

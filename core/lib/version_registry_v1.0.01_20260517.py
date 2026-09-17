@@ -35,14 +35,14 @@ class VersionRegistry:
     def _load_registry(self) -> Dict:
         """加载版本注册表"""
         if self.registry_file.exists():
-            with open(self.registry_file, "r") as f:
+            with open(self.registry_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"modules": {}, "last_updated": None}
 
     def _save_registry(self):
         """保存版本注册表"""
         self.registry["last_updated"] = datetime.now().isoformat()
-        with open(self.registry_file, "w") as f:
+        with open(self.registry_file, "w", encoding="utf-8") as f:
             json.dump(self.registry, f, indent=2, ensure_ascii=False)
 
     def _get_git_info(self, file_path: Path) -> Dict:
@@ -51,21 +51,21 @@ class VersionRegistry:
             # 获取最后一次 commit 时间
             cmd_time = f'git log -1 --format="%ai" -- "{file_path}"'
             time_result = subprocess.run(
-                cmd_time, shell=True, capture_output=True, text=True, cwd=self.root
+                cmd_time, shell=True, capture_output=True, text=True, cwd=self.root, encoding="utf-8", errors="replace"
             )
             commit_time = time_result.stdout.strip()
 
             # 获取 commit 哈希（短）
             cmd_hash = f'git log -1 --format="%h" -- "{file_path}"'
             hash_result = subprocess.run(
-                cmd_hash, shell=True, capture_output=True, text=True, cwd=self.root
+                cmd_hash, shell=True, capture_output=True, text=True, cwd=self.root, encoding="utf-8", errors="replace"
             )
             commit_hash = hash_result.stdout.strip()
 
             # 获取 commit 次数
             cmd_count = f'git rev-list --count HEAD -- "{file_path}"'
             count_result = subprocess.run(
-                cmd_count, shell=True, capture_output=True, text=True, cwd=self.root
+                cmd_count, shell=True, capture_output=True, text=True, cwd=self.root, encoding="utf-8", errors="replace"
             )
             commit_count = (
                 int(count_result.stdout.strip()) if count_result.stdout.strip() else 0
@@ -83,7 +83,7 @@ class VersionRegistry:
     def _get_system_version(self) -> str:
         """获取系统版本"""
         if self.system_version_file.exists():
-            return self.system_version_file.read_text().strip()
+            return self.system_version_file.read_text(encoding="utf-8").strip()
         return "3.0.0"
 
     def auto_version(self, module_path: str, module_type: str = "core") -> str:

@@ -41,7 +41,7 @@ class UserSecretManager:
 
     def _load(self):
         if self.keys_file.exists():
-            with open(self.keys_file, "r") as f:
+            with open(self.keys_file, "r", encoding="utf-8") as f:
                 self.keys = json.load(f)
         else:
             self.keys = {}
@@ -53,7 +53,7 @@ class UserSecretManager:
             self.tokens = {}
 
     def _save(self):
-        with open(self.keys_file, "w") as f:
+        with open(self.keys_file, "w", encoding="utf-8") as f:
             json.dump(self.keys, f, indent=2)
         with open(self.tokens_file, "wb") as f:
             pickle.dump(self.tokens, f)

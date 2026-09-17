@@ -42,7 +42,7 @@ class AgentSoul:
         soul_file = self._find_file(candidates)
         if soul_file:
             try:
-                with open(soul_file, "r") as f:
+                with open(soul_file, "r", encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                     self._souls = data.get("agents", {})
                 print(f"   ✅ 加载 Agent 灵魂配置: {len(self._souls)} 个")

@@ -18,7 +18,7 @@ class IntentFallback:
     def _load(self):
         config_path = Path("config/intent_agent_map.yaml")
         if config_path.exists():
-            with open(config_path) as f:
+            with open(config_path, encoding="utf-8") as f:
                 config = yaml.safe_load(f)
                 fallback = config.get("keyword_fallback", {})
                 for intent, keywords in fallback.items():

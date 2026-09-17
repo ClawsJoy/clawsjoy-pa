@@ -93,7 +93,7 @@ class SkillRegistry:
 
     def _load(self):
         if self.registry_file.exists():
-            with open(self.registry_file, "r") as f:
+            with open(self.registry_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 for name, manifest_data in data.items():
                     self.manifests[name] = self._dict_to_manifest(manifest_data)
@@ -101,7 +101,7 @@ class SkillRegistry:
     def _save(self):
         self.registry_file.parent.mkdir(parents=True, exist_ok=True)
         data = {name: m.to_dict() for name, m in self.manifests.items()}
-        with open(self.registry_file, "w") as f:
+        with open(self.registry_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
     def _dict_to_manifest(self, data: Dict) -> SkillManifest:

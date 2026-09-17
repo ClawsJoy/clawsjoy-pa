@@ -23,7 +23,7 @@ class ClaudeCodeAdapter(BaseAdapter):
         ]
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
             if result.returncode == 0 and result.stdout.strip():
                 data = json.loads(result.stdout)
                 content = data.get("result", data.get("content", result.stdout))

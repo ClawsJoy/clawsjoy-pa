@@ -42,7 +42,7 @@ class ConfigManager:
         """加载所有配置"""
         config_file = Path(__file__).parent.parent / "config/driver/unified.yaml"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self._config = unified_config.get("config_manager", {})
         else:
             self._config = self._default_config()

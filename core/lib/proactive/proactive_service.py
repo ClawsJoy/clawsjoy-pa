@@ -25,7 +25,7 @@ class ProactiveService:
         path = self._get_path()
         if path.exists():
             try:
-                with open(path, 'r') as f:
+                with open(path, 'r', encoding="utf-8") as f:
                     self._user_habits = json.load(f)
             except:
                 pass
@@ -33,7 +33,7 @@ class ProactiveService:
     def _save(self):
         path = self._get_path()
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             json.dump(self._user_habits, f, indent=2)
     
     def record_activity(self, user_id: str, activity: Dict):

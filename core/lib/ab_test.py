@@ -37,7 +37,7 @@ class ABTest:
     def _load_tests(self):
         self.tests = {}
         for test_file in self.test_dir.glob("*.json"):
-            with open(test_file, "r") as f:
+            with open(test_file, "r", encoding="utf-8") as f:
                 test = json.load(f)
                 self.tests[test["id"]] = test
 
@@ -140,7 +140,7 @@ class ABTest:
         # 转换 defaultdict 为普通 dict
         test_copy = dict(self.tests[test_id])
         test_copy["results"] = dict(test_copy["results"])
-        with open(test_file, "w") as f:
+        with open(test_file, "w", encoding="utf-8") as f:
             json.dump(test_copy, f, indent=2)
 
 

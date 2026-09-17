@@ -48,7 +48,7 @@ class ConfigVersionManager:
         version_path.mkdir(parents=True, exist_ok=True)
 
         # 保存配置
-        with open(version_path / "config.json", "w") as f:
+        with open(version_path / "config.json", "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
         # 保存元数据
@@ -60,7 +60,7 @@ class ConfigVersionManager:
             "hash": self._get_config_hash(config),
             "previous_hash": self.get_latest_hash(config_name),
         }
-        with open(version_path / "metadata.json", "w") as f:
+        with open(version_path / "metadata.json", "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2)
 
         # 清理旧版本（保留最近10个）
@@ -78,7 +78,7 @@ class ConfigVersionManager:
         if not versions:
             return None
 
-        with open(versions[-1] / "metadata.json", "r") as f:
+        with open(versions[-1] / "metadata.json", "r", encoding="utf-8") as f:
             metadata = json.load(f)
         return metadata.get("hash")
 
@@ -93,7 +93,7 @@ class ConfigVersionManager:
             if v.is_dir():
                 metadata_file = v / "metadata.json"
                 if metadata_file.exists():
-                    with open(metadata_file, "r") as f:
+                    with open(metadata_file, "r", encoding="utf-8") as f:
                         metadata = json.load(f)
                         versions.append(metadata)
         return versions
@@ -104,7 +104,7 @@ class ConfigVersionManager:
         if not version_path.exists():
             return None
 
-        with open(version_path / "config.json", "r") as f:
+        with open(version_path / "config.json", "r", encoding="utf-8") as f:
             return json.load(f)
 
     def rollback(self, config_name: str, version_id: str) -> bool:

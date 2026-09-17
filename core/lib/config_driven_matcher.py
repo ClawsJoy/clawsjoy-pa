@@ -51,7 +51,7 @@ class ConfigDrivenMatcher:
         """加载所有配置"""
         mapping_file = Path(__file__).parent.parent / "config/skill_mapping.yaml"
         if mapping_file.exists():
-            with open(mapping_file, "r") as f:
+            with open(mapping_file, "r", encoding="utf-8") as f:
                 self.mapping_config = yaml.safe_load(f)
         else:
             self.mapping_config = {"mappings": {}, "category_mappings": {}}

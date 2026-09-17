@@ -58,7 +58,7 @@ class CrossSessionMemory:
         count_file = self.user_dir / "count.txt"
         if count_file.exists():
             try:
-                self.interactions = int(count_file.read_text().strip())
+                self.interactions = int(count_file.read_text(encoding="utf-8").strip())
             except Exception as e:
                 self.interactions = 0
 
@@ -71,7 +71,7 @@ class CrossSessionMemory:
             with open(self.user_dir / "preferences.txt", "w", encoding="utf-8") as f:
                 f.write("\n".join(self.preferences))
 
-        with open(self.user_dir / "count.txt", "w") as f:
+        with open(self.user_dir / "count.txt", "w", encoding="utf-8") as f:
             f.write(str(self.interactions))
 
     def remember(self, key: str, value):

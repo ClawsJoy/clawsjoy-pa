@@ -50,13 +50,13 @@ class DeveloperAPI:
     def _load_registry(self) -> Dict:
         """加载开发者注册表"""
         if self.registry_path.exists():
-            with open(self.registry_path, "r") as f:
+            with open(self.registry_path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f) or {"developers": {}}
         return {"developers": {}}
 
     def _save_registry(self, data: Dict):
         """保存开发者注册表"""
-        with open(self.registry_path, "w") as f:
+        with open(self.registry_path, "w", encoding="utf-8") as f:
             yaml.dump(data, f, allow_unicode=True, sort_keys=False, indent=2)
 
     def sanitize_agent(self, agent_path: Path) -> Dict:
@@ -74,7 +74,7 @@ class DeveloperAPI:
         for f in memory_files:
             target = agent_path / f
             if target.exists():
-                with open(target, "w") as fp:
+                with open(target, "w", encoding="utf-8") as fp:
                     json.dump(
                         {
                             "sanitized": True,
@@ -106,7 +106,7 @@ class DeveloperAPI:
                 result["kept"].append(f"{d}/")
 
         # 标记已脱敏
-        with open(agent_path / ".sanitized", "w") as f:
+        with open(agent_path / ".sanitized", "w", encoding="utf-8") as f:
             f.write(f"version: {self.VERSION}\n")
             f.write(f"sanitized_at: {datetime.now().isoformat()}\n")
             f.write("user_memory_cleared: true\n")
@@ -148,7 +148,7 @@ class DeveloperAPI:
         # 读取Agent配置
         config_file = agent_path / "config" / "agent.yaml"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
                 agent_name = config.get("name", agent_path.name)
                 agent_type = config.get("type", "custom")
@@ -183,7 +183,7 @@ class DeveloperAPI:
         }
 
         # 保存审核记录
-        with open(self.pending_dir / f"{package_id}.json", "w") as f:
+        with open(self.pending_dir / f"{package_id}.json", "w", encoding="utf-8") as f:
             json.dump(review_record, f, indent=2)
 
         # 更新开发者统计
@@ -209,7 +209,7 @@ class DeveloperAPI:
         """列出待审核的Agent（管理员）"""
         pending = []
         for f in self.pending_dir.glob("*.json"):
-            with open(f, "r") as fp:
+            with open(f, "r", encoding="utf-8") as fp:
                 record = json.load(fp)
                 if record.get("status") == "pending":
                     pending.append(record)
@@ -221,7 +221,7 @@ class DeveloperAPI:
         if not pending_file.exists():
             return {"success": False, "error": "Package not found"}
 
-        with open(pending_file, "r") as f:
+        with open(pending_file, "r", encoding="utf-8") as f:
             record = json.load(f)
 
         # 移动到正式市场
@@ -244,7 +244,7 @@ class DeveloperAPI:
             "downloads": 0,
         }
 
-        with open(product_file, "w") as f:
+        with open(product_file, "w", encoding="utf-8") as f:
             json.dump(product_data, f, indent=2)
 
         # 移动包文件
@@ -278,7 +278,7 @@ class DeveloperAPI:
         if not pending_file.exists():
             return {"success": False, "error": "Package not found"}
 
-        with open(pending_file, "r") as f:
+        with open(pending_file, "r", encoding="utf-8") as f:
             record = json.load(f)
 
         record["status"] = "rejected"

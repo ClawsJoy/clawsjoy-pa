@@ -27,7 +27,7 @@ class PersistentMemory:
         user_file = self.storage_dir / f"{user_id}.json"
         if user_file.exists():
             try:
-                with open(user_file, 'r') as f:
+                with open(user_file, 'r', encoding="utf-8") as f:
                     data = json.load(f)
                     return {
                         'name': data.get('name', ''),
@@ -42,7 +42,7 @@ class PersistentMemory:
         if not user_file.exists():
             return ""
         try:
-            with open(user_file, 'r') as f:
+            with open(user_file, 'r', encoding="utf-8") as f:
                 data = json.load(f)
             conversations = data.get('conversations', [])
             if not conversations:
@@ -60,7 +60,7 @@ class PersistentMemory:
         data = {}
         if user_file.exists():
             try:
-                with open(user_file, 'r') as f:
+                with open(user_file, 'r', encoding="utf-8") as f:
                     data = json.load(f)
             except Exception:
                 pass
@@ -73,7 +73,7 @@ class PersistentMemory:
         })
         if len(data['conversations']) > 50:
             data['conversations'] = data['conversations'][-50:]
-        with open(user_file, 'w') as f:
+        with open(user_file, 'w', encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
     def save(self, user_id: str, data: dict):

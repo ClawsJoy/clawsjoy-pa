@@ -34,20 +34,17 @@ class EvolvingPrompt:
             f = self.storage_dir / fname
             if f.exists():
                 try:
-                    setattr(self, attr, json.loads(f.read_text()))
+                    setattr(self, attr, json.loads(f.read_text(encoding="utf-8")))
                 except Exception:
                     pass
     
     def _save(self):
         (self.storage_dir / "capabilities.json").write_text(
-            json.dumps(self.capabilities, indent=2, ensure_ascii=False)
-        )
+            json.dumps(self.capabilities, indent=2, ensure_ascii=False), encoding="utf-8")
         (self.storage_dir / "examples.json").write_text(
-            json.dumps(self.examples[-100:], indent=2, ensure_ascii=False)
-        )
+            json.dumps(self.examples[-100:], indent=2, ensure_ascii=False), encoding="utf-8")
         (self.storage_dir / "user_terms.json").write_text(
-            json.dumps(self.user_terms, indent=2, ensure_ascii=False)
-        )
+            json.dumps(self.user_terms, indent=2, ensure_ascii=False), encoding="utf-8")
     
     # ========== LLM建议新分类 → 系统采纳 ==========
     

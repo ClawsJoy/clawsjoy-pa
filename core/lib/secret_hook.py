@@ -37,7 +37,7 @@ class SecretHook:
     def _load_config(self):
         config_file = Path("config/driver/secrets.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = unified_config.get("secret_hook", {})
         else:
             self.config = {}

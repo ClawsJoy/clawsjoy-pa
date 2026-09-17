@@ -27,20 +27,19 @@ class GroupManager:
         }
         
         (self.groups_dir / f"{group_id}.json").write_text(
-            json.dumps(data, ensure_ascii=False, indent=2)
-        )
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         return {"group_id": group_id, "invite_code": invite_code}
 
     def join(self, invite_code: str, user_id: str) -> dict:
         """通过邀请码加入群"""
         for f in self.groups_dir.glob("*.json"):
-            data = json.loads(f.read_text())
+            data = json.loads(f.read_text(encoding="utf-8"))
             if data.get("invite_code") == invite_code:
                 data["members"][user_id] = {
                     "role": "member",
                     "joined_at": datetime.now().isoformat()
                 }
-                f.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+                f.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
                 return {"success": True, "group_name": data["name"]}
         return {"success": False, "error": "邀请码无效"}
 
@@ -48,7 +47,7 @@ class GroupManager:
         """获取群成员列表"""
         f = self.groups_dir / f"{group_id}.json"
         if f.exists():
-            return list(json.loads(f.read_text())["members"].keys())
+            return list(json.loads(f.read_text(encoding="utf-8"))["members"].keys())
         return []
 
     def notify(self, group_id: str, message: str) -> list:

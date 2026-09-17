@@ -41,7 +41,7 @@ class ProactiveService:
         if config_file.exists():
             import yaml
 
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
         return {
             "email": {
@@ -120,7 +120,7 @@ class ProactiveService:
         if registry_file.exists():
             import json
 
-            with open(registry_file, "r") as f:
+            with open(registry_file, "r", encoding="utf-8") as f:
                 registry = json.load(f)
             result["skills_checked"] = len(registry)
 
@@ -188,7 +188,7 @@ class ProactiveService:
             f"{get_data_root()}/reports/system_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         )
         report_file.parent.mkdir(exist_ok=True)
-        with open(report_file, "w") as f:
+        with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2, default=str)
 
         report["file"] = str(report_file)

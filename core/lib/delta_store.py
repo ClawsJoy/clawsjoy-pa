@@ -49,7 +49,7 @@ class DeltaStore:
     
     def _get_writer(self, bucket: str):
         if bucket not in self._writers:
-            f = open(self.root / f"{bucket}.jsonl", 'a')
+            f = open(self.root / f"{bucket}.jsonl", 'a', encoding="utf-8")
             self._writers[bucket] = f
         return self._writers[bucket]
     
@@ -121,7 +121,7 @@ class DeltaStore:
         schema_file = self.root / "_schema.json"
         schema = {}
         if schema_file.exists():
-            schema = json.loads(schema_file.read_text())
+            schema = json.loads(schema_file.read_text(encoding="utf-8"))
         
         if bucket not in schema:
             schema[bucket] = {"fields": [], "created": datetime.now().isoformat()}
@@ -131,21 +131,21 @@ class DeltaStore:
                 schema[bucket]["fields"].append(f)
         
         schema[bucket]["updated"] = datetime.now().isoformat()
-        schema_file.write_text(json.dumps(schema, indent=2, ensure_ascii=False))
+        schema_file.write_text(json.dumps(schema, indent=2, ensure_ascii=False), encoding="utf-8")
         
         return {"bucket": bucket, "new_fields": fields, "total_fields": len(schema[bucket]["fields"])}
     
     def get_schema(self) -> dict:
         schema_file = self.root / "_schema.json"
         if schema_file.exists():
-            return json.loads(schema_file.read_text())
+            return json.loads(schema_file.read_text(encoding="utf-8"))
         return {}
     
     # ========== 辅助 ==========
     
     def _read_tail(self, filepath: Path, n: int) -> list:
         try:
-            lines = filepath.read_text().strip().split('\n')
+            lines = filepath.read_text(encoding="utf-8").strip().split('\n')
             return lines[-n:]
         except Exception:
             return []
@@ -157,7 +157,7 @@ class DeltaStore:
     def stats(self) -> dict:
         buckets = {}
         for f in self.root.glob("*.jsonl"):
-            lines = len(f.read_text().strip().split('\n')) if f.read_text().strip() else 0
+            lines = len(f.read_text(encoding="utf-8").strip().split('\n')) if f.read_text(encoding="utf-8").strip() else 0
             buckets[f.stem] = lines
         
         return {

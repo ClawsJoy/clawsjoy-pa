@@ -26,7 +26,7 @@ class EngineManager:
     def _load_config(self):
         config_path = Path("config/engine_layers.yaml")
         if config_path.exists():
-            with open(config_path) as f:
+            with open(config_path, encoding="utf-8") as f:
                 self.config = yaml.safe_load(f)
         else:
             self.config = {}

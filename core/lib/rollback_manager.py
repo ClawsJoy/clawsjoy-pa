@@ -33,13 +33,13 @@ class RollbackManager:
 
     def _load_rollback_points(self):
         if self.rollback_file.exists():
-            with open(self.rollback_file, "r") as f:
+            with open(self.rollback_file, "r", encoding="utf-8") as f:
                 self.rollback_points = json.load(f)
         else:
             self.rollback_points = {"points": []}
 
     def _save(self):
-        with open(self.rollback_file, "w") as f:
+        with open(self.rollback_file, "w", encoding="utf-8") as f:
             json.dump(self.rollback_points, f, indent=2)
 
     def create_point(self, action: str, before_state: Dict) -> str:

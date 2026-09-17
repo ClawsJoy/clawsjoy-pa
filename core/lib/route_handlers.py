@@ -1062,7 +1062,7 @@ def learning_trigger():
     history_file = Path(f"data/users/{user_id}/learning_history.json")
     history = []
     if history_file.exists():
-        with open(history_file, "r") as f:
+        with open(history_file, "r", encoding="utf-8") as f:
             history = json.load(f)
 
     history.append(
@@ -1073,7 +1073,7 @@ def learning_trigger():
         }
     )
     history = history[-100:]
-    with open(history_file, "w") as f:
+    with open(history_file, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=2)
 
     return jsonify({"success": result.get("success", False), "result": result})

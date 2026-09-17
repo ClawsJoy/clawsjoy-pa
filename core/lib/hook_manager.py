@@ -50,7 +50,7 @@ class HookManager:
         """加载钩子配置"""
         config_file = Path("config/hooks.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = unified_config.get("hooks", {})
         else:
             self.config = {}

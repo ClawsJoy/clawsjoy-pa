@@ -30,7 +30,7 @@ class SmartSearch:
         """加载检索配置"""
         config_file = Path(__file__).parent.parent / "config/smart_search.yaml"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = unified_config.get("smart_search", {})
         else:
             self.config = self._get_default_config()

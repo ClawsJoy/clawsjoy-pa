@@ -67,7 +67,7 @@ class HardwareProbe:
                 ],
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=5, encoding="utf-8", errors="replace"
             )
             if result.returncode == 0 and result.stdout.strip():
                 for line in result.stdout.strip().split("\n"):
@@ -87,7 +87,7 @@ class HardwareProbe:
         # Apple Silicon / Metal
         if not gpus and platform.system() == "Darwin":
             try:
-                result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True)
+                result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True, encoding="utf-8", errors="replace")
                 if "Apple" in result.stdout:
                     gpus.append(
                         {
@@ -103,7 +103,7 @@ class HardwareProbe:
         # Intel/AMD集成显卡（Linux）
         if not gpus and platform.system() == "Linux":
             try:
-                result = subprocess.run(["lspci"], capture_output=True, text=True)
+                result = subprocess.run(["lspci"], capture_output=True, text=True, encoding="utf-8", errors="replace")
                 for line in result.stdout.split("\n"):
                     if "VGA" in line or "3D" in line:
                         gpus.append(

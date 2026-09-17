@@ -33,7 +33,7 @@ class SkillLearning:
     def _load_config(self):
         config_file = Path("config/skill_learning.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = unified_config.get("skill_learning", {})
         else:
             self.config = {"learning": {"enabled": True, "min_success_count": 3}}
@@ -41,25 +41,25 @@ class SkillLearning:
     def _load_data(self):
         combos_file = Path(f"{get_data_root()}/skill_stats/successful_combos.json")
         if combos_file.exists():
-            with open(combos_file, "r") as f:
+            with open(combos_file, "r", encoding="utf-8") as f:
                 self.combos = json.load(f)
         else:
             self.combos = {"stats": {}}
 
         generated_file = Path(f"{get_data_root()}/skill_stats/generated_skills.json")
         if generated_file.exists():
-            with open(generated_file, "r") as f:
+            with open(generated_file, "r", encoding="utf-8") as f:
                 self.generated = json.load(f)
         else:
             self.generated = {"skills": []}
 
     def _save_data(self):
         combos_file = Path(f"{get_data_root()}/skill_stats/successful_combos.json")
-        with open(combos_file, "w") as f:
+        with open(combos_file, "w", encoding="utf-8") as f:
             json.dump(self.combos, f, indent=2)
 
         generated_file = Path(f"{get_data_root()}/skill_stats/generated_skills.json")
-        with open(generated_file, "w") as f:
+        with open(generated_file, "w", encoding="utf-8") as f:
             json.dump(self.generated, f, indent=2)
 
     def record(self, intent: str, skills: list):
@@ -108,12 +108,12 @@ skill = None
 '''
 
         skill_file = output_dir / f"{skill_name}.py"
-        skill_file.write_text(code)
+        skill_file.write_text(code, encoding="utf-8")
 
         # 注册到技能注册中心
         registry_file = Path(f"{get_data_root()}/skill_registry_v2.json")
         if registry_file.exists():
-            with open(registry_file, "r") as f:
+            with open(registry_file, "r", encoding="utf-8") as f:
                 registry = json.load(f)
         else:
             registry = {}
@@ -126,7 +126,7 @@ skill = None
             "created_at": datetime.now().isoformat(),
         }
 
-        with open(registry_file, "w") as f:
+        with open(registry_file, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2)
 
         self.generated["skills"].append(

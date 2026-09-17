@@ -20,7 +20,7 @@ class DialectHelper:
         path = self._get_path()
         if path.exists():
             try:
-                with open(path, 'r') as f:
+                with open(path, 'r', encoding="utf-8") as f:
                     return json.load(f)
             except:
                 pass
@@ -30,7 +30,7 @@ class DialectHelper:
         """保存方言词库"""
         path = self._get_path()
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             json.dump(self._words, f, indent=2, ensure_ascii=False)
 
     def learn_direct(self, dialect_word: str, meaning: str):

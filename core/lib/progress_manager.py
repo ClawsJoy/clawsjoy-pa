@@ -37,7 +37,7 @@ class ProgressManager:
                 "saved_at": datetime.now().isoformat(),
             }
             self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-            self.checkpoint_file.write_text(json.dumps(checkpoint, ensure_ascii=False, indent=2))
+            self.checkpoint_file.write_text(json.dumps(checkpoint, ensure_ascii=False, indent=2), encoding="utf-8")
             # 同步写入 task_progress 表
             try:
                 from core.lib.code_entity_extractor import extractor
@@ -63,7 +63,7 @@ class ProgressManager:
         try:
             if not self.checkpoint_file.exists():
                 return None
-            checkpoint = json.loads(self.checkpoint_file.read_text())
+            checkpoint = json.loads(self.checkpoint_file.read_text(encoding="utf-8"))
             if checkpoint.get("task_name") == task_name:
                 return checkpoint
             # task_name 不匹配，可能是旧任务的残留

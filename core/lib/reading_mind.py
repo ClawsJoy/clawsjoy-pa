@@ -23,15 +23,15 @@ class ReadingMind:
             f = self.data_dir / fname
             if f.exists():
                 try:
-                    data = json.loads(f.read_text())
+                    data = json.loads(f.read_text(encoding="utf-8"))
                     setattr(self, attr, data if attr != "_concepts" else defaultdict(list, data))
                 except Exception:
                     pass
 
     def _save(self):
-        (self.data_dir / "knowledge.json").write_text(json.dumps(self._knowledge[-500:], indent=2, ensure_ascii=False))
-        (self.data_dir / "concepts.json").write_text(json.dumps(dict(self._concepts), indent=2, ensure_ascii=False))
-        (self.data_dir / "facts.json").write_text(json.dumps(self._facts, indent=2, ensure_ascii=False))
+        (self.data_dir / "knowledge.json").write_text(json.dumps(self._knowledge[-500:], indent=2, ensure_ascii=False), encoding="utf-8")
+        (self.data_dir / "concepts.json").write_text(json.dumps(dict(self._concepts), indent=2, ensure_ascii=False), encoding="utf-8")
+        (self.data_dir / "facts.json").write_text(json.dumps(self._facts, indent=2, ensure_ascii=False), encoding="utf-8")
 
     def read(self, content: str, source: str = "用户输入") -> Dict:
         concepts = self._extract_concepts(content)

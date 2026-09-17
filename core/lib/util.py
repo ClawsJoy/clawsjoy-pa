@@ -10,7 +10,7 @@ def _get_skeletons_by_type(module_type, user_id="default", session_id="default")
     if not _state_file.exists():
         return None
     try:
-        _state = json.loads(_state_file.read_text())
+        _state = json.loads(_state_file.read_text(encoding="utf-8"))
         _modules = _state.get("world_model", {}).get("modules", {})
         _skeletons = []
         for _fp, _info in _modules.items():

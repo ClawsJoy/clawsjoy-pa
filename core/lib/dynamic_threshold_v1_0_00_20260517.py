@@ -35,7 +35,7 @@ class DynamicThreshold:
         """加载调整历史"""
         if self.adjustment_file.exists():
             try:
-                with open(self.adjustment_file, "r") as f:
+                with open(self.adjustment_file, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 return {}
@@ -43,7 +43,7 @@ class DynamicThreshold:
 
     def _save_history(self):
         """保存调整历史"""
-        with open(self.adjustment_file, "w") as f:
+        with open(self.adjustment_file, "w", encoding="utf-8") as f:
             json.dump(self.threshold_history, f, indent=2)
 
     def adjust_quality_threshold(self) -> float:

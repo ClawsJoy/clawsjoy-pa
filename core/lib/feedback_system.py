@@ -27,15 +27,15 @@ class FeedbackSystem:
 
     def _init_files(self):
         if not self.feedback_file.exists():
-            with open(self.feedback_file, "w") as f:
+            with open(self.feedback_file, "w", encoding="utf-8") as f:
                 json.dump({"success": [], "failure": []}, f)
         if not self.satisfaction_file.exists():
-            with open(self.satisfaction_file, "w") as f:
+            with open(self.satisfaction_file, "w", encoding="utf-8") as f:
                 json.dump({}, f)
 
     def record_success(self, task: str, agent: str, duration: float = 0):
         """记录成功"""
-        with open(self.feedback_file, "r") as f:
+        with open(self.feedback_file, "r", encoding="utf-8") as f:
             data = json.load(f)
         data["success"].append(
             {
@@ -46,12 +46,12 @@ class FeedbackSystem:
             }
         )
         data["success"] = data["success"][-1000:]
-        with open(self.feedback_file, "w") as f:
+        with open(self.feedback_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     def record_failure(self, task: str, agent: str, error: str):
         """记录失败"""
-        with open(self.feedback_file, "r") as f:
+        with open(self.feedback_file, "r", encoding="utf-8") as f:
             data = json.load(f)
         data["failure"].append(
             {
@@ -62,12 +62,12 @@ class FeedbackSystem:
             }
         )
         data["failure"] = data["failure"][-1000:]
-        with open(self.feedback_file, "w") as f:
+        with open(self.feedback_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     def update_satisfaction(self, user_id: str, channel_data: Dict):
         """更新用户满意度"""
-        with open(self.satisfaction_file, "r") as f:
+        with open(self.satisfaction_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if user_id not in data:
@@ -90,14 +90,14 @@ class FeedbackSystem:
         data[user_id]["current_score"] = score
         data[user_id]["history"] = data[user_id]["history"][-30:]
 
-        with open(self.satisfaction_file, "w") as f:
+        with open(self.satisfaction_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
         return {"user_id": user_id, "satisfaction_score": score}
 
     def get_stats(self) -> Dict:
         """获取反馈统计"""
-        with open(self.feedback_file, "r") as f:
+        with open(self.feedback_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         total_success = len(data["success"])
@@ -153,7 +153,7 @@ class FeedbackSystem:
             }
 
         if user_id:
-            with open(self.satisfaction_file, "r") as f:
+            with open(self.satisfaction_file, "r", encoding="utf-8") as f:
                 sat_data = json.load(f)
             user_sat = sat_data.get(user_id, {})
             current_score = user_sat.get("current_score", 70)

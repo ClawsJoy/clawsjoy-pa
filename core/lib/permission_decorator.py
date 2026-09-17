@@ -17,7 +17,7 @@ from flask import g, jsonify, request
 def load_permissions():
     perm_file = Path("config/permissions.yaml")
     if perm_file.exists():
-        with open(perm_file, "r") as f:
+        with open(perm_file, "r", encoding="utf-8") as f:
             return yaml.safe_load(f)
     return {}
 

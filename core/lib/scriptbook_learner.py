@@ -26,7 +26,7 @@ class ScriptbookLearner:
         if self.learning_data_path.exists():
             try:
                 import json
-                with open(self.learning_data_path, 'r') as f:
+                with open(self.learning_data_path, 'r', encoding="utf-8") as f:
                     data = json.load(f)
                     self._stats.update(data.get("stats", {}))
             except:
@@ -35,7 +35,7 @@ class ScriptbookLearner:
     def _save_stats(self):
         """保存统计"""
         import json
-        with open(self.learning_data_path, 'w') as f:
+        with open(self.learning_data_path, 'w', encoding="utf-8") as f:
             json.dump({
                 "stats": dict(self._stats),
                 "updated_at": datetime.now().isoformat()

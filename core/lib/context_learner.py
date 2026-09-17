@@ -40,14 +40,14 @@ class ContextLearner:
     def _load_memory(self):
         """加载长期记忆"""
         if self.memory_file.exists():
-            with open(self.memory_file, "r") as f:
+            with open(self.memory_file, "r", encoding="utf-8") as f:
                 self.long_memory = json.load(f)
         else:
             self.long_memory = {}
 
     def _save_memory(self):
         """保存长期记忆"""
-        with open(self.memory_file, "w") as f:
+        with open(self.memory_file, "w", encoding="utf-8") as f:
             json.dump(self.long_memory, f, indent=2, ensure_ascii=False)
 
     def add(self, user: str, assistant: str, task: str = None):

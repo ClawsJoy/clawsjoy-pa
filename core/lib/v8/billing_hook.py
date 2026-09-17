@@ -44,7 +44,7 @@ def check_token_budget(
         return {"status": "allowed", "used": 0, "limit": 0,
                 "remaining": 0, "warning": False}
 
-    with open(config_path) as f:
+    with open(config_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     token_budget = config.get("token_budget", {})
@@ -82,7 +82,7 @@ def check_token_budget(
         today = datetime.now().strftime("%Y-%m-%d")
         billing_file = ledger._billing_file(server_id)
         if billing_file.exists():
-            with open(billing_file) as f:
+            with open(billing_file, encoding="utf-8") as f:
                 for line in f:
                     try:
                         e = json.loads(line)

@@ -84,9 +84,9 @@ class Metacognition:
 
     def _save(self):
         with self._save_lock:
-            with open(self.reflections_file, "w") as f:
+            with open(self.reflections_file, "w", encoding="utf-8") as f:
                 json.dump(self.reflections[-500:], f, indent=2, ensure_ascii=False)
-            with open(self.evolutions_file, "w") as f:
+            with open(self.evolutions_file, "w", encoding="utf-8") as f:
                 json.dump(self.evolutions, f, indent=2, ensure_ascii=False)
 
     def reflect(
@@ -237,7 +237,7 @@ class Metacognition:
             import yaml
 
             # 加载 meta_cognition_system.yaml prompt
-            prompt_config = yaml.safe_load(open("config/prompts/meta_cognition_system.yaml"))
+            prompt_config = yaml.safe_load(open("config/prompts/meta_cognition_system.yaml", encoding="utf-8"))
             system_prompt = prompt_config.get("meta_cognition_prompt", "")
 
             # 构造输入：os_events 摘要 + 分析规则

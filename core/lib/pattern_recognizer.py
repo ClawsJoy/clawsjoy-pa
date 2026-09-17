@@ -19,7 +19,7 @@ class PatternRecognizer:
 
     def _load(self):
         if self.patterns_file.exists():
-            with open(self.patterns_file, "r") as f:
+            with open(self.patterns_file, "r", encoding="utf-8") as f:
                 self.data = json.load(f)
         else:
             self.data = {
@@ -30,7 +30,7 @@ class PatternRecognizer:
             }
 
     def _save(self):
-        with open(self.patterns_file, "w") as f:
+        with open(self.patterns_file, "w", encoding="utf-8") as f:
             json.dump(self.data, f, indent=2)
 
     def record_behavior(self, user_id: str, user_input: str, response: str, agent: str):
@@ -122,7 +122,7 @@ class PatternRecognizer:
             "learned_at": datetime.now().isoformat(),
             "rules": self.data["generated_rules"],
         }
-        with open(self.rules_file, "w") as f:
+        with open(self.rules_file, "w", encoding="utf-8") as f:
             yaml.dump(rules_config, f, allow_unicode=True, default_flow_style=False)
 
         # 触发热重载

@@ -58,7 +58,7 @@ def register_config_routes(app):
         """获取系统配置（仅管理员）"""
         if name not in SYSTEM_CONFIGS:
             return jsonify({"error": "配置不存在"}), 404
-        with open(SYSTEM_CONFIGS[name], "r") as f:
+        with open(SYSTEM_CONFIGS[name], "r", encoding="utf-8") as f:
             content = unified_config.get("config_api", {})
         return jsonify({"config": content, "scope": "system"})
 
@@ -70,7 +70,7 @@ def register_config_routes(app):
         if name not in SYSTEM_CONFIGS:
             return jsonify({"error": "配置不存在"}), 404
         data = request.json
-        with open(SYSTEM_CONFIGS[name], "w") as f:
+        with open(SYSTEM_CONFIGS[name], "w", encoding="utf-8") as f:
             yaml.dump(data.get("config", {}), f)
         return jsonify({"success": True, "scope": "system"})
 
@@ -84,7 +84,7 @@ def register_config_routes(app):
         config_file = tenant_dir / TENANT_CONFIGS[name]
         content = {}
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 content = unified_config.get("config_api", {})
         return jsonify({"config": content, "scope": "tenant", "tenant_id": g.tenant_id})
 
@@ -97,7 +97,7 @@ def register_config_routes(app):
         tenant_dir = get_tenant_config_dir()
         config_file = tenant_dir / TENANT_CONFIGS[name]
         data = request.json
-        with open(config_file, "w") as f:
+        with open(config_file, "w", encoding="utf-8") as f:
             yaml.dump(data.get("config", {}), f)
         return jsonify({"success": True, "scope": "tenant", "tenant_id": g.tenant_id})
 

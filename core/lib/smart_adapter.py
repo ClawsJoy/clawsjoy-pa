@@ -32,7 +32,7 @@ class SmartAdapter:
         config_paths = ["config/skills/smart_adapter.yaml", "config/smart_adapter.yaml"]
         for path in config_paths:
             if Path(path).exists():
-                with open(path, "r") as f:
+                with open(path, "r", encoding="utf-8") as f:
                     return yaml.safe_load(f) or {}
         print("⚠️ smart_adapter.yaml 未找到，使用默认配置")
         return {}

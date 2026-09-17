@@ -33,7 +33,7 @@ class RedisManager:
     def _init(self):
         config_file = Path(__file__).parent.parent / "config/redis.yaml"
         if config_file.exists():
-            with open(config_file) as f:
+            with open(config_file, encoding="utf-8") as f:
                 self._config = unified_config.get("redis_manager", {}).get("redis", {})
         else:
             self._config = {"enabled": False}

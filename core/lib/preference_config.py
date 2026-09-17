@@ -28,7 +28,7 @@ class PreferenceConfig:
         """加载配置"""
         config_file = Path("config/butler/preferences.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self._config = yaml.safe_load(f)
         else:
             self._config = {

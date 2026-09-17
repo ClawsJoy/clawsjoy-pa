@@ -46,7 +46,7 @@ class SecurityHook:
         # 从 YAML 文件直接加载，避免 config_loader 点号问题
         config_file = Path("config/driver/security.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 data = unified_config.get("security_hook", {})
                 self.enabled = data.get("enabled", True)
                 self.patterns = data.get("patterns", {})

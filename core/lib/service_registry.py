@@ -30,7 +30,7 @@ class ServiceRegistry:
         """加载服务注册表"""
         try:
             if self.registry_file.exists():
-                with open(self.registry_file, "r") as f:
+                with open(self.registry_file, "r", encoding="utf-8") as f:
                     content = f.read().strip()
                     if not content:
                         return {}
@@ -47,7 +47,7 @@ class ServiceRegistry:
         """保存服务注册表"""
         try:
             self.registry_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.registry_file, "w") as f:
+            with open(self.registry_file, "w", encoding="utf-8") as f:
                 json.dump(self.services, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"⚠️ 保存服务注册表失败: {e}")

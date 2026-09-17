@@ -20,7 +20,7 @@ class UsageStats:
         stats_file = self.data_dir / "usage.json"
         if stats_file.exists():
             try:
-                with open(stats_file, 'r') as f:
+                with open(stats_file, 'r', encoding="utf-8") as f:
                     return json.load(f)
             except:
                 pass
@@ -42,7 +42,7 @@ class UsageStats:
             
             # 保存
             stats_file = self.data_dir / "usage.json"
-            with open(stats_file, 'w') as f:
+            with open(stats_file, 'w', encoding="utf-8") as f:
                 json.dump(self.stats, f, indent=2)
     
     def get_summary(self) -> dict:

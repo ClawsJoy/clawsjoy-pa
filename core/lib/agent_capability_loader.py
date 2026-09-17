@@ -23,7 +23,7 @@ class AgentCapabilityLoader:
 
         for file_path in self.config_dir.glob("*.yaml"):
             try:
-                with open(file_path, 'r') as f:
+                with open(file_path, 'r', encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                     if data:
                         name = data.get('name', file_path.stem)

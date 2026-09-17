@@ -30,7 +30,7 @@ class PathManager:
     def _load(self):
         config_file = Path("config/paths.yaml")
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 self.config = unified_config.get("path_manager", {})
         else:
             self.config = {}

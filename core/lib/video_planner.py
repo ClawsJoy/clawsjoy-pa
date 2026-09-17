@@ -31,7 +31,7 @@ class VideoPlanner:
                 ],
                 capture_output=True,
                 text=True,
-                timeout=unified_config.get("timeouts.default", 30),
+                timeout=unified_config.get("timeouts.default", 30), encoding="utf-8", errors="replace"
             )
 
             # 提取 JSON（输出中可能包含日志前缀）

@@ -27,7 +27,7 @@ class VersionRegistry:
         import json
 
         if self.json_file.exists():
-            with open(self.json_file, "r") as f:
+            with open(self.json_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
             "version": self.VERSION,
@@ -38,7 +38,7 @@ class VersionRegistry:
     def _save_registry(self):
         import json
 
-        with open(self.json_file, "w") as f:
+        with open(self.json_file, "w", encoding="utf-8") as f:
             json.dump(self.registry, f, indent=2)
 
     def register_module(

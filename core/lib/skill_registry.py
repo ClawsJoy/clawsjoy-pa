@@ -20,12 +20,12 @@ class SkillRegistry:
 
     def _load(self):
         if self.record_file.exists():
-            with open(self.record_file, "r") as f:
+            with open(self.record_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"generated": [], "reviewed": [], "rejected": []}
 
     def _save(self):
-        with open(self.record_file, "w") as f:
+        with open(self.record_file, "w", encoding="utf-8") as f:
             json.dump(self.records, f, indent=2, ensure_ascii=False)
 
     def add_record(self, requirement, skill_name, code_preview, status="pending"):

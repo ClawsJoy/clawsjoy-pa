@@ -19,7 +19,7 @@ class UserProfile:
         path = self._get_path()
         if path.exists():
             try:
-                with open(path, 'r') as f:
+                with open(path, 'r', encoding="utf-8") as f:
                     return json.load(f)
             except:
                 pass
@@ -37,7 +37,7 @@ class UserProfile:
     def _save(self):
         path = self._get_path()
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             json.dump(self._profile, f, indent=2, ensure_ascii=False)
     
     def set_native_language(self, language: str):

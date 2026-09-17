@@ -148,7 +148,7 @@ def collect_written_files(messages: List[Dict], base_dir: Path, project_root: st
     import subprocess
 
     result = subprocess.run(
-        ["git", "diff", "--name-only", "HEAD~1", "HEAD"], cwd=str(workdir), capture_output=True, text=True
+        ["git", "diff", "--name-only", "HEAD~1", "HEAD"], cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
     # 批188 · 缺陷2 第二层（真根因）：git diff **看不见「新建未跟踪」文件** ⇒ 新产物（如 docs/x.md）
     # 永远判「未检测到成功写入」⇒ chain Step1 恒 FAIL（假失败，PA 线程实测）。
@@ -158,7 +158,7 @@ def collect_written_files(messages: List[Dict], base_dir: Path, project_root: st
         _diff_names |= {x.strip() for x in result.stdout.strip().split(chr(10)) if x.strip()}
     try:
         _un = subprocess.run(
-            ["git", "ls-files", "--others", "--exclude-standard"], cwd=str(workdir), capture_output=True, text=True
+            ["git", "ls-files", "--others", "--exclude-standard"], cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace"
         )
         if _un.returncode == 0 and _un.stdout.strip():
             _diff_names |= {x.strip() for x in _un.stdout.strip().split(chr(10)) if x.strip()}
@@ -170,7 +170,7 @@ def collect_written_files(messages: List[Dict], base_dir: Path, project_root: st
     if not (result.returncode == 0 and result.stdout.strip()):
         # 兜底：HEAD~1 不存在（首次提交/浅克隆）时，回退到 HEAD
         result = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD"], cwd=str(workdir), capture_output=True, text=True
+            ["git", "diff", "--name-only", "HEAD"], cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace"
         )
     if result.returncode == 0 and result.stdout.strip():
         for line in result.stdout.strip().split("\n"):
@@ -198,7 +198,7 @@ def collect_written_files(messages: List[Dict], base_dir: Path, project_root: st
         task_start_ts = None
         task_progress_file = base_dir / project_root / "data" / "task_progress.json"
         if task_progress_file.exists():
-            with open(task_progress_file) as f:
+            with open(task_progress_file, encoding="utf-8") as f:
                 data = json.load(f)
             # 取最早一条记录的 started_at 或 created_at
             steps = data.get("steps", [])
@@ -272,7 +272,7 @@ def run_verify(files, base_dir, timeout=20):
                     [sys.executable, "-m", "py_compile", str(_abs)],
                     capture_output=True,
                     text=True,
-                    timeout=timeout,
+                    timeout=timeout, encoding="utf-8", errors="replace"
                 )
                 if _proc.returncode != 0:
                     _err = (_proc.stderr or _proc.stdout or "").strip()
@@ -287,7 +287,7 @@ def run_verify(files, base_dir, timeout=20):
                     [sys.executable, "-c", f"import {_mod}"],
                     capture_output=True,
                     text=True,
-                    timeout=timeout,
+                    timeout=timeout, encoding="utf-8", errors="replace"
                 )
                 if _imp.returncode != 0:
                     _ierr = (_imp.stderr or _imp.stdout or "").strip()
@@ -565,7 +565,7 @@ def _check_done_when(done_when: str, base_dir: Path) -> dict:
         result["detail"] = f"文件{'存在' if result['passed'] else '不存在'}: {path}"
     elif check.startswith("command_success:"):
         cmd = check[16:]
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30, cwd=str(base_dir))
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30, cwd=str(base_dir), encoding="utf-8", errors="replace")
         result["passed"] = r.returncode == 0
         result["detail"] = f"命令返回码={r.returncode}: {cmd}"
     elif check.startswith("file_contains:"):

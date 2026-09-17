@@ -26,7 +26,7 @@ class LocalKnowledge:
         idx_file = self.data_dir / "index.json"
         if idx_file.exists():
             try:
-                self._index = json.loads(idx_file.read_text())
+                self._index = json.loads(idx_file.read_text(encoding="utf-8"))
                 self._topics = defaultdict(list, self._index.get("topics", {}))
                 self._people = self._index.get("people", {})
                 self._projects = self._index.get("projects", {})
@@ -41,8 +41,7 @@ class LocalKnowledge:
             "updated": datetime.now().isoformat(),
         }
         (self.data_dir / "index.json").write_text(
-            json.dumps(self._index, indent=2, ensure_ascii=False)
-        )
+            json.dumps(self._index, indent=2, ensure_ascii=False), encoding="utf-8")
     
     def scan_directory(self, path: str, depth: int = 2):
         """扫描目录，建立索引"""

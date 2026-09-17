@@ -54,7 +54,7 @@ class V25UnifiedBridge:
         """从文件加载记忆（本地备份）"""
         if self._memory_file.exists():
             try:
-                with open(self._memory_file, 'r') as f:
+                with open(self._memory_file, 'r', encoding="utf-8") as f:
                     self._local_memory = json.load(f)
                 print(f"   ✅ 从文件加载了 {len(self._local_memory)} 个用户的记忆")
             except Exception as e:
@@ -66,7 +66,7 @@ class V25UnifiedBridge:
     def _save_memory_to_file(self):
         """保存记忆到文件（本地备份）"""
         try:
-            with open(self._memory_file, 'w') as f:
+            with open(self._memory_file, 'w', encoding="utf-8") as f:
                 json.dump(self._local_memory, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:

@@ -52,7 +52,7 @@ class MonitoringIntegration:
         """获取最近的告警"""
         alerts = []
         if self.monitor_log.exists():
-            with open(self.monitor_log, "r") as f:
+            with open(self.monitor_log, "r", encoding="utf-8") as f:
                 all_lines = f.readlines()
                 for line in all_lines[-lines:]:
                     if "⚠️" in line or "ERROR" in line or "告警" in line:
@@ -91,7 +91,7 @@ class MonitoringIntegration:
                 ],
                 capture_output=True,
                 text=True,
-                timeout=unified_config.get("timeouts.default", 30),
+                timeout=unified_config.get("timeouts.default", 30), encoding="utf-8", errors="replace"
             )
             return {"success": True, "result": result.stdout}
         except Exception as e:

@@ -43,12 +43,12 @@ class ConfigCompat:
         if old_path in cls.MAPPING:
             new_path = cls.MAPPING[old_path]
             if Path(new_path).exists():
-                with open(new_path, "r") as f:
+                with open(new_path, "r", encoding="utf-8") as f:
                     return yaml.safe_load(f)
 
         # fallback到原路径
         if Path(old_path).exists():
-            with open(old_path, "r") as f:
+            with open(old_path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
 
         return {}
@@ -61,13 +61,13 @@ class ConfigCompat:
             f"{get_data_root()}/system/agents/{agent_name}/{config_type}.yaml"
         )
         if new_path.exists():
-            with open(new_path, "r") as f:
+            with open(new_path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
 
         # fallback到全局配置
         old_path = Path(f"config/agent_{config_type}.yaml")
         if old_path.exists():
-            with open(old_path, "r") as f:
+            with open(old_path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
 
         return {}

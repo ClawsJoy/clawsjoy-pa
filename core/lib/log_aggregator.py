@@ -27,7 +27,7 @@ class LogAggregator:
         """加载最近日志"""
         for log_file in self.log_dir.glob("*.log"):
             try:
-                with open(log_file, "r") as f:
+                with open(log_file, "r", encoding="utf-8") as f:
                     lines = f.readlines()[-50:]
                     self.log_cache[log_file.stem] = deque(lines, maxlen=100)
             except Exception as e:

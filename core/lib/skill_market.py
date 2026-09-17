@@ -31,12 +31,12 @@ class SkillMarket:
 
     def _load(self):
         if self.market_file.exists():
-            with open(self.market_file, "r") as f:
+            with open(self.market_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"local": [], "remote": []}
 
     def _save(self):
-        with open(self.market_file, "w") as f:
+        with open(self.market_file, "w", encoding="utf-8") as f:
             json.dump(self.skills, f, indent=2)
 
     def publish(self, skill_name, author, description, version="1.0.0"):
@@ -82,7 +82,7 @@ class SkillMarket:
                 if resp.status_code == 200:
                     skill_code = resp.text
                     skill_path = Path(f"skills/market_{skill_name}.py")
-                    skill_path.write_text(skill_code)
+                    skill_path.write_text(skill_code, encoding="utf-8")
                     return {"success": True, "message": f"技能 {skill_name} 已安装"}
             except Exception as e:
                 return {"success": False, "error": str(e)}

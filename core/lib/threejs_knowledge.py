@@ -29,14 +29,14 @@ class ThreeJSKnowledgeBase:
         """加载知识索引"""
         index_file = self.knowledge_dir / "index.json"
         if index_file.exists():
-            with open(index_file, "r") as f:
+            with open(index_file, "r", encoding="utf-8") as f:
                 self.index = json.load(f)
         else:
             self.index = {}
 
     def _save_index(self):
         index_file = self.knowledge_dir / "index.json"
-        with open(index_file, "w") as f:
+        with open(index_file, "w", encoding="utf-8") as f:
             json.dump(self.index, f, indent=2)
 
     def _init_knowledge(self):

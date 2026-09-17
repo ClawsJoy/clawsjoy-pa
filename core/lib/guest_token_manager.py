@@ -125,12 +125,12 @@ class GuestTokenManager:
         }
 
         analytics_file = self._analytics_dir / f"{session.get('session_id')}.jsonl"
-        with open(analytics_file, "a") as f:
+        with open(analytics_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(record) + "\n")
 
         # 同时写入全局汇总（用于市场分析）
         global_file = self._analytics_dir / "_all_interactions.jsonl"
-        with open(global_file, "a") as f:
+        with open(global_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(record) + "\n")
 
         return True
@@ -144,7 +144,7 @@ class GuestTokenManager:
             "data": data,
         }
         event_file = self._analytics_dir / "_events.jsonl"
-        with open(event_file, "a") as f:
+        with open(event_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(record) + "\n")
 
     def _generate_token(self) -> str:

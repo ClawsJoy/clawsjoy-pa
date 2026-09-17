@@ -26,7 +26,7 @@ class SkillLibrary:
         atomic_dir = self.manifests_dir / "atomic"
         if atomic_dir.exists():
             for f in atomic_dir.glob("*.json"):
-                with open(f, "r") as fp:
+                with open(f, "r", encoding="utf-8") as fp:
                     manifest = json.load(fp)
                     self.atomic_skills[manifest["name"]] = manifest
                     print(f"✅ 加载原子技能: {manifest['name']}")
@@ -35,7 +35,7 @@ class SkillLibrary:
         workflow_dir = self.manifests_dir / "workflow"
         if workflow_dir.exists():
             for f in workflow_dir.glob("*.json"):
-                with open(f, "r") as fp:
+                with open(f, "r", encoding="utf-8") as fp:
                     manifest = json.load(fp)
                     self.workflow_skills[manifest["name"]] = manifest
                     print(f"✅ 加载工作流: {manifest['name']}")

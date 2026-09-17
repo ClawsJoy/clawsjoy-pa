@@ -37,13 +37,13 @@ class TemplateVault:
 
     def _load_index(self):
         if self.index_file.exists():
-            with open(self.index_file, "r") as f:
+            with open(self.index_file, "r", encoding="utf-8") as f:
                 self.index = json.load(f)
         else:
             self.index = {"templates": [], "review_queue": []}
 
     def _save_index(self):
-        with open(self.index_file, "w") as f:
+        with open(self.index_file, "w", encoding="utf-8") as f:
             json.dump(self.index, f, indent=2)
 
     def submit_for_review(
@@ -54,7 +54,7 @@ class TemplateVault:
 
         # 保存模板文件
         template_file = self.vault_dir / f"{template_id}.yaml"
-        with open(template_file, "w") as f:
+        with open(template_file, "w", encoding="utf-8") as f:
             yaml.dump(
                 {
                     "id": template_id,

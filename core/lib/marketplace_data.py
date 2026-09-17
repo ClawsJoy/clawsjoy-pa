@@ -25,7 +25,7 @@ class MarketplaceData:
         self.products = {}
         for json_file in self.marketplace_dir.glob("*.json"):
             try:
-                with open(json_file, "r") as f:
+                with open(json_file, "r", encoding="utf-8") as f:
                     product = json.load(f)
                     product_id = json_file.stem
                     self.products[product_id] = product
@@ -40,7 +40,7 @@ class MarketplaceData:
 
     def add_product(self, product_id: str, product_data: Dict) -> bool:
         file_path = self.marketplace_dir / f"{product_id}.json"
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(product_data, f, indent=2)
         self.products[product_id] = product_data
         return True

@@ -30,7 +30,7 @@ class SkillStats:
 
     def _load(self):
         if self.stats_file.exists():
-            with open(self.stats_file, "r") as f:
+            with open(self.stats_file, "r", encoding="utf-8") as f:
                 self.stats = json.load(f)
         else:
             self.stats = {
@@ -43,7 +43,7 @@ class SkillStats:
 
     def _save(self):
         self.stats_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.stats_file, "w") as f:
+        with open(self.stats_file, "w", encoding="utf-8") as f:
             json.dump(self.stats, f, indent=2)
 
     def record(self, user_id: str, skill_name: str, success: bool, duration: float):

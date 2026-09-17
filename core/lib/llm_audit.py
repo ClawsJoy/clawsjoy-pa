@@ -40,7 +40,7 @@ class LLMAudit:
             "tokens": context.get("tokens", {}),
         }
 
-        with open(self.current_log, "a") as f:
+        with open(self.current_log, "a", encoding="utf-8") as f:
             f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
 
         return log_entry["call_id"]
@@ -56,7 +56,7 @@ class LLMAudit:
             return {"total_calls": 0}
 
         calls = []
-        with open(log_file, "r") as f:
+        with open(log_file, "r", encoding="utf-8") as f:
             for line in f:
                 try:
                     calls.append(json.loads(line))

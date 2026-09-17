@@ -26,7 +26,7 @@ class FederatedLearning:
         path = self._get_path()
         if path.exists():
             try:
-                with open(path, 'r') as f:
+                with open(path, 'r', encoding="utf-8") as f:
                     data = json.load(f)
                     self._knowledge_base = data.get("knowledge", {})
                     self._agent_knowledge = defaultdict(list, data.get("agent_knowledge", {}))
@@ -36,7 +36,7 @@ class FederatedLearning:
     def _save(self):
         path = self._get_path()
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             json.dump({
                 "knowledge": self._knowledge_base,
                 "agent_knowledge": dict(self._agent_knowledge),

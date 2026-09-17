@@ -82,7 +82,7 @@ class SkillLoaderV3:
                 continue
 
             try:
-                with open(manifest_file, "r") as f:
+                with open(manifest_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 name = data.get("name", manifest_file.parent.name)

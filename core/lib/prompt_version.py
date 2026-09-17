@@ -38,7 +38,7 @@ class PromptVersion:
 
     def _load_current(self):
         if self.current_file.exists():
-            with open(self.current_file, "r") as f:
+            with open(self.current_file, "r", encoding="utf-8") as f:
                 self.current = unified_config.get("prompt_version", {})
         else:
             self.current = {}
@@ -57,7 +57,7 @@ class PromptVersion:
             "diff_from_previous": self._get_diff(),
         }
 
-        with open(version_file, "w") as f:
+        with open(version_file, "w", encoding="utf-8") as f:
             yaml.dump(version_data, f, allow_unicode=True)
 
         # 更新索引
@@ -73,7 +73,7 @@ class PromptVersion:
 
         prev_file = self.VERSIONS_DIR / f"{versions[-2]['id']}.yaml"
         if prev_file.exists():
-            with open(prev_file, "r") as f:
+            with open(prev_file, "r", encoding="utf-8") as f:
                 prev = unified_config.get("prompt_version", {})
             # 简单比较
             if prev.get("prompts") != self.current:
@@ -83,7 +83,7 @@ class PromptVersion:
     def _update_index(self, version_id: str, tag: str, description: str):
         index_file = self.VERSIONS_DIR / "index.json"
         if index_file.exists():
-            with open(index_file, "r") as f:
+            with open(index_file, "r", encoding="utf-8") as f:
                 index = json.load(f)
         else:
             index = {"versions": []}
@@ -97,14 +97,14 @@ class PromptVersion:
             }
         )
 
-        with open(index_file, "w") as f:
+        with open(index_file, "w", encoding="utf-8") as f:
             json.dump(index, f, indent=2)
 
     def list_versions(self) -> List[Dict]:
         """列出所有版本"""
         index_file = self.VERSIONS_DIR / "index.json"
         if index_file.exists():
-            with open(index_file, "r") as f:
+            with open(index_file, "r", encoding="utf-8") as f:
                 return json.load(f).get("versions", [])
         return []
 
@@ -114,14 +114,14 @@ class PromptVersion:
         if not version_file.exists():
             return False
 
-        with open(version_file, "r") as f:
+        with open(version_file, "r", encoding="utf-8") as f:
             version_data = unified_config.get("prompt_version", {})
 
         # 备份当前
         self.save_version("pre_rollback", f"回滚前备份")
 
         # 恢复
-        with open(self.current_file, "w") as f:
+        with open(self.current_file, "w", encoding="utf-8") as f:
             yaml.dump(version_data.get("prompts", {}), f, allow_unicode=True)
 
         return True
@@ -134,9 +134,9 @@ class PromptVersion:
         if not file_a.exists() or not file_b.exists():
             return {"error": "版本不存在"}
 
-        with open(file_a, "r") as f:
+        with open(file_a, "r", encoding="utf-8") as f:
             data_a = unified_config.get("prompt_version", {})
-        with open(file_b, "r") as f:
+        with open(file_b, "r", encoding="utf-8") as f:
             data_b = unified_config.get("prompt_version", {})
 
         return {

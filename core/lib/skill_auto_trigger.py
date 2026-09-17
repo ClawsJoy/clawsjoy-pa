@@ -55,22 +55,22 @@ class SkillAutoTrigger:
     def _load_data(self):
         """加载统计数据"""
         if self.combos_file.exists():
-            with open(self.combos_file, "r") as f:
+            with open(self.combos_file, "r", encoding="utf-8") as f:
                 self.successful_combos = json.load(f)
         else:
             self.successful_combos = {}
 
         if self.generated_file.exists():
-            with open(self.generated_file, "r") as f:
+            with open(self.generated_file, "r", encoding="utf-8") as f:
                 self.generated_skills = json.load(f)
         else:
             self.generated_skills = {}
 
     def _save_data(self):
         """保存统计数据"""
-        with open(self.combos_file, "w") as f:
+        with open(self.combos_file, "w", encoding="utf-8") as f:
             json.dump(self.successful_combos, f, indent=2)
-        with open(self.generated_file, "w") as f:
+        with open(self.generated_file, "w", encoding="utf-8") as f:
             json.dump(self.generated_skills, f, indent=2)
 
     def record_success_combination(
@@ -145,7 +145,7 @@ class Auto{skill_name.title()}Skill:
 skill = Auto{skill_name.title()}Skill()
 '''
 
-        with open(skill_file, "w") as f:
+        with open(skill_file, "w", encoding="utf-8") as f:
             f.write(code)
 
         # 记录已生成

@@ -44,7 +44,7 @@ class VersionRegistry:
     def _load_registry(self) -> Dict:
         """从 JSON 加载注册表"""
         if self.json_file.exists():
-            with open(self.json_file, "r") as f:
+            with open(self.json_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
             "version": self.VERSION,
@@ -60,7 +60,7 @@ class VersionRegistry:
         self.registry["last_updated"] = datetime.now().isoformat()
         self.registry["system_version"] = self._get_system_version()
 
-        with open(self.json_file, "w") as f:
+        with open(self.json_file, "w", encoding="utf-8") as f:
             json.dump(self.registry, f, indent=2, ensure_ascii=False)
 
         self._export_yaml()
@@ -70,7 +70,7 @@ class VersionRegistry:
         if not YAML_AVAILABLE:
             return
         try:
-            with open(self.yaml_file, "w") as f:
+            with open(self.yaml_file, "w", encoding="utf-8") as f:
                 yaml.dump(
                     self.registry, f, default_flow_style=False, allow_unicode=True
                 )
@@ -80,7 +80,7 @@ class VersionRegistry:
     def _get_system_version(self) -> str:
         """获取系统版本"""
         if self.system_version_file.exists():
-            return self.system_version_file.read_text().strip()
+            return self.system_version_file.read_text(encoding="utf-8").strip()
         return "3.0.0"
 
     def _extract_version_from_filename(self, file_path: Path) -> Optional[str]:
@@ -103,7 +103,7 @@ class VersionRegistry:
         try:
             cmd_count = f'git rev-list --count HEAD -- "{file_path}" 2>/dev/null'
             count_result = subprocess.run(
-                cmd_count, shell=True, capture_output=True, text=True, cwd=self.root
+                cmd_count, shell=True, capture_output=True, text=True, cwd=self.root, encoding="utf-8", errors="replace"
             )
             commit_count = (
                 int(count_result.stdout.strip()) if count_result.stdout.strip() else 0
@@ -111,13 +111,13 @@ class VersionRegistry:
 
             cmd_hash = f'git log -1 --format="%h" -- "{file_path}" 2>/dev/null'
             hash_result = subprocess.run(
-                cmd_hash, shell=True, capture_output=True, text=True, cwd=self.root
+                cmd_hash, shell=True, capture_output=True, text=True, cwd=self.root, encoding="utf-8", errors="replace"
             )
             commit_hash = hash_result.stdout.strip()
 
             cmd_time = f'git log -1 --format="%ai" -- "{file_path}" 2>/dev/null'
             time_result = subprocess.run(
-                cmd_time, shell=True, capture_output=True, text=True, cwd=self.root
+                cmd_time, shell=True, capture_output=True, text=True, cwd=self.root, encoding="utf-8", errors="replace"
             )
             commit_time = time_result.stdout.strip()
 

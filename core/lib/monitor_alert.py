@@ -40,13 +40,13 @@ class MonitorAlert:
         if self.alert_file.exists():
             import json
 
-            with open(self.alert_file, "r") as f:
+            with open(self.alert_file, "r", encoding="utf-8") as f:
                 self.alerts = json.load(f)
 
     def _save_alerts(self):
         import json
 
-        with open(self.alert_file, "w") as f:
+        with open(self.alert_file, "w", encoding="utf-8") as f:
             json.dump(self.alerts[-1000:], f, indent=2)
 
     def check_service(self, url: str, timeout: int = 5) -> Dict:

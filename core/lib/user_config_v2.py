@@ -53,14 +53,14 @@ class UserConfigV2:
         """加载三层配置"""
         # 1. 系统基础（只读，从系统配置加载）
         if self.system_base_file.exists():
-            with open(self.system_base_file, "r") as f:
+            with open(self.system_base_file, "r", encoding="utf-8") as f:
                 self.system_base = unified_config.get("user_v2", {}) or {}
         else:
             self.system_base = self._get_system_base()
 
         # 2. 用户自定义（可修改）
         if self.user_custom_file.exists():
-            with open(self.user_custom_file, "r") as f:
+            with open(self.user_custom_file, "r", encoding="utf-8") as f:
                 self.user_custom = unified_config.get("user_v2", {}) or {}
         else:
             self.user_custom = self._get_default_custom()
@@ -68,7 +68,7 @@ class UserConfigV2:
 
         # 3. 用户私有（不可复制，不可导出）
         if self.user_private_file.exists():
-            with open(self.user_private_file, "r") as f:
+            with open(self.user_private_file, "r", encoding="utf-8") as f:
                 self.user_private = unified_config.get("user_v2", {}) or {}
         else:
             self.user_private = self._get_default_private()
@@ -130,12 +130,12 @@ class UserConfigV2:
 
     def _save_custom(self):
         """保存用户自定义配置"""
-        with open(self.user_custom_file, "w") as f:
+        with open(self.user_custom_file, "w", encoding="utf-8") as f:
             yaml.dump(self.user_custom, f, allow_unicode=True, default_flow_style=False)
 
     def _save_private(self):
         """保存用户私有记忆"""
-        with open(self.user_private_file, "w") as f:
+        with open(self.user_private_file, "w", encoding="utf-8") as f:
             yaml.dump(
                 self.user_private, f, allow_unicode=True, default_flow_style=False
             )

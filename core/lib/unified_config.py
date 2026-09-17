@@ -37,7 +37,7 @@ class UnifiedConfig:
     def _load_yaml(self, path: Path, key: str = None):
         """加载 YAML 文件"""
         try:
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
                 if key:
                     self._config[key] = data
