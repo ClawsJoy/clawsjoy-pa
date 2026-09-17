@@ -40,11 +40,16 @@ def test_parse_miss_warns_with_delta():
 
 
 def test_unjudgeable_but_nonempty_warns():
-    """汇总行缺失但确实解析到失败 ⇒ 提醒（不静默）。"""
+    """汇总行缺失但确实解析到失败 ⇒ 提醒（不静默）。
+
+    子项⑥ 修法 A（汇总口径改为「全文取最后一条汇总行」）后，`counts` 为空
+    **只可能**是「全文都找不到汇总行」 ⇒ 文案随之由「末行汇总里没有」
+    改为「全文都没有」（避免与修法 A 后的实际语义脱节）。
+    """
     m = _load()
     assert m._parse_selfcheck({}, []) is None
     w = m._parse_selfcheck({}, ["a::x"])
-    assert w and "末行形态异常" in w
+    assert w and "汇总形态异常" in w
 
 
 def test_selfcheck_never_touches_verdict():

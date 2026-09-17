@@ -34,6 +34,16 @@
 #   首跑实测: counts.failed=25 而只解析到 24 条 nodeid ⇒ 差额那条被误判成「台账陈旧」⇒ **假红**
 #   (同族于「假绿」: 判定依据与实际证据不一致)。修法=只把差额暴露成 WARN, **判定层/退出码一行不动**。
 #   证据等级: 【实测】2026-09-18 · data/test_baseline/last_run.json 首跑 vs 复跑对照。
+#
+# G-02 子项⑥(2026-09-18 · 老板/DS 拍「修法 A」): **汇总口径 = 全文取最后一条汇总行**。
+#   实测(同一批代码三次全量跑, 三种形态): ①假红(汇总 25 / 解析 24) ②**假绿**——产品侧 cp936 下
+#   打印 emoji 抛 UnicodeEncodeError, 垫片把降级报错打在汇总行**之后** ⇒ 旧「只读末行」写法手里
+#   counts 读成 {} 而门禁**仍判 ✅**(PASS 由 nodeid 名单决定) ⇒ 证据残缺却报绿 ③正常。
+#   修法(只动「汇总从哪儿读」): 末行 → 全文最后一条汇总行(找不到回落末行, 行为与旧版逐字一致)
+#   + 末行≠汇总行时印一条**非告警**的注 + last_run.json 记 summary_off_last_line(为「要不要上
+#   判定 B」积累实测数据)。**判定层/退出码/台账一行未动**(老板 2026-09-18 拍: 只做 A, B 等数据)。
+#   为什么不加 WARN: 汇总既然能从全文找到 ⇒ 此处**没有问题**, 报警即「假警报」(与假绿同等有害)。
+#   证据等级: 【实测】2026-09-18 · data/tmp/gate_r5|r6|r7.txt; 反例证明 data/tmp/g02_proof_a.py。
 import argparse
 import datetime
 import json
@@ -64,6 +74,10 @@ _STATUS_RE = re.compile(r"^(\S+::\S+)\s+(PASSED|FAILED|SKIPPED|ERROR|XFAIL|XPASS
 # G-02(2026-09-17): 一并计入 xfailed/xpassed/errors —— 否则正常跑会因「收集 1756 > 已统计 1755」
 # 报假警告（简单说就是那 1 条 xfailed）。仅影响留痕统计，不参与判定。
 _SUMMARY_RE = re.compile(r"(\d+) (failed|passed|skipped|errors?|xfailed|xpassed)")
+# 子项⑥ 修法 A: 汇总**行**的形态判据 —— 比 _SUMMARY_RE 多一个「时长尾」(`in <秒>`)。
+# 为什么要多这一层: _SUMMARY_RE 在**短摘要行**(例 `FAILED tests/x.py::t - AssertionError: 3 failed items`)
+# 与**参数化 id**(例 `t[3 passed cases] PASSED`)上都会误配 ⇒ 单靠它挑不出「哪一行才是汇总行」。
+_SUMMARY_LINE_RE = re.compile(r"\d+ (?:failed|passed|skipped|errors?|xfailed|xpassed)\b.*\bin \d")
 _COLLECTED_RE = re.compile(r"collected (\d+) items")
 
 
@@ -72,6 +86,27 @@ def _load(path):
         print(f"[GATE] 缺台账: {path}")
         sys.exit(1)
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _locate_summary(stdout):
+    """G-02 子项⑥（修法 A）：从**全文**里定位 pytest 汇总行。
+
+    为什么不能只取末行：任何在汇总行**之后**打印的内容（实测：产品侧 cp936 下打印 emoji 抛
+    UnicodeEncodeError，垫片把降级报错打在汇总行之后）都会把末行顶掉 ⇒ 旧写法手里 `counts`
+    **全空**，而门禁仍判 ✅（PASS 由 nodeid 名单决定）—— **证据残缺却报绿**。
+    规则：取**最后一条**「像汇总行」的行（`_SUMMARY_LINE_RE`，带时长尾以避免误配短摘要/参数化 id）；
+    一条都没有就**回落末行**（行为与旧版逐字一致，不引入新失败面）。
+
+    返回：(summary, tail, off_last_line) —— summary 为空串表示**全文都没找到**汇总行。
+    （本函数只服务「留痕/告警」；**判定层不引用它**，见 tests/unit/test_gate_summary_locate.py 的静态判据。）
+    """
+    lines = [l.strip() for l in stdout.strip().splitlines()]
+    tail = lines[-1] if lines else ""
+    summary = ""
+    for line in lines:
+        if _SUMMARY_LINE_RE.search(line):
+            summary = line
+    return summary, tail, bool(summary) and summary != tail
 
 
 def _run_pytest(extra):
@@ -95,8 +130,10 @@ def _run_pytest(extra):
                 failed.append(_id)
             elif _st == "SKIPPED":
                 skipped.append(_id)
-    tail = p.stdout.strip().splitlines()[-1] if p.stdout.strip() else ""
-    for n, k in _SUMMARY_RE.findall(tail):
+    # 子项⑥ 修法 A: 汇总口径 = **全文取最后一条汇总行**（一条都没有才回落末行），
+    # 而不是旧版的「只读末行」—— 末行被别的输出顶掉时，旧写法会把 counts 读空。
+    summary, tail, off_last_line = _locate_summary(p.stdout)
+    for n, k in _SUMMARY_RE.findall(summary or tail):
         counts[k] = int(n)
     # G-02 留痕: 收集数 + 收集期错误行（无 `::`，故不会进 failed 名单）
     collected = None
@@ -105,7 +142,8 @@ def _run_pytest(extra):
         collected = int(_m_col.group(1))
     collect_errors = [s for s in (l.strip() for l in p.stdout.splitlines())
                       if s.startswith("ERROR ") and "::" not in s]
-    return failed, skipped, counts, tail, p.returncode, collected, collect_errors
+    return (failed, skipped, counts, summary, tail, off_last_line,
+            p.returncode, collected, collect_errors)
 
 
 def _parse_selfcheck(counts, failed):
@@ -125,7 +163,7 @@ def _parse_selfcheck(counts, failed):
                 return None
     if exp is None:
         if failed:
-            return ("解析自检: 解析到 %d 条失败, 但末行汇总里没有 failed/errors 计数(末行形态异常)"
+            return ("解析自检: 解析到 %d 条失败, 但全文都没有 failed/errors 计数(汇总形态异常)"
                     " —— 判定依据可能不完整, 请人工核对 -v 输出" % len(failed))
         return None
     if exp == len(failed):
@@ -150,8 +188,14 @@ def main():
         print("[GATE] --no-run: 台账格式 OK")
         return 0
 
-    failed, skipped, counts, tail, rc, collected, collect_errors = _run_pytest(a.pytest_args)
-    print(f"[GATE] {tail}")
+    (failed, skipped, counts, summary, tail, off_last_line,
+     rc, collected, collect_errors) = _run_pytest(a.pytest_args)
+    # 子项⑥: 印**汇总行**（全文都没找到才印末行）。旧写法一律印末行 ⇒ 末行被顶掉时，
+    # 门禁的头条会变成一条无关输出（实测就是那行 cp936 报错），读的人无从判断。
+    print(f"[GATE] {summary or tail}")
+    if off_last_line:
+        print("[GATE] 注: 汇总行不在末行（已从全文定位；末行另有输出）"
+              " —— 旧「只读末行」口径在这里会把 counts 读空（**不是告警**，判定未受影响）")
 
     # --- G-02 留痕/告警：只记录与告警，**不改判定**（bad 列表与退出码逻辑未动）---
     warnings = []
@@ -223,6 +267,8 @@ def main():
             {
                 "ts": datetime.datetime.now().isoformat(timespec="seconds"),
                 "counts": counts,
+                # 子项⑥ 留痕：汇总行是否**不在末行**（为「要不要上判定 B」积累实测数据；非告警）
+                "summary_off_last_line": off_last_line,
                 "failed": failed,
                 "skipped": skipped,
                 "pytest_rc": rc,
