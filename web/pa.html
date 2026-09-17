@@ -90,6 +90,8 @@ body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Seg
 .pa-cards:empty{display:none}
 .pa-card-hint{display:none;margin:0 14px 6px;font-size:10.5px;color:var(--sub);opacity:.85}
 .pa-card-hint.show{display:block}
+/* M2-A 卡片「不持久化」标注（老板 2026-09-18 拍：加标注，不加持久化） */
+.pa-card-note{margin-top:6px;color:var(--sub);font-size:10.5px;line-height:1.45;opacity:.9}
 /* M2-A · Step 3.1：阻断卡（**无动作按钮**：不许把「重试」当万能解） */
 .pa-block-card{margin:8px 12px;padding:12px;border:1px solid #f0883e;border-radius:8px;background:#1c2128}
 .pa-block-card .pbc-head{color:#f0883e;font-weight:600;margin-bottom:6px}
@@ -1928,6 +1930,18 @@ const PA_CARD_BIND={
   },
   block:function(){}
 };
+/* M2-A · Step 3.2 续 / 老板 2026-09-18 拍板：卡片**加「不持久化」标注，不加持久化**。
+   **文案逐类如实**（不逐类如实就是「假标注」）：
+   - 宿主 `#paCards` 的卡（审批/阻断）：刷新即清空 ⇒ 用老板给定原文；
+   - 产物卡宿主是 `#thread`（消息内联，批201 起 F5 后按**消息正文**重建）⇒ 写「刷新后消失」是**反的**；
+     但正文本身存在 localStorage，**配额写失败时同样会消失** ⇒ 两句都写清。
+   标注由出口 `paRenderCard` 以 `textContent` 追加（不拼 HTML）；**不得**塞进 PA_CARD_BODY
+   （那是「事实行」区域，产物卡 body 有「不得出现完成断言」的判据）。 */
+const PA_CARD_PERSIST_NOTE = {
+  approval: 'ⓘ 本卡片不持久化，刷新后消失；记录见消息日志。',
+  block:    'ⓘ 本卡片不持久化，刷新后消失；记录见消息日志。',
+  artifact: 'ⓘ 本卡片本身不持久化：刷新后按该条消息正文重建；若本地写入失败（存储配额），会与消息一起消失。'
+};
 function paSyncCardsHint(){
   try{
     const host=document.getElementById('paCards'), hint=document.getElementById('paCardsHint');
@@ -1964,6 +1978,14 @@ function paRenderCard(kind, payload, host){
   }
   card.innerHTML=PA_CARD_BODY[kind](r.data);
   PA_CARD_BIND[kind](card,r.data);
+  /* 「不持久化」标注（老板 2026-09-18 拍）：innerHTML 每次重画 ⇒ 标注随之重建（无需去重）。
+     textContent 写入 ⇒ 文案不进 HTML 解析路径。 */
+  const _note=PA_CARD_PERSIST_NOTE[kind];
+  if(_note){
+    const _n=document.createElement('div');
+    _n.className='pa-card-note'; _n.setAttribute('data-card-note','persist'); _n.textContent=_note;
+    card.appendChild(_n);
+  }
   if(host.id==='paCards') paSyncCardsHint();   /* 提示行只描述 #paCards 的内容（产物卡在 #thread） */
   try{ if(card.scrollIntoView) card.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){}
   return card;
