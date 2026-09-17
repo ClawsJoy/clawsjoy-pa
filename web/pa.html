@@ -58,6 +58,8 @@ body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Seg
 .runstate.st-appr{background:rgba(210,153,29,.22);color:var(--amber)}
 .runstate.st-ok{background:rgba(63,185,80,.16);color:var(--green)}
 .runstate.st-err{background:rgba(248,81,73,.16);color:var(--red)}
+/* M2-A · Step 3.1：阻断态（**新增键**，不改既有 9 键）—— 阻断=等待老板，不是错误，故与 st-err 分开 */
+.runstate.st-block{background:rgba(240,136,62,.18);color:#f0883e}
 /* 批171 · 入口可达性：当前通道**常显且醒目**（聊天=不出手 ／ 工作·开发=执行） */
 .chanbadge{font-weight:700;border-radius:5px;padding:1px 7px;font-size:11px;border:1px solid transparent}
 .chanbadge.pa{background:rgba(210,153,29,.22);color:var(--amber);border-color:rgba(210,153,29,.55)}
@@ -88,6 +90,11 @@ body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Seg
 .pa-cards:empty{display:none}
 .pa-card-hint{display:none;margin:0 14px 6px;font-size:10.5px;color:var(--sub);opacity:.85}
 .pa-card-hint.show{display:block}
+/* M2-A · Step 3.1：阻断卡（**无动作按钮**：不许把「重试」当万能解） */
+.pa-block-card{margin:8px 12px;padding:12px;border:1px solid #f0883e;border-radius:8px;background:#1c2128}
+.pa-block-card .pbc-head{color:#f0883e;font-weight:600;margin-bottom:6px}
+.pa-block-card .pbc-why{color:#f0883e;font-size:13px;line-height:1.5;word-break:break-all;margin-bottom:6px}
+.pa-block-card .pbc-meta{color:#8b949e;font-size:11.5px;line-height:1.6;word-break:break-all}
 .composer{flex-shrink:0;border-top:1px solid var(--border);padding:9px 16px 12px;background:var(--card)}
 .composer .box{display:flex;gap:7px;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:5px 5px 5px 12px;align-items:flex-end}
 .composer textarea{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13.5px;resize:none;height:38px;line-height:19px;font-family:inherit;padding-top:9px}
@@ -1503,7 +1510,9 @@ const PA_STATE_DEF = {
   verifying: {ic:'🔍', label:'验证中',   cls:'st-run'},
   done:      {ic:'✅', label:'已完成',   cls:'st-ok'},
   failed:    {ic:'❌', label:'已失败',   cls:'st-err'},
-  stopped:   {ic:'⏹', label:'已停止',   cls:'st-err'}
+  stopped:   {ic:'⏹', label:'已停止',   cls:'st-err'},
+  /* M2-A · Step 3.1：**只增键** —— 阻断不再借 tool 态显示（既有 9 键一字未改） */
+  blocked:   {ic:'⛔', label:'已阻断',   cls:'st-block'}
 };
 // 终态不再计时：已失败/已停止/已完成/就绪若继续累加「Ns」会误导成"还在跑"（自检发现：failed 态秒数一直跳）
 const PA_TERMINAL = {idle:1, done:1, failed:1, stopped:1};
@@ -1729,7 +1738,18 @@ async function readSSE(resp){
           const _sem=semanticStage(s.tool,s.arg,semanticCtx(s.tool,s.arg))||semanticArg(s.tool,s.arg)||ACTION_SEMANTIC[s.tool]||'执行操作';
           const _raw=s.tool+' '+String(s.arg||'').slice(0,60);
           const _res=(s.result&&typeof s.result==='object')?s.result:null;
-          if(_res&&_res.blocked){ paSetState('tool', '已拦截外发（'+_sem+'）'); paRunLog('⛔ 已拦截外发：'+(s.result.reason||'L4 隐私禁止'), 'err', true, _raw); addLog('💡 '+(s.result.suggestion||'脱敏后重试'), 'warn', true, _raw); }
+          if(_res&&_res.blocked){
+            /* M2-A · Step 3.1（语义修正）：阻断**不再借 `tool` 态**显示（设计稿 §2.3 三个不许之①）。
+               事实来源 = 该次工具结果的 `reason` / `suggestion`（guard 原文，非前端编造）；
+               `blocked_at` 传 null（后端未给 ⇒ 不显示本地时间，禁止前端造时刻）。 */
+            paSetState('blocked', '已拦截外发（'+_sem+'）');
+            paRunLog('⛔ 已拦截外发：'+(s.result.reason||'L4 隐私禁止'), 'err', true, _raw);
+            addLog('💡 '+(s.result.suggestion||'脱敏后重试'), 'warn', true, _raw);
+            paRenderCard('block', {block_id:'toolstep:'+_raw, blocked_at:null, layer:'Guard',
+              reason:(s.result.reason||'L4 隐私禁止'), blocked_action:_sem, evidence_ref:null,
+              unblock_hint:((s.result.suggestion&&String(s.result.suggestion).trim())?String(s.result.suggestion):null),
+              state_map_key:'blocked'});
+          }
           else if(_res&&_res.pending){ paSetState('approval', '等待授权：'+_sem); paRunLog('⏳ 等待授权：'+(s.result.reason||'需老板确认'), 'warn', true, _raw); }
           else if(_res&&paIsPreviewPending(_res)){
             // 批183 · C3：桥未就绪 = 可区分的**降级状态**（不是失败）⇒ 中性文案 + 就绪引导卡片；**不显示 ❌**
@@ -1811,8 +1831,24 @@ const PA_CARD_BODY={
       (cmd?'<div class="pwc-cmd">'+esc(cmd.slice(0,220))+'</div>':'')+
       '<div class="pwc-btns">'+acts.map(function(a){ return '<button data-act="'+esc(a)+'">'+PA_CARD_ACTS[a]+'</button>'; }).join('')+'</div>';
   },
-  artifact:function(){ return ''; },   /* Step 3 接线（产物卡）：本步不渲染 */
-  block:function(){ return ''; }       /* Step 3 接线（阻断卡）：本步不渲染 */
+  artifact:function(){ return ''; },   /* Step 3 后续接线（产物卡）：本步不渲染 */
+  /* M2-A · Step 3.1：阻断卡。三个不许（设计稿 §2.3）——
+     ① 不许把阻断渲染成 tool（语义修正在 SSE 分支：paSetState('blocked', …)）；
+     ② 不许给「重试」当万能解 ⇒ **本卡不带任何动作按钮**（阻断分「可重试」与「需老板改授权」）；
+     ③ 不许隐藏 unblock_hint 缺失 ⇒ 没替代路径就**明说**（防「假拒绝」）。 */
+  block:function(d){
+    const reason=(d.reason==null||String(d.reason).trim()==='')?'原因未记录':String(d.reason);
+    const hint=(d.unblock_hint==null||String(d.unblock_hint).trim()==='')?'':String(d.unblock_hint);
+    const rows=['阻断编号：'+esc(String(d.block_id))];
+    if(d.blocked_action!=null) rows.push('被拦动作：'+esc(String(d.blocked_action)));
+    rows.push('层：'+esc(d.layer==null?'未知层':String(d.layer)));
+    rows.push(hint?('替代路径：'+esc(hint)):'无替代路径（未记录）');
+    if(d.evidence_ref!=null) rows.push('证据：'+esc(String(d.evidence_ref)));
+    if(d.blocked_at!=null) rows.push('阻断时刻（后端）：'+esc(String(d.blocked_at)));
+    return '<div class="pbc-head">⛔ 已阻断（等待老板处理，不是错误）</div>'+
+      '<div class="pbc-why">原因：'+esc(reason)+'</div>'+
+      '<div class="pbc-meta">'+rows.map(function(x){ return '<div>'+x+'</div>'; }).join('')+'</div>';
+  }
 };
 /* 每个 kind 的按钮绑定（DOM 侧；与 body 分开，便于纯函数单测） */
 const PA_CARD_BIND={
@@ -1860,6 +1896,35 @@ function paRenderCard(kind, payload){
   return card;
 }
 
+/* M2-A · Step 3.1：阻断卡接**只读投影**接口（Step 1：GET /v9/pes/runs）。
+   三条纪律：
+   1. **只读**：本函数只 GET，不写任何状态；
+   2. **取不到不当「全绿」**：接口不可用 / success=false / 有 degradations ⇒ **只 warn，不渲染假卡**；
+      `runs` 为空 ⇒ 不渲染卡片，也**不显示任何「正常」标记**（空 ≠ 全绿，见未闭 M2A-02）；
+   3. **字段不代填**：投影已按冻结表给白名单字段，本函数**只搬运**（多余字段由 paRenderCard warn 出来）。 */
+async function paLoadPesBlocks(){
+  try{
+    const r=await fetch(API+'/v9/pes/runs?user_id='+encodeURIComponent(curUser())+'&limit=50');
+    if(!r.ok){ console.warn('[PA][PES] 投影接口不可用：HTTP '+r.status+' ⇒ 不渲染任何阻断卡（不用「取不到」冒充「无阻断」）'); return; }
+    const d=await r.json();
+    if(!d||!d.success){ console.warn('[PA][PES] 投影 success=false：'+((d&&d.error)||'未知')+' ⇒ 不渲染任何阻断卡'); return; }
+    const deg=d.degradations||[];
+    deg.forEach(function(g){ console.warn('[PA][PES] 降级信号 '+(g&&g.code)+'：'+((g&&g.message)||'')); });
+    let n=0, first=null;
+    (d.runs||[]).forEach(function(run){
+      const b=run&&run.blocked; if(!b) return;
+      const card=paRenderCard('block', b);
+      if(card){ n++; if(!first) first=b; }
+    });
+    if(first){   /* 状态药丸也跟着进阻断态（键来自后端 state_map_key；未知键不猜，只 warn） */
+      const k=String(first.state_map_key||'blocked');
+      if(PA_STATE_DEF[k]) paSetState(k, first.reason||'');
+      else console.warn('[PA][PES] state_map_key 未知：'+k+'（不猜，保持原状态）');
+    }
+    if(!(d.runs||[]).length) console.log('[PA][PES] 投影 runs 为空（无 run 记录）—— 不渲染卡片，也不视为「全绿」');
+    console.log('[PA][PES] 阻断卡渲染 '+n+' 张（投影 runs='+(d.runs||[]).length+'，降级信号 '+deg.length+' 条）');
+  }catch(e){ console.warn('[PA][PES] 投影请求异常：'+(e&&e.message)); }
+}
 function renderPaWriteCard(pw, note){
   if(!pw) return null;
   const _cmd=String(pw.command||pw.path||'');
@@ -2157,6 +2222,7 @@ function paCollapseToSingleThread(){
   _boot("loadCfg", loadCfg);
   _boot("renderKbPanel", renderKbPanel);
   _boot("probeConn", probeConn);
+  _boot("paLoadPesBlocks", paLoadPesBlocks);   /* M2-A Step 3.1：阻断卡接只读投影（空库时静默，不渲染假卡） */
   setInterval(probeConn, 15000);
 })();
 </script>

@@ -218,10 +218,16 @@ def test_three_kinds_declared_and_non_persist_label_visible():
     assert 'id="paCardsHint"' in html and "卡片不持久化" in html, "缺少可见的「不持久化」标注"
 
 
-def test_pa_state_def_untouched_by_step2():
-    """Step 2 边界：状态契约仍 9 键（``blocked`` 属 Step 3，只增不改）。"""
+def test_pa_state_def_original_keys_unchanged():
+    """边界：既有 9 态**顺序与命名不得改动**（新键只能**追加在尾部**，不得插队/改名）。
+
+    2026-09-18 Step 3 按契约**追加** ``blocked``（阻断卡）—— 该步把本用例从「恰好 9 键」
+    收紧为「既有 9 键原样在前 + 新键只能尾部追加」；完整取值校验见
+    ``tests/pes/test_m2a_block_card.py::test_state_def_only_appended_blocked``。
+    """
     m = re.search(r"const PA_STATE_DEF = \{(.*?)\n\};", _src(), re.S)
     assert m, "未找到 PA_STATE_DEF"
     keys = re.findall(r"^\s*(\w+):\s*\{ic:", m.group(1), re.M)
-    assert len(keys) == 9, "既有 9 态被改动：%r" % keys
-    assert "blocked" not in keys
+    assert keys[:9] == ["idle", "running", "model", "tool", "approval",
+                        "verifying", "done", "failed", "stopped"], "既有 9 态被改动：%r" % keys
+    assert keys[9:] in ([], ["blocked"]), "只允许尾部追加 blocked：%r" % keys[9:]

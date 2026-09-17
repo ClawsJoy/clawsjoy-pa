@@ -22,8 +22,8 @@
 
 |字段|为什么这里没有|
 |---|---|
-|``blocked.layer`` / ``blocked.blocked_action`` / ``blocked.evidence_ref``|需读 audit 流 / ``goal_blocked_*.json``，属 Step 3 阻断卡接线|
-|``blocked.unblock_hint``|需 ``Authorizer.explain()``，属 Step 3|
+|~~``blocked.layer`` / ``blocked.blocked_action`` / ``blocked.evidence_ref``~~|**2026-09-18 Step 3.1 已接线**（读注册表行 ``last_error`` + audit 流 ``for_run()`` 的 ``seq``）；取不到仍显式 ``None``|
+|~~``blocked.unblock_hint``~~|**2026-09-18 Step 3.1：只**透传** ``last_error.unblock_hint``**；**不调 ``Authorizer.explain()``** —— 实测 ``CapabilityRegistry.ensure_seeded()`` 会写注册表（``capability_registry.py:79-91`` → ``update_runtime``），在只读投影里调用它就违反 P3。⇒ ``unblock_hint`` 的产出方是**产生阻断的那一层**（写进 ``last_error``），投影只透传；取不到 ⇒ ``None``（UI 显式渲染「无替代路径（未记录）」，不说谎）|
 |``approval``|审批实源（``write_gate._pending_writes``）是 **session 级**，与 run **无共同键** ⇒ **不臆造关联**，恒 ``None``；审批卡本身也排 Step 3 最后|
 
 **边界**：本模块不调 ``contract.reduce()``、不投任何事件、不调 ``RunRegistry.reconcile()``（它会写审计流）。
@@ -38,6 +38,7 @@ from typing import Any, Dict, List, Optional
 
 from core.gateway.task_contract import load as _load_p0_contract
 from core.pes import contract as pes_contract
+from core.pes.audit import audit_log as _audit_log
 from core.pes.run_registry import DEFAULT_RUNS_PATH, RunRegistry
 
 DEFAULT_LIMIT = 50
@@ -112,8 +113,35 @@ def _artifact_view(row: Any, contract: Optional[Dict[str, Any]]) -> Dict[str, An
     }
 
 
-def _blocked_view(row: Any, run_id: str) -> Optional[Dict[str, Any]]:
-    """阻断卡骨架：只读注册表行；未接线字段显式 ``None``（见模块 docstring）。"""
+def _evidence_ref(run_id: str, audit: Any = None) -> Optional[str]:
+    """证据引用：**只读** audit 流里该 run 的最后一条 ``seq`` ⇒ ``<path>#seq=N``。
+
+    取不到（无该 run 的审计记录 / 流未落盘）⇒ ``None`` —— **不编证据**。
+    用 ``seq`` 而不是行号，是因为 ``seq`` 是审计链自己的**稳定序号**（行号会随重写漂移）。
+    """
+    try:
+        log = audit if audit is not None else _audit_log()
+        rows = log.for_run(str(run_id))
+    except Exception:
+        return None
+    if not rows:
+        return None
+    seq = _k(rows[-1], "seq")
+    if seq is None:
+        return None
+    try:
+        where = log.path.as_posix()
+    except Exception:
+        where = "audit.jsonl"
+    return "%s#seq=%s" % (where, seq)
+
+
+def _blocked_view(row: Any, run_id: str, audit: Any = None) -> Optional[Dict[str, Any]]:
+    """阻断卡：**只读**注册表行 ``last_error`` + audit 流证据引用（Step 3.1 接线）。
+
+    ``unblock_hint`` **只透传**来源写入的值（``last_error.unblock_hint``）；
+    **本模块不调 ``Authorizer.explain()``** —— 那会 ``ensure_seeded()`` 写注册表（违反 P3）。
+    """
     if _k(row, "state") != "blocked":
         return None
     err = _k(row, "last_error")
@@ -126,13 +154,14 @@ def _blocked_view(row: Any, run_id: str) -> Optional[Dict[str, Any]]:
         "layer": _blank(_k(err, "layer")),
         "reason": _blank(_k(err, "message")),
         "blocked_action": _blank(_k(err, "tool")),
-        "evidence_ref": None,
-        "unblock_hint": None,
+        "evidence_ref": _evidence_ref(run_id, audit),
+        "unblock_hint": _blank(_k(err, "unblock_hint")),
         "state_map_key": "blocked",
     }
 
 
-def _project_run(row: Any, degradations: List[Dict[str, Any]], contracts_dir: Any) -> Dict[str, Any]:
+def _project_run(row: Any, degradations: List[Dict[str, Any]], contracts_dir: Any,
+                 audit: Any = None) -> Dict[str, Any]:
     run_id = str(_k(row, "run_id") or "")
     contract = _load_contract(run_id, contracts_dir)
     if contract is None:
@@ -158,14 +187,14 @@ def _project_run(row: Any, degradations: List[Dict[str, Any]], contracts_dir: An
         "progress": _progress_view(contract),
         "artifact": _artifact_view(row, contract),
         "verdict": pes_contract.verdict(contract, None),
-        "blocked": _blocked_view(row, run_id),
+        "blocked": _blocked_view(row, run_id, audit),
         "approval": None,
     }
 
 
 def project_runs(session_id: Optional[str] = None, user_id: Optional[str] = None,
                  limit: int = DEFAULT_LIMIT, runs_path: Any = None,
-                 contracts_dir: Any = None) -> Dict[str, Any]:
+                 contracts_dir: Any = None, audit: Any = None) -> Dict[str, Any]:
     """**只读**投影：设计稿 §6 Step 1 的返回形状。
 
     空库 / 无落盘 ⇒ ``runs: []`` + ``degradations``，**不抛异常、不 500**。
@@ -205,7 +234,7 @@ def project_runs(session_id: Optional[str] = None, user_id: Optional[str] = None
     return {
         "success": True,
         "generated_at": datetime.datetime.now().isoformat(timespec="seconds"),
-        "runs": [_project_run(r, degradations, contracts_dir) for r in rows],
+        "runs": [_project_run(r, degradations, contracts_dir, audit) for r in rows],
         "degradations": degradations,
     }
 
