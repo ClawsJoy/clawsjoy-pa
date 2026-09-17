@@ -701,6 +701,38 @@ def _commit_results(
     return {"sevenb_fail": False, "bridge_exhausted": bridge_exhausted}
 
 
+def _pending_card_view(_pw):
+    """M2-A · Step 3.3（方案 A）：审批卡的**响应视图** —— 只读叠加，不改 `_pending_writes` 结构、
+    不进 `_persist_pending_writes` 白名单 ⇒ **不污染 `.agent_state.json`**（在响应组装时现算）。
+
+    两条纪律（设计稿 §2.1；前端有静态反例钉死「不得本地算时间」）：
+    ① 剩余秒数**只能后端算**（`expires_in_s`，来源 `write_gate._PENDING_TTL`，不写死数值）；
+    ② **未知即未知**：取不到就是 `None`，**不兜底成 0**（0 会被读成「已过期」⇒ 假拒绝）。
+    `revoke_window` 透传 `HoldQueue.visibility()`；写审批**未接 hold**（产品侧 0 调用点）⇒
+    今天恒 `{"show": False}`，前端只在 `show=True` 时渲染（不暗示一个不存在的窗口）。
+    """
+    _view = dict(_pw or {})
+    try:
+        import time as _t_pcv
+
+        _ts = float(_view.get("ts") or 0)
+        if _ts <= 0:
+            _view["expires_in_s"] = None
+        else:
+            from core.gateway.write_gate import _PENDING_TTL as _TTL_pcv
+
+            _view["expires_in_s"] = max(0, int(_TTL_pcv - (_t_pcv.time() - _ts)))
+    except Exception:
+        _view["expires_in_s"] = None
+    try:
+        from core.pes.authorization import HoldQueue as _HQ_pcv
+
+        _view["revoke_window"] = _HQ_pcv().visibility(str(_view.get("id") or ""))
+    except Exception:
+        _view["revoke_window"] = {"show": False}
+    return _view
+
+
 def _run_approval_gate(
     *,
     pre_terminal,
@@ -825,10 +857,11 @@ def _run_approval_gate(
                 "goal_info": goal_info_fn(session_id),
             }
             if _is_batch:
-                _resp_wp["batch_pending"] = _pending_writes[session_id]
+                # Step 3.3 A：批量卡同样给一份「响应视图」（秒数由后端算，不写回 _pending_writes）
+                _resp_wp["batch_pending"] = _pending_card_view(_pending_writes[session_id])
                 _resp_wp["pending_writes"] = _pending_writes[session_id].get("items", [])
             else:
-                _resp_wp["pending_write"] = _pending_writes[session_id]
+                _resp_wp["pending_write"] = _pending_card_view(_pending_writes[session_id])
             return (messages, tool_steps, bridge_exhausted, _resp_wp, tokens, None, None)
         if _term_kind == "plan_pending":
             # 状态写入(原内联逻辑): _plan_pending(确认路由依赖此状态)
