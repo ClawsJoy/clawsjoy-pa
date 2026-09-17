@@ -7,7 +7,12 @@ from flask import jsonify
 
 from core.gateway.audit import _record_approval
 from core.gateway.tool_router import _truncate_tool_result_content
-from core.gateway.write_gate import _pending_writes, _persist_pending_writes, _plan_pending
+from core.gateway.write_gate import (
+    _PENDING_TTL,
+    _pending_writes,
+    _persist_pending_writes,
+    _plan_pending,
+)
 
 
 def _approval_payload(_r):
@@ -128,7 +133,7 @@ def _handle_write_approval(user_id, session_id, messages, model, approve):
                 }
             )
     elif not _p or _p.get("id") != approve.get("id"):
-        # 2026-08-30 审核对齐 harness: pending 不存在 = 已执行过 或 TTL(60s) 已过期。
+        # 2026-08-30 审核对齐 harness: pending 不存在 = 已执行过 或 TTL 已过期（时长见 write_gate._PENDING_TTL，勿在此写死数值）。
         # 不再返回"已确认执行"假成功(用户点卡片后发现没写入, 误以为成功) —
         # 过期场景前端显示明确提示, Agent 需重新发起写入。
         _expired_flag = _p is None
@@ -138,7 +143,9 @@ def _handle_write_approval(user_id, session_id, messages, model, approve):
             {
                 "success": False,
                 "status": "write_expired" if _expired_flag else "write_confirmed_dup",
-                "message": "该写入审批已过期或已完成（60 秒内有效）。请让 Agent 重新发起写入；如需原内容请重新触发。",
+                # X-08 A1: 秒数从 write_gate._PENDING_TTL 派生 —— 文案与真值永不漂移
+                "message": f"该写入审批已过期或已完成（{int(_PENDING_TTL)} 秒内有效）。"
+                "请让 Agent 重新发起写入；如需原内容请重新触发。",
                 "expired": True if _expired_flag else False,
             }
         )
