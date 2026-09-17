@@ -26,7 +26,7 @@ _pending_writes = {}
 # session_id → {"ts": float, "approved": bool, "plan": str, "files": [str], "intents": int}
 _plan_pending = {}
 
-# #106 C5：pending 并发锁 + TTL（60s 过期清理）；threading 延迟工厂
+# #106 C5：pending 并发锁 + TTL 过期清理（时长见 _PENDING_TTL，勿在本注释写死数值）；threading 延迟工厂
 _pending_lock = None
 _PENDING_TTL = 300.0  # 2026-08-30 对齐 harness: 审批 60s 过短(大文章/多文件审核不够), 放宽到 5 分钟; 过期显式提示非假成功
 
@@ -93,7 +93,7 @@ def _persist_pending_writes(user_id, session_id):
 
 
 def _pending_cleanup(now=None):
-    """清理过期的 pending 写操作（TTL 60s）"""
+    """清理过期的 pending 写操作（TTL = _PENDING_TTL，勿在此写死数值）。"""
     if now is None:
         now = time.time()
     with _get_pending_lock():
