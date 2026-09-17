@@ -5,7 +5,6 @@ ClawsJoy Robotics Agent - 延申版集成入口
 import os
 import sys
 
-sys.path.insert(0, "/home/flybo/clawsjoy_v5")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import logging

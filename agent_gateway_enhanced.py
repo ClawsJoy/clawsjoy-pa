@@ -35,7 +35,23 @@ from core.gateway.write_gate import *
 from core.lib.gateway_helpers import _get_sandbox_base
 from core.lib.tool_executor import tool_executor
 
-_PROJECT_ROOT = os.environ.get("PROJECT_ROOT", os.path.dirname(os.path.abspath(__file__)))
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _resolve_project_root():
+    """解析项目根目录。
+
+    PROJECT_ROOT 可能来自 .env（历史 WSL 绝对路径 /home/flybo/...）。
+    Windows 副本下该路径不存在，此时必须回退到本文件所在目录，
+    否则 config/system_config.yaml 读取失败、进程无法启动。
+    """
+    for candidate in (os.environ.get("PROJECT_ROOT"), _THIS_DIR):
+        if candidate and os.path.isfile(os.path.join(candidate, "config", "system_config.yaml")):
+            return candidate
+    return _THIS_DIR
+
+
+_PROJECT_ROOT = _resolve_project_root()
 
 # H2 防线修复: H1 提取遗留的漏变量定义（防线抓到）
 # _file_retry_state: 大文件重试计数（函数内 get/set, 原无定义 → NameError 被吞）
@@ -43,16 +59,22 @@ _file_retry_state = {}
 # _task_config: 任务配置默认值（原在 execute_agent_task 模块级, 此处从该模块复用）
 from core.gateway.execute_agent_task import _task_config  # noqa: E402
 
-with open(os.path.join(_PROJECT_ROOT, "config/system_config.yaml"), "r") as _f:
+with open(os.path.join(_PROJECT_ROOT, "config/system_config.yaml"), "r", encoding="utf-8") as _f:
     _sys_cfg = yaml.safe_load(_f).get("system", {})
 _env_path = _sys_cfg.get("env_file_path", "config/.env")
 if not os.path.isabs(_env_path):
     _env_path = os.path.join(_PROJECT_ROOT, _env_path)
 load_dotenv(_env_path, override=True)
 
+# load_dotenv 会把 .env 里的 PROJECT_ROOT 灌进 os.environ；若它是历史 WSL 路径
+# （/home/flybo/clawsjoy_v5），下游 security / shared_state / context_manager /
+# execute_command 拿到的项目根就是无效路径。这里统一校正为实际存在的根目录。
+if not os.path.isdir(os.environ.get("PROJECT_ROOT", "")):
+    os.environ["PROJECT_ROOT"] = _PROJECT_ROOT
+
 # 如果 .env 文件没有配置代理，清除 shell 残留的代理
 _env_has_proxy = False
-with open(_env_path) as _f:
+with open(_env_path, encoding="utf-8") as _f:
     for _line in _f:
         if _line.startswith("HTTP_PROXY=") or _line.startswith("HTTPS_PROXY="):
             _env_has_proxy = True

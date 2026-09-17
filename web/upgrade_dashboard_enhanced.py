@@ -11,7 +11,8 @@ import plotly.graph_objects as go
 import streamlit as st
 import yaml
 
-sys.path.insert(0, "/home/flybo/clawsjoy_v5")
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
+sys.path.insert(0, _PROJECT_ROOT)
 
 from core.agents.builtin.config_upgrader import ConfigUpgrader
 from tools.real_log_collector import RealLogCollector
@@ -103,7 +104,7 @@ with tab1:
             config_file = Path(f"agents/{agent}/config.yaml")
             temp = "N/A"
             if config_file.exists():
-                with open(config_file) as f:
+                with open(config_file, encoding="utf-8") as f:
                     config = yaml.safe_load(f)
                     temp = (
                         config.get("agent", {}).get("llm", {}).get("temperature", "N/A")
@@ -235,7 +236,7 @@ with tab3:
 
     config_file = Path(f"agents/{selected_agent}/config.yaml")
     if config_file.exists():
-        with open(config_file, "r") as f:
+        with open(config_file, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
 
         col1, col2 = st.columns(2)
@@ -276,7 +277,7 @@ with tab3:
                 config["agent"]["llm"]["temperature"] = new_temp
                 config["agent"]["llm"]["max_tokens"] = new_tokens
 
-                with open(config_file, "w") as f:
+                with open(config_file, "w", encoding="utf-8") as f:
                     yaml.dump(config, f, allow_unicode=True, default_flow_style=False)
 
                 st.success("配置已保存！")

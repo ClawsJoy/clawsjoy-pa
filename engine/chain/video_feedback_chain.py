@@ -5,7 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, "/home/flybo/clawsjoy_v5")
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+sys.path.insert(0, _PROJECT_ROOT)
 from engine.semantic_params.mapper import FeedbackLearner, SemanticParamMapper
 
 
@@ -71,7 +72,7 @@ class VideoFeedbackChain:
         ]
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, encoding="utf-8", errors="replace")
             if result.returncode == 0 and output_path.exists():
                 return {"success": True, "adjusted": str(output_path)}
             else:

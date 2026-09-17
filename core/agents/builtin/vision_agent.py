@@ -3,7 +3,8 @@
 
 import sys
 
-sys.path.insert(0, "/home/flybo/clawsjoy_v5")
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
+sys.path.insert(0, _PROJECT_ROOT)
 import base64
 from pathlib import Path
 

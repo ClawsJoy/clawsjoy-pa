@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-sys.path.insert(0, '/home/flybo/clawsjoy_v5')
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
+sys.path.insert(0, _PROJECT_ROOT)
 
 
 class IncrementalFixer:

@@ -12,8 +12,9 @@ import re
 import shutil
 import time
 from pathlib import Path
+from core.lib.paths import vault_root
 
-VAULT_ROOT = "/mnt/d/Obsidian/ClawsJoy/ClawsJoy"
+VAULT_ROOT = str(vault_root())
 
 
 class BrainSync:

@@ -17,7 +17,7 @@ class ImageAnalyzer:
         try:
             import sys
 
-            sys.path.insert(0, "/home/flybo/clawsjoy_v5")
+            sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
             from skills.vision.scripts.main import execute as vision_execute
 
             self.vision_execute = vision_execute

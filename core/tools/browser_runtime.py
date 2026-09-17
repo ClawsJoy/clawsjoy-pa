@@ -26,10 +26,11 @@ import threading
 import time
 from contextlib import contextmanager
 from typing import Dict, Optional, Tuple
+from core.lib.paths import playwright_browsers_path
 
 log = logging.getLogger(__name__)
 
-BROWSERS_PATH_DEFAULT = "/mnt/d/whisper_cache/ms-playwright"
+BROWSERS_PATH_DEFAULT = playwright_browsers_path()
 MAX_SESSIONS = 4
 SESSION_TTL_S = 600
 

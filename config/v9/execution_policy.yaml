@@ -55,7 +55,7 @@ workspace:
 # ===== Obsidian 第二大脑集成(2026-08-29): 知识检索源 + 任务复盘写入 =====
 obsidian:
   enabled: true
-  vault_path: "/mnt/d/Obsidian/ClawsJoy/ClawsJoy"   # WSL 挂载; Windows 侧 D:\Obsidian\ClawsJoy
+  vault_path: "D:/Obsidian/ClawsJoy/ClawsJoy"   # WSL 挂载; Windows 侧 D:\Obsidian\ClawsJoy
   reviews_dir: "聊天区/复盘"   # 批198: 按《第二大脑分类规范 v2》目标目录（此前仍写顶层 Reviews ⇒ 迁移回退、972 份堆积）
   sops_dir: "SOPs"
   pitfalls_dir: "Pitfalls"

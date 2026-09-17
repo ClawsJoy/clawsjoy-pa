@@ -14,6 +14,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from core.lib.paths import vault_root
 
 
 def _vault_root() -> Path:
@@ -28,7 +29,7 @@ def _vault_root() -> Path:
             return Path(p)
     except Exception:
         pass
-    return Path("/mnt/d/Obsidian/ClawsJoy/ClawsJoy")
+    return vault_root()
 
 
 def _llm_summarize(text: str, max_chars: int = 3000) -> str:
@@ -134,7 +135,10 @@ def _describe_image_llava(file_path: Path) -> Dict[str, Any]:
 def _extract_pdf(file_path: Path) -> Dict[str, Any]:
     """PyPDF2 提取文本(限 3 万字符防膨胀)。"""
     try:
-        from PyPDF2 import PdfReader
+        try:
+            from pypdf import PdfReader
+        except ImportError:  # PyPDF2 已弃用名, 仅作兼容回退
+            from PyPDF2 import PdfReader
 
         _r = PdfReader(str(file_path))
         _n = len(_r.pages)
@@ -225,7 +229,7 @@ def process_youtube(source_url: str, note_path: str = "", title: str = "") -> Di
             str(_tmp_dir / "audio.%(ext)s"),
             _url,
         ]
-        _dl = subprocess.run(_dl_cmd, capture_output=True, text=True, timeout=120, env=_env)
+        _dl = subprocess.run(_dl_cmd, capture_output=True, text=True, timeout=120, env=_env, encoding="utf-8", errors="replace")
         _audio_cands = list(_tmp_dir.glob("audio.*"))
         if _dl.returncode == 0 and _audio_cands:
             _audio_path = _audio_cands[0]
@@ -493,7 +497,7 @@ def process_media(file_path: str, media_type: str = "", title: str = "") -> Dict
         return {
             "success": True,
             "note_path": str(_note_path),
-            "rel_path": str(_note_path.relative_to(root)),
+            "rel_path": _note_path.relative_to(root).as_posix(),
             "media": {"name": _media_name, "copied_to": str(_assets_dst)},
             "summary": _summary,
             "media_type": media_type,

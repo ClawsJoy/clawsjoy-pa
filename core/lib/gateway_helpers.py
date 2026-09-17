@@ -7,6 +7,7 @@ import re
 import time as _gw_time
 import uuid
 from pathlib import Path
+from core.lib.paths import playwright_browsers_path
 
 _intercept_cache = {}
 
@@ -152,14 +153,14 @@ class ProjectUserState:
         path = self._get_state_path()
         if path.exists():
             try:
-                self._state = json.loads(path.read_text())
+                self._state = json.loads(path.read_text(encoding="utf-8"))
             except Exception:
                 self._state = {}
         else:
             self._state = {}
 
     def _save(self):
-        self._get_state_path().write_text(json.dumps(self._state, indent=2, ensure_ascii=False))
+        self._get_state_path().write_text(json.dumps(self._state, indent=2, ensure_ascii=False), encoding="utf-8")
 
     def get(self, key: str, default=None):
         return self._state.get(key, default)
@@ -207,7 +208,7 @@ def load_memories(user_id: str) -> list:
         pass
 
     if MEMORY_FILE.exists():
-        all_memories = json.loads(MEMORY_FILE.read_text())
+        all_memories = json.loads(MEMORY_FILE.read_text(encoding="utf-8"))
         return all_memories.get(user_id, [])
     return []
 
@@ -224,11 +225,11 @@ def save_memory(user_id: str, fact: str):
 
     all_memories = {}
     if MEMORY_FILE.exists():
-        all_memories = json.loads(MEMORY_FILE.read_text())
+        all_memories = json.loads(MEMORY_FILE.read_text(encoding="utf-8"))
     memories = all_memories.get(user_id, [])
     memories.append({"fact": fact, "timestamp": datetime.now().isoformat()})
     all_memories[user_id] = memories[-100:]
-    MEMORY_FILE.write_text(json.dumps(all_memories, indent=2))
+    MEMORY_FILE.write_text(json.dumps(all_memories, indent=2), encoding="utf-8")
 
 
 def search_memories(user_id: str, query: str) -> list:
@@ -303,7 +304,7 @@ LEARNING_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 def load_learning_stats() -> dict:
     if LEARNING_FILE.exists():
-        data = json.loads(LEARNING_FILE.read_text())
+        data = json.loads(LEARNING_FILE.read_text(encoding="utf-8"))
         if isinstance(data, dict):
             if "total_learnings" not in data:
                 data["total_learnings"] = data.get("learned", 0)
@@ -318,7 +319,7 @@ def record_learning(fact: str, success: bool = True):
         stats["successful_learnings"] = stats.get("successful_learnings", 0) + 1
     else:
         stats["failed_learnings"] = stats.get("failed_learnings", 0) + 1
-    LEARNING_FILE.write_text(json.dumps(stats, indent=2))
+    LEARNING_FILE.write_text(json.dumps(stats, indent=2), encoding="utf-8")
 
 
 # ========== 用户目录创建 ==========
@@ -338,7 +339,7 @@ def create_user_directories(username: str, user_id: str, email: str = ""):
         "role": "user",
         "created_at": datetime.now().isoformat(),
     }
-    (user_dir / "profile.json").write_text(json.dumps(profile, indent=2))
+    (user_dir / "profile.json").write_text(json.dumps(profile, indent=2), encoding="utf-8")
 
 
 # ========== V9 Agent 工作区 → StandardJSON 协议适配器 ==========
@@ -2219,7 +2220,7 @@ def _handle_playwright_browser(params):
         return {"success": False, "error": "playwright 未安装: %s" % exc}
 
     # 部署环境 chromium 缓存路径(可被 shell env 覆盖); 避免 "Executable doesn't exist" 类路径问题
-    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/mnt/d/whisper_cache/ms-playwright")
+    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", playwright_browsers_path())
 
     try:
         from core.tools import browser_runtime as _brt  # 批197：唯一出口

@@ -8,7 +8,8 @@ from typing import Dict, Optional, Tuple
 
 from dotenv import load_dotenv
 
-load_dotenv("/home/flybo/clawsjoy_v5/config/.env")
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+load_dotenv(os.path.join(_PROJECT_ROOT, "config", ".env"))
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -83,7 +84,7 @@ class YoutubeAgentV4(BusinessAgent):
                 "video",
                 "video_download",
             )
-            result = subprocess.run(["bash", script_path, url], capture_output=True, text=True, timeout=300)
+            result = subprocess.run(["bash", script_path, url], capture_output=True, text=True, timeout=300, encoding="utf-8", errors="replace")
             if result.returncode == 0:
                 return self._resp(f"✅ 下载完成\n\n{result.stdout.strip()}")
             else:

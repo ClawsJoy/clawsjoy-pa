@@ -17,7 +17,7 @@ def _resolve_main_repo(user_id, session_id):
                 break
         if _here_repo is None:
             return None
-        if "data/projects" not in str(_here_repo):
+        if "data/projects" not in _here_repo.as_posix():
             return _here_repo
         # 模块在沙箱副本（data/projects 之下）：向上找正本 git 根
         for _p in _here_repo.parents:
@@ -107,7 +107,7 @@ def _resolve_path(base, path):
     if path_str.count("clawsjoy_dev/") > 1 or "data/projects/" in path_str:
         # 任务3 修复: 用 data/projects/ 锚点定位 uid/sid（固定 parts[-3]/[-2] 在子任务 base
         # 多 2 层 subtasks/{tid} 时会取错为 clawsjoy_dev/subtasks）
-        _base_str = str(base)
+        _base_str = str(base).replace(chr(92), "/")  # Windows: str(Path) 用反斜杠, 统一成正斜杠再解析
         user_id = "default"
         session_id = "default"
         if "data/projects/" in _base_str:
@@ -133,7 +133,7 @@ def _resolve_path(base, path):
         state_file = base / ".agent_state.json"
         if state_file.exists():
             import json as _json
-            project_root = _json.loads(state_file.read_text()).get("project_root", "clawsjoy_dev")
+            project_root = _json.loads(state_file.read_text(encoding="utf-8")).get("project_root", "clawsjoy_dev")
     except Exception:
         pass
     # #92 修复：base 恒为沙箱根（data/projects/{uid}/{sid}/clawsjoy_dev），
@@ -158,7 +158,7 @@ def _resolve_path(base, path):
         # 与 _normalize_path 的"主沙箱绝对路径保持"对齐, 解析到主沙箱而非拼回 base 双重嵌套。
         # 主沙箱根 = base 去掉 /subtasks/{tid} 段(_resolve_path 无 uid/sid 参数, 从 base 推导)。
         if _rel_s.startswith("subtasks/"):
-            _main_base_res = Path(str(base).split(_off_sub, 1)[0].rstrip("/"))
+            _main_base_res = Path(str(base).replace(chr(92), "/").split(_off_sub, 1)[0].rstrip("/"))
             return _main_base_res / _rel_s
     if _rel.startswith(".") or "/" not in _rel:
         return base / _rel

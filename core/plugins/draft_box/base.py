@@ -15,6 +15,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from core.lib.paths import vault_root
 
 
 def _vault_root() -> Path:
@@ -28,7 +29,7 @@ def _vault_root() -> Path:
             return Path(p)
     except Exception:
         pass
-    return Path("/mnt/d/Obsidian/ClawsJoy/ClawsJoy")
+    return vault_root()
 
 
 def _sanitize_filename(title: str) -> str:
@@ -122,7 +123,7 @@ class DraftBoxPlugin:
             note_txt = (chr(10) + chr(10) + "> 媒体说明: " + self.media_note) if self.media_note else ""
             fpath.write_text(fm + chr(10) + chr(10) + body + media_txt + note_txt, encoding="utf-8")
             return {"success": True, "path": str(fpath),
-                    "rel_path": str(fpath.relative_to(root)), "media": media_info}
+                    "rel_path": fpath.relative_to(root).as_posix(), "media": media_info}
         except Exception as e:
             return {"success": False, "error": str(e)}
 
@@ -161,7 +162,7 @@ class DraftBoxPlugin:
             p.write_text(new_txt, encoding="utf-8")
             changed = new_txt != orig
             return {"success": True, "path": str(p),
-                    "rel_path": str(p.relative_to(root)), "changed": changed}
+                    "rel_path": p.relative_to(root).as_posix(), "changed": changed}
         except Exception as e:
             return {"success": False, "error": str(e)}
 
@@ -208,7 +209,7 @@ class DraftBoxPlugin:
                 if status and st != status:
                     continue
                 out.append({"name": f.name, "path": str(f),
-                            "rel_path": str(f.relative_to(root)),
+                            "rel_path": f.relative_to(root).as_posix(),
                             "status": st, "mtime": f.stat().st_mtime})
             except Exception:
                 continue

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """file_center 工具(2026-09-11): PA 独立核验交付物落盘(存在+大小), 不信桥自报 applied:true。"""
 import os
-import re
 
 from core.tools.base import ToolPlugin
+from core.lib.paths import to_host_path
 
 FILE_CENTER_SCHEMA = {
     "type": "function",
@@ -23,11 +23,12 @@ FILE_CENTER_SCHEMA = {
 
 
 def _to_linux(path):
-    p = str(path or "").strip().replace("\\", "/")
-    m = re.match(r"^([A-Za-z]):/(.*)$", p)
-    if m:
-        return "/mnt/%s/%s" % (m.group(1).lower(), m.group(2))
-    return p
+    """把传入路径规整成当前主机可用的形式（函数名保留历史叫法）。
+
+    WSL:     C:/x -> /mnt/c/x   （interop 需要挂载路径）
+    Windows: /mnt/c/x -> C:/x   （否则 /mnt/c 在本机不存在，必然找不到文件）
+    """
+    return to_host_path(path)
 
 
 class FileCenterPlugin(ToolPlugin):

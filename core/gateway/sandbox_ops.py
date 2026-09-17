@@ -163,7 +163,7 @@ def v9_sandbox_read_handler():
         _proj_root = "youtube-autopilot"
         if _state_file.exists():
             try:
-                _state = json.loads(_state_file.read_text())
+                _state = json.loads(_state_file.read_text(encoding="utf-8"))
                 _wm = _state.get("world_model", {})
                 _proj_root = _wm.get("project_root", "youtube-autopilot")
             except Exception:
@@ -770,13 +770,13 @@ def v9_sandbox_edit_handler():
         if resp.status_code == 200:
             content = resp.json()["choices"][0]["text"]
             # 将 FIM 结果插入到文件中
-            original = target.read_text()
+            original = target.read_text(encoding="utf-8")
             # 备份原文件
             backup = target.with_suffix(target.suffix + ".bak")
-            backup.write_text(original)
+            backup.write_text(original, encoding="utf-8")
 
             # FIM 精准替换：找到 prompt 和 suffix 在原文件中的位置，只替换中间部分
-            original = target.read_text()
+            original = target.read_text(encoding="utf-8")
 
             # 在原文件中定位 prompt 和 suffix
             # 模糊匹配：忽略每行前导空白
@@ -797,7 +797,7 @@ def v9_sandbox_edit_handler():
                 start = sum(len(l) + 1 for l in original.split("\n")[:prompt_line])
                 end = sum(len(l) + 1 for l in original.split("\n")[: suffix_line + 1])
                 final = original[:start] + prompt + "\n" + content + "\n" + suffix + original[end:]
-                target.write_text(final)
+                target.write_text(final, encoding="utf-8")
                 return jsonify({"success": True, "content": content, "path": str(target)})
             else:
                 return jsonify(
@@ -808,7 +808,7 @@ def v9_sandbox_edit_handler():
                     }
                 )
         logger.info(f"API 400 响应: {resp.text[:500]}")
-        with open("logs/api_errors.log", "a") as f:
+        with open("logs/api_errors.log", "a", encoding="utf-8") as f:
             f.write(f"{resp.text[:500]}\n")
         return jsonify({"success": False, "error": f"API错误: {resp.status_code}"})
     except Exception as e:
@@ -952,7 +952,7 @@ def v9_sandbox_query_index_handler():
         # 索引文件为空，自动触发扫描
         _py_files = [f for f in _project_dir.rglob("*.py") if ".venv" not in f.parts and "site-packages" not in f.parts]
         _py_files = [
-            f for f in _py_files if "test_" not in f.name and "/tests/" not in str(f) and not f.name.endswith(".bak")
+            f for f in _py_files if "test_" not in f.name and "/tests/" not in f.as_posix() and not f.name.endswith(".bak")
         ]
         for _pf in _py_files:  # #195 全量扫描，移除 [:200] 截断
             try:
@@ -1200,7 +1200,7 @@ def v9_sandbox_exec_handler():
         _cmd_fixed = _re_heredoc.sub(r"(?<![A-Za-z0-9_])\./", "", _cmd_fixed)
         _cmd_fixed = _re_heredoc.sub(r"(?<![A-Za-z0-9_])clawsjoy_dev/", "", _cmd_fixed)
         result = _sp_heredoc.run(
-            _cmd_fixed, shell=True, capture_output=True, text=True, timeout=300, cwd=str(sandbox_base), env=_SANDBOX_ENV
+            _cmd_fixed, shell=True, capture_output=True, text=True, timeout=300, cwd=str(sandbox_base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace"
         )
         return jsonify(
             {
@@ -1224,7 +1224,7 @@ def v9_sandbox_exec_handler():
         # cwd 统一为 sandbox_base（与 heredoc 分支一致，避免 base/clawsjoy_dev 双重拼接）
         sandbox_base = _get_sandbox_base(user_id, session_id)
         result = _sp_inline.run(
-            command, shell=True, capture_output=True, text=True, timeout=300, cwd=str(sandbox_base), env=_SANDBOX_ENV
+            command, shell=True, capture_output=True, text=True, timeout=300, cwd=str(sandbox_base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace"
         )
         return jsonify(
             {
@@ -1414,7 +1414,7 @@ def v9_sandbox_exec_handler():
                 if _abs.exists():
                     _before_mtimes[str(_abs)] = _abs.stat().st_mtime
             _res_h2 = subprocess.run(
-                command, shell=True, capture_output=True, text=True, timeout=30, cwd=str(base), env=_SANDBOX_ENV
+                command, shell=True, capture_output=True, text=True, timeout=30, cwd=str(base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace"
             )
             if _res_h2.returncode == 0:
                 import time as _t2
@@ -1500,7 +1500,7 @@ def v9_sandbox_exec_handler():
             if _sb_err:
                 return jsonify({"success": False, "stdout": "", "stderr": _sb_err, "returncode": 1})
             result = subprocess.run(
-                command, shell=True, cwd=str(base), env=_SANDBOX_ENV, capture_output=True, text=True, timeout=30
+                command, shell=True, cwd=str(base), env=_SANDBOX_ENV, capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace"
             )
             _resp = {
                 "success": result.returncode == 0,
@@ -1535,7 +1535,7 @@ def v9_sandbox_exec_handler():
                 return jsonify({"success": False, "error": "禁止在沙箱外写入文件。所有修改操作必须在项目目录内进行。"})
 
         result = subprocess.run(
-            command, shell=True, cwd=str(base), env=_SANDBOX_ENV, capture_output=True, text=True, timeout=30
+            command, shell=True, cwd=str(base), env=_SANDBOX_ENV, capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace"
         )
         _hint = None
         if result.returncode != 0 and result.stderr and "No such file or directory" in result.stderr:
@@ -1576,7 +1576,7 @@ def v9_sandbox_exec_handler():
                     try:
                         from core.lib.code_entity_extractor import extractor
 
-                        _ec = extractor.extract_and_upsert(str(_abs_wp), _abs_wp.read_text()) or 0
+                        _ec = extractor.extract_and_upsert(str(_abs_wp), _abs_wp.read_text(encoding="utf-8")) or 0
                     except Exception:
                         _ec = 0
         _ec = _ec if "_ec" in dir() else 0
@@ -1618,7 +1618,7 @@ def v9_sandbox_checkpoint_handler():
         from core.gateway.sandbox_git import safe_git_commit as _sgc2
 
         _st2 = subprocess.run(
-            ["git", "status", "--porcelain"], cwd=str(base), capture_output=True, text=True, timeout=10
+            ["git", "status", "--porcelain"], cwd=str(base), capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace"
         )
         _files2 = [ln[3:].strip() for ln in (_st2.stdout or "").splitlines() if len(ln) > 3 and ln[3:].strip()]
         _ok2, _det2 = _sgc2(base, _files2, message, require_toplevel=base)
@@ -1632,11 +1632,11 @@ def v9_sandbox_checkpoint_handler():
             cwd=str(base),
             capture_output=True,
             text=True,
-            timeout=10,
+            timeout=10, encoding="utf-8", errors="replace"
         )
         if r_patch.returncode != 0:
             return jsonify({"success": False, "error": r_patch.stderr.strip() or "git format-patch 失败"})
-        r_hash = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5)
+        r_hash = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
         patch_files = sorted(patches_dir.glob("*.patch")) if patches_dir.exists() else []
         return jsonify(
             {
@@ -1661,8 +1661,8 @@ def v9_sandbox_rollback_handler():
     if not (base / ".git").exists():
         return jsonify({"success": False, "error": "沙箱 Git 仓库未初始化"})
     try:
-        subprocess.run(["git", "reset", "--hard", target], cwd=str(base), capture_output=True, text=True, timeout=10)
-        r_hash = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5)
+        subprocess.run(["git", "reset", "--hard", target], cwd=str(base), capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
+        r_hash = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
         _trk = _tracker_setdefault(
             _session_git_tracker,
             session_id,

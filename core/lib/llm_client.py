@@ -28,6 +28,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from core.lib.os_event_logger import write_os_event
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def _get_model_context_window(model):
     try:
         import yaml
 
-        with open("config/v8/available_models.yaml") as f:
+        with open("config/v8/available_models.yaml", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         for m in (data or {}).get("models", []) or []:
             if m.get("value") == model and m.get("context_window"):
@@ -597,7 +598,9 @@ class LLMClient:
                         return
                     if resp.status_code >= 400:
                         print(f"[LLM] API {resp.status_code} 响应: {resp.text[:500]}")
-                        with open("/home/flybo/clawsjoy_v5/logs/api_errors.log", "a") as _ef:
+                        _err_log = Path(__file__).resolve().parents[2] / "logs" / "api_errors.log"
+                        _err_log.parent.mkdir(parents=True, exist_ok=True)
+                        with open(_err_log, "a", encoding="utf-8") as _ef:
                             _ef.write(f"[LLM] API {resp.status_code}: {resp.text[:1000]}\n")
                     result = resp.json()
                     response_text = result["choices"][0]["message"]["content"]

@@ -25,7 +25,7 @@ class ProjectGraph:
             try:
                 content = file.read_text(encoding='utf-8')
                 imports = self._extract_imports(content, all_files)
-                rel_path = str(file.relative_to(self.project_path))
+                rel_path = file.relative_to(self.project_path).as_posix()
                 self.graph[rel_path] = imports
             except Exception as e:
                 print(f"跳过 {file}: {e}")

@@ -25,7 +25,7 @@ def _init_precision_feed_cache():
     """预加载精准投喂配置到缓存"""
     import yaml
     try:
-        with open("config/os_precision_feeds.yaml") as _f:
+        with open("config/os_precision_feeds.yaml", encoding="utf-8") as _f:
             _precision_feed_cache["feeds"] = yaml.safe_load(_f).get("feeds", [])
         print(f"[PRECISION_FEED] 预加载 {len(_precision_feed_cache['feeds'])} 条精准投喂规则")
     except Exception as e:
@@ -61,7 +61,7 @@ def _load_asset(source, params, user_id, session_id, step_number=0, _project_tre
     if source == "world_model_summary":
         wm_path = base / ".agent_state.json"
         if wm_path.exists():
-            wm = json.loads(wm_path.read_text()).get("world_model", {})
+            wm = json.loads(wm_path.read_text(encoding="utf-8")).get("world_model", {})
             modules = wm.get("modules", {}) if isinstance(wm, dict) else {}
             if _task_vars is not None:
                 try:
@@ -77,7 +77,7 @@ def _load_asset(source, params, user_id, session_id, step_number=0, _project_tre
         wm_path = base / ".agent_state.json"
         if wm_path.exists():
             try:
-                wm_data = json.loads(wm_path.read_text())
+                wm_data = json.loads(wm_path.read_text(encoding="utf-8"))
             except Exception:
                 wm_data = None
             if _task_vars is not None and isinstance(wm_data, dict):
@@ -105,7 +105,7 @@ def _load_asset(source, params, user_id, session_id, step_number=0, _project_tre
     if source == "dependency_graph":
         dg_path = base / "data" / "dependency_graph.json"
         if dg_path.exists():
-            dg_text = dg_path.read_text()
+            dg_text = dg_path.read_text(encoding="utf-8")
             if _task_vars is not None:
                 try:
                     from core.lib.task_vars import filter_dependency_graph
@@ -154,7 +154,7 @@ def _load_asset(source, params, user_id, session_id, step_number=0, _project_tre
     if source == "os_capabilities":
         try:
             import yaml
-            caps_data = yaml.safe_load(open(Path(os.environ.get("PROJECT_ROOT", "")) / "config" / "os_capabilities.yaml"))
+            caps_data = yaml.safe_load(open(Path(os.environ.get("PROJECT_ROOT", "")) / "config" / "os_capabilities.yaml", encoding="utf-8"))
             caps_list = caps_data.get("capabilities", [])
             filter_config = params.get("filter", {})
             if filter_config:
@@ -228,7 +228,7 @@ def _load_asset(source, params, user_id, session_id, step_number=0, _project_tre
         _sid = session_id or "default"
         billing_path = Path(f"data/projects/{user_id}/{_sid}/clawsjoy_dev/data/v8/billing_default.jsonl")
         if billing_path.exists():
-            lines = billing_path.read_text().split("\n")[-50:]
+            lines = billing_path.read_text(encoding="utf-8").split("\n")[-50:]
             result = "\n".join(lines)
             max_chars = params.get("max_chars", 1500)
             return result[-max_chars:] if len(result) > max_chars else result
@@ -237,7 +237,7 @@ def _load_asset(source, params, user_id, session_id, step_number=0, _project_tre
     if source == "current_plan_discussion":
         _task_state_file = Path(f"data/projects/{user_id}/{session_id}/.current_plan_task.json")
         if _task_state_file.exists():
-            _ts = json.loads(_task_state_file.read_text())
+            _ts = json.loads(_task_state_file.read_text(encoding="utf-8"))
             _tid = _ts.get("task_id", "")
             if _tid:
                 try:

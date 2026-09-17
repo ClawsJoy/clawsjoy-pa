@@ -5,7 +5,8 @@ import os
 import time
 from dotenv import load_dotenv
 
-load_dotenv("/home/flybo/clawsjoy_v5/config/.env")
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+load_dotenv(os.path.join(_PROJECT_ROOT, "config", ".env"))
 DEFAULT_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID", "")
 
 

@@ -39,8 +39,8 @@ def test_PASS_no_double_project_root(tmp_path, monkeypatch):
     sandbox = tmp_path / "clawsjoy_dev"
     sandbox.mkdir()
     p = _resolve_sandbox_path(sandbox, "data/reports/x.md")
-    assert "clawsjoy_dev/clawsjoy_dev" not in str(p), p
-    assert str(p).endswith("clawsjoy_dev/data/reports/x.md"), p
+    assert "clawsjoy_dev/clawsjoy_dev" not in p.as_posix(), p
+    assert p.as_posix().endswith("clawsjoy_dev/data/reports/x.md"), p
 
 
 def test_PASS_parent_dir_still_works(tmp_path, monkeypatch):
@@ -50,7 +50,7 @@ def test_PASS_parent_dir_still_works(tmp_path, monkeypatch):
     parent = tmp_path
     (tmp_path / "clawsjoy_dev").mkdir()
     p = _resolve_sandbox_path(parent, "data/reports/x.md")
-    assert str(p).endswith("clawsjoy_dev/data/reports/x.md"), p
+    assert p.as_posix().endswith("clawsjoy_dev/data/reports/x.md"), p
 
 
 def test_lite_mode_reports_chain_not_run(tmp_path, monkeypatch):

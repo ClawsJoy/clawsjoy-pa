@@ -22,7 +22,7 @@ class CodeRepository:
         """加载代码索引"""
         if self.index_file.exists():
             try:
-                with open(self.index_file, 'r') as f:
+                with open(self.index_file, 'r', encoding="utf-8") as f:
                     self.index = json.load(f)
             except:
                 self.index = {"projects": {}, "files": {}, "last_scan": None}
@@ -31,7 +31,7 @@ class CodeRepository:
     
     def _save_index(self):
         """保存代码索引"""
-        with open(self.index_file, 'w') as f:
+        with open(self.index_file, 'w', encoding="utf-8") as f:
             json.dump(self.index, f, indent=2, ensure_ascii=False)
     
     def add_project(self, project_path: str, name: str = None) -> Dict:
@@ -83,7 +83,7 @@ class CodeRepository:
                 if any(part in ['node_modules', '__pycache__', 'target', 'dist'] for part in file_path.parts):
                     continue
                 
-                rel_path = str(file_path.relative_to(path))
+                rel_path = file_path.relative_to(path).as_posix()
                 stat = file_path.stat()
                 files[rel_path] = {
                     "path": rel_path,

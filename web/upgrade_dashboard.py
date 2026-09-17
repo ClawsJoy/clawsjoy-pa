@@ -7,7 +7,8 @@ from pathlib import Path
 
 import streamlit as st
 
-sys.path.insert(0, "/home/flybo/clawsjoy_v5")
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
+sys.path.insert(0, _PROJECT_ROOT)
 
 from core.agents.builtin.config_upgrader import ConfigUpgrader
 from tools.real_log_collector import RealLogCollector

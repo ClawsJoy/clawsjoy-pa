@@ -3,12 +3,14 @@
 
 import sys
 
-sys.path.insert(0, "/home/flybo/clawsjoy_v5")
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+sys.path.insert(0, _PROJECT_ROOT)
 
 from typing import Dict, Optional
 
 from core.agents.business.business_agent_v2 import BusinessAgentV2
 from core.orchestration.service import orchestration_service
+from pathlib import Path
 
 
 class OrchestratorAgent(BusinessAgentV2):

@@ -7,6 +7,7 @@ import os
 import re
 import time
 from pathlib import Path
+from core.lib.paths import vault_root
 
 
 def _tokenize(text):
@@ -50,7 +51,7 @@ def _vault_path():
             return p
     except Exception:
         pass
-    return "/mnt/d/Obsidian/ClawsJoy/ClawsJoy"
+    return str(vault_root())
 
 
 def _scan_vault():
@@ -64,7 +65,7 @@ def _scan_vault():
     root = Path(_vault_path())
     out = []
     for f in sorted(root.rglob("*.md")):
-        rel = str(f.relative_to(root))
+        rel = f.relative_to(root).as_posix()
         # 排除 .obsidian 配置与 Templates 模板目录(非知识内容)
         if rel.startswith(".obsidian") or rel.startswith("Templates"):
             continue
@@ -1028,7 +1029,7 @@ def list_knowledge_files():
     root = Path(_vault_path())
     out = []
     for f in sorted(root.rglob("*.md")):
-        rel = str(f.relative_to(root))
+        rel = f.relative_to(root).as_posix()
         if rel.startswith(".obsidian") or rel.startswith("Templates"):
             continue
         _top = rel.split("/")[0]

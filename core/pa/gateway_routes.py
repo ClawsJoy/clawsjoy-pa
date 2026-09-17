@@ -26,6 +26,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 
 from core.pa.pa_core import PaCore
+from core.lib.paths import cmd_exe, vault_root
 
 PA_SYSTEM = (
     "你是老板的私人 PA(主权 agent)，不是通用聊天机器人。铁律：\n"
@@ -180,7 +181,7 @@ def build_kb_mapping(*, kb_root, sandbox_root, scope=KB_MAPPING_DEFAULT_SCOPE, l
 #   · 已连接时**不重复启动**；15s 冷却（防连点）；
 #   · 走 WSL→Windows interop（cmd.exe start）⇒ 客户端在 Windows 侧运行（它要驱动 Windows Chrome）。
 LOCAL_CLIENT = {
-    "cmd_exe": "/mnt/c/Windows/System32/cmd.exe",
+    "cmd_exe": cmd_exe(),
     "win_dir": r"C:\Users\flybo\Desktop\agent_client",
     "win_python": r"C:\Users\flybo\AppData\Local\Programs\Python\Python312\pythonw.exe",
     "script": "agent_client.py",
@@ -194,9 +195,8 @@ LOCAL_CLIENT_GUARD = {"ts": 0.0}  # 模块级（可测：单测直接重置它�
 def local_client_launchable():
     """能不能一键启动：Windows 侧 cmd.exe 与 agent_client.py 都在（**未观察到 ≠ 可用**）。"""
     try:
-        return bool(os.path.exists(LOCAL_CLIENT["cmd_exe"])) and bool(
-            os.path.exists("/mnt/c/Users/flybo/Desktop/agent_client/" + LOCAL_CLIENT["script"])
-        )
+        _script = os.path.join(LOCAL_CLIENT["win_dir"], LOCAL_CLIENT["script"])
+        return bool(os.path.exists(LOCAL_CLIENT["cmd_exe"])) and bool(os.path.exists(_script))
     except Exception:
         return False
 
@@ -731,7 +731,7 @@ def register_pa_routes(app, brain=None):
         from core.pa.vault_brain import BrainSync
 
         pa = _core((request.json or {}).get("user_id"))
-        vault = os.getenv("PA_VAULT_DIR", "/mnt/d/Obsidian/ClawsJoy/ClawsJoy")
+        vault = os.getenv("PA_VAULT_DIR") or str(vault_root())
         brain_sync = BrainSync(pa.ledger, vault_dir=vault)
         out = {
             "ledger_md": brain_sync.sync_ledger(),
@@ -869,7 +869,7 @@ def register_pa_routes(app, brain=None):
             _sid = (request.args.get("session_id") or "").strip()
             _scope = request.args.get("scope") or KB_MAPPING_DEFAULT_SCOPE
             _limit = request.args.get("limit") or 100
-            _kb = os.getenv("PA_VAULT_DIR", "/mnt/d/Obsidian/ClawsJoy/ClawsJoy")
+            _kb = os.getenv("PA_VAULT_DIR") or str(vault_root())
             _sb = ""
             _man = None
             if _sid:

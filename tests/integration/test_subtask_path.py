@@ -17,32 +17,32 @@ def test_resolve_branchA_subtask_uid_sid_anchor():
     sub_base = _sub_base("web_test", "sess_v1", "sub_a1")
     # 含 data/projects/ 的绝对路径 → 归一化到子任务沙箱
     r = _resolve_path(sub_base, "data/projects/web_test/sess_v1/clawsjoy_dev/subtasks/sub_a1/output.md")
-    assert "web_test" in str(r) and "sess_v1" in str(r), f"uid/sid 锚点定位失败: {r}"
-    assert "subtasks/sub_a1" in str(r), f"应落在子任务沙箱: {r}"
-    assert str(r).endswith("output.md")
+    assert "web_test" in r.as_posix() and "sess_v1" in r.as_posix(), f"uid/sid 锚点定位失败: {r}"
+    assert "subtasks/sub_a1" in r.as_posix(), f"应落在子任务沙箱: {r}"
+    assert r.as_posix().endswith("output.md")
 
 
 def test_resolve_branchA_subtask_double_clawsjoy():
     """分支 A: 双重 clawsjoy_dev 路径 → 子任务沙箱（base_override 生效）"""
     sub_base = _sub_base("web_test", "sess_v1", "sub_a2")
     r = _resolve_path(sub_base, "clawsjoy_dev/subtasks/sub_a2/result.md")
-    assert "subtasks/sub_a2" in str(r), f"应落在子任务沙箱: {r}"
-    assert str(r).endswith("result.md")
+    assert "subtasks/sub_a2" in r.as_posix(), f"应落在子任务沙箱: {r}"
+    assert r.as_posix().endswith("result.md")
 
 
 def test_resolve_shared_base_unchanged():
     """回归: 共享沙箱 base 行为不变（分支 A uid/sid 仍正确 + 归一化到共享根）"""
     shared = Path("data/projects") / "web_test" / "sess_v1" / "clawsjoy_dev"
     r = _resolve_path(shared, "data/projects/web_test/sess_v1/clawsjoy_dev/a.py")
-    assert str(r).endswith("clawsjoy_dev/a.py"), f"共享 base 回归失败: {r}"
-    assert "subtasks" not in str(r)
+    assert r.as_posix().endswith("clawsjoy_dev/a.py"), f"共享 base 回归失败: {r}"
+    assert "subtasks" not in r.as_posix()
 
 
 def test_normalize_base_override():
     """_normalize_path base_override: 子任务时归一化结果不回落共享根"""
     sub_base = _sub_base("web_test", "sess_v1", "sub_a3")
     r = _normalize_path("clawsjoy_dev/x.py", "web_test", "sess_v1", base_override=sub_base)
-    assert str(r) == str(sub_base / "x.py"), f"base_override 失败: {r}"
+    assert r.as_posix() == (sub_base / "x.py").as_posix(), f"base_override 失败: {r}"
     # 共享默认: 回落共享根
     r2 = _normalize_path("clawsjoy_dev/x.py", "web_test", "sess_v1")
-    assert str(r2).endswith("clawsjoy_dev/x.py"), f"默认 base 回归失败: {r2}"
+    assert r2.as_posix().endswith("clawsjoy_dev/x.py"), f"默认 base 回归失败: {r2}"
