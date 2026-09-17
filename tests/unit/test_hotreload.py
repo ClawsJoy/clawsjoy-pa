@@ -13,13 +13,13 @@ class TestHotReload:
         """测试 keywords.yaml 语法正确"""
         config_path = Path("config/keywords.yaml")
         assert config_path.exists()
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             config = yaml.safe_load(f)
         assert config is not None
 
     def test_agent_capabilities_structure(self):
         """测试 agent_capabilities 结构"""
-        with open("config/keywords.yaml") as f:
+        with open("config/keywords.yaml", encoding="utf-8") as f:
             config = yaml.safe_load(f)
 
         caps = config.get("agent_capabilities", {})
@@ -35,7 +35,7 @@ class TestHotReload:
 
     def test_intents_structure(self):
         """测试 intents 结构"""
-        with open("config/keywords.yaml") as f:
+        with open("config/keywords.yaml", encoding="utf-8") as f:
             config = yaml.safe_load(f)
 
         intents = config.get("intents", {})
@@ -47,7 +47,7 @@ class TestHotReload:
 
     def test_no_keyword_conflicts(self):
         """测试无关键词冲突"""
-        with open("config/keywords.yaml") as f:
+        with open("config/keywords.yaml", encoding="utf-8") as f:
             config = yaml.safe_load(f)
 
         caps = config.get("agent_capabilities", {})

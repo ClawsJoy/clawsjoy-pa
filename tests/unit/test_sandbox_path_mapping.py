@@ -17,7 +17,7 @@ def test_helpers_sandbox_preferred():
     tmp = Path(tempfile.mkdtemp())
     base = tmp / "u1" / "s1" / "clawsjoy_dev"
     base.mkdir(parents=True)
-    (base / "hello.txt").write_text("sandbox")
+    (base / "hello.txt").write_text("sandbox", encoding="utf-8")
     # 模拟沙箱 target(存在) → 返回 None(不触发回退)
     # _resolve_project_root_read 只接受"沙箱 target 不存在"时的回退; 存在时调用方不会调它
     _t = base / "hello.txt"

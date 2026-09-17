@@ -1,7 +1,7 @@
 import re
 
 path = "agent_gateway_enhanced.py"
-with open(path, "r") as f:
+with open(path, "r", encoding="utf-8") as f:
     content = f.read()
 
 old1 = """    if not command or not cmd_name:
@@ -34,6 +34,6 @@ if old2 in content:
 else:
     print("Change 2: pattern not found!")
 
-with open(path, "w") as f:
+with open(path, "w", encoding="utf-8") as f:
     f.write(content)
 print("File written successfully")

@@ -24,6 +24,41 @@ def _func_source(src, name):
     raise AssertionError(f"未找到顶层函数: {name}")
 
 
+def _tuple_returns(src, name, arity=7):
+    """②(2026-09-17) 抗格式化: AST 取顶层函数内 arity 元组的 return。
+
+    旧写法用**单行字面量**判断(fn.count("return (messages, _tool_steps") 与
+    `"return (_pause_msgs, tool_steps, True, {" in src`), 对**换行排版**敏感:
+    同一份代码被排版成 return ( / messages, / _tool_steps, ... 之后即判定失败
+    (产品实际完好, 出口一个不少)。与 ① 同一思路: 断言只依赖语法结构。
+
+    返回 ast.Tuple 列表; 找不到该顶层函数时抛 AssertionError(与 ① 一致)。
+    """
+    for node in ast.parse(src).body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == name:
+            return [
+                sub.value
+                for sub in ast.walk(node)
+                if isinstance(sub, ast.Return)
+                and isinstance(sub.value, ast.Tuple)
+                and len(sub.value.elts) == arity
+            ]
+    raise AssertionError(f"未找到顶层函数: {name}")
+
+
+def _shape(t):
+    """元组元素形态: Name→标识符, Constant→字面量, 其余→节点类型名。"""
+    out = []
+    for e in t.elts:
+        if isinstance(e, ast.Name):
+            out.append(e.id)
+        elif isinstance(e, ast.Constant):
+            out.append(repr(e.value))
+        else:
+            out.append(type(e).__name__)
+    return out
+
+
 def test_bridge_loop_has_init():
     """桥接循环解包 _init_bridge_state + 定义 _ts_progress + 参数化缺失变量"""
     src = open("agent_gateway_enhanced.py", encoding="utf-8").read()
@@ -46,12 +81,27 @@ def test_bridge_loop_has_init():
     bad_returns = re.findall(r"return jsonify", fn)
     assert not bad_returns, f"函数内仍有 return jsonify: {bad_returns}"
     # 元组返回至少 2 个(循环内 error/7B fail); post-loop 尾段已归位 response_builder
-    tuple_returns = fn.count("return (messages, _tool_steps")
+    tuple_returns = sum(
+        1
+        for t in _tuple_returns(src, "_v9_bridge_loop")
+        if isinstance(t.elts[0], ast.Name) and t.elts[0].id == "messages"
+    )
     assert tuple_returns >= 2, f"循环内元组返回应>=2, 实际 {tuple_returns}"
     # post-loop 尾段归位 response_builder: 其最终返回也是 7 元组(不 jsonify)
     _rb = open("core/gateway/v9_bridge/response_builder.py", encoding="utf-8").read()
-    assert "return (messages, tool_steps, bridge_exhausted, None, tokens, _turn_reason, _turn_reason_detail)" in _rb
-    assert "return (_pause_msgs, tool_steps, True, {" in _rb
+    _rb_shapes = [_shape(t) for t in _tuple_returns(_rb, "build_bridge_response")]
+    assert [
+        "messages",
+        "tool_steps",
+        "bridge_exhausted",
+        "None",
+        "tokens",
+        "_turn_reason",
+        "_turn_reason_detail",
+    ] in _rb_shapes, "post-loop 尾段应返回 7 元组"
+    assert any(
+        shp[:4] == ["_pause_msgs", "tool_steps", "True", "Dict"] for shp in _rb_shapes
+    ), "暂停出口应返回 (_pause_msgs, tool_steps, True, {...}, ...)"
     # S7: 初始化本体在 loop.py::_init_bridge_state
     loop_src = open("core/gateway/v9_bridge/loop.py", encoding="utf-8").read()
     assert "tokens = 0" in loop_src, "loop.py 缺 tokens 初始化"

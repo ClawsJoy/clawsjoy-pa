@@ -33,7 +33,7 @@ def walk(co, depth=0, seen=None):
 
 
 walk(code)
-with open("clawsjoy_dev/_dis_output.txt", "w") as f:
+with open("clawsjoy_dev/_dis_output.txt", "w", encoding="utf-8") as f:
     f.write(
         "\
 ".join(

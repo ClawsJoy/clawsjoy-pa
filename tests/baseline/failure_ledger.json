@@ -10,7 +10,283 @@
   "note": "批129：出口门 python -c 三条按方案A 修复（同步断言 3 条 + 删三处死分支 + 新增 3 条守卫测试）⇒ 确定性失败 3 → 0，全量 1582 passed / 7 skipped / 1 xfailed / 0 failed / 0 errors（本轮门实测）。此前 20 条全部收敛：17 条环境依赖已装包（批126）、3 条已被取代已同步（批129）。"
  },
  "policy": "失败条数不增 + 每条失败必须登记(性质/owner/计划); 未登记的新失败直接判红。skip 同样必须登记。 失败登记必须含 solo_reproducible 列（单跑是否可复现）；solo_reproducible=false → 归入测试脆弱桶。",
- "known_failures": [],
+ "known_failures": [
+  {
+   "id": "tests/integration/test_sag_edge_learning.py::test_no_local_zombie_definition",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 execute_agent_task.py 里 'from core.gateway.sag_feedback import _build_code_edges, ...' 单行 import 字面量",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_adapter_timeout.py::test_retry_path_uses_adapter_timeout",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 agent_gateway_enhanced.py 里 'resp_retry = adapter.execute_with_tools(messages=messages, tools=tools' 单行调用",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_max_tokens_brief.py::test_retry_path_uses_dynamic",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 agent_gateway_enhanced.py 里 'max_tokens=_mt_out, thinking=(_thinking2 and not _no_think)' 单行实参",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_goal_multiturn.py::test_continue_steer_injection",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 agent_gateway_enhanced.py 里 'add_steer(session_id, f' 单行调用",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_context_projection.py::test_bridge_injection_source",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 agent_gateway_enhanced.py 里 'render_policy_snapshot(user_id, session_id' 单行调用",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_failure_feedback.py::test_save_state_failed_triggers_feedback",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 execute_agent_task.py 里 '_update_sag_feedback(_last_usr[:80]' 单行调用",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_ds_adapter_retry.py::test_retry_loop_in_source",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 deepseek_adapter.py 里指数退避单行字面量",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_p0_fixes.py::test_retry_backoff",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 deepseek_adapter.py 里 '2 * (2 ** _attempt_rt)' 单行字面量",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_p3_parallel_tools.py::test_bridge_source_pool_structure",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "对源码做 substring 定位(ValueError: substring not found), 重构后字面量不存在",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_recon_fake_done.py::test_fake_check_conditions",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 '_needs_fake_check = (_claimed_done_no_write or _write_task_stopped_no_write)' 单行赋值",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_s6d_event_sourcing_order.py::test_s6d_event_sourcing_order",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "对源码做 index() 定位(-1 ⇒ 字面量已不在被断言模块)",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_vault_write_fake_done.py::test_write_note_success_marks_tracker",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 precision_inject.py 里 '_mark_vault_write(_wn_p, _act)' 单行调用",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_workspace_guard_fixes.py::test_token_water_guard_message_honest",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 '\"success\": True, \"status\": \"token_water\"' 单行返回字典(守卫已归位到 v9_bridge/loop.py)",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_cost_protection_fixes.py::test_budget_limit_success_false",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "同上: 断言 S6-C 响应守卫的单行返回字面量(已归位到 v9_bridge/response_guard.py)",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_approval_card_fix.py::test_frontend_btn_scope_card_only",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言前端 js 里 \"card.querySelectorAll('#writeApproveBtn,#writeRejectBtn')\" 字面量",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_bp2_strategy_switch.py::test_escalation_immediate_guidance_source",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言越权分支里 'add_steer(session_id' 单行调用",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_browser_local_p4.py::test_gateway_routes",
+   "nature": "平台无关 · 格式敏感源码字面量断言(基线 2026-09-14 之后的重构把字面量折行/迁走)",
+   "scope": "断言 approval 路由里 'approve_reply(user_id, _rp_approve' 单行调用",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: (a) 断言改正则/AST(先例: tests/integration/test_bridge_loop_init.py 已由 AST 重写); (b) 定位重构后新落点, 断言改指新模块",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/integration/test_save_state_extraction.py::test_save_state_shrunk",
+   "nature": "平台无关 · 源码行数/体积预算被基线后重构打破",
+   "scope": "_save_state 函数 372 行(ast lineno 521..892) > 预算 350 行",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: 要么拆函数回到预算内, 要么按新职责调预算常量(口径需老板确认)",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/integration/test_validate_task_completion.py::test_save_state_shrunk_further",
+   "nature": "平台无关 · 源码行数/体积预算被基线后重构打破",
+   "scope": "同上: _save_state 仍 372 行 > 350, 与 test_save_state_extraction 同源",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: 要么拆函数回到预算内, 要么按新职责调预算常量(口径需老板确认)",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_gateway_layering.py::test_bridge_loop_line_budget",
+   "nature": "平台无关 · 源码行数/体积预算被基线后重构打破",
+   "scope": "bridge_loop 555 行 > 预算 500",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: 要么拆函数回到预算内, 要么按新职责调预算常量(口径需老板确认)",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_gateway_layering.py::test_routes_are_thin",
+   "nature": "平台无关 · 源码行数/体积预算被基线后重构打破",
+   "scope": "routes/misc.py 202 行 > 预算 200",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: 要么拆函数回到预算内, 要么按新职责调预算常量(口径需老板确认)",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/integration/test_subtask_depth.py::test_depth_persisted_to_agent_state",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "scope": "tmp 沙箱里没出现 .agent_state.json(测试 patch 的是 subtask_executor.Path, 落盘可能走 state_json 模块)",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/integration/test_v9_stream.py::test_stream_mode_emits_sse_events",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "scope": "/v9/agent/chat?stream=true 返回 application/json 而非 text/event-stream",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/integration/test_v9_stream.py::test_non_stream_mode_returns_json",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "scope": "非流式被守卫拦下: {'blocked': True, 'reason': '未 seed(.agent_state.json 无 seed.source_path)'}",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_replay.py::test_replay_at_turn_window",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "scope": "回放 at_turn=1 只拿到 1 条(期望 3 条); 与 s6d 事件溯源同源",
+   "solo_reproducible": true,
+   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
+   "owner": "老板",
+   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
+   "registered": "2026-09-17",
+   "platform": "Windows(wsl 副本)"
+  }
+ ],
  "resolved": [
   {
    "id": "tests/integration/test_bridge_loop_init.py::test_bridge_loop_has_init",
@@ -254,5 +530,15 @@
    "owner": "B 块（9fb1b9fe，故障注入 #15：预算耗尽→回「继续」→任务链必须接上）",
    "plan": "pid 隔离已落地。若再现：先确认是否与其它 pytest 进程同跑（跨进程），再考虑同进程内顺序污染。"
   }
- ]
+ ],
+ "windows_baseline": {
+  "updated": "2026-09-17",
+  "command": "python -m pytest -q --tb=line -p no:cacheprovider tests (Windows 副本, Python 3.12.10)",
+  "failed": 25,
+  "errors": 0,
+  "passed": 1557,
+  "skipped": 7,
+  "xfailed": 1,
+  "note": "Windows 化收尾基线: 本轮从 77 failed / 1500 passed 修到 25 failed / 1557 passed。余下 25 条**全部**与 Windows 无关(pristine HEAD 单跑同样红), 已逐条登记在 known_failures; Linux 侧 2026-09-14 的 0 failed 基线对应的是**更早的树**(本树含 2026-09-15/16 批195/批198 重构), 两者不可直接比。"
+ }
 }

@@ -1,6 +1,6 @@
 import re
 
-with open("web/dashboard/workbench.html") as f:
+with open("web/dashboard/workbench.html", encoding="utf-8") as f:
     html = f.read()
 
 # Find JS content between script tags

@@ -19,7 +19,7 @@ def _extract():
 
 def _run(body):
     open("/tmp/_dir_probe.js", "w", encoding="utf-8").write(_extract() + "\n" + body)
-    return subprocess.run(["node", "/tmp/_dir_probe.js"], capture_output=True, text=True)
+    return subprocess.run(["node", "/tmp/_dir_probe.js"], capture_output=True, text=True, encoding="utf-8", errors="replace")
 
 
 def test_1_dir_arg_no_longer_null():

@@ -42,7 +42,7 @@ def _run_node(body):
     code = js["table"] + "\n" + js["semanticArg"] + "\n" + js["semanticStage"] + "\n" + body
     p = "/tmp/_sem_stage_probe.js"
     open(p, "w", encoding="utf-8").write(code)
-    r = subprocess.run(["node", p], capture_output=True, text=True)
+    r = subprocess.run(["node", p], capture_output=True, text=True, encoding="utf-8", errors="replace")
     return r
 
 

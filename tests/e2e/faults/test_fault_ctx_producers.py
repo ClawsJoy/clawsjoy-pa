@@ -23,7 +23,7 @@ def _extract():
 def _run(body):
     code = _extract() + "\n" + body
     open("/tmp/_ctx_probe.js", "w", encoding="utf-8").write(code)
-    return subprocess.run(["node", "/tmp/_ctx_probe.js"], capture_output=True, text=True)
+    return subprocess.run(["node", "/tmp/_ctx_probe.js"], capture_output=True, text=True, encoding="utf-8", errors="replace")
 
 
 def test_plan_step_reaches_semanticCtx():

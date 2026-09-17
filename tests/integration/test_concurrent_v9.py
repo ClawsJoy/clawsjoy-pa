@@ -196,7 +196,7 @@ def test_concurrent_sandbox_read_different_sessions():
     for i in range(3):
         d = tmp / f"sandbox_{i}"
         d.mkdir(parents=True)
-        (d / f"file_{i}.txt").write_text(f"content-{i}")
+        (d / f"file_{i}.txt").write_text(f"content-{i}", encoding="utf-8")
     results = {}
 
     def _worker(i):

@@ -43,6 +43,10 @@ def test_policy_short_passthrough():
 def test_tool_exec_cache_roundtrip_and_rules():
     _reset()
     d = os.path.abspath("data/tmp")
+    # data/ 在 .gitignore 里(运行时目录), 新克隆/新副本下不存在;
+    # 产品侧由 write_file 用时自动建父目录(docs/reports/v9_tmp_usage_audit_20260829.md),
+    # 所以这里用例自建, 不把"未 provisioning 的运行时目录"当产品契约。
+    os.makedirs(d, exist_ok=True)
     assert os.path.isdir(d)
     r = {"success": True, "content": "目录内容"}
     tool_exec_cache_put("s3_1", "list_dir", {"path": d}, r)

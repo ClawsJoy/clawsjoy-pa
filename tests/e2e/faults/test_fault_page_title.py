@@ -29,7 +29,7 @@ def _extract():
 
 def _run(body):
     open("/tmp/_title_probe.js", "w", encoding="utf-8").write(_extract() + "\n" + body)
-    return subprocess.run(["node", "/tmp/_title_probe.js"], capture_output=True, text=True)
+    return subprocess.run(["node", "/tmp/_title_probe.js"], capture_output=True, text=True, encoding="utf-8", errors="replace")
 
 
 def test_title_matched():

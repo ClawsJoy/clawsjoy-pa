@@ -26,6 +26,20 @@ import subprocess
 import sys
 
 _REPO = pathlib.Path(__file__).resolve().parent.parent
+
+# Windows(2026-09-17): 本脚本自身也打印 emoji(✅/❌)。中文 GBK 控制台编码不了 emoji,
+# 会 UnicodeEncodeError 让门禁在**最后一行结论**上崩掉(判定其实已经算完)。
+# 复用产品侧同一个垫片; 这里用**按路径加载**而不是 `import core.console_utf8` ——
+# 后者会执行 core/__init__.py, 连带拉起 chromadb + 向量中心(慢, 且会去碰 data/
+# 下的文件锁), 对纯门禁工具是负担。
+import importlib.util as _importlib_util
+
+_shim_spec = _importlib_util.spec_from_file_location(
+    "_cj_console_utf8", _REPO / "core" / "console_utf8.py"
+)
+_cj_shim = _importlib_util.module_from_spec(_shim_spec)
+_shim_spec.loader.exec_module(_cj_shim)
+_cj_shim.ensure_utf8_console()
 # 台账**入库**(tests/baseline/, "登记"是可 review 的动作); 运行产物写 data/(gitignored)
 _LEDGER = _REPO / "tests" / "baseline"
 _RUN_DIR = _REPO / "data" / "test_baseline"
@@ -47,7 +61,11 @@ def _run_pytest(extra):
     else:
         cmd += ["tests/"]
     print("[GATE] " + " ".join(cmd))
-    p = subprocess.run(cmd, cwd=str(_REPO), capture_output=True, text=True)
+    # Windows(2026-09-17): 子进程 pytest 的 stdout 已被产品侧垫片切成 UTF-8, 而 text=True
+    # 是按 locale(cp936) 解码 —— 一旦输出里带中文(失败断言文本), 这里就
+    # UnicodeDecodeError 崩掉。显式 utf-8 + errors=replace: 解析只依赖 ASCII 的
+    # "nodeid PASSED/FAILED" 与汇总行, 个别字符降级不影响判定。
+    p = subprocess.run(cmd, cwd=str(_REPO), capture_output=True, encoding="utf-8", errors="replace")
     failed, skipped, counts = [], [], {}
     for line in p.stdout.splitlines():
         m = _STATUS_RE.match(line.strip())
