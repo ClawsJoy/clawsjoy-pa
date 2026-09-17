@@ -29,6 +29,11 @@
 #   新增「文件编码显式化债务」AST 扫描(tools/check_encoding_explicit.py), 同样**只告警不改判定**;
 #   结果进 warnings + last_run.json 的 encoding_debt 字段, 不进 bad 列表、不改退出码。
 #   为什么: X-03 存量(产品侧 11 处)修完后必须防新增, 否则下一批代码又长出同类债务。
+#
+# G-02 子项⑤(2026-09-18 · 老板拍定「做」): **漏解析自检**。
+#   首跑实测: counts.failed=25 而只解析到 24 条 nodeid ⇒ 差额那条被误判成「台账陈旧」⇒ **假红**
+#   (同族于「假绿」: 判定依据与实际证据不一致)。修法=只把差额暴露成 WARN, **判定层/退出码一行不动**。
+#   证据等级: 【实测】2026-09-18 · data/test_baseline/last_run.json 首跑 vs 复跑对照。
 import argparse
 import datetime
 import json
@@ -103,6 +108,33 @@ def _run_pytest(extra):
     return failed, skipped, counts, tail, p.returncode, collected, collect_errors
 
 
+def _parse_selfcheck(counts, failed):
+    """G-02 子项⑤：判定用的 failed 名单与 pytest 汇总口径是否一致（**只算告警文本**）。
+
+    为什么需要它：pytest 汇总行给的是**条数**，而判定用的是**逐条 nodeid**。两者不一致时，
+    「台账陈旧」的红可能是**假红**（漏解析 ≠ 真修好），也可能掩盖**漏登记**。
+    规则：**宁可不报，也不报假警报** —— 口径一致或无法判定时返回 None。
+    返回：告警文本；None 表示无需告警。（本函数**不参与判定**，调用点只 append 到 warnings）
+    """
+    exp = None
+    for k in ("failed", "error", "errors"):
+        if k in counts:
+            try:
+                exp = (exp or 0) + int(counts[k])
+            except (TypeError, ValueError):
+                return None
+    if exp is None:
+        if failed:
+            return ("解析自检: 解析到 %d 条失败, 但末行汇总里没有 failed/errors 计数(末行形态异常)"
+                    " —— 判定依据可能不完整, 请人工核对 -v 输出" % len(failed))
+        return None
+    if exp == len(failed):
+        return None
+    return ("解析自检: 汇总 failed/errors=%d 但只解析到 %d 条 nodeid(差额 %d)"
+            " —— 判定用的名单可能不完整(既可能漏登记, 也可能把「台账陈旧」判成假红), 请人工核对 -v 输出"
+            % (exp, len(failed), exp - len(failed)))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-run", action="store_true", help="只校验台账格式, 不跑测试")
@@ -157,6 +189,10 @@ def main():
                             % encoding_debt["baseline_state"])
     except Exception as _e:  # 扫描器自身出问题也不能把门禁搞红（只告警）
         warnings.append("X-03 编码扫描未执行: %r" % (_e,))
+    # --- G-02 子项⑤：漏解析自检（只告警）---
+    _selfcheck = _parse_selfcheck(counts, failed)
+    if _selfcheck:
+        warnings.append(_selfcheck)
     for _w in warnings:
         print(f"[GATE][WARN] {_w}")
     print("[GATE] 证据范围: 上行 PASS 仅覆盖 ①②③ 三问；第④问（收集阶段）只留痕不判定，见 last_run.json")
