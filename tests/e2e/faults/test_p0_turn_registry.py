@@ -18,13 +18,46 @@ def reg(tmp_path, monkeypatch):
 
 
 def test_FAULT_same_second_turns_do_not_collide(reg):
-    """① 先能失败：同一秒建两个 turn 必须是**两个不同的键**（旧实现 int(time.time()) 会撞号）。"""
+    """① 先能失败：同一秒建两个 turn 必须是**两个不同的键**（旧实现用 int(time.time()) 当**键** 会撞号）。
+
+    断言语义修正（2026-09-18，未登记台账的**秒级 flake**，见未闭 `X-06`）：
+    原写法把 `turn_id` 钉死为「两次调用必归同一秒」（`turn_id == int(_now())`，秒级可读标签）
+    ⇒ 满负载全量跑两次调用**跨秒**就红（假红）。契约本来就是「**标签可以相同、键必须唯一**」
+    ⇒ 改为按「创建前后的秒窗口」断言，**两种情形都合法**。
+    """
+    t0 = int(time.time())
     k1 = reg.create_turn("s1")
     k2 = reg.create_turn("s1")
+    t1 = int(time.time())
     assert k1 != k2
     assert len(k1) == 32 and len(k2) == 32  # uuid4 hex
-    assert reg.get_turn(k1)["turn_id"] == reg.get_turn(k2)["turn_id"]  # 可读标签可能相同
-    assert reg.get_turn(k1)["turn_key"] != reg.get_turn(k2)["turn_key"]  # 但键必须不同
+    l1 = reg.get_turn(k1)["turn_id"]
+    l2 = reg.get_turn(k2)["turn_id"]
+    # 标签是秒级：落在 [t0, t1] 窗口内且单调不减（同秒 ⇒ 相同；跨秒 ⇒ 递增）——两种都合法，**不再依赖两次调用落在同一秒**
+    assert t0 <= l1 <= l2 <= t1, (t0, l1, l2, t1)
+    assert reg.get_turn(k1)["turn_key"] != reg.get_turn(k2)["turn_key"]  # 真契约：键必须不同
+
+
+def test_turn_label_is_second_granular_and_key_stays_unique(reg, monkeypatch):
+    """契约钉死（确定性，与实时时钟无关）：标签是**秒级**（同秒相同 / 跨秒递增），**键永远唯一**。
+
+    为什么需要它：X-06 的 flake 根因是「断言写死了同秒假设」，**不是时钟本身**。
+    这里用可控时钟把**两种情形都钉死**（仅本用例内 monkeypatch，不改测试基础设施）
+    —— 旧断言在跨秒分支上必然失败（可复现，见未闭 `X-06`）。
+    """
+    clock = {"t": 1000.4}
+    monkeypatch.setattr(tr, "_now", lambda: clock["t"])
+    clock["t"] = 1000.1
+    k1 = reg.create_turn("s1")
+    clock["t"] = 1000.9                      # 同一秒内的两次创建
+    k2 = reg.create_turn("s1")
+    assert k1 != k2
+    assert reg.get_turn(k1)["turn_id"] == reg.get_turn(k2)["turn_id"] == 1000
+    clock["t"] = 1001.2                      # 跨秒
+    k3 = reg.create_turn("s1")
+    assert reg.get_turn(k3)["turn_id"] == 1001
+    assert len({k1, k2, k3}) == 3            # 键与时间无关：永远唯一
+    assert all(len(k) == 32 for k in (k1, k2, k3))
 
 
 def test_FAULT_terminal_state_cannot_go_back(reg):
