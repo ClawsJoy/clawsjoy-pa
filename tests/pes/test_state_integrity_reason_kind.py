@@ -17,11 +17,15 @@
  ② 「台账坏」**不得**说成「无台账」（`reason` 里不得出现「从未经由唯一出口写过」/「无写台账」）；
  ③ **部分损坏可见**：`log_bad_lines` 计数（旧版恒 0）；
  ④ 契约：`detect_uninstrumented` 与 `scan_state_dir` 每条输出**都带** `reason_kind`，取值在枚举内；
- ⑤ 反例（有牙）：若把 `log_unreadable` 折叠回 `no_log`（或删掉计数）⇒ 判据必须红。
+ ⑤ 反例（有牙）：若把 `log_unreadable` 折叠回 `no_log`（或删掉计数）⇒ 判据必须红；
+ ⑥ `D5` **legacy 并存不误报**：``X.json`` 与追加式 ``X.jsonl`` 并存 ⇒ 该 ``.json`` 归
+    ``legacy_append``（**不判「未插桩写者」**）且**不进** `scan_state_dir` 清单；
+    **无**同名 ``.jsonl`` 的 ``.json`` 仍判 ``no_log`` 且**必须**进清单（防「一律放过」的反例）。
 """
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -32,7 +36,7 @@ from core.pes.state_integrity import (
     scan_state_dir,
 )
 
-_KINDS = {"ok", "missing", "no_log", "log_unreadable", "mismatch"}
+_KINDS = {"ok", "missing", "no_log", "log_unreadable", "mismatch", "legacy_append"}
 
 
 def _write_via_exit(p, writer="w.test", payload=None):
@@ -128,3 +132,27 @@ def test_台账打不开也归_log_unreadable(pes_dir):
     assert r["reason_kind"] == "log_unreadable", r
     assert r["log_lines"] == 0 and r["log_bad_lines"] == 0, r
     assert "无法打开" in r["reason"], r["reason"]
+
+
+def test_legacy_并存不误报(pes_dir):
+    """⑥ `D5`：`X.json` 与追加式 `X.jsonl` 并存 ⇒ 该 `.json` 是 **legacy 残留**，不判「未插桩写者」。"""
+    legacy = pes_dir / "dispatch.json"
+    legacy.write_text('[{"a": 1}]', encoding="utf-8")
+    (pes_dir / "dispatch.jsonl").write_text('{"a": 1}\n', encoding="utf-8")
+    r = detect_uninstrumented(legacy)
+    assert r["instrumented"] is False, r          # 无写台账 ⇒ 不谎报「已插桩」
+    assert r["reason_kind"] == "legacy_append", r
+    assert r["superseded_by"].endswith("dispatch.jsonl"), r
+    names = [Path(b["path"]).name for b in scan_state_dir(pes_dir)]
+    assert "dispatch.json" not in names, names
+
+
+def test_无追加式兄弟的_json_仍进未插桩清单(pes_dir):
+    """⑥ 反例（防「一律放过」）：**无**同名 `.jsonl` ⇒ 仍判 `no_log`，且**必须**进未插桩清单。"""
+    p = pes_dir / "plain.json"
+    p.write_text('{"a": 1}', encoding="utf-8")
+    r = detect_uninstrumented(p)
+    assert r["reason_kind"] == "no_log", r
+    assert r["superseded_by"] == "", r
+    names = [Path(b["path"]).name for b in scan_state_dir(pes_dir)]
+    assert "plain.json" in names, names

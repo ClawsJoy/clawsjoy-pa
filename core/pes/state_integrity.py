@@ -577,6 +577,18 @@ class StateFile:
 
 
 # ============================== 未插桩写者检测（M1 ①） ==============================
+def _append_sibling(path: Path) -> Optional[Path]:
+    """该 ``.json`` 的**同名追加式账本**（``X.jsonl``）——存在即说明它已被取代（D5）。
+
+    为什么需要它：``dispatch.json`` → ``dispatch.jsonl`` 这类迁移会留下一个**只读 legacy**
+    （见 :mod:`core.pa.dispatch`），它天然**没有写台账** ⇒ 朴素扫描会把它误报成「未插桩写者」。
+    """
+    if path.suffix != ".json":
+        return None
+    cand = path.with_suffix(".jsonl")
+    return cand if cand.exists() else None
+
+
 def detect_uninstrumented(path) -> Dict[str, Any]:
     """机械判定：该状态文件**是否被绕过唯一出口的写者**改过。
 
@@ -591,9 +603,14 @@ def detect_uninstrumented(path) -> Dict[str, Any]:
       · ``no_log``         ⇒ 无写台账（真·从未经出口写过）；
       · ``log_unreadable`` ⇒ **台账存在但整份不可读/不可解析** ⇒ **无法判定**。
         旧版会把这种情形误报成 ``no_log``（「从未经出口写过」）—— **把「台账坏了」说成「没写过」**；
-      · ``mismatch``       ⇒ 台账可读但与磁盘不符 ⇒ 存在未插桩写者。
+      · ``mismatch``       ⇒ 台账可读但与磁盘不符 ⇒ 存在未插桩写者；
+      · ``legacy_append``  ⇒ 同名**追加式账本**（``X.jsonl``）已存在 ⇒ 该 ``.json`` 是
+        **legacy 残留**（已被取代，先例 ``dispatch.json`` → ``dispatch.jsonl``）⇒ **不判「未插桩写者」**。
+        `instrumented` 仍为 ``False``（**无写台账 = 未验证**，不谎报「已插桩」），
+        而 `scan_state_dir` **不列它**（D5：legacy 并存不误报）。
 
     `log_lines` / `log_bad_lines`：让**部分损坏**也可见（旧版静默忽略坏行、计数为零）。
+    `superseded_by`：被追加式账本取代时的**接任路径**（否则空串）。
     取数件：`data/tmp/b5_work/x21/d2_repro_head.txt`（改前基线）。
     """
     sf = StateFile(path)
@@ -606,6 +623,7 @@ def detect_uninstrumented(path) -> Dict[str, Any]:
         "last_ts": "",
         "log_lines": 0,
         "log_bad_lines": 0,
+        "superseded_by": "",
     }
     if not sf.path.exists():
         out["reason_kind"] = "missing"
@@ -639,8 +657,17 @@ def detect_uninstrumented(path) -> Dict[str, Any]:
                 out["log_lines"],
             )
         else:
-            out["reason_kind"] = "no_log"
-            out["reason"] = "无写台账：该文件从未经由唯一出口写过（未插桩写者）"
+            sup = _append_sibling(sf.path)
+            if sup is not None:
+                out["reason_kind"] = "legacy_append"
+                out["superseded_by"] = str(sup)
+                out["reason"] = (
+                    "已被同名追加式账本取代（legacy 残留）：%s ⇒ 该 .json 无写台账属正常，"
+                    "**不判「未插桩写者」**" % sup.name
+                )
+            else:
+                out["reason_kind"] = "no_log"
+                out["reason"] = "无写台账：该文件从未经由唯一出口写过（未插桩写者）"
         return out
     disk = _sha256_file(sf.path)
     if disk != last.get("sha256"):
@@ -660,6 +687,11 @@ def scan_state_dir(root=None, patterns=("*.json",)) -> List[Dict[str, Any]]:
     run registry）**不在此列** —— 它们由各自的 **哈希链 + append-only** 保证完整性
     （见 :mod:`core.pes.audit` 与 :mod:`core.pes.run_registry`），用「全文 sha256 比对」
     判它们会误报。这是两类东西，不能混判。
+
+    **legacy 残留不列**（D5）：若 ``X.json`` 有同名追加式账本 ``X.jsonl``，它是被取代的只读
+    legacy（迁移先例：``dispatch.json`` → ``dispatch.jsonl``）⇒ 天然无写台账，**不构成
+    「未插桩写者」**，故不列入清单（成因口径见 :func:`detect_uninstrumented` 的
+    ``reason_kind == "legacy_append"``，本条只做过滤）。
     """
     base = Path(normalize_path(root or (str(Path(__file__).resolve().parents[2]) + "/data/v9")))
     bad: List[Dict[str, Any]] = []
@@ -670,6 +702,8 @@ def scan_state_dir(root=None, patterns=("*.json",)) -> List[Dict[str, Any]]:
             if f.name.endswith(WRITE_LOG_SUFFIX) or QUARANTINE_DIR in f.parts:
                 continue
             r = detect_uninstrumented(f)
+            if r["reason_kind"] == "legacy_append":
+                continue
             if not r["instrumented"]:
                 bad.append(r)
     return bad
