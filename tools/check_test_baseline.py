@@ -51,6 +51,14 @@
 #   口径: **纯留痕** —— 不改判定/退出码/台账; 只在「证据可能不完整」时留存(时间戳文件, 只留最新
 #   _RAW_KEEP 份); 正常跑不堆积(只留一份滚动 raw_last.txt, 在 data/ = gitignored)。
 #   证据等级: 【实测】2026-09-18 · tests/unit/test_gate_raw_stdout_kept.py; 门禁 data/tmp/gate_r12.txt。
+#
+# P1(2026-09-18 · 老板/DS 拍「做」): **门禁「只追加」历史** `data/test_baseline/gate_history.jsonl`。
+#   为什么要: 子项⑥ 的字段其实已经齐了(evidence_gaps 里就是结构化 token), 但 last_run.json 每跑
+#   **覆盖**、data/ 又被 gitignore ⇒ **不留历史** ⇒「漏解析率 / 末行异常率」**没有分母**, 攒不出「率」。
+#   口径: **纯留痕** —— 不读、不判、不改退出码/台账; 每跑 append 一行 JSONL, 超过 _HIST_KEEP 行只留最新。
+# P3(同批): `parse_selfcheck` 拆出**子 token**(parse_miss / counts_form_anomaly) 供分口径计数,
+#   同时**保留父标记** parse_selfcheck ⇒ 旧的 `in` 判据不失效(不静默打断)。
+#   证据等级: 【实测】2026-09-18 · tests/unit/test_gate_history.py。
 import argparse
 import datetime
 import json
@@ -89,6 +97,8 @@ _SUMMARY_LINE_RE = re.compile(r"\d+ (?:failed|passed|skipped|errors?|xfailed|xpa
 _COLLECTED_RE = re.compile(r"collected (\d+) items")
 # 子项⑥ 续: 证据不完整时留存的原始 stdout 最多保留几份（文件名以时间戳开头 ⇒ 按名排序即按时间）
 _RAW_KEEP = 5
+# P1: 「只追加」的门禁历史最多保留几行（防无限增长；data/ 是 gitignored）
+_HIST_KEEP = 2000
 
 
 def _load(path):
@@ -193,13 +203,44 @@ def _keep_raw_stdout(gaps):
         return str(dst)
 
 
-def _parse_selfcheck(counts, failed):
-    """G-02 子项⑤：判定用的 failed 名单与 pytest 汇总口径是否一致（**只算告警文本**）。
+def _append_history(rec):
+    """P1（2026-09-18 拍）：门禁的**只追加**历史 —— `data/test_baseline/gate_history.jsonl`。
+
+    为什么要: 子项⑥ 的字段其实已经齐了（`evidence_gaps` 里就是结构化 token），但
+    `last_run.json` 每跑**覆盖**、`data/` 又被 gitignore ⇒ **不留历史** ⇒
+    「漏解析率 / 末行异常率」**没有分母**，攒不出「率」。
+    口径: **纯留痕** —— 不读、不判、不改退出码/台账；每跑 append **一行** JSONL；
+    超过 `_HIST_KEEP` 行时只保留最新 `_HIST_KEEP` 行（防无限增长）。
+    失败由调用点兜住（只记 warnings，与 X-03 扫描、原始 stdout 留存同规矩）。
+
+    返回：历史文件的仓库相对路径（无法相对化时返回绝对路径）。
+    """
+    _RUN_DIR.mkdir(parents=True, exist_ok=True)
+    p = _RUN_DIR / "gate_history.jsonl"
+    with open(p, "a", encoding="utf-8") as fh:      # 内建 open（编码显式；避免给 X-03 扫描器添「未判定」噪声）
+        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    if _HIST_KEEP > 0:
+        _lines = p.read_text(encoding="utf-8").splitlines()
+        if len(_lines) > _HIST_KEEP:
+            p.write_text("\n".join(_lines[-_HIST_KEEP:]) + "\n", encoding="utf-8")
+    try:
+        return str(p.relative_to(_REPO))
+    except ValueError:
+        return str(p)
+
+
+def _parse_selfcheck_issue(counts, failed):
+    """G-02 子项⑤ / P3：判定用的 failed 名单与 pytest 汇总口径是否一致。
 
     为什么需要它：pytest 汇总行给的是**条数**，而判定用的是**逐条 nodeid**。两者不一致时，
     「台账陈旧」的红可能是**假红**（漏解析 ≠ 真修好），也可能掩盖**漏登记**。
     规则：**宁可不报，也不报假警报** —— 口径一致或无法判定时返回 None。
-    返回：告警文本；None 表示无需告警。（本函数**不参与判定**，调用点只 append 到 warnings）
+    返回：(告警文本, 子口径 token)；None 表示无需告警。（本函数**不参与判定**，调用点只 append 到 warnings）
+
+    P3（2026-09-18 拍）：两种子形态**分开标记**，便于分口径计数 —— 否则
+    「汇总缺失」会被误计入「漏解析」的分子。
+      `parse_miss`          汇总 N / 解析 N-1（真漏解析；本批实测形态）
+      `counts_form_anomaly` 全文都没有 failed/errors 计数，但解析到 ≥1 条失败（更像「汇总缺失」）
     """
     exp = None
     for k in ("failed", "error", "errors"):
@@ -211,13 +252,27 @@ def _parse_selfcheck(counts, failed):
     if exp is None:
         if failed:
             return ("解析自检: 解析到 %d 条失败, 但全文都没有 failed/errors 计数(汇总形态异常)"
-                    " —— 判定依据可能不完整, 请人工核对 -v 输出" % len(failed))
+                    " —— 判定依据可能不完整, 请人工核对 -v 输出" % len(failed),
+                    "counts_form_anomaly")
         return None
     if exp == len(failed):
         return None
     return ("解析自检: 汇总 failed/errors=%d 但只解析到 %d 条 nodeid(差额 %d)"
             " —— 判定用的名单可能不完整(既可能漏登记, 也可能把「台账陈旧」判成假红), 请人工核对 -v 输出"
-            % (exp, len(failed), exp - len(failed)))
+            % (exp, len(failed), exp - len(failed)),
+            "parse_miss")
+
+
+def _parse_selfcheck(counts, failed):
+    """只取**告警文本**（签名与旧版逐字一致；规则见 `_parse_selfcheck_issue`）。"""
+    issue = _parse_selfcheck_issue(counts, failed)
+    return issue[0] if issue else None
+
+
+def _parse_selfcheck_kind(counts, failed):
+    """只取**子口径 token**（`parse_miss` / `counts_form_anomaly`）；None 表示无需告警。"""
+    issue = _parse_selfcheck_issue(counts, failed)
+    return issue[1] if issue else None
 
 
 def main():
@@ -291,7 +346,10 @@ def main():
     _selfcheck = _parse_selfcheck(counts, failed)
     if _selfcheck:
         warnings.append(_selfcheck)
-        gaps.append("parse_selfcheck")
+        gaps.append("parse_selfcheck")            # 父标记（子形态任一）—— 旧 `in` 判据不失效
+        _selfcheck_kind = _parse_selfcheck_kind(counts, failed)
+        if _selfcheck_kind:
+            gaps.append(_selfcheck_kind)          # 子标记（P3：parse_miss / counts_form_anomaly）
     for _w in warnings:
         print(f"[GATE][WARN] {_w}")
     # 子项⑥ 续（2026-09-18 拍）：证据不完整 ⇒ 把原始 stdout **留存**一份（纯留痕，不改判定）
@@ -326,6 +384,22 @@ def main():
     if miss_skip:
         bad.append("台账登记 skip 但当前已有结果(请更新 skip_ledger.json): " + ", ".join(miss_skip))
 
+    # P1（2026-09-18 拍）：**只追加**的门禁历史（纯留痕 —— 不读、不判、不改退出码/台账）
+    _hist_kept = None
+    try:
+        _hist_kept = _append_history({
+            "ts": datetime.datetime.now().isoformat(timespec="seconds"),
+            "evidence_gaps": gaps,
+            "summary_off_last_line": off_last_line,
+            "pytest_rc": rc,
+            "collected": collected,
+            "counts": counts,
+            "reported_pass": not bad,
+        })
+    except Exception as _e:   # 落盘失败也不能把门禁搞红（与 X-03 扫描、原始 stdout 留存同规矩）
+        warnings.append("门禁历史落盘失败: %r" % (_e,))
+        print(f"[GATE][WARN] 门禁历史落盘失败: {_e!r}")
+
     _RUN_DIR.mkdir(parents=True, exist_ok=True)
     (_RUN_DIR / "last_run.json").write_text(
         json.dumps(
@@ -341,6 +415,7 @@ def main():
                 "collect_errors": collect_errors,
                 "evidence_gaps": gaps,
                 "raw_stdout_kept": _raw_kept,
+                "history_kept": _hist_kept,
                 "warnings": warnings,
                 "encoding_debt": encoding_debt,
                 "reported_pass": not bad,

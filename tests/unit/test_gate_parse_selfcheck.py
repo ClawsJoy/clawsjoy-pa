@@ -65,3 +65,33 @@ def test_selfcheck_never_touches_verdict():
     assert "_selfcheck" in seg
     for bad in ("bad.append(_selfcheck", "sys.exit(2)", "return 2"):
         assert bad not in seg, "自检影响了判定/退出码：%s" % bad
+
+
+def test_parse_selfcheck_kind_splits_two_forms():
+    """P3（2026-09-18 拍）：两种子形态**分开标记**；口径一致时不标记（防假警报）。
+
+    为什么: 「汇总形态异常」若与「真漏解析」共用一个 token，(b) 会被误计入 (a) 的分子。
+    """
+    m = _load()
+    # (a) 差额型 —— 真漏解析
+    assert m._parse_selfcheck_kind({"failed": 25, "passed": 10}, ["a::x"] * 24) == "parse_miss"
+    # (b) 汇总形态异常型 —— 全文无计数但解析到失败
+    assert m._parse_selfcheck_kind({}, ["a::x"]) == "counts_form_anomaly"
+    # 一致 / 无失败 ⇒ 不标记
+    assert m._parse_selfcheck_kind({"failed": 25, "passed": 1756}, ["a::x"] * 25) is None
+    assert m._parse_selfcheck_kind({"failed": 1, "errors": 1}, ["a::x", "b::y"]) is None
+    assert m._parse_selfcheck_kind({}, []) is None
+
+
+def test_gaps_carry_parent_and_child_tokens():
+    """静态判据：`gaps` 同时带**父标记**（旧 `in` 判据不失效）与**子标记**（分口径可数）。
+
+    若只拆子 token、不留父标记 ⇒ 旧的 `"parse_selfcheck" in evidence_gaps` **静默失效**。
+    """
+    src = _TOOL.read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    fns = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    seg = ast.get_source_segment(src, fns["main"])
+    assert 'gaps.append("parse_selfcheck")' in seg, "父标记丢失（旧判据会静默失效）"
+    assert "_parse_selfcheck_kind(counts, failed)" in seg, "子口径未接线"
+    assert "gaps.append(_selfcheck_kind)" in seg, "子标记未落入 gaps"
