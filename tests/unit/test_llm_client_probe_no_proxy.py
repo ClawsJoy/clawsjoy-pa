@@ -124,22 +124,22 @@ def test_ollama_available_走探测会话_成功即_True(monkeypatch):
     monkeypatch.setattr(client, "_ollama_checked", False)
     probe = _Recorder()
     monkeypatch.setattr(llm_mod, "_PROBE_SESSION", probe)
-    assert llm_mod.LLMClient._ollama_available(client, timeout=0.5) is True
+    assert client._ollama_available(timeout=0.5) is True
     assert probe.urls == [client.config.base_url + "/api/tags"]
 
 
 def test_ollama_available_失败必须留_WARN(monkeypatch, caplog):
     """拍定 ②：失败路径必须**可观测**（此前是静默 `False`）。
 
-    这里用**类调用**绕过同名遮蔽 —— `self._ollama_available` 被 `_init` 的布尔实例
-    属性遮蔽（`LLMClient._ollama_available` 仍可取到函数），那条遮蔽是**另一处独立
-    缺陷**，另行登记，不在本批改。
+    X-22 修后直证：这里用**实例调用**——改名前 `self._ollama_available` 是 `_init`
+    的布尔实例属性，实例调用恒抛 `TypeError: 'bool' object is not callable`；
+    改名后（属性 → `_ollama_probe_ok`）实例调用可达。
     """
     client = llm_mod.LLMClient()
     monkeypatch.setattr(client, "_ollama_checked", False)
     monkeypatch.setattr(llm_mod, "_PROBE_SESSION", _Recorder(mode="boom"))
     with caplog.at_level(logging.WARNING):
-        assert llm_mod.LLMClient._ollama_available(client, timeout=0.5) is False
+        assert client._ollama_available(timeout=0.5) is False
     assert any("探测异常" in rec.getMessage() for rec in caplog.records), caplog.text
 
 
@@ -150,3 +150,31 @@ def test_生产代码探测不得再用裸_requests_get():
     assert "requests.get(" not in src, "仍在用裸 requests.get（会被 env 代理串味）"
     assert "_req.get(" not in src, "仍在用裸 _req.get（会被 env 代理串味）"
     assert src.count("_PROBE_SESSION.get(") == 2, "两处探测都应走 _PROBE_SESSION"
+
+
+def test_X22_ollama_available_实例调用必须可达():
+    """X-22 行为判据：方法名**不得**被同实例属性遮蔽（改名前此条必红）。
+
+    改名前实况：`type(client._ollama_available) == bool`、直接调用抛
+    `TypeError: 'bool' object is not callable` ⇒ `:256` 的
+    `if self._ollama_available():` 恒抛，被外层 `except Exception`
+    误归因为「云端 API 不可用」。取数件 `data/tmp/b5_work/x21/shadow_probe.txt`。
+    """
+    client = llm_mod.LLMClient()
+    assert "_ollama_available" not in vars(client), "实例属性又盖住了同名方法（X-22 回潮）"
+    assert callable(client._ollama_available), "实例上取不到可调用的探测方法"
+
+
+def test_X22_缓存分支读的是新属性名(monkeypatch):
+    """关系判据：`_ollama_checked=True` 时必须**读新属性**且**不再探测**。
+
+    若把 `return self._ollama_probe_ok` 改回旧名，取到的是绑定方法（truthy）⇒
+    `is True` 失败 ⇒ 红。
+    """
+    client = llm_mod.LLMClient()
+    monkeypatch.setattr(client, "_ollama_checked", True)
+    monkeypatch.setattr(client, "_ollama_probe_ok", True)
+    probe = _Recorder(mode="boom")
+    monkeypatch.setattr(llm_mod, "_PROBE_SESSION", probe)
+    assert client._ollama_available(timeout=0.5) is True
+    assert probe.urls == [], "命中缓存时不应再探测"

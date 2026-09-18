@@ -121,7 +121,7 @@ class LLMClient:
         # #24 流式首Token优先：常用上下文预加载缓存
         self._context_cache = {}
         self._ollama_checked = False
-        self._ollama_available = False
+        self._ollama_probe_ok = False
 
     def _ensure_ollama(self):
         """确保 Ollama 运行"""
@@ -136,15 +136,15 @@ class LLMClient:
     def _ollama_available(self, timeout: float = 1.5) -> bool:
         """#24 探测 Ollama 本地是否可用（带结果缓存，避免每次请求都探测）"""
         if self._ollama_checked:
-            return self._ollama_available
+            return self._ollama_probe_ok
         try:
             resp = _PROBE_SESSION.get(f"{self.config.base_url}/api/tags", timeout=timeout)
-            self._ollama_available = resp.status_code == 200
+            self._ollama_probe_ok = resp.status_code == 200
         except Exception as e:
             logger.warning("[LLM] Ollama 探测异常，本进程内判定为不可用: %s", e)
-            self._ollama_available = False
+            self._ollama_probe_ok = False
         self._ollama_checked = True
-        return self._ollama_available
+        return self._ollama_probe_ok
 
     # ========== 公共API ==========
 

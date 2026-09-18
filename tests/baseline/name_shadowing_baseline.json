@@ -1,0 +1,29 @@
+{
+  "schema": "name-shadowing-baseline/1",
+  "policy": "类内「方法名 ∩ 实例属性名」必须为空：同名遮蔽会让 `self.X` 取到属性而非方法 ⇒ 调用恒抛 TypeError（或被 truthy 属性静默吞掉），且常被外层 `except Exception` 误归因到别的层。",
+  "note": "本文件是**基线留痕**（记「哪些豁免、为什么、待谁处置」），由 tests/unit/test_name_shadowing_guard.py 读取：**新遮蔽 = 红**；**陈旧豁免 = 红**（条目不再复现必须删）。扫描范围见 scan_scope（判据会断言它与实际扫描根一致，防悄悄缩范围）。",
+  "updated": "2026-09-18",
+  "scan_scope": [
+    "core",
+    "tools",
+    "scripts"
+  ],
+  "decision_ref": "未闭清单_20260917.md §八 X-22 / X-23",
+  "entries": [
+    {
+      "id": "NS-01",
+      "key": "core/orchestration/planner.py :: TaskPlanner._is_dag_request",
+      "path": "core/orchestration/planner.py",
+      "class": "TaskPlanner",
+      "name": "_is_dag_request",
+      "kind": "有意覆盖（临时置换 + finally 恢复）",
+      "severity": "低",
+      "evidence": {
+        "code": "planner.py:278-283（`orig_check = self._is_dag_request` → `self._is_dag_request = lambda _u: False` → `finally` 恢复）",
+        "probe": "data/tmp/b5_work/x21/planner_shadow_probe.txt"
+      },
+      "observed": "**不恒抛**：绑定方法与 lambda 都可调用（受控探针实测 direct call ok → False）。副作用 = 异常回退路径跑过一次后，实例字典里**永久留一个绑定方法**（覆盖类方法查找路径；第二个实例不受影响）。",
+      "status": "未修 · 待拍（另立 X-23，不与 X-22 并批）"
+    }
+  ]
+}
