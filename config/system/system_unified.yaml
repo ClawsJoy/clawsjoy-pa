@@ -189,7 +189,10 @@ services:
   gateway:
     debug: false
     host: 0.0.0.0
-    port: 5002
+    # X-11 层 1（老板/DS 2026-09-18 拍 A）：Windows 副本**必须错峰**
+    #   实测 Windows 侧 5002 **不可绑**（WinError 10013，fail-loud）⇒ 用默认值根本起不来；
+    #   5103 与 5102 两候选均实测可绑（见 data/tmp/port_spike.py）；与 WSL(=5002) 错峰。
+    port: 5102
   multi_agent:
     host: 0.0.0.0
     port: 5006
