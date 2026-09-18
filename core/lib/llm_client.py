@@ -33,6 +33,14 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+# X-21（2026-09-18 拍）：本机服务探测**不得走代理**。
+# `.env` 注入 `HTTP_PROXY`（为沙箱 yt-dlp 下载有意保留）；不显式绕开时，
+# 连 `http://127.0.0.1:11434` 也会被送去代理 —— 代理未监听时探测恒失败。
+# 独立 session：`trust_env=False`，且**不挂重试适配器**（探测＝只探一次，不重试）。
+_PROBE_SESSION = requests.Session()
+_PROBE_SESSION.trust_env = False
+
+
 def _get_model_context_window(model):
     """读取模型实际 context_window（与 gateway 侧 agent_gateway_enhanced._get_model_context_window 一致）。
 
@@ -118,9 +126,7 @@ class LLMClient:
     def _ensure_ollama(self):
         """确保 Ollama 运行"""
         try:
-            import requests as _req
-
-            _req.get("http://127.0.0.1:11434/api/tags", timeout=3)
+            _PROBE_SESSION.get("http://127.0.0.1:11434/api/tags", timeout=3)
         except Exception as e:
             logger.warning(f"[LLM] Ollama 探测失败，尝试拉起服务: {e}")
             import subprocess as _sp
@@ -132,9 +138,10 @@ class LLMClient:
         if self._ollama_checked:
             return self._ollama_available
         try:
-            resp = requests.get(f"{self.config.base_url}/api/tags", timeout=timeout)
+            resp = _PROBE_SESSION.get(f"{self.config.base_url}/api/tags", timeout=timeout)
             self._ollama_available = resp.status_code == 200
-        except Exception:
+        except Exception as e:
+            logger.warning("[LLM] Ollama 探测异常，本进程内判定为不可用: %s", e)
             self._ollama_available = False
         self._ollama_checked = True
         return self._ollama_available
