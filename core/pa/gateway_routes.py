@@ -408,10 +408,16 @@ def register_pa_routes(app, brain=None):
 
     @bp.route("/v9/pa/threads", methods=["GET"])
     def pa_threads_get():
-        from core.pa.threads import ThreadStore
+        from core.pa.threads import ThreadStore, ThreadStoreCorrupt
 
         ts = ThreadStore(_data_dir())
-        return ok(ts.load(request.args.get("user_id")))
+        try:
+            _tstate = ts.load(request.args.get("user_id"))
+        except ThreadStoreCorrupt as _c:
+            # X-17：坏状态**不回落空状态**（前端是 `if(r.ok)` ⇒ 自动跳过，不会炸页面）
+            return jsonify({"ok": False, "error": "thread_state_corrupt",
+                            "message": str(_c), "path": _c.path}), 409
+        return ok(_tstate)
 
     @bp.route("/v9/pa/threads", methods=["POST"])
     def pa_threads_post():
@@ -923,7 +929,7 @@ def register_pa_routes(app, brain=None):
         """归档正文落服务端（层 1）。入参 {user_id, items:[{id,title,archived_at,msgs}]}。"""
         import json as _json
 
-        from core.pa.threads import ThreadStore
+        from core.pa.threads import ThreadStore, ThreadStoreCorrupt
 
         body = request.get_json(silent=True) or {}
         try:
@@ -938,7 +944,12 @@ def register_pa_routes(app, brain=None):
                 return err("每个 item 必须有非空 id", 400)
 
         ts = ThreadStore(_data_dir())
-        state = ts.load(uid)
+        try:
+            state = ts.load(uid)
+        except ThreadStoreCorrupt as _c:
+            # X-17 关键止损：坏状态**不得当空基线**（否则一次写即清空历史归档）⇒ 报错且**零写入**
+            return jsonify({"ok": False, "error": "thread_state_corrupt",
+                            "message": str(_c), "path": _c.path, "written": 0}), 409
         archived = state.get("archived")
         if not isinstance(archived, list):
             archived = []
@@ -995,13 +1006,18 @@ def register_pa_routes(app, brain=None):
     @bp.route("/v9/pa/archive/<archive_id>", methods=["GET"])
     def pa_archive_get(archive_id):
         """按 id 取一条归档（含正文）。**查不到返 404，不得拿空对象冒充**。"""
-        from core.pa.threads import ThreadStore
+        from core.pa.threads import ThreadStore, ThreadStoreCorrupt
 
         try:
             uid = _archive_uid(request.args.get("user_id"))
         except ValueError as _ve:
             return err(_ve, 400)
-        state = ThreadStore(_data_dir()).load(uid)
+        try:
+            state = ThreadStore(_data_dir()).load(uid)
+        except ThreadStoreCorrupt as _c:
+            # X-17：损坏**不得谎报 404「不存在」**（404 = 确实没这条；读不动 ≠ 不存在）
+            return jsonify({"ok": False, "error": "thread_state_corrupt",
+                            "message": str(_c), "path": _c.path}), 409
         for _a in state.get("archived") or []:
             if isinstance(_a, dict) and str(_a.get("id")) == str(archive_id):
                 return ok({"item": _a})
