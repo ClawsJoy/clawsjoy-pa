@@ -54,13 +54,13 @@ python scripts/agent_client/tests/test_roundtrip.py   # WS 往返 + 动作 + 卡
 \`\`\`bash
 python scripts/agent_client/tests/test_step45.py   # 未登录门槛 + 风控上报 + click/fill/publish
 \`\`\`
-## Windows 客户端（真实 Chrome，可复用日常登录态）
+## Windows 客户端（真实 Chrome；默认专用实例，可选显式接管）
 
 ### 特点
 
-- 用 **系统安装的 Chrome**（playwright `channel=chrome`），可复用你日常浏览器的登录态（小红书/B站/知乎等）
+- 用 **系统安装的 Chrome**（playwright `channel=chrome`），**默认用专用实例目录**（`~/.clawsjoy/profiles/default`）；扫码登录一次即由该目录保存登录态
 - 一键脚本：`install_windows.bat` 装依赖、`start_windows.bat` 启动
-- 可选 `--profile` 指定 Chrome 用户数据目录，直接复用已登录数据（不用重复扫码）
+- 可选 `--profile` **显式接管**一个已存在的 Chrome 用户数据目录（会复用其登录态；启动日志打印实际路径）
 
 ### 安装
 
@@ -82,8 +82,8 @@ start_windows.bat bilibili            :: 启动后自动打开 B站登录页(可
 REM 用系统 Chrome + 默认 profile（~/.clawsjoy/profiles/default 由本客户端自建）
 python agent_client.py --chrome --user-id web_windows --ws ws://127.0.0.1:5006
 
-REM 复用你日常 Chrome 的登录数据（指定用户数据目录, 不拼 /default）
-python agent_client.py --chrome --profile "%LOCALAPPDATA%\Google\Chrome\User Data\Default"
+REM 显式接管一个已存在的 Chrome 用户数据目录（不拼 /default；日志会打印实际路径）
+python agent_client.py --chrome --profile "<某个已存在的 Chrome 用户数据目录>"
 
 REM 带平台: 启动后打开登录页
 python agent_client.py --chrome --user-id web_windows --platform bilibili
@@ -94,7 +94,7 @@ python agent_client.py --chrome --user-id web_windows --platform bilibili
 | 参数 | 说明 |
 |---|---|
 | `--chrome` | 用系统安装的 Chrome（channel=chrome）。Linux 上会报 Chromium distribution chrome is not found（预期，仅 Windows 用） |
-| `--profile` | Chrome 用户数据目录（如 `%LOCALAPPDATA%\Google\Chrome\User Data\Default`）。传了则直接复用该目录登录态；留空用默认 profile |
+| `--profile` | **显式接管**一个已存在的 Chrome 用户数据目录。传了则直接复用该目录登录态（启动日志会打印实际路径）；留空用 `--profile-root/default` 专用实例目录 |
 
 ### 注意
 

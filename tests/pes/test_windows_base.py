@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
+import ast
 import os
+from pathlib import Path
 
 import pytest
 
@@ -112,12 +114,6 @@ def test_本机路径不算_wsl():
     assert is_wsl_path("C:/Windows") is False
 
 
-def test_wsl_被标为跨信任边界():
-    assert WSL_BOUNDARY["cross_env_is_trust_boundary"] is True
-    assert WSL_BOUNDARY["requires_explicit_grant"] is True
-    assert "/mnt/" in WSL_BOUNDARY["wsl_markers"]
-
-
 # ---------------------------------------------------------------- PowerShell
 def test_危险命令硬拒():
     for cmd in ("rm -rf /", "diskpart", "reg delete hklm", ":(){ :|:& };:"):
@@ -150,11 +146,90 @@ def test_硬拒优先于写类提问():
     assert shell_guard("Remove-Item -Recurse; diskpart")["decision"] == "deny"
 
 
-# ---------------------------------------------------------------- 浏览器隔离
-def test_浏览器必须专用实例且不得接管日常_profile():
-    assert BROWSER_ISOLATION["dedicated_instance"] is True
-    assert BROWSER_ISOLATION["separate_user_data_dir"] is True
-    assert BROWSER_ISOLATION["forbid_user_profile"] is True
+# ------------------------------------------------- 契约常量（X-18：消除假绿面）
+#: 扫「生产消费者」时跳过的目录：测试不是生产消费者（``L-04``），历史归档/数据不算。
+_CONTRACT_SKIP_DIRS = {
+    "tests", "data", "archive", "experiments", "docs", "logs", "memory",
+    "sandbox", "store-assets", "__pycache__", ".git", "node_modules",
+}
+
+
+def _scan_contract_consumers(names, root):
+    """AST 扫生产代码里对这些常量的**取值引用**（Name-Load / Attribute）。
+
+    返回 (每个名字的计数, 已成功解析的文件数)。
+    """
+    counts = {n: 0 for n in names}
+    scanned = 0
+    for path in sorted(Path(root).rglob("*.py")):
+        if set(path.relative_to(root).parts) & _CONTRACT_SKIP_DIRS:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        scanned += 1
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and node.id in counts:
+                counts[node.id] += 1
+            elif isinstance(node, ast.Attribute) and node.attr in counts:
+                counts[node.attr] += 1
+    return counts, scanned
+
+
+def _contract_violations(constants, load_counts):
+    """判据本体（纯函数，便于用合成输入证「有牙」）。空列表 = 过。
+
+    断言的是**声明与实测的关系**（而非常量自身字面量 —— 那是同义反复，``L-04``）：
+      1. 契约常量必须带 ``wired`` 标记（缺 ⇒ 违规）；
+      2. ``wired`` 必须等于「实测生产消费者 > 0」；
+      3. ``wired=False``（声明性）必须带**非空** ``declarative_note``。
+    """
+    bad = []
+    for name, c in constants.items():
+        if not isinstance(c, dict):
+            continue
+        if "wired" not in c:
+            bad.append("%s: 缺 wired 标记（是契约常量就必须声明被接线或被标注）" % name)
+            continue
+        wired = bool(c["wired"])
+        n = int(load_counts.get(name, 0))
+        if wired != (n > 0):
+            bad.append("%s: wired=%s 与实测生产消费者数 %d 不符" % (name, wired, n))
+        if not wired and not str(c.get("declarative_note") or "").strip():
+            bad.append("%s: 声明性契约缺 declarative_note" % name)
+    return bad
+
+
+def _exported_dict_constants():
+    return {n: getattr(w, n) for n in w.__all__ if isinstance(getattr(w, n, None), dict)}
+
+
+def test_契约常量必须声明被接线或被显式标注():
+    """``X-18`` 2：把「假绿面」从「靠人发现」变成「机器会红」。"""
+    constants = _exported_dict_constants()
+    assert constants, "未扫到任何导出字典常量 ⇒ 判据空转"
+    counts, scanned = _scan_contract_consumers(list(constants), REPO_ROOT)
+    assert scanned >= 100, "生产代码扫描面过小（%d 文件）⇒ 判据可能空转" % scanned
+    assert _contract_violations(constants, counts) == []
+
+
+def test_契约常量判据本身有牙():
+    """反例证明：四类违规在合成输入下必须全部被判出（否则判据是空转）。"""
+    ok = {"A": {"wired": False, "declarative_note": "无消费者"}}
+    assert _contract_violations(ok, {"A": 0}) == []
+    assert _contract_violations({"A": {"wired": False}}, {"A": 0}) != []  # 缺标记
+    assert _contract_violations({"A": {"wired": False, "declarative_note": "x"}}, {"A": 3}) != []  # 有消费者却标假
+    assert _contract_violations({"A": {"wired": True, "declarative_note": ""}}, {"A": 0}) != []  # 未接线却标真
+    assert _contract_violations({"A": {"wired": False, "declarative_note": " "}}, {"A": 0}) != []  # 声明性缺说明
+
+
+def test_契约口径_钉住_X18_已拍策略():
+    """口径 pin（**非行为验证**）：钉住 ``X-18`` 已拍策略，防静默改口径。"""
+    assert BROWSER_ISOLATION["user_profile_reuse"] == "explicit_only"
+    assert BROWSER_ISOLATION["dedicated_instance_by_default"] is True
+    assert WSL_BOUNDARY["cross_env_is_trust_boundary"] is True
+    assert WSL_BOUNDARY["requires_explicit_grant"] is True
 
 
 # ---------------------------------------------------------------- 进程台账

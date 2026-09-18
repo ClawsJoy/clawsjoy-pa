@@ -8,8 +8,8 @@
 | 文件系统 | :func:`normalize_path` / :func:`same_path` / :func:`join_under` / :func:`classify_path` —— **禁止裸字符串拼路径**，沙箱路径解析单一出口 |
 | 本地进程 | :class:`ProcessLedger` —— 进程有句柄与生命周期台账，**不留孤儿** |
 | PowerShell | :func:`shell_guard` —— **逐条过门**、可回放、**不静默降级到 shell**、危险命令硬拒 |
-| 浏览器 | :data:`BROWSER_ISOLATION` —— 专用实例 + 独立 ``user-data-dir``，**禁止复用/接管用户日常 profile** |
-| WSL | :data:`WSL_BOUNDARY` —— **跨环境 = 跨信任边界**，需单独授权 |
+| 浏览器 | :data:`BROWSER_ISOLATION` —— **默认**专用实例 + 独立 ``user-data-dir``；复用日常 profile 只允许**显式接管**（``wired=False``，声明性） |
+| WSL | :data:`WSL_BOUNDARY` —— **跨环境 = 跨信任边界**，需单独授权（``wired=False``，声明性） |
 | git | :func:`is_sandbox_repo` / :func:`is_real_repo` —— 沙箱 git 与真项目 git **必须区分**（不自动推远程） |
 
 设计纪律：本模块**只做平台事实与契约常量**，**不做业务决策**（决策在 authorization 层）。
@@ -35,18 +35,32 @@ VAULT_REL = "data/v9/pa"
 #: Windows 最大路径（不含长路径前缀）
 _WIN_MAX_PATH = 260
 
-#: 浏览器隔离契约 —— 禁止复用/接管用户日常 profile
+#: 浏览器隔离契约 —— **默认**专用实例；复用日常 profile 属「显式接管」
+#:
+#: **声明性（``wired=False``）**：本常量**无生产代码消费者**；实际策略落在
+#: ``scripts/agent_client/``（显式 ``--profile`` 接管 + 启动日志打印实际 profile 路径）。
+#: ``wired`` 不是自述句，而是被 ``tests/pes/test_windows_base.py`` 按**实测** AST 消费者数校验：
+#: wired 与实测不符 / 缺 wired / 声明性缺 declarative_note ⇒ 三者任一即红。
+#:
+#: 口径（``X-18`` · 2026-09-18 拍）：复用老板日常 Chrome profile **不是禁止项**，
+#: 而是**只能显式接管**（``user_profile_reuse=explicit_only``）—— 不许静默接管。
 BROWSER_ISOLATION: Dict[str, Any] = {
-    "dedicated_instance": True,
-    "separate_user_data_dir": True,
-    "forbid_user_profile": True,
-    "note": "必须专用实例 + 独立 user-data-dir；不得复用或接管老板日常 Chrome profile。",
+    "dedicated_instance_by_default": True,
+    "separate_user_data_dir_by_default": True,
+    "user_profile_reuse": "explicit_only",  # silent | explicit_only | forbidden
+    "wired": False,
+    "declarative_note": "全仓生产代码消费者 = 0；实际策略在 scripts/agent_client/（显式 --profile 接管 + 启动打印实际路径）。",
+    "note": "默认必须专用实例 + 独立 user-data-dir；不得**静默**接管老板日常 Chrome profile（显式接管须在启动日志打印实际 profile 路径）。",
 }
 
 #: WSL 边界契约 —— 跨环境 = 跨信任边界
+#:
+#: **声明性（``wired=False``）**：本常量**无生产代码消费者**；判据与 ``BROWSER_ISOLATION`` 同一条。
 WSL_BOUNDARY: Dict[str, Any] = {
     "cross_env_is_trust_boundary": True,
     "requires_explicit_grant": True,
+    "wired": False,
+    "declarative_note": "全仓生产代码消费者 = 0；跨树判定实际由 is_wsl_path 承担，其 markers 与本常量的 wsl_markers 目前是两份（已登记）。",
     "note": "Windows ↔ WSL 调用需显式适配层与单独授权；不得当作本地同信任域调用。",
     "wsl_markers": ("/mnt/", "/home/", "/usr/", "/etc/"),
 }

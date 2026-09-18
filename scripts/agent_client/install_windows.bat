@@ -55,7 +55,7 @@ if errorlevel 1 (
     )
     echo   [OK] playwright chromium 已安装
 ) else (
-    echo   [OK] 系统 Chrome 可用(推荐: 可复用日常登录态)
+    echo   [OK] 系统 Chrome 可用(默认用专用实例目录, 不接管日常 profile)
 )
 
 echo.

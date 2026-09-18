@@ -19,9 +19,10 @@ class BrowserSession:
         """浏览器会话。
 
         channel: 浏览器通道(custom=系统 Chrome / chrome=Windows 版 Chrome / msedge 等)
-                 Windows 用 --chrome 启动真实 Chrome(可复用用户日常登录态)时传 channel="chrome"
-        user_data_dir: 自定义用户数据目录(Windows 用户日常 Chrome profile 路径)。
-                       传了则直接用该目录(不再拼 /default), 可复用用户已登录的 Chrome 数据。
+                 Windows 用 --chrome 启动真实 Chrome 时传 channel="chrome";
+                 **默认仍用专用实例目录, 不接管日常 profile**(显式传 user_data_dir 才算接管)
+        user_data_dir: **显式接管**一个已存在的 Chrome 用户数据目录(会复用其中登录态)。
+                       传了则直接用该目录(不再拼 /default); 留空用 profile_root/default 专用实例目录。
         """
         self.profile_root = Path(profile_root)
         self.profile_root.mkdir(parents=True, exist_ok=True)
@@ -88,7 +89,7 @@ class BrowserSession:
             locale="zh-CN",
         )
         if self.channel:
-            # Windows: channel="chrome" 用系统安装的 Chrome(可复用用户日常登录态)
+            # Windows: channel="chrome" 用系统安装的 Chrome(仍用专用实例目录, 不接管日常 profile)
             _kw["channel"] = self.channel
             log.info("使用系统浏览器 channel=%s", self.channel)
         self._ctx = self._pw.chromium.launch_persistent_context(_ud, **_kw)

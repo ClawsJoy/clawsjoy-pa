@@ -24,9 +24,10 @@ if not "%1"=="" set PLATFORM=--platform %1
 echo 启动中(Windows Chrome 模式, 弹出 Chrome 窗口)...
 echo.
 
-REM --chrome: 用系统 Chrome(可复用日常登录态); --profile: 可选指定用户数据目录
+REM --chrome: 用系统 Chrome; 默认用专用实例目录(不接管日常 profile)
+REM --profile: 显式接管一个已存在的 Chrome 用户数据目录(会复用其登录态; 启动日志打印实际路径)
 REM 示例: start_windows.bat bilibili
-REM       或带 profile: python agent_client.py --chrome --profile "%LOCALAPPDATA%\Google\Chrome\User Data\Default"
+REM       或显式接管: python agent_client.py --chrome --profile "<某个已存在的 Chrome 用户数据目录>"
 python agent_client.py --ws "%AGENT_CLIENT_WS%" --user-id "%AGENT_CLIENT_USER%" --chrome %PLATFORM%
 
 if errorlevel 1 (

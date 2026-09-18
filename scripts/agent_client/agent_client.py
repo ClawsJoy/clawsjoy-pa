@@ -36,13 +36,15 @@ def main():
     ap.add_argument("--platform", default="", help="启动时打开的登录平台(如 xiaohongshu)")
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument(
-        "--chrome", action="store_true", help="Windows: 用系统安装的 Chrome(playwright channel=chrome), 可复用用户日常登录态"
+        "--chrome",
+        action="store_true",
+        help="Windows: 用系统安装的 Chrome(playwright channel=chrome); 默认仍用专用实例目录, 不接管日常 profile",
     )
     ap.add_argument(
         "--profile",
         default="",
-        help=r"Windows: 指定 Chrome 用户数据目录(如 %LOCALAPPDATA%\Google\Chrome\User Data\Default); "
-        r"传了则直接用该目录(不拼 /default); 留空用默认 profile",
+        help=r"Windows: **显式接管**一个已存在的 Chrome 用户数据目录(会复用其登录态; 启动日志会打印实际路径); "
+        r"传了则直接用该目录(不拼 /default); 留空用 --profile-root/default 专用实例目录",
     )
     args = ap.parse_args()
 
