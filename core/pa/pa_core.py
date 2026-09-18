@@ -26,7 +26,7 @@ class PaCore:
         self.ledger = TodoStore(self.dir / "ledger.json")
         self.events = EventLog(self.dir / "events.jsonl")
         self.dialog = DialogRuntime(str(self.dir / "sessions"))
-        self.dispatch_rec = DispatchRecord(self.dir / "dispatch.json")
+        self.dispatch_rec = DispatchRecord(self.dir / "dispatch.jsonl")
         self.artifacts_dir = self.dir / "artifacts"
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self._ensure_seed()

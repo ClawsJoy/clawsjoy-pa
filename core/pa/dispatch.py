@@ -10,6 +10,7 @@
 """
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -114,19 +115,76 @@ def review(contract, result, profile_brief="", rules=None):
 
 
 class DispatchRecord:
+    """分派记录 —— append-only JSONL（DS 2026-09-18 拍「改真 append」；X-16 方案稿 §九.2）。
+
+    为什么不再用 ``dispatch.json``（顶层 JSON 数组）：
+      · 旧 ``add()`` = 「读全量 → 追加 → **整文件重写**」⇒ 每次追加都重写全部历史（非原子，
+        写一半崩 ⇒ 历史全丢）；且「顶层数组」与统一出口 ``StateFile``（只认顶层 dict）是两种
+        模型 ⇒ 接不了出口（X-16 方案稿 §十.3）。
+      · 改成一行一条后：追加只写**一行**、历史不重写；坏也只坏一行，可逐行定位与上报。
+    同模型先例：``core/pa/events.py``（``EventLog``）已是 ``events.jsonl``。
+    读语义（与 X-17① 同族，但**伤害模型不同 ⇒ 处置不同**）：
+      · 文件不存在 ⇒ 空历史（新用户正常，**不是**损坏）；
+      · **单行**不可解析／非对象／缺 ``task_id`` ⇒ 跳过该行并**计数 + 报 stderr**。
+        理由：append-only 的坏行**不会**导致后续覆盖（没有「读不动就当空基线再写」这条链），
+        故不按状态文件那样抛；但**必须可见** —— 不静默，也不把损坏当空历史（经验库 L-08）。
+    兼容：同名 ``.json``（旧数组）存在时**只读**它作为更早的历史基线，**不改写、不迁移**。
+    """
+
     def __init__(self, path=None):
-        self.path = Path(path or os.getenv("PA_DISPATCH_PATH", "data/v9/pa/dispatch.json"))
+        self.path = Path(path or os.getenv("PA_DISPATCH_PATH", "data/v9/pa/dispatch.jsonl"))
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.rows = []
-        if self.path.exists():
+        self.legacy_path = self.path.with_suffix(".json") if self.path.suffix == ".jsonl" else None
+        self.corrupt_lines = 0
+        self.rows = self._load()
+
+    def _report(self, msg):
+        self.corrupt_lines += 1
+        try:
+            sys.stderr.write("[dispatch] %s\n" % msg)
+        except Exception:
+            pass
+
+    def _load(self):
+        rows = []
+        if self.legacy_path is not None and self.legacy_path.exists():
             try:
-                self.rows = json.loads(self.path.read_text(encoding="utf-8"))
-            except Exception:
-                self.rows = []
+                old = json.loads(self.legacy_path.read_text(encoding="utf-8"))
+            except Exception as e:
+                self._report("旧格式历史不可解析（只读跳过，未改写）：%s（%s）" % (self.legacy_path, type(e).__name__))
+            else:
+                if isinstance(old, list):
+                    rows.extend(r for r in old if isinstance(r, dict))
+                else:
+                    self._report("旧格式历史不是数组（只读跳过，未改写）：%s" % self.legacy_path)
+        if self.path.exists():
+            for no, line in enumerate(self.path.read_text(encoding="utf-8").splitlines(), 1):
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except Exception as e:
+                    self._report("第 %d 行不可解析（%s）——已跳过该行，其余历史保留" % (no, type(e).__name__))
+                    continue
+                if not isinstance(row, dict) or not str(row.get("task_id") or "").strip():
+                    self._report("第 %d 行结构不符（须为含非空 task_id 的对象）——已跳过该行，其余历史保留" % no)
+                    continue
+                rows.append(row)
+        return rows
 
     def add(self, row):
+        """追加一条：**先自检结构 → 单行追加 → 读回校验**（假成交红线：读回不一致就抛）。"""
+        if not isinstance(row, dict) or not str(row.get("task_id") or "").strip():
+            raise ValueError("dispatch 记录必须是含非空 task_id 的对象（拒绝写入）")
+        line = json.dumps(row, ensure_ascii=False)
+        blob = (line + "\n").encode("utf-8")
+        with open(self.path, "a", encoding="utf-8", newline="\n") as fh:
+            fh.write(line + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        if not self.path.read_bytes().endswith(blob):
+            raise RuntimeError("dispatch 追加未生效（读回不一致）：%s" % self.path)
         self.rows.append(row)
-        self.path.write_text(json.dumps(self.rows, ensure_ascii=False, indent=1), encoding="utf-8")
         return row
 
 
