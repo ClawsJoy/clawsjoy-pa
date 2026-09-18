@@ -64,22 +64,28 @@
   ],
   "root_cause_finding_2026_09_18": {
     "title": "应用侧 Ollama 探测被 `config/.env` 的 HTTP_PROXY 串味（裸 `requests.get`，trust_env 默认 True）",
-    "severity": "**不影响本表结论**（A/B 已证伪『代理是唯一原因』）；但**是独立缺陷**，另立条目登记、本批不修",
+    "severity": "**不影响本表结论**（A/B 已证伪「代理是唯一原因」）；但**是独立缺陷**：其**live 一处**是 `_ensure_ollama`（已修），另一处落在**不可达代码**上（待 `X-22` 修后才生效）",
     "mechanism": [
       "`config/.env:14-15` 注入 `HTTP_PROXY`/`HTTPS_PROXY=http://127.0.0.1:7890`（为 #27 沙箱 yt-dlp 下载外网而设，**有意保留**：`tests/unit/test_proxy_sandbox_fix.py:30` 断言其必须存在）",
       "`agent_gateway_enhanced.py:75-84` 仅在 `.env` **无**代理时才清 `os.environ` 代理 ⇒ 有代理时全进程继承",
       "`core/lib/llm_client.py:121-123`（`_ensure_ollama`）与 `:135`（`_ollama_available`）用**裸 `requests.get`** ⇒ `trust_env` 默认 True ⇒ 连 `127.0.0.1:11434` 也被送去 `7890`",
       "而同一类 `:107` **明确**设了 `self._session.trust_env = False` ⇒ **同类内自相矛盾**：主 session 绕代理，探测路径不绕",
-      "`_ollama_available` 以 `except Exception: self._ollama_available = False` **吞异常** ⇒ 代理一死，进程内**永久**判定「Ollama 不可用」（`_ollama_checked=True`，不再重试）＝ **静默降级**（L-08 同族）"
+      "`_ollama_available` 以 `except Exception:` 吞异常⇒ **已更正（2026-09-18 同日，实测证伪）**：该探测**当前不可达** —— `_ollama_available` **方法名被同一实例的布尔属性遮蔽**（`_init` 的 `self._ollama_available = False`）⇒ `:249` `if self._ollama_available():` **恒抛 `TypeError: 'bool' object is not callable`**（`type(c._ollama_available) == bool` 实测）。因此原写的「代理一死 ⇒ 进程内永久静默降级」**不成立**（缓存对该路径无意义）。真实后果是**另一处独立缺陷**（已另立 `X-22`）：该 `TypeError` 被 `:277` 的 `except Exception` **误归因为「云端 API 不可用」**并**静默降级到 Ollama**。"
     ],
     "evidence": "pytest 输出内 WARNING：`[LLM] Ollama 探测失败… HTTPConnectionPool(host='127.0.0.1', port=7890) … ProxyError('Unable to connect to proxy')` ⇒ 直证裸探测走了代理（data/tmp/b5_work/x20/rerun_perf.txt）",
     "precedent": "同族旧案 `docs/reports/v9_deepseek_proxy_error_20260824.md`（2026-08-24）：当时修了 `deepseek_adapter` 的 `_DS_SESSION.trust_env=False` 与主 session，**未覆盖这两处裸探测** ⇒ 属**未修尽的同族残留**",
-    "proposed_fix": "**待拍，本批不修**：探测改用 `self._session`（已有 `trust_env=False`）或显式 `proxies={}`；并把吞异常改为**可观测**（记 WARN 而非静默 False）"
+    "proposed_fix": "**已落地（`b60fbd0`，DS 2026-09-18 拍「做」）**：① 两处探测改走新增的模块级 `_PROBE_SESSION`（`trust_env=False`、**不挂重试适配器**—— 避免继承 `self._session` 的 `Retry(total=3, backoff_factor=2.0)` 拖慢失败路径）；② 吞异常改为**可观测**（`logger.warning`）。**仍待拍**：探测结果缓存的 **TTL/失效条件**（拍定范围只 ①②）。"
   },
   "explicitly_not": {
     "flake": "未登记进 failure_ledger.json::flaky_watch，也未登记进 known_failures —— 不放宽口径、不把环境问题常态化",
     "threshold_change": "未修改 assert elapsed < 30 / < 2000 的任何阈值（改阈值＝放宽口径）",
     "offline_mode": "全树 grep OFFLINE|MOCK_LLM|LLM_STUB = 0 命中（无官方离线模式开关）",
-    "code_fix_in_this_batch": "`root_cause_finding_2026_09_18` 的修法**未实施**（属改行为 ⇒ 待拍）"
+    "code_fix_in_this_batch": "`root_cause_finding` 的 ①② **已落地**（`b60fbd0`）；TTL **未加**（拍定范围外）；**另有独立缺陷 `X-22`（同名遮蔽）已登记、未修**"
+  },
+  "same_path_defect_2026_09_18_x22": {
+    "title": "`_ollama_available` 方法名被实例属性遮蔽 ⇒ `:249` 恒抛 `TypeError`",
+    "evidence": "实测：`type(LLMClient()._ollama_available) == bool`、`\"_ollama_available\" in inst.__dict__` 为 True，而 `callable(vars(LLMClient)[\"_ollama_available\"])` 也为 True（方法存在但被盖）；直接调用 ⇒ `TypeError: 'bool' object is not callable`。取数件 `data/tmp/b5_work/x21/shadow_probe.txt`",
+    "impact": "`core/lib/llm_client.py:249`（DeepSeek 分支的 `stream=True` 首Token优先）**恒抛**，被 `:277` `except Exception` 捕获 ⇒ 日志误报「云端 API 不可用，降级到 Ollama」（**归因层错位**）。",
+    "proposed_fix": "**待拍（属改行为）**：二选一 ——① 属性改名（如 `self._ollama_probe_ok`）；② 方法改名。修后 `X-21` 修的那一处探测才真正生效。"
   }
 }
