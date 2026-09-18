@@ -1,0 +1,60 @@
+{
+  "policy": "环境依赖用例 ≠ flake。flake = 同一环境下不稳定（时绿时红、单跑绿全量红）；环境依赖 = 依赖可达时稳定通过、依赖缺失时必红（可复现的确定红）。把后者写成 flake，等于把环境问题常态化。",
+  "note": "本文件是**留痕**（记『谁依赖什么、谁负责、下一步』），**不是门禁输入**：tools/check_test_baseline.py 只读 tests/baseline/failure_ledger.json 与 skip_ledger.json；本文件不参与失败/跳过判定，也不得据此放宽断言阈值。",
+  "updated": "2026-09-18",
+  "decision": "DS 2026-09-18 拍：下述 2 条墙钟用例不登记为 flake，改登记为「环境依赖用例」；处置 = 等后端/代理恢复后复跑（复跑绿则门禁失败数 27 → 25）。",
+  "decision_ref": "未闭清单_20260917.md §八 X-20",
+  "env_dependencies": [
+    {
+      "dep": "本机 LLM 后端（Ollama 等）",
+      "probe": "http://127.0.0.1:11434",
+      "probe_kind": "http",
+      "observed_state": "down（连接失败）"
+    },
+    {
+      "dep": "出网代理（.env 的 HTTP_PROXY，Clash）",
+      "probe": "http://127.0.0.1:7890",
+      "probe_kind": "tcp",
+      "observed_state": "down（本机无监听；Get-NetTCPConnection 无 7890）"
+    },
+    {
+      "dep": "上游 LLM API",
+      "probe": "https://api.deepseek.com",
+      "probe_kind": "https",
+      "observed_state": "可达但 401（本机无 key）"
+    }
+  ],
+  "cases": [
+    {
+      "id": "tests/integration/test_full_flow.py::TestPerformance::test_concurrent_requests",
+      "nature": "环境依赖",
+      "depends_on": [
+        "本机 LLM 后端（Ollama 等）",
+        "出网代理（.env 的 HTTP_PROXY，Clash）"
+      ],
+      "symptom": "assert elapsed < 30 实测 63.58s —— 10 次串行 POST /api/v5/enhanced/chat，每次约 6.3s（依赖可达时常态 ~950ms）",
+      "why_not_flake": "同一环境下每次必红且数字几乎相同；按字节换回 5607d08 版跑同例同样红（63.68s）⇒ 与本线代码改动无因果，且非『时绿时红』",
+      "owner": "DSH/DS（复跑）",
+      "plan": "等后端/代理恢复后复跑；复跑绿则本条目连同门禁失败数一并收敛（27 → 25）",
+      "evidence": "data/tmp/b5_work/x18b/gate_a.txt · gate_b.txt · perf_fixed.txt · perf_head.txt"
+    },
+    {
+      "id": "tests/integration/test_full_flow.py::TestPerformance::test_response_time",
+      "nature": "环境依赖",
+      "depends_on": [
+        "本机 LLM 后端（Ollama 等）",
+        "出网代理（.env 的 HTTP_PROXY，Clash）"
+      ],
+      "symptom": "assert elapsed < 2000 实测稳态中位 6357ms（同一根因：每次 chat 约 6.3s）",
+      "why_not_flake": "同上：确定红、A/B 同红；该用例 docstring 自己已承认『属测试脆弱』，但脆弱源是环境而非写死逻辑",
+      "owner": "DSH/DS（复跑）",
+      "plan": "同上",
+      "evidence": "data/tmp/b5_work/x18b/gate_a.txt · gate_b.txt · perf_fixed.txt · perf_head.txt"
+    }
+  ],
+  "explicitly_not": {
+    "flake": "未登记进 failure_ledger.json::flaky_watch，也未登记进 known_failures —— 不放宽口径、不把环境问题常态化",
+    "threshold_change": "未修改 assert elapsed < 30 / < 2000 的任何阈值（改阈值＝放宽口径）",
+    "offline_mode": "全树 grep OFFLINE|MOCK_LLM|LLM_STUB = 0 命中（无官方离线模式开关）"
+  }
+}

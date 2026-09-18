@@ -123,3 +123,31 @@ def test_baseline_ledgers_present_and_wellformed():
             assert entry.get(k), f"skip 台账条目缺字段 {k}: {entry}"
     # 门禁脚本必须在位(④ 的执行者)
     assert (_REPO / "tools" / "check_test_baseline.py").exists(), "缺门禁脚本 tools/check_test_baseline.py"
+
+
+def test_env_dependent_cases_registered_not_as_flake():
+    """⑤ 环境依赖用例必须登记为「环境依赖」而非 flake（DS 2026-09-18 拍）。
+
+    区分: flake = 同一环境下不稳定(时绿时红); 环境依赖 = 依赖可达时稳定通过、
+    缺失时**必红**(可复现的确定红)。把后者写成 flake 等于把环境问题**常态化**。
+    本表是**留痕**、不是门禁输入(门禁只读 failure_ledger/skip_ledger),
+    所以这里只钉「登记本身的形状」, 不参与失败/跳过判定。
+    """
+    _p = _LEDGER_DIR / "env_dependent_tests.json"
+    assert _p.exists(), f"缺环境依赖用例登记表: {_p}"
+    _d = json.loads(_p.read_text(encoding="utf-8"))
+    _deps = _d.get("env_dependencies")
+    assert _deps, "必须列明环境依赖项(否则「环境依赖」无从复跑)"
+    for _dep in _deps:
+        for _k in ("dep", "probe", "observed_state"):
+            assert _dep.get(_k), f"环境依赖项缺字段 {_k}: {_dep}"
+    _cases = _d.get("cases")
+    assert _cases, "环境依赖用例表不得为空"
+    for _c in _cases:
+        for _k in ("id", "nature", "depends_on", "owner", "plan"):
+            assert _c.get(_k), f"环境依赖用例缺字段 {_k}: {_c}"
+        assert _c["id"].startswith("tests/"), f"用例 id 应为 pytest nodeid: {_c['id']}"
+        assert _c["nature"] not in ("flake", "flaky"), (
+            f"环境依赖用例不得登记为 flake(应写「环境依赖」): {_c['id']} -> {_c['nature']}"
+        )
+        assert _c["depends_on"], f"必须写明依赖项: {_c['id']}"

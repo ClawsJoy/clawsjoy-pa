@@ -145,6 +145,7 @@ class TestPerformance:
         elapsed = time.time() - start
 
         assert all(r == 200 for r in results)
+        # 环境依赖（非 flake）：依赖本机 LLM 后端/出网代理可达；登记见 tests/baseline/env_dependent_tests.json
         assert elapsed < 30  # 串行10个请求应在30秒内完成
 
     def test_response_time(self, client):
@@ -169,6 +170,7 @@ class TestPerformance:
         elapsed = statistics.median(samples)
 
         assert response.status_code == 200
+        # 环境依赖（非 flake）：依赖本机 LLM 后端/出网代理可达；登记见 tests/baseline/env_dependent_tests.json
         assert elapsed < 2000, "稳态中位响应 %.0fms 超 2000ms(样本 %s)" % (elapsed, [round(s) for s in samples])
 
 
