@@ -19,6 +19,8 @@
   POST /v9/pa/dispatch         分派(契约->执行->代理审核)
   GET  /v9/pa/dispatch/history 分派历史
   POST /v9/pa/vault/sync       账本/站会/未读 同步到 Obsidian
+  POST /v9/pa/archive         归档正文落服务端(X-11 层 1; 按 id 合并, 只写 archived, 写后读回确认)
+  GET  /v9/pa/archive/<id>     按 id 取归档正文(查不到 404, 不拿空对象冒充)
 """
 import os
 from pathlib import Path
@@ -894,5 +896,115 @@ def register_pa_routes(app, brain=None):
         except Exception as _e:
             return jsonify({"ok": False, "error": str(_e)}), 500
 
+    # ---- 层 1 · 归档正文落服务端（X-11；老板/DS 2026-09-18 拍 A：Windows 起本机网关 + 端口错峰）----
+    # 目的：**本地足迹与归档条数解耦** —— 正文搬进 data/v9/pa/threads_<uid>.json，
+    #       前端随即将本地 archived[].msgs 换成最小索引（id/title/archived_at/msg_count/server）。
+    # 纪律（与方案 §三 逐条对应）：
+    #   1) **按 id 合并**：不覆盖既有条、不产生重复；同一批重发 ⇒ written=0（幂等）；
+    #   2) **只碰 archived**：不改 POST /v9/pa/threads 的单线程关闭语义，不动 threads/activeThread；
+    #   3) **写完立刻读回**：缺任一条 ⇒ ok:False（**不得假装成功**）；
+    #   4) 校验**全部通过才 save**（本端点自身不留半截；前端「本地一字不改」由前端保证）；
+    #   5) items 空 / 项缺 id / 缺 user_id / uid 非法 ⇒ 400 且**零写入**；
+    #   6) 按 user_id 隔离（threads_<uid>.json）；非法 uid（路径分隔/穿越）⇒ 400；
+    #   7) **不自动删除任何数据**（批221·A：归档不设上限、不裁剪）。
+    def _archive_uid(raw):
+        """uid 必须是**单段**标识：拒空/拒路径分隔/拒 '..'/拒空字节（防穿越出 data/v9/pa/）。"""
+        s = str(raw or "").strip()
+        if not s:
+            raise ValueError("user_id 缺失")
+        if chr(0) in s:
+            raise ValueError("user_id 含非法字符")
+        if s in (".", "..") or "/" in s or "\\" in s or ":" in s:
+            raise ValueError("user_id 必须是单段标识（不允许路径分隔/穿越）")
+        return s
+
+    @bp.route("/v9/pa/archive", methods=["POST"])
+    def pa_archive_post():
+        """归档正文落服务端（层 1）。入参 {user_id, items:[{id,title,archived_at,msgs}]}。"""
+        import json as _json
+
+        from core.pa.threads import ThreadStore
+
+        body = request.get_json(silent=True) or {}
+        try:
+            uid = _archive_uid(body.get("user_id"))
+        except ValueError as _ve:
+            return err(_ve, 400)
+        items = body.get("items")
+        if not isinstance(items, list) or not items:
+            return err("items 必须是非空数组", 400)
+        for _it in items:
+            if not isinstance(_it, dict) or not str(_it.get("id") or "").strip():
+                return err("每个 item 必须有非空 id", 400)
+
+        ts = ThreadStore(_data_dir())
+        state = ts.load(uid)
+        archived = state.get("archived")
+        if not isinstance(archived, list):
+            archived = []
+        by_id = {}
+        order = []
+        for _a in archived:
+            if isinstance(_a, dict) and _a.get("id") is not None:
+                _k = str(_a["id"])
+                if _k not in by_id:
+                    order.append(_k)
+                by_id[_k] = _a
+        written = 0
+        for _it in items:
+            _k = str(_it.get("id"))
+            _old = by_id.get(_k)
+            _new = dict(_it)
+            if _old is None or _json.dumps(_old, ensure_ascii=False, sort_keys=True) != _json.dumps(
+                _new, ensure_ascii=False, sort_keys=True
+            ):
+                written += 1
+            if _old is None:
+                order.append(_k)
+            by_id[_k] = _new
+        state["archived"] = [by_id[_k] for _k in order]
+        res = ts.save(uid, state)
+        if not (isinstance(res, dict) and res.get("ok")):
+            return jsonify({"ok": False, "error": "写入失败：save 未返回 ok", "written": 0}), 500
+        # **读回确认**（本项目既有教训：测试绿 ≠ 数据在）
+        back = ts.load(uid)
+        back_ids = {
+            str(_a["id"]) for _a in (back.get("archived") or []) if isinstance(_a, dict) and _a.get("id") is not None
+        }
+        missing = [str(_it.get("id")) for _it in items if str(_it.get("id")) not in back_ids]
+        if missing:
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "读回不一致：缺 %d 条" % len(missing),
+                        "missing": missing[:10],
+                        "written": 0,
+                    }
+                ),
+                500,
+            )
+        return ok(
+            {
+                "written": written,
+                "archived_total": len(back.get("archived") or []),
+                "path": str(res.get("path") or ""),
+            }
+        )
+
+    @bp.route("/v9/pa/archive/<archive_id>", methods=["GET"])
+    def pa_archive_get(archive_id):
+        """按 id 取一条归档（含正文）。**查不到返 404，不得拿空对象冒充**。"""
+        from core.pa.threads import ThreadStore
+
+        try:
+            uid = _archive_uid(request.args.get("user_id"))
+        except ValueError as _ve:
+            return err(_ve, 400)
+        state = ThreadStore(_data_dir()).load(uid)
+        for _a in state.get("archived") or []:
+            if isinstance(_a, dict) and str(_a.get("id")) == str(archive_id):
+                return ok({"item": _a})
+        return jsonify({"ok": False, "error": "archive_not_found"}), 404
     app.register_blueprint(bp)
     return bp
