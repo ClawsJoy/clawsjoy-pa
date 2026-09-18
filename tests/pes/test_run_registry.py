@@ -168,4 +168,4 @@ def test_汇总态记账本身走唯一出口(pes_dir):
     r = _rr(pes_dir)
     r.register_run("r1")
     # runs.jsonl 是追加式账本（靠哈希链），**不应**出现在「未插桩」清单里
-    assert [Path(b["path"]).name for b in scan_state_dir(pes_dir)] == []
+    assert [Path(b["path"]).name for b in scan_state_dir(pes_dir, scope="all")] == []

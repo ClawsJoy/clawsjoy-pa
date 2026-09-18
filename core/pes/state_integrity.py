@@ -22,6 +22,7 @@ import os
 import tempfile
 import threading
 import time
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -45,6 +46,29 @@ QUARANTINE_DIR = ".quarantine"
 
 #: 写台账后缀
 WRITE_LOG_SUFFIX = ".writes.jsonl"
+
+#: **PA store 白名单**（D1 · DS 2026-09-18 拍）：**必须走统一出口**的 PA 侧单文档状态文件。
+#: 未列入者**不在判据范围**（契约快照 `contracts/*.json`、`pa/artifacts/` 等**产物派生**、
+#: 审计探针残留）—— 理由：把「不必走出口」的东西算进来，判据就**恒不可能为 0**
+#: ⇒ 退化成噪声后被无视（＝判据失效）。增删此表**必须显式改判据**（有 pin 用例钉住）。
+PA_STORE_WHITELIST = (
+    "threads_*.json",
+    "ledger.json",
+    "profile.json",
+    "roster.json",
+    "permission.json",
+    "decision*.json",
+)
+
+#: 白名单命中还须满足：**直接**位于名为 `pa` 的目录下（排除 `pa/artifacts/` 等产物派生）。
+PA_STORE_DIRNAME = "pa"
+
+
+def _is_pa_store(path: Path) -> bool:
+    """该文件是否属 :data:`PA_STORE_WHITELIST`（且**直接**位于 ``pa/`` 下）—— D1 判据范围。"""
+    if path.parent.name != PA_STORE_DIRNAME:
+        return False
+    return any(fnmatch(path.name, pat) for pat in PA_STORE_WHITELIST)
 
 #: `update_runtime` 遇到**坏状态**时的策略（2026-09-18 加 · 老板/DS 拍 A）：
 #:  · "salvage"（**默认**）＝隔离后照写 —— **既有行为，一字不变**
@@ -680,7 +704,7 @@ def detect_uninstrumented(path) -> Dict[str, Any]:
 
 
 
-def scan_state_dir(root=None, patterns=("*.json",)) -> List[Dict[str, Any]]:
+def scan_state_dir(root=None, patterns=("*.json",), scope: str = "pa") -> List[Dict[str, Any]]:
     """扫描目录下所有**可变状态文件**，返回**未插桩**清单（M1 ① 的批量判据）。
 
     只扫 ``*.json``（单文档状态，必须走唯一出口）；**追加式账本**（``*.jsonl``：审计流 /
@@ -688,11 +712,26 @@ def scan_state_dir(root=None, patterns=("*.json",)) -> List[Dict[str, Any]]:
     （见 :mod:`core.pes.audit` 与 :mod:`core.pes.run_registry`），用「全文 sha256 比对」
     判它们会误报。这是两类东西，不能混判。
 
+    **判据范围**（``scope``，DS 2026-09-18 拍「PA store 白名单」，D1）—— 判据只问
+    「**必须走出口**的那些 store 有没有走」；把「不必走出口」的东西（契约快照 ／ 产物派生 ／
+    探针残留）一并算红，判据就**恒不可能为 0** ⇒ 退化成噪声后被无视（＝判据失效）：
+
+      · ``"pa"``（**默认**）：只收 :data:`PA_STORE_WHITELIST` 的名字，且**直接**位于 ``pa/`` 下
+        （例：``data/v9/pa/threads_<uid>.json``、``pa/ledger.json``；``pa/artifacts/`` 天然不命中）；
+      · ``"all"``：扫 ``root`` 下全部 ``patterns``（**旧全域口径**，显式 opt-in；
+        契约快照 ／ 产物派生 ／ 非 PA store 会被一并计入 ⇒ **会有正当的红**，故不做默认）。
+
+    非法 ``scope`` ⇒ ``ValueError``（**不静默回落默认值**，同 ``update_runtime(on_corrupt=...)`` 口径）。
+
     **legacy 残留不列**（D5）：若 ``X.json`` 有同名追加式账本 ``X.jsonl``，它是被取代的只读
     legacy（迁移先例：``dispatch.json`` → ``dispatch.jsonl``）⇒ 天然无写台账，**不构成
     「未插桩写者」**，故不列入清单（成因口径见 :func:`detect_uninstrumented` 的
     ``reason_kind == "legacy_append"``，本条只做过滤）。
     """
+    if scope not in ("pa", "all"):
+        raise ValueError(
+            "非法 scope=%r（只认 'pa' / 'all'；**不静默回落**，DS 拍口径见 D1）" % (scope,)
+        )
     base = Path(normalize_path(root or (str(Path(__file__).resolve().parents[2]) + "/data/v9")))
     bad: List[Dict[str, Any]] = []
     if not base.exists():
@@ -700,6 +739,8 @@ def scan_state_dir(root=None, patterns=("*.json",)) -> List[Dict[str, Any]]:
     for pat in patterns:
         for f in base.rglob(pat):
             if f.name.endswith(WRITE_LOG_SUFFIX) or QUARANTINE_DIR in f.parts:
+                continue
+            if scope == "pa" and not _is_pa_store(f):
                 continue
             r = detect_uninstrumented(f)
             if r["reason_kind"] == "legacy_append":
@@ -711,6 +752,8 @@ def scan_state_dir(root=None, patterns=("*.json",)) -> List[Dict[str, Any]]:
 
 __all__ = [
     "DEFAULT_SEED_KEYS",
+    "PA_STORE_DIRNAME",
+    "PA_STORE_WHITELIST",
     "QUARANTINE_DIR",
     "WRITE_LOG_SUFFIX",
     "StateIntegrityError",

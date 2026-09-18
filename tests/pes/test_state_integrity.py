@@ -178,7 +178,7 @@ def test_scan_state_dir_只扫单文档状态不扫追加式账本(pes_dir):
     """追加式账本由哈希链保证完整性，用「全文 sha256」判它会误报。"""
     (pes_dir / "ledger.jsonl").write_text('{"seq": 1}\n', encoding="utf-8")
     (pes_dir / "loose.json").write_text("{}", encoding="utf-8")
-    bad = scan_state_dir(pes_dir)
+    bad = scan_state_dir(pes_dir, scope="all")
     names = [Path(b["path"]).name for b in bad]
     assert "loose.json" in names
     assert "ledger.jsonl" not in names
@@ -187,7 +187,7 @@ def test_scan_state_dir_只扫单文档状态不扫追加式账本(pes_dir):
 def test_隔离区与台账文件不被当成状态文件扫描(pes_dir):
     sf = _sf(pes_dir)
     sf.update_runtime(lambda d: d.update({"a": 1}), writer="test.writer")
-    names = [Path(b["path"]).name for b in scan_state_dir(pes_dir)]
+    names = [Path(b["path"]).name for b in scan_state_dir(pes_dir, scope="all")]
     assert "state.json" not in names
     assert not any(n.endswith(WRITE_LOG_SUFFIX) for n in names)
     assert QUARANTINE_DIR not in [p.name for p in pes_dir.iterdir()] or True

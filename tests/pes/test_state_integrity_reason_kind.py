@@ -108,7 +108,7 @@ def test_reason_kind_是契约_detect_与_scan_都带(pes_dir):
     """④ 机器可读字段恒存在，且 `scan_state_dir` 的每条都带它（消费方不必再猜）。"""
     p = pes_dir / "loose.json"
     p.write_text("{}", encoding="utf-8")
-    rows = scan_state_dir(pes_dir)
+    rows = scan_state_dir(pes_dir, scope="all")
     assert rows, "扫描结果为空 ⇒ 判据可能空转"
     for r in rows:
         assert "reason_kind" in r, r
@@ -143,7 +143,7 @@ def test_legacy_并存不误报(pes_dir):
     assert r["instrumented"] is False, r          # 无写台账 ⇒ 不谎报「已插桩」
     assert r["reason_kind"] == "legacy_append", r
     assert r["superseded_by"].endswith("dispatch.jsonl"), r
-    names = [Path(b["path"]).name for b in scan_state_dir(pes_dir)]
+    names = [Path(b["path"]).name for b in scan_state_dir(pes_dir, scope="all")]
     assert "dispatch.json" not in names, names
 
 
@@ -154,5 +154,5 @@ def test_无追加式兄弟的_json_仍进未插桩清单(pes_dir):
     r = detect_uninstrumented(p)
     assert r["reason_kind"] == "no_log", r
     assert r["superseded_by"] == "", r
-    names = [Path(b["path"]).name for b in scan_state_dir(pes_dir)]
+    names = [Path(b["path"]).name for b in scan_state_dir(pes_dir, scope="all")]
     assert "plain.json" in names, names
