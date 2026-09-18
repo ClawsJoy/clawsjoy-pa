@@ -46,6 +46,12 @@ QUARANTINE_DIR = ".quarantine"
 #: 写台账后缀
 WRITE_LOG_SUFFIX = ".writes.jsonl"
 
+#: `update_runtime` 遇到**坏状态**时的策略（2026-09-18 加 · 老板/DS 拍 A）：
+#:  · "salvage"（**默认**）＝隔离后照写 —— **既有行为，一字不变**
+#:  · "refuse" ＝**拒绝写入**（`ok=False` + `reason`，活文件一个字节不动）—— fail-loud
+#:  · "overwrite" ＝显式声明「接受覆盖」（行为同 salvage，但调用方意图显式）
+CORRUPT_POLICIES: Tuple[str, ...] = ("salvage", "refuse", "overwrite")
+
 
 class StateIntegrityError(Exception):
     """**可读**的状态完整性错误（代替裸 ``json`` / ``OSError`` 抛给上层）。"""
@@ -180,6 +186,8 @@ class StateReport:
         self.message = ""
         self.degradations: List[str] = []
         self.writer = ""
+        #: 本次 `update_runtime` **是否真的写了盘**（`on_corrupt="refuse"` 下为 False）。
+        self.written = False
 
     def degrade(self, text: str, message: str = "") -> "StateReport":
         self.ok = False
@@ -199,6 +207,7 @@ class StateReport:
             "message": self.message,
             "degradations": list(self.degradations),
             "writer": self.writer,
+            "written": self.written,
         }
 
     def __repr__(self):
@@ -339,23 +348,50 @@ class StateFile:
         mutate: Callable[[Dict[str, Any]], None],
         writer: Optional[str] = None,
         reason: str = "",
+        on_corrupt: str = "salvage",
     ) -> Tuple[Dict[str, Any], StateReport]:
         """**运行态唯一写路径**：加锁 + 容错读 + mutate + 原子替换 + 写台账。
 
         ``mutate`` **不得**修改 :attr:`seed_keys` 中的键 —— 被静默丢弃并记降级
         （seed 只由 :meth:`set_seed` 写，对应 M1 判据③）。
+
+        :param on_corrupt: 读到**坏状态**时怎么办（见 :data:`CORRUPT_POLICIES`）——
+            ``"salvage"``（**默认**，既有行为）＝隔离后照写；``"refuse"`` ＝**拒绝写入**
+            （`ok=False` + `reason`，**活文件一个字节不动**）；``"overwrite"`` ＝显式接受覆盖。
+            **为什么要有**：`read()` 判 `corrupted` 之后本方法**原本仍会写**（判定在写之后），
+            故「接统一出口」得到的只是「**可恢复的重置**」，不是 fail-loud。
         """
         w = str(writer or self.writer)
+        if on_corrupt not in CORRUPT_POLICIES:
+            raise ValueError(
+                "on_corrupt 非法：%r（可选：%s）" % (on_corrupt, "/".join(CORRUPT_POLICIES))
+            )
         rep = StateReport(self.path.as_posix())
         rep.writer = w
         with self._local, _InterProcessLock(self.path):
             read_rep = self.read()
             rep.corrupted, rep.recovered = read_rep.corrupted, read_rep.recovered
             rep.quarantined = read_rep.quarantined
+            rep.reason = read_rep.reason
             rep.degradations.extend(read_rep.degradations)
             if read_rep.message:
                 rep.message = read_rep.message
             doc = dict(read_rep.data or {})
+            if read_rep.corrupted and on_corrupt == "refuse":
+                # fail-loud：坏状态**不得**被当合并基线覆写。
+                # 原文件已在 read() 内 _quarantine（证据未丢），此处**一个字节都不写**。
+                rep.data = doc
+                rep.written = False
+                rep.degrade(
+                    "坏状态 ⇒ 按 on_corrupt=refuse **拒绝写入**（reason=%s）"
+                    % (read_rep.reason or "unknown"),
+                    "状态文件损坏，已隔离原文件并拒绝写入（未覆盖任何内容）。可点「恢复」重建。",
+                )
+                self._audit(
+                    "state.write_refused",
+                    {"writer": w, "reason": read_rep.reason, "quarantined": read_rep.quarantined},
+                )
+                return doc, rep
             before_seed = {k: doc.get(k) for k in self.seed_keys if k in doc}
             mutate(doc)
             after_seed = {k: doc.get(k) for k in self.seed_keys if k in doc}
@@ -372,6 +408,7 @@ class StateFile:
                 self._audit("state.seed_write_rejected", {"writer": w, "keys": sorted(before_seed)})
             self._atomic_write(doc, w, reason)
             rep.data = doc
+            rep.written = True
             rep.ok = rep.ok and not rep.corrupted
             return doc, rep
 
