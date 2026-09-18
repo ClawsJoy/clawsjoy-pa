@@ -204,16 +204,27 @@ def test_unknown_field_is_warned_not_silent():
 def test_card_removal_syncs_hint_via_single_helper():
     """卡片移除走 paDismissCard（否则「不持久化」提示行会留在页面上）。"""
     s = _src()
-    raw = "if(card&&card.parentNode) card.parentNode.removeChild(card);"
-    assert s.count(raw) == 1, "原生移除只应出现在 paDismissCard 内（其余走 helper）"
-    assert s.count("paDismissCard(card);") == 2, "paWriteDecide 两处移除都应走 helper"
+    # M2A-07 ②-1（2026-09-18）：本判据由「**字面量计数**」收紧为「**名字无关的总量**」——
+    # 旧版数的是 `removeChild(card)` 这一串字面量 ⇒ 它**漏掉了** WPS 就绪卡那处把变量命名成 `c`
+    # 的原生移除（同族、只是变量名不同）；该处已随 ②-1 归到 helper，判据同时收紧（L-23 现场）。
+    # 同理，helper 调用也**不再按变量名字面量**数（旧：`paDismissCard(card);`）⇒ 改数名字无关的总量：
+    # 定义 1 处 + 调用 3 处（paWriteDecide 两处 + WPS 就绪卡清除一处）。新增移除点 ⇒ 本判据必须同批改。
+    assert s.count("removeChild(") == 1, "原生移除只应出现在 paDismissCard 内（其余一律走 helper）"
+    assert s.count("paDismissCard(") == 4, "移除一律走 paDismissCard（定义 1 + 调用 3）"
 
 
-def test_three_kinds_declared_and_non_persist_label_visible():
-    """三张卡共用同一出口；「卡片不持久化」必须是**可见 DOM 文案**（不是注释）。"""
+def test_original_kinds_unchanged_and_non_persist_label_visible():
+    """各张卡共用同一出口；「卡片不持久化」必须是**可见 DOM 文案**（不是注释）。
+
+    2026-09-18 M2A-07 ②-1（DS 拍「并入统一出口」）—— 本用例**范围从「恰好 3 种 kind」
+    推进到「既有 3 种**原样在前** + 新 kind **只能尾部追加**」**（规格同
+    ``test_pa_state_def_original_keys_unchanged``）。理由：并入会新增 kind，但**不许**借机
+    改名 / 换序 / 删掉既有三类；**改判据必须与本批同源**，不许只删断言（L-28）。
+    """
     s = _src()
     kinds = re.findall(r"^\s{2}(\w+):\s*\{cls:'pa-\w+-card'", _card_module(), re.M)
-    assert kinds == ["approval", "artifact", "block"], "三种 kind 未齐：%r" % kinds
+    assert kinds[:3] == ["approval", "artifact", "block"], "既有三种 kind 被改名/换序/删除：%r" % kinds
+    assert len(kinds) == len(set(kinds)), "kind 有重复声明：%r" % kinds
     html = s.split("<script>")[0]
     assert 'id="paCardsHint"' in html and "卡片不持久化" in html, "缺少可见的「不持久化」标注"
 
