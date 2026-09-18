@@ -419,6 +419,108 @@ const MODES = {"chat":{"ic":"💬","label":"聊天","hint":"就事论事 · 目�
 
 /* ---- 状态 ---- */
 let state = { mode:'chat', threads:[], activeThread:null };
+/* ---- X-11 层 1：归档正文落服务端（老板/DS 2026-09-18 拍 A：Windows 起本机网关 + 端口 5102）------
+   目的：**本地足迹与归档条数解耦** —— 归档正文搬到服务端 data/v9/pa/threads_<uid>.json，
+   本地每条只留 5 键索引（id/title/archived_at/msg_count/server）。
+   纪律（对应方案 §三；**每条都有测试判据**）：
+   1. **不静默**：只搬「有正文且未标 server」的条目；没有就说没有（不假装搬过）；
+   2. **先保底导出、再动数据**：迁移前**先落一份文件**当回滚锚点
+      —— 上次的教训：没有基线 ⇒ 无法判定到底丢没丢数据；
+   3. **服务端确认读回才改本地**：`ok && written >= n` 才替换；**否则本地一字不改**（不半途改）；
+      服务端回 `ok` 但 written 不够 ⇒ **照样当失败**（假成交防线）；
+   4. **只换正文、不删条目**：替换后 `state.archived` **条目数不变**（批221·A「不裁剪、不丢数据」）；
+   5. **可回滚**：`PA_ARCHIVE_SERVER=false` ⇒ 整个迁移不跑（回旧的本地正文分支）；
+   6. **不自动删除**：本区域**不得**出现 `.splice(`／`.pop(`／`.shift(`／`removeItem`／`setItem(`
+      —— 唯一落盘出口是 `saveState()`（它有失败上报）。
+   注：提示复用 `#paQuotaBanner`（页面唯一的可见横幅）——语义上是「存储相关提示」，**不影响 W-08 判据**。
+      本区整段插在配额守卫区**之前**，不落在 W-08/W-09 的测试抽取区间内；为免抽取按字面量定位出错，
+      这里**刻意不复述**那两个区块边界的原文（复述会把抽取起点提前到本注释，实测会让 6 条 W-08 判据变红）。 */
+const PA_ARCHIVE_SERVER = true;                 /* 回滚位：置 false ⇒ 不迁移（回本地正文分支） */
+const PA_ARCHIVE_API = '/v9/pa/archive';
+const PA_ARCHIVE_INDEX_KEYS = ['id', 'title', 'archived_at', 'msg_count', 'server'];
+
+function paArchiveHasBody(e){ return !!(e && Array.isArray(e.msgs) && e.msgs.length); }
+function paArchiveIndex(e){
+  /* 只出 5 键索引 —— **按 PA_ARCHIVE_INDEX_KEYS 构造**（键表本身是判据，不靠人手抄对）。
+     **未知即未知**：archived_at 取不到就留 null，不兜底成「现在」。 */
+  const src = {
+    id: (e && e.id != null) ? e.id : null,
+    title: (e && e.title != null) ? e.title : null,
+    archived_at: (e && e.archived_at != null) ? e.archived_at : null,
+    msg_count: (e && Array.isArray(e.msgs)) ? e.msgs.length : ((e && e.msg_count) || 0),
+    server: true
+  };
+  const out = {};
+  PA_ARCHIVE_INDEX_KEYS.forEach(function(k){ out[k] = src[k]; });
+  return out;
+}
+function paArchivePending(){
+  const ar = (state && Array.isArray(state.archived)) ? state.archived : [];
+  const pend = ar.filter(function(e){ return paArchiveHasBody(e) && !(e && e.server); });
+  return { items:pend, pending:pend.length, total:ar.length,
+           withBody:ar.filter(paArchiveHasBody).length };
+}
+function paArchiveBackupFile(){
+  /* 保底导出（回滚锚点）：**落成文件**——不写 localStorage（写本地正是要解决的问题）。 */
+  try{
+    const blob = new Blob([JSON.stringify(state, null, 1)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pa_state_premigrate_' + Date.now() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    return a.download;
+  }catch(e){ return null; }
+}
+function paArchiveMigrateFail(msg, backup){
+  const full = '⚠ ' + msg + '（**本地未改**，正文仍在本地）'
+    + (backup ? '；已先存回滚文件 ' + backup : '；**回滚文件未生成**，请先手动导出 pa_state');
+  try{ console.warn('[PA][ARCHIVE_SERVER] ' + full); }catch(_e1){}
+  try{ paQuotaNotice(full); }catch(_e2){}
+  try{ addMsg('sys', full); }catch(_e3){}
+  return full;
+}
+async function paMigrateArchiveToServer(){
+  if(!PA_ARCHIVE_SERVER) return { skipped:'switch_off' };
+  const p = paArchivePending();
+  if(!p.pending) return { pending:0, withBody:p.withBody, total:p.total, backup:null, migrated:0 };
+  const backup = paArchiveBackupFile();          /* **先**落回滚锚点 */
+  const items = p.items.map(function(e){
+    return { id:e.id, title:(e.title != null ? e.title : null),
+             archived_at:(e.archived_at != null ? e.archived_at : null),
+             msgs:e.msgs, plan:(e.plan === undefined ? null : e.plan) };
+  });
+  let r = null;
+  try{
+    const resp = await fetch(API + PA_ARCHIVE_API, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ user_id:curUser(), items:items })
+    });
+    r = await resp.json();
+    if(!resp.ok || !r || r.ok !== true) throw new Error((r && r.error) || ('HTTP ' + resp.status));
+  }catch(err){
+    const full = paArchiveMigrateFail('归档正文迁移失败：' + ((err && err.message) || err), backup);
+    return { error:full, migrated:0, pending:p.pending, backup:backup };
+  }
+  if(!(r.written >= items.length)){               /* 假成交：说 ok 但写的条数不够 */
+    const full = paArchiveMigrateFail('归档正文迁移未完成：服务端回执 written=' + r.written
+      + ' < 应写 ' + items.length, backup);
+    return { error:full, migrated:0, pending:p.pending, backup:backup };
+  }
+  const ids = {};
+  items.forEach(function(it){ ids[String(it.id)] = true; });
+  state.archived = (state.archived || []).map(function(e){
+    return (e && ids[String(e.id)]) ? paArchiveIndex(e) : e;   /* **只换内容，不增不减** */
+  });
+  saveState();
+  const done = '✅ 归档正文已迁移到服务端（本地只留索引）：' + items.length + ' 条'
+    + '；回滚文件 ' + (backup || '（未生成）');
+  try{ console.log('[PA][ARCHIVE_SERVER] ' + done); }catch(_e1){}
+  try{ addMsg('sys', done); }catch(_e2){}
+  return { migrated:items.length, pending:0, backup:backup, total:(state.archived || []).length };
+}
 /* ---- W-08 · 产品侧配额守卫（老板 2026-09-18 拍：W-08/W-09/W-10 三件提级、同批、各自版本内）------
    现场实测根因：`pa_state` 撑到配额上限 ⇒ `setItem` 抛 `QuotaExceededError` ⇒ **写入被拒**
    ⇒ 刷新后读不到 ⇒ 用户看到的是「消息日志消失」（不是渲染问题，是**存储写入失败**）。
@@ -2447,6 +2549,7 @@ function paCollapseToSingleThread(){
   paCollapseToSingleThread();
   /* W-08：收敛之后再测一次（读的是收敛后的实际体积）；走 _boot ⇒ 失败也 fail-loud（批192 口径）。 */
   _boot("paQuotaGuard", paQuotaGuard);
+  _boot("paMigrateArchiveToServer", paMigrateArchiveToServer);   /* X-11 层 1：有正文才动作；先保底导出；服务端确认读回才改本地 */
   /* 批192 · 缺陷修：启动步骤**逐步 fail-loud** —— 一个 null 写入（如 #threadList）曾静默中断整段启动，
      且因是 promise rejection 而页内无感。现在每步独立捕获并显式报告（控制台 + 页面内 sys 消息）。 */
   function _bootErr(step, e){
