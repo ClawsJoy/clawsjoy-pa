@@ -203,6 +203,36 @@ def _keep_raw_stdout(gaps):
         return str(dst)
 
 
+def _read_prev_collected(run_dir):
+    """档 A（2026-09-18 老板/DS 拍「先 A 后 C、不上 B」）留痕用：读**上一跑**的 ``collected``。
+
+    口径（**为的是不破 P1**）：读的是门禁**自己**的上一份快照 ``last_run.json``，
+    **不读** ``gate_history.jsonl`` —— P1 自定口径是「历史文件**不读、不判**」，
+    历史只由 :func:`_append_history` 单向追加，读它会把留痕件变成**输入**。
+    任何异常 / 缺键 / 非整数 ⇒ ``None``（**不编数**：首次跑就该是 ``null``）。
+    """
+    try:
+        d = json.loads((run_dir / "last_run.json").read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    v = d.get("collected") if isinstance(d, dict) else None
+    return v if isinstance(v, int) and not isinstance(v, bool) else None
+
+
+def _collected_delta(prev, cur):
+    """档 A：``cur - prev``（可为负）；任一侧不可用 ⇒ ``None``。
+
+    **纯留痕** —— 不产生 WARN、不进 ``bad``、不改退出码（档 B/C 未拍，见
+    ``codex/2026-09-18-g02-sub4-collect-baseline-plan.md`` §五）。
+    """
+    def _ok(x):
+        return isinstance(x, int) and not isinstance(x, bool)   # bool 不是计数
+
+    if not _ok(prev) or not _ok(cur):
+        return None
+    return cur - prev
+
+
 def _append_history(rec):
     """P1（2026-09-18 拍）：门禁的**只追加**历史 —— `data/test_baseline/gate_history.jsonl`。
 
@@ -364,6 +394,14 @@ def main():
                   "（**不是告警**，判定未受影响）")
     print("[GATE] 证据范围: 上行 PASS 仅覆盖 ①②③ 三问；第④问（收集阶段）只留痕不判定，见 last_run.json")
 
+    # 档 A（2026-09-18 老板/DS 拍「先 A 后 C、不上 B」）：收集数**变化量**纯留痕。
+    #   前值取门禁**自己**的上一份快照 `last_run.json`（**不读** `gate_history.jsonl` —— P1 口径是
+    #   「历史文件不读、不判」）；不产生 WARN、不进 `bad` 列表、不改退出码。
+    _prev_collected = _read_prev_collected(_RUN_DIR)
+    _delta_collected = _collected_delta(_prev_collected, collected)
+    print("[GATE] 收集数 %s（delta %s vs 上一跑）· 档 A 纯留痕：不判、不进 bad、不改退出码"
+          % (collected, _delta_collected))
+
     bad = []
     # 1) 条数
     if len(failed) > len(known):
@@ -393,6 +431,7 @@ def main():
             "summary_off_last_line": off_last_line,
             "pytest_rc": rc,
             "collected": collected,
+            "collected_delta": _delta_collected,
             "counts": counts,
             "reported_pass": not bad,
         })
@@ -412,6 +451,8 @@ def main():
                 "skipped": skipped,
                 "pytest_rc": rc,
                 "collected": collected,
+                # 档 A 留痕（2026-09-18 拍）：与**上一跑**的 collected 之差；首次/不可用 ⇒ null
+                "collected_delta": _delta_collected,
                 "collect_errors": collect_errors,
                 "evidence_gaps": gaps,
                 "raw_stdout_kept": _raw_kept,
