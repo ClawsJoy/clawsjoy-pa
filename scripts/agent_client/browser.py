@@ -44,6 +44,24 @@ class BrowserSession:
             return str(_d)
         return str(self.profile_root / "default")
 
+    def _announce_profile(self, user_data_dir):
+        """**显式接管必须可见**：实际用哪个 profile 一律打日志。
+
+        契约：``core/pes/windows.py::BROWSER_ISOLATION`` 的 ``user_profile_reuse=explicit_only``
+        —— 复用日常 profile 只允许「**显式接管**」，且必须**看得见**（不许静默接管）。
+        该契约本身仍是声明性的（``wired=False``），本函数是该策略在执行面的落点。
+
+        - 显式传了 ``user_data_dir`` ⇒ **WARNING**（接管外部目录，会复用其中登录态）；
+        - 留空（专用实例 ``profile_root/default``）⇒ INFO。
+        """
+        if self.user_data_dir:
+            log.warning(
+                "显式接管外部 profile 目录: %s（复用其登录态, 非专用实例; 与日常 Chrome 同目录时注意 profile 锁冲突）",
+                user_data_dir,
+            )
+        else:
+            log.info("使用专用实例 profile 目录: %s", user_data_dir)
+
     def _profile_locked(self) -> bool:
         """检测 profile 是否被其他 Chromium 实例占用(SingletonLock 机制)。
         返回 True 表示锁文件存在且被锁定(另一个浏览器正在用该 profile)。"""
@@ -80,6 +98,8 @@ class BrowserSession:
         # 最大化启动 + 不固定视口: 窗口与用户日常全屏一致(此前固定小视口 469x554 导致三栏溢出)
         args += ["--start-maximized"]
         _ud = self._resolve_user_data_dir()
+        # X-18 方向 3（2026-09-18 拍）: 先宣告、再启动 —— 显式接管必须在日志里可见
+        self._announce_profile(_ud)
         _kw = dict(
             headless=self.headless,
             args=args,
