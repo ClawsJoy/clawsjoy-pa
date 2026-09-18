@@ -31,7 +31,7 @@ def _now():
 
 
 #: 写者标识（进出口的写者归属台账；供 detect_uninstrumented 识别绕过出口的写者）
-_WRITER = "core/pa/profile.py"
+_WRITER = "pa.profile"
 
 
 def _shape(doc):

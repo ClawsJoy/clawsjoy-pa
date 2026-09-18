@@ -26,7 +26,7 @@ class ThreadStoreCorrupt(Exception):
 
 
 #: 写者标识（进出口的写者归属台账；供 detect_uninstrumented 识别绕过出口的写者）
-_WRITER = "core/pa/threads.py"
+_WRITER = "pa.threads"
 
 
 def _empty():

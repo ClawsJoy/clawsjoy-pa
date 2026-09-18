@@ -59,7 +59,7 @@ def test_threads_save_成功_原子且留写者台账(tmp_path):
     log = _threads_path(tmp_path).with_name("threads_u1.json.writes.jsonl")
     assert log.exists(), "接统一出口后必须留写者归属台账"
     row = json.loads(log.read_text(encoding="utf-8").splitlines()[-1])
-    assert row["writer"] == "core/pa/threads.py"
+    assert row["writer"] == "pa.threads"
     assert row["sha256"] and row["bytes"] > 0
 
 
@@ -105,7 +105,7 @@ def test_ledger_save_成功_原子且留写者台账(tmp_path):
 
     log = p.with_name("ledger.json.writes.jsonl")
     assert log.exists()
-    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "core/pa/ledger.py"
+    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "pa.ledger"
     assert json.loads(p.read_text(encoding="utf-8"))["items"][0]["title"] == "测一条"
 
 
@@ -144,7 +144,7 @@ def test_profile_save_成功_原子且留写者台账(tmp_path):
 
     log = p.with_name("profile.json.writes.jsonl")
     assert log.exists()
-    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "core/pa/profile.py"
+    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "pa.profile"
     assert json.loads(p.read_text(encoding="utf-8"))["entries"][0]["value"] == "直接"
 
 
@@ -195,7 +195,7 @@ def test_roster_save_成功_留写者台账(tmp_path, monkeypatch):
     R.load()
     log = Path(R._path()).with_name("roster.json.writes.jsonl")
     assert log.exists()
-    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "core/pa/roster.py"
+    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "pa.roster"
 
 
 # ============================================================ 判据范围

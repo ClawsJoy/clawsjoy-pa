@@ -79,7 +79,7 @@ def _detect_task_type(text):
 
 
 #: 写者标识（进出口的写者归属台账；供 detect_uninstrumented 识别绕过出口的写者）
-_WRITER = "core/pa/decision.py"
+_WRITER = "pa.decision"
 
 
 def _shape(doc):

@@ -25,7 +25,7 @@ DEFAULT_LEVEL = "标准"
 
 
 #: 写者标识（进出口的写者归属台账；供 detect_uninstrumented 识别绕过出口的写者）
-_WRITER = "core/pa/permission.py"
+_WRITER = "pa.permission"
 
 
 def _shape(doc):

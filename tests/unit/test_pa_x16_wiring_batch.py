@@ -55,7 +55,7 @@ def test_permission_写走出口_留写者台账(tmp_path):
     assert r.get("ok") is True and r.get("level") == "只读"
     log = p.with_name("permission.json.writes.jsonl")
     assert log.exists(), "接统一出口后必须留写者归属台账"
-    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "core/pa/permission.py"
+    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "pa.permission"
     assert json.loads(p.read_text(encoding="utf-8"))["level"] == "只读"
 
 
@@ -114,7 +114,7 @@ def test_decision_record_留写者台账(tmp_path):
 
     log = d / "decision_log.json.writes.jsonl"
     assert log.exists()
-    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "core/pa/decision.py"
+    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["writer"] == "pa.decision"
     assert len(json.loads((d / "decision_log.json").read_text(encoding="utf-8"))["decisions"]) == 1
 
 
