@@ -113,3 +113,18 @@ def test_reason_kind_是契约_detect_与_scan_都带(pes_dir):
     one = detect_uninstrumented(p)
     assert set(("reason_kind", "log_lines", "log_bad_lines")).issubset(one.keys())
     assert one["reason_kind"] == "no_log"
+
+def test_台账打不开也归_log_unreadable(pes_dir):
+    """⑤ 台账路径**存在但打不开**（这里用「目录」模拟）⇒ 同归 `log_unreadable`，**不是** `no_log`。
+
+    补录说明：上一条提交（`610a3db`）的提交信息里我写「用一条断言把该分支的口径钉住」——
+    当时**并不存在**这条断言（**口径跑在实现前面**，属「假成交」族）。本用例把它补上。
+    """
+    p = pes_dir / "locked.json"
+    p.write_text('{"a": 4}', encoding="utf-8")
+    (pes_dir / ("locked.json" + WRITE_LOG_SUFFIX)).mkdir()   # 台账路径是目录 ⇒ open 必失败
+    r = detect_uninstrumented(p)
+    assert r["instrumented"] is False
+    assert r["reason_kind"] == "log_unreadable", r
+    assert r["log_lines"] == 0 and r["log_bad_lines"] == 0, r
+    assert "无法打开" in r["reason"], r["reason"]
