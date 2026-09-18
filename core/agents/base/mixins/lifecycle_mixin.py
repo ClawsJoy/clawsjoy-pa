@@ -1,5 +1,6 @@
 """生命周期 Mixin - 唤醒、沉睡、梦境"""
 
+import sys
 import threading
 import time
 from datetime import datetime
@@ -57,7 +58,11 @@ class LifecycleMixin:
 
 
                 except Exception as e:
-                    print(f"[{self.name}] 生命周期错误: {e}")
+                    # X-09（2026-09-18）：这条兜底报错此前写 stdout。Windows cp936 下 emoji 打印
+                    # 抛 UnicodeEncodeError 后，它会插进 pytest -v 的进度行中间，把「nodeid … 状态」
+                    # 劈成两行 ⇒ 门禁漏解析该 nodeid ⇒ 误判「台账陈旧」假红（G-02 分子漏解析真因）。
+                    # 诊断信息走 stderr：不污染机器解析面，且 stderr 默认 backslashreplace，不会二次抛。
+                    print(f"[{self.name}] 生命周期错误: {e}", file=sys.stderr)
                     self._lifecycle_state = "sleeping"
 
         thread = threading.Thread(target=loop, daemon=True)
@@ -197,6 +202,8 @@ class LifecycleMixin:
         return {}
 
     def log(self, message: str, level: str = "INFO"):
+        """生命周期日志。X-09（2026-09-18）：走 stderr —— stdout 是门禁/机器解析面，
+        且 cp936 环境下 emoji 会让 stdout 抛 UnicodeEncodeError，把日志变成「兜底报错」插进解析面。"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         agent_name = getattr(self, "name", "unknown")
-        print(f"[{timestamp}] [{agent_name}] [{level}] {message}")
+        print(f"[{timestamp}] [{agent_name}] [{level}] {message}", file=sys.stderr)
