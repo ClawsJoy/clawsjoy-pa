@@ -69,10 +69,39 @@ def _save(d: Dict[str, Any]) -> bool:
 
             _txt = json.dumps(d, ensure_ascii=False, indent=1)
         p.write_text(_txt, encoding="utf-8")
+        _audit_save(p, d, True)
         return True
     except Exception as e:
         print("[GRANT_FAIL] 写 grants.yaml 失败: %s" % e)
+        _audit_save(p, d, False, str(e)[:200])
         return False
+
+
+def _audit_save(p, d: Dict[str, Any], ok: bool, error: str = "") -> None:
+    """**X-16 批 C（DS 拍 B1）**：`grants.yaml` 是 YAML ⇒ 接不了 JSON-only 的统一出口
+    （`StateFile` 只做 `json.loads`/`json.dumps`）⇒ 本处**不接线**，只补**审计留痕**。
+
+    为什么是审计而不是完整性：本处**不是静默失败**（有 `[GRANT_FAIL]` 打印），
+    接线价值不在「不丢」，在「**谁/何时/为什么改了授权**」可查。
+
+    契约：**永不抛**（审计失败不得打断授权写入；与 `AuditLog.record` 同一纪律）。
+    """
+    try:
+        from core.pes.audit import audit_log
+
+        audit_log().record(
+            "pa.grants.write",
+            payload={
+                "path": str(p),
+                "ok": bool(ok),
+                "error": str(error or ""),
+                "updated": d.get("updated"),
+                "grants_n": len(d.get("grants") or []),
+            },
+            layer="PA 授权记忆",
+        )
+    except Exception:
+        pass
 
 
 def _has_unsafe_path(cmd: str) -> bool:

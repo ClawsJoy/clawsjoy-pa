@@ -6,17 +6,36 @@
 
 主权约束：本文件只能被 pa.html 前端（老板在场）经 /v9/pa/permission 路由写入；
 PA agent 直写被 ForbiddenGuard._CONFIG_FILES 硬拒（agent_manual §4.2）。
+
+2026-09-18（X-16 批 B · DS 拍 A）：**读写走统一出口**（`core/pa/state_out`）。
+**这同时是对「静默放宽」的对治**：此前「文件存在但不可用」（损坏 JSON／非法 level／空文件）
+被静默忽略并回落 `标准`，而 `只读 < 标准` ⇒ **损坏即放宽**。现在 ⇒ **抛**（fail-closed）。
 """
 
 from __future__ import annotations
 
-import json
 import os
 import time
 from pathlib import Path
 
+from core.pa.state_out import read_state, write_state
+
 LEVELS = ("只读", "标准", "高(需确认)")
 DEFAULT_LEVEL = "标准"
+
+
+#: 写者标识（进出口的写者归属台账；供 detect_uninstrumented 识别绕过出口的写者）
+_WRITER = "core/pa/permission.py"
+
+
+def _shape(doc):
+    """**PA 侧业务结构判据**（DS 拍①：判据留 PA 侧，不给出口加回调）。
+
+    权限档只有三个合法取值 ⇒ 判据同时是「非法 level 不得落盘」的护栏（fail-closed）。
+    """
+    if doc.get("level") not in LEVELS:
+        return False, "level 必须是 %s 之一" % "/".join(LEVELS)
+    return True, ""
 
 
 def _default_path() -> str:
@@ -33,13 +52,10 @@ class PermissionStore:
         self.load()
 
     def load(self):
+        """**不存在 ⇒ 默认档；存在但不可用 ⇒ 抛 PAStateCorrupt**（不再静默回落默认档）。"""
+        self.data = {"level": DEFAULT_LEVEL, "updated": "", "updated_by": ""}
         if self.path.exists():
-            try:
-                d = json.loads(self.path.read_text(encoding="utf-8"))
-                if isinstance(d, dict) and d.get("level") in LEVELS:
-                    self.data = d
-            except Exception:
-                pass
+            self.data = read_state(self.path, _WRITER, _shape)
         return self
 
     def get(self) -> str:
@@ -60,6 +76,6 @@ class PermissionStore:
         return {"ok": True, "level": level}
 
     def save(self):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(self.data, ensure_ascii=False, indent=1), encoding="utf-8")
+        """**走统一出口**（X-16 批 B）：跨进程锁 + 原子替换 + 坏状态拒绝写入。"""
+        write_state(self.path, _WRITER, _shape, self.data, reason="pa.permission.save")
         return self

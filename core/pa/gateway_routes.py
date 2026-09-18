@@ -1028,5 +1028,23 @@ def register_pa_routes(app, brain=None):
             if isinstance(_a, dict) and str(_a.get("id")) == str(archive_id):
                 return ok({"item": _a})
         return jsonify({"ok": False, "error": "archive_not_found"}), 404
+    # ---- X-16 批 B（DS 2026-09-18 拍）：PA 状态不可用 ⇒ **可读提示**，不外泄原始 traceback ----
+    from core.pa.state_out import PAStateCorrupt
+
+    @bp.errorhandler(PAStateCorrupt)
+    def _pa_state_corrupt(e):
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": "pa_state_corrupt",
+                    "message": str(e),
+                    "path": getattr(e, "path", ""),
+                    "hint": "状态文件已隔离到同目录 .quarantine/；可人工核对后放回，或按业务重建。",
+                }
+            ),
+            409,
+        )
+
     app.register_blueprint(bp)
     return bp

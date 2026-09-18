@@ -2,10 +2,15 @@
 """PA 拍板(决策) + 计划时间轴 服务(2026-09-11)。
 老板对 PA 产物/步骤拍板(采纳/小改/大改/退回/暂缓), 决策留痕 decision_log.json。
 计划: 任务类型→固定步骤模板(确定性, 保证同一任务两次生成一致), 可选 LLM 细化 label。
+
+2026-09-18（X-16 批 B · DS 拍 A）：**读写走统一出口**（`core/pa/state_out`）；
+坏状态 fail-loud（此前 `load()` 静默回落 `{"decisions": []}` ⇒ 下一次 `record()` 即覆写裁决历史）。
 """
 import json
 import time
 from pathlib import Path
+
+from core.pa.state_out import read_state, write_state
 
 DECISIONS = ("采纳", "小改", "大改", "退回", "暂缓")
 
@@ -73,6 +78,17 @@ def _detect_task_type(text):
     return "办公"
 
 
+#: 写者标识（进出口的写者归属台账；供 detect_uninstrumented 识别绕过出口的写者）
+_WRITER = "core/pa/decision.py"
+
+
+def _shape(doc):
+    """**PA 侧业务结构判据**（DS 拍①：判据留 PA 侧，不给出口加回调）。"""
+    if not isinstance(doc.get("decisions"), list):
+        return False, "decisions 需为 list"
+    return True, ""
+
+
 class DecisionStore:
     def __init__(self, data_dir="data/v9/pa"):
         self.dir = Path(data_dir)
@@ -80,14 +96,10 @@ class DecisionStore:
         self.path = self.dir / "decision_log.json"
 
     def load(self):
-        if self.path.exists():
-            try:
-                d = json.loads(self.path.read_text(encoding="utf-8"))
-                if isinstance(d, dict) and isinstance(d.get("decisions"), list):
-                    return d
-            except Exception:
-                pass
-        return {"decisions": []}
+        """**不存在 ⇒ 空；存在但不可用 ⇒ 抛 PAStateCorrupt**（不再静默回落空裁决历史）。"""
+        if not self.path.exists():
+            return {"decisions": []}
+        return read_state(self.path, _WRITER, _shape)
 
     def record(self, user_id, session_id, node, stage, decision, note="", task=""):
         d = self.load()
@@ -103,7 +115,7 @@ class DecisionStore:
             "task": (task or "").strip()[:200],
         }
         d["decisions"].append(rec)
-        self.path.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
+        write_state(self.path, _WRITER, _shape, d, reason="pa.decision.record")
         return rec
 
     def list(self, user_id=None, session_id=None, limit=100):
