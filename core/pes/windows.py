@@ -9,7 +9,7 @@
 | 本地进程 | :class:`ProcessLedger` —— 进程有句柄与生命周期台账，**不留孤儿** |
 | PowerShell | :func:`shell_guard` —— **逐条过门**、可回放、**不静默降级到 shell**、危险命令硬拒 |
 | 浏览器 | :data:`BROWSER_ISOLATION` —— **默认**专用实例 + 独立 ``user-data-dir``；复用日常 profile 只允许**显式接管**（``wired=False``，声明性） |
-| WSL | :data:`WSL_BOUNDARY` —— **跨环境 = 跨信任边界**，需单独授权（``wired=False``，声明性） |
+| WSL | :data:`WSL_BOUNDARY` —— **跨环境 = 跨信任边界**，需单独授权（``wired=True``，消费者＝:func:`is_wsl_path`） |
 | git | :func:`is_sandbox_repo` / :func:`is_real_repo` —— 沙箱 git 与真项目 git **必须区分**（不自动推远程） |
 
 设计纪律：本模块**只做平台事实与契约常量**，**不做业务决策**（决策在 authorization 层）。
@@ -55,14 +55,18 @@ BROWSER_ISOLATION: Dict[str, Any] = {
 
 #: WSL 边界契约 —— 跨环境 = 跨信任边界
 #:
-#: **声明性（``wired=False``）**：本常量**无生产代码消费者**；判据与 ``BROWSER_ISOLATION`` 同一条。
+#: **已接线（``wired=True``）**：消费者 = 同模块 :func:`is_wsl_path` 的 ``markers``。
+#:
+#: 2026-09-18 归一（DS 拍「归并＝接线」）：此前是**两份真源** —— 实现在 :func:`is_wsl_path`
+#: 内硬编码 **6 个** markers，契约只列 **4 个**（缺 ``/var/``、``/tmp/``）⇒ 现改为
+#: **契约即真源**（:func:`is_wsl_path` 直接读本键），契约补齐到 **6 个**；
+#: **行为逐字节不变**（6 个一个不多一个不少）。原 4 值清单保留在台账 ``X-18`` 行的更正段。
 WSL_BOUNDARY: Dict[str, Any] = {
     "cross_env_is_trust_boundary": True,
     "requires_explicit_grant": True,
-    "wired": False,
-    "declarative_note": "全仓生产代码消费者 = 0；跨树判定实际由 is_wsl_path 承担，其 markers 与本常量的 wsl_markers 目前是两份（已登记）。",
+    "wired": True,
     "note": "Windows ↔ WSL 调用需显式适配层与单独授权；不得当作本地同信任域调用。",
-    "wsl_markers": ("/mnt/", "/home/", "/usr/", "/etc/"),
+    "wsl_markers": ("/mnt/", "/home/", "/usr/", "/etc/", "/var/", "/tmp/"),
 }
 
 
@@ -182,8 +186,11 @@ def is_wsl_path(p) -> bool:
     **先看原始写法，再看归一化结果**：Windows 上 ``Path("/home/x")`` 被解释为
     「当前盘符根下的 home/x」（``D:/home/x``）。只判归一化结果的话，``/home/`` 这类
     Linux 绝对路径会被**误判成非 WSL 路径** ⇒「跨环境 = 跨信任边界」的守卫静默失效。
+
+    markers **不在此另立字面量**：单一真源 = :data:`WSL_BOUNDARY` 的 ``wsl_markers``
+    （2026-09-18 归一；此前这里是第二份真源，见 ``L-09``）。
     """
-    markers = ("/mnt/", "/home/", "/usr/", "/etc/", "/var/", "/tmp/")
+    markers = WSL_BOUNDARY["wsl_markers"]
     raw = str(p or "").replace(chr(92), "/").strip().lower()
     if raw.startswith(markers):
         return True

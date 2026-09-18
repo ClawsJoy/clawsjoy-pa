@@ -114,6 +114,24 @@ def test_本机路径不算_wsl():
     assert is_wsl_path("C:/Windows") is False
 
 
+def test_wsl_契约_markers_即判据真源():
+    """单一真源（``L-09``）：契约列出的每个 marker 必须**真的**被判据承认。"""
+    markers = WSL_BOUNDARY["wsl_markers"]
+    assert markers, "契约 markers 为空 ⇒ 判据会静默失效"
+    for m in markers:
+        assert is_wsl_path(m + "probe") is True, m
+
+
+def test_wsl_改契约即改行为(monkeypatch):
+    """**反证**（证明「已接线」而非同义反复）：改契约 ⇒ 行为随之改变；
+
+    若实现里**另有一份字面量**，本用例必红。
+    """
+    monkeypatch.setitem(WSL_BOUNDARY, "wsl_markers", ("/zzz-x18-probe/",))
+    assert is_wsl_path("/zzz-x18-probe/x") is True
+    assert is_wsl_path("/home/flybo/x") is False
+
+
 # ---------------------------------------------------------------- PowerShell
 def test_危险命令硬拒():
     for cmd in ("rm -rf /", "diskpart", "reg delete hklm", ":(){ :|:& };:"):
