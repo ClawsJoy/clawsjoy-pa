@@ -582,34 +582,75 @@ def detect_uninstrumented(path) -> Dict[str, Any]:
 
     判据：磁盘现值 sha256 ≠ 写台账最后一条 sha256 ⇒ **有未插桩写者**。
     这是 M1「所有 state 读写走统一出口」的**可执行判据**（不靠人读日志）。
+
+    `reason_kind`（机器可读，**永远存在**）—— 「红」的**成因分报**：同一句「未插桩」
+    至少有两种**零鉴别力**的成因（经验库 L-01 / L-06），必须分开报：
+
+      · ``ok``             ⇒ 经出口写且磁盘与台账一致；
+      · ``missing``        ⇒ 文件不存在（**不是**未插桩）；
+      · ``no_log``         ⇒ 无写台账（真·从未经出口写过）；
+      · ``log_unreadable`` ⇒ **台账存在但整份不可读/不可解析** ⇒ **无法判定**。
+        旧版会把这种情形误报成 ``no_log``（「从未经出口写过」）—— **把「台账坏了」说成「没写过」**；
+      · ``mismatch``       ⇒ 台账可读但与磁盘不符 ⇒ 存在未插桩写者。
+
+    `log_lines` / `log_bad_lines`：让**部分损坏**也可见（旧版静默忽略坏行、计数为零）。
+    取数件：`data/tmp/b5_work/x21/d2_repro_head.txt`（改前基线）。
     """
     sf = StateFile(path)
-    out = {"path": sf.path.as_posix(), "instrumented": True, "reason": "", "last_writer": "", "last_ts": ""}
+    out = {
+        "path": sf.path.as_posix(),
+        "instrumented": True,
+        "reason": "",
+        "reason_kind": "ok",
+        "last_writer": "",
+        "last_ts": "",
+        "log_lines": 0,
+        "log_bad_lines": 0,
+    }
     if not sf.path.exists():
+        out["reason_kind"] = "missing"
         out["reason"] = "文件不存在"
         return out
     last = None
+    log_open_failed = False
     try:
         if sf.write_log.exists():
             with open(sf.write_log, encoding="utf-8") as f:
                 for line in f:
+                    if not line.strip():
+                        continue
+                    out["log_lines"] += 1
                     try:
                         last = json.loads(line)
                     except Exception:
+                        out["log_bad_lines"] += 1
                         continue
     except Exception:
-        pass
+        log_open_failed = True
     if last is None:
         out["instrumented"] = False
-        out["reason"] = "无写台账：该文件从未经由唯一出口写过（未插桩写者）"
+        if log_open_failed:
+            out["reason_kind"] = "log_unreadable"
+            out["reason"] = "写台账不可读（无法打开）：无法判定 ⇒ 不是「无台账」，需人工核对台账"
+        elif out["log_lines"] and out["log_bad_lines"] == out["log_lines"]:
+            out["reason_kind"] = "log_unreadable"
+            out["reason"] = "写台账存在但整份不可解析（%d/%d 行）：无法判定 ⇒ 不是「无台账」，需人工核对台账" % (
+                out["log_bad_lines"],
+                out["log_lines"],
+            )
+        else:
+            out["reason_kind"] = "no_log"
+            out["reason"] = "无写台账：该文件从未经由唯一出口写过（未插桩写者）"
         return out
     disk = _sha256_file(sf.path)
     if disk != last.get("sha256"):
         out["instrumented"] = False
+        out["reason_kind"] = "mismatch"
         out["reason"] = "磁盘内容与写台账不符 ⇒ 存在未插桩写者"
     out["last_writer"] = last.get("writer", "")
     out["last_ts"] = last.get("ts", "")
     return out
+
 
 
 def scan_state_dir(root=None, patterns=("*.json",)) -> List[Dict[str, Any]]:
