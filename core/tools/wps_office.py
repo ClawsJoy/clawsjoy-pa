@@ -40,7 +40,10 @@ WPS_OFFICE_SCHEMA = {
             "properties": {
                 "action": {"type": "string", "enum": ["pptx_from_md", "docx_from_md"], "description": "动作"},
                 "md_path": {"type": "string", "description": "源 markdown 文件(沙箱相对路径)"},
-                "out_path": {"type": "string", "description": "输出文件路径(默认 data/reports/同名 .pptx/.docx)"},
+                "out_path": {
+                    "type": "string",
+                    "description": "输出文件路径(缺省 data/reports/同名 .pptx/.docx，锚定在执行沙箱下；绝对路径原样)"
+                },
                 "provider": {"type": "string", "description": "可选强制: auto/wpsai/mcp/cli/pptx"},
             },
             "required": ["action", "md_path"],
@@ -265,8 +268,52 @@ def _pptx_from_md(md_path, out_path):
     return out_path, len(pages)
 
 
+def _is_abs_out_path(p):
+    """绝对路径判据：posix 绝对 / UNC / Windows 盘符都要认（勿用 Path.is_absolute）。"""
+    s = str(p or "")
+    if s.startswith("/") or s.startswith("\\"):
+        return True
+    return len(s) > 1 and s[1] == ":"
+
+
+def _join_base(base, rel):
+    """把相对路径锚定到 base 下；剥掉重复的 clawsjoy_dev/ 前缀（防双重嵌套）。"""
+    r = str(rel or "").replace("\\", "/").strip()
+    b = str(base or "").strip()
+    if not b:
+        return r
+    while r.startswith("./"):
+        r = r[2:]
+    while r.startswith("clawsjoy_dev/"):
+        r = r[len("clawsjoy_dev/"):]
+    return str(Path(b) / r)
+
+
+def _resolve_out_path(out_path, action, md_path, base):
+    """输出落点必须与输入同根。
+
+    历史缺陷：缺省为裸相对路径 ⇒ 落点随**调用进程 cwd** 漂移（活进程 cwd=仓库根、沙箱
+    进程 cwd=沙箱）⇒ 同一产品分裂到两个根（实测 2026-09-11 18:30 `pa_mtuu37ds`：md 在
+    沙箱、pptx 在仓库根；`data/v8/audit/tool_audit.jsonl:3976` 与文件 mtime 差 5ms）。
+    规则：base 已知 ⇒ 缺省与**显式相对路径**都锚定在 base 下；绝对路径（含盘符/UNC）原样；
+    base 未知 ⇒ 保持旧行为（缺省裸相对路径），不臆造根。
+    """
+    stem = Path(str(md_path or "")).stem
+    default_name = "data/reports/%s.%s" % (stem, "pptx" if action == "pptx_from_md" else "docx")
+    p = str(out_path or "").strip()
+    if not p:
+        return _join_base(base, default_name)
+    if _is_abs_out_path(p):
+        return p
+    return _join_base(base, p)
+
+
 def execute_wps_office(action, md_path, out_path="", provider="auto", base=""):
-    """确定性入口(供插件与上层直接调用)。返回 {success, out_path, provider, pages|error}。"""
+    """确定性入口(供插件与上层直接调用)。返回 {success, out_path, provider, pages|error}。
+
+    out_path 统一走 _resolve_out_path：base(执行沙箱)已知 ⇒ 缺省与显式相对路径都
+    锚定在 base 下（与输入同根）；绝对路径原样；base 未知 ⇒ 保持缺省裸相对路径。
+    """
     md_path = str(md_path or "")
     if not md_path:
         return {"success": False, "error": "wps_office 需要 md_path"}
@@ -277,9 +324,7 @@ def execute_wps_office(action, md_path, out_path="", provider="auto", base=""):
     if not Path(md_path).exists():
         return {"success": False, "error": "源文件不存在: %s" % md_path}
     prov = _detect_provider(provider)
-    if not out_path:
-        stem = Path(md_path).stem
-        out_path = "data/reports/%s.%s" % (stem, "pptx" if action == "pptx_from_md" else "docx")
+    out_path = _resolve_out_path(out_path, action, md_path, base)
     if action != "pptx_from_md":
         return {"success": False, "error": "docx_from_md 待接入; 当前仅 pptx_from_md"}
     try:
