@@ -27,7 +27,7 @@ execution_budget:
 
 # ===== V9 本地浏览器操作(Manus 对齐, P1 只读调研) =====
 browser_local:
-  ws_port: 5007              # 扩展 WebSocket 连接端口(独立 WS 服务线程; 低端口被 svchost 占用 → 定为 5006)
+  ws_port: 5007              # 扩展 WebSocket 连接端口(独立 WS 服务线程; 低端口被 svchost 占用 ⇒ 上移到本键值（注释不复述数值）)
   ws_host: localhost         # 扩展连接地址(Chrome 侧): localhost 经 WSL2 localhost 转发可达; 桥接/共享 IP 下 Windows 连 192.168.3.11 不通, 勿用
   domain_whitelist:          # 平台域名白名单(默认 小红书/抖音/B站/知乎/公众号/微博)
     - xiaohongshu.com

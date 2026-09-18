@@ -2,7 +2,7 @@
 """V9 本地浏览器操作 — 后端 WS 服务 + 连接管理 + 工具实现
 
 架构: Chrome Extension(SW) 作为 WebSocket 客户端连本服务(V9 侧独立 WS 线程, 端口
-从 execution_policy.browser_local.ws_port 读取, 默认 5006)。V9 Agent 通过
+从 execution_policy.browser_local.ws_port 读取（兜底见 start_browser_ws；不复述数值）。V9 Agent 通过
 browser_local_* 工具把指令发到该连接, 扩展用 chrome.debugger 操作用户本地浏览器。
 
 安全: 只收 DOM/截图, 不转发 Cookies; 域名白名单 browser_policy.yaml; 敏感操作硬拒绝。

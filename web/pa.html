@@ -318,8 +318,8 @@ body.hide-top .left.drawer-open,body.hide-top .side.drawer-open{top:0}
       <span id="modeTag">💬 聊天</span>
       <span id="modeHint">就事论事 · 目标导向</span>
       <span class="perm" id="modePerm">只读</span>
-      <!-- 批159 · P0-2：8 态运行状态（就绪/正在执行/等待模型/等待工具/等待审批/验证中/已完成/已失败/已停止） -->
-      <span class="runstate" id="runState" title="运行状态（8 态）">○ 就绪</span>
+      <!-- 批159 · P0-2：运行状态。**真源 = 下方 PA_STATE_DEF**（注释不复述键数与清单 ⇒ 免漂移；批159 建 8 态，此后只增键） -->
+      <span class="runstate" id="runState" title="运行状态（键值见 PA_STATE_DEF）">○ 就绪</span>
       <span style="margin-left:auto" id="connDot">● 就绪</span>
       <span class="chip" id="connStart" onclick="paStartLocalClient()" title="启动 Windows 桌面 agent_client（命令与参数由后端硬编码，页面改不了）" style="display:none;margin-left:8px;cursor:pointer">🚀 启动本地浏览器</span>
     </div>
