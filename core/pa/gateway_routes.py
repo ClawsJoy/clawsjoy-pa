@@ -974,7 +974,13 @@ def register_pa_routes(app, brain=None):
                 order.append(_k)
             by_id[_k] = _new
         state["archived"] = [by_id[_k] for _k in order]
-        res = ts.save(uid, state)
+        try:
+            res = ts.save(uid, state)
+        except ThreadStoreCorrupt as _c:
+            # X-17② 批 2：save 现在也 fail-loud（坏状态拒绝写入）⇒ 与 load 同形状回报，
+            # 不把「读→写」窗口内变坏的情况漏成 Flask HTML 500（前端 `if(r.ok)` 依赖 JSON 形状）。
+            return jsonify({"ok": False, "error": "thread_state_corrupt",
+                            "message": str(_c), "path": _c.path, "written": 0}), 409
         if not (isinstance(res, dict) and res.get("ok")):
             return jsonify({"ok": False, "error": "写入失败：save 未返回 ok", "written": 0}), 500
         # **读回确认**（本项目既有教训：测试绿 ≠ 数据在）

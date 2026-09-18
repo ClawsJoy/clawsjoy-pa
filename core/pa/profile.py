@@ -11,11 +11,15 @@
   - 老板修正 -> 旧条目标 revised, 新条目 supersedes 指向旧 id(不覆盖历史)
   - 试错 = 数据: 被否方案/被纠正说法同样入库
   - 持久化 data/v9/pa/profile.json(可被 env PA_PROFILE_PATH 覆盖)
+
+2026-09-18（X-17② 批 2 · DS 拍 A）：**读写都走统一出口**（`core/pa/state_out`）——
+坏状态 fail-loud，不再静默回落空档案；业务结构判据（`entries` 需为 list）**留 PA 侧**。
 """
-import json
 import os
 import time
 from pathlib import Path
+
+from core.pa.state_out import read_state, write_state
 
 DOMAINS = {"fact", "decision", "aesthetic", "emotion", "style", "product", "channel", "lesson"}
 STATUSES = {"proposed", "confirmed", "revised", "deprecated"}
@@ -26,6 +30,17 @@ def _now():
     return time.strftime("%Y-%m-%d")
 
 
+#: 写者标识（进出口的写者归属台账；供 detect_uninstrumented 识别绕过出口的写者）
+_WRITER = "core/pa/profile.py"
+
+
+def _shape(doc):
+    """**PA 侧业务结构判据**（X-17② 批 2 · DS 拍①：判据留 PA 侧，不给出口加回调）。"""
+    if not isinstance(doc.get("entries"), list):
+        return False, "entries 需为 list"
+    return True, ""
+
+
 class ProfileStore:
     def __init__(self, path=None):
         self.path = Path(path or os.getenv("PA_PROFILE_PATH", "data/v9/pa/profile.json"))
@@ -33,19 +48,20 @@ class ProfileStore:
         self.load()
 
     def load(self):
+        """**不存在 ⇒ 空档案；存在但不可用 ⇒ 抛 PAStateCorrupt**（不再静默回落空档案）。"""
+        self.entries = []
         if self.path.exists():
-            try:
-                data = json.loads(self.path.read_text(encoding="utf-8"))
-                self.entries = data if isinstance(data, list) else data.get("entries", [])
-            except Exception:
-                self.entries = []
+            self.entries = read_state(self.path, _WRITER, _shape).get("entries") or []
         return self
 
     def save(self):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(
-            json.dumps({"version": 1, "updated": _now(), "entries": self.entries}, ensure_ascii=False, indent=1),
-            encoding="utf-8",
+        """**走统一出口**（X-17② 批 2）：跨进程锁 + 原子替换 + 坏状态拒绝写入。"""
+        write_state(
+            self.path,
+            _WRITER,
+            _shape,
+            {"version": 1, "updated": _now(), "entries": self.entries},
+            reason="pa.profile.save",
         )
         return self
 

@@ -17,10 +17,15 @@
 【纪律】
   每张卡片的 verified/boundary/fragility 必须有实测来源, 不写"应该可以"。
   未验证的一律标 unverified, 宁可保守也不虚报能力。
+
+2026-09-18（X-17② 批 2 · DS 拍 A）：**读写都走统一出口**（`core/pa/state_out`）。
+**更正一处「纯读即覆写」**：此前 `load()` 在「文件存在但不可用」时会**静默回落内置默认卡
+并落盘覆写**（不可逆）。现在：不存在 ⇒ 初始化（首次运行，正常）；存在但不可用 ⇒ **抛**。
 """
-import json
 import os
 import time
+
+from core.pa.state_out import read_state, write_state
 
 # 接入能力分级（与 computer-use 阶梯一致）
 ACCESS_LADDER = ("L4", "L3", "L2", "L1", "L0")
@@ -160,6 +165,17 @@ _DEFAULT_CARDS = [
 ]
 
 
+#: 写者标识（进出口的写者归属台账；供 detect_uninstrumented 识别绕过出口的写者）
+_WRITER = "core/pa/roster.py"
+
+
+def _shape(doc):
+    """**PA 侧业务结构判据**（X-17② 批 2 · DS 拍①：判据留 PA 侧，不给出口加回调）。"""
+    if not isinstance(doc.get("cards"), list):
+        return False, "cards 需为 list"
+    return True, ""
+
+
 def _path():
     d = os.getenv("PA_DATA_DIR", "data/v9/pa")
     os.makedirs(d, exist_ok=True)
@@ -167,25 +183,28 @@ def _path():
 
 
 def load():
-    """读花名册; 文件不存在则用内置卡片初始化。"""
+    """读花名册。契约（X-17② 批 2 更正）：
+
+      · 文件**不存在** ⇒ 用内置卡片**初始化并落盘**（首次运行，正常）；
+      · 文件**存在且可用** ⇒ 返回；
+      · 文件**存在但不可用**（读不动／JSON 非法／`cards` 不是 list）⇒ **抛 PAStateCorrupt**。
+
+    为什么不再回落默认卡：此前「存在但坏」与「不存在」走同一条路 ⇒ **纯读即覆写** ——
+    老板自定义 2 卡的文件被一次 `load()` 覆盖成内置 6 卡，**不可逆**
+    （受控复现：codex/2026-09-18-pa-engineering-self-audit.md）。
+    """
     p = _path()
-    if os.path.exists(p):
-        try:
-            with open(p, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            if isinstance(data, dict) and isinstance(data.get("cards"), list):
-                return data
-        except Exception:
-            pass
-    data = {"cards": [dict(c) for c in _DEFAULT_CARDS], "ts": time.time()}
-    save(data)
-    return data
+    if not os.path.exists(p):
+        data = {"cards": [dict(c) for c in _DEFAULT_CARDS], "ts": time.time()}
+        save(data)
+        return data
+    return read_state(p, _WRITER, _shape)
 
 
 def save(data):
+    """**走统一出口**（X-17② 批 2）：跨进程锁 + 原子替换 + 坏状态拒绝写入。"""
     data["ts"] = time.time()
-    with open(_path(), "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=1)
+    write_state(_path(), _WRITER, _shape, data, reason="pa.roster.save")
     return {"ok": True, "count": len(data.get("cards") or [])}
 
 
