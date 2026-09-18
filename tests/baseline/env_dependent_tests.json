@@ -6,22 +6,28 @@
   "decision_ref": "未闭清单_20260917.md §八 X-20",
   "env_dependencies": [
     {
-      "dep": "本机 LLM 后端（Ollama 等）",
-      "probe": "http://127.0.0.1:11434",
+      "dep": "本机 LLM 后端（Ollama；在役模型 qwen2.5:7b-instruct-q4_0-gpu 等 3 个）",
+      "probe": "http://127.0.0.1:11434/api/tags",
       "probe_kind": "http",
-      "observed_state": "down（连接失败）"
+      "observed_state": "**UP**（2026-09-18 复测：`curl --noproxy '*'` 200 / 47ms）。**注意证据层**：Windows 侧 **无 LISTENING socket**（`Get-NetTCPConnection -State Listen` 为空），却可连通 ⇒ 经 **WSL2 localhost 转发**可达 —— 「绑端口」与「可达」不是同一层证据（X-05 同族）"
     },
     {
-      "dep": "出网代理（.env 的 HTTP_PROXY，Clash）",
+      "dep": "出网代理（`config/.env:14-15` 注入 `HTTP_PROXY`/`HTTPS_PROXY=http://127.0.0.1:7890`，Clash）",
       "probe": "http://127.0.0.1:7890",
       "probe_kind": "tcp",
-      "observed_state": "down（本机无监听；Get-NetTCPConnection 无 7890）"
+      "observed_state": "**down**（无监听）。**注入源已定位**：WinINET `ProxyEnable=0`、`urllib.request.getproxies()`={} ⇒ OS 层无代理；代理**只来自仓内 `config/.env`**（`agent_gateway_enhanced.py:75-84` 仅在 `.env` **无**代理时才清理 ⇒ 有代理时保留在 `os.environ`）"
     },
     {
       "dep": "上游 LLM API",
       "probe": "https://api.deepseek.com",
       "probe_kind": "https",
       "observed_state": "可达但 401（本机无 key）"
+    },
+    {
+      "dep": "「本机推理路径足够快」本身（≤2s 中位）—— 这两条用例的隐含前置",
+      "probe": "tests/integration/test_full_flow.py::TestPerformance",
+      "probe_kind": "wall-clock",
+      "observed_state": "**不满足**：直连 Ollama 的中位约 **11257ms**（`NO_PROXY` A/B）> 断言 2000ms ⇒ 即便网络路径完全干净，本机也达不到阈值"
     }
   ],
   "cases": [
@@ -29,32 +35,51 @@
       "id": "tests/integration/test_full_flow.py::TestPerformance::test_concurrent_requests",
       "nature": "环境依赖",
       "depends_on": [
-        "本机 LLM 后端（Ollama 等）",
-        "出网代理（.env 的 HTTP_PROXY，Clash）"
+        "本机 LLM 后端（Ollama；在役模型 qwen2.5:7b-instruct-q4_0-gpu 等 3 个）",
+        "出网代理（`config/.env:14-15` 注入 `HTTP_PROXY`/`HTTPS_PROXY=http://127.0.0.1:7890`，Clash）",
+        "「本机推理路径足够快」本身（≤2s 中位）—— 这两条用例的隐含前置"
       ],
-      "symptom": "assert elapsed < 30 实测 63.58s —— 10 次串行 POST /api/v5/enhanced/chat，每次约 6.3s（依赖可达时常态 ~950ms）",
-      "why_not_flake": "同一环境下每次必红且数字几乎相同；按字节换回 5607d08 版跑同例同样红（63.68s）⇒ 与本线代码改动无因果，且非『时绿时红』",
+      "symptom": "`assert elapsed < 30`：实测 **62.96s**（默认路径）／**113.49s**（`NO_PROXY` A/B）—— 10 次串行 POST /api/v5/enhanced/chat，每次约 6.3s（代理串味路径）或约 11.3s（直连路径）",
+      "why_not_flake": "同一环境下每次必红且数字同量级；按字节换回 5607d08 版跑同例同样红（63.68s）⇒ 与本线代码改动**无因果**；且非『时绿时红』",
+      "ab_2026_09_18": "两次受控复跑：① 默认环境 ⇒ 62.96s；② `NO_PROXY=127.0.0.1,localhost` ⇒ 113.49s（**更慢**）⇒ **证伪**「死代理是唯一原因」；代理只是**路径之一**，直连同样超阈值",
       "owner": "DSH/DS（复跑）",
-      "plan": "等后端/代理恢复后复跑；复跑绿则本条目连同门禁失败数一并收敛（27 → 25）",
-      "evidence": "data/tmp/b5_work/x18b/gate_a.txt · gate_b.txt · perf_fixed.txt · perf_head.txt"
+      "plan": "① 短期：等环境满足（代理恢复 **或** 推理路径变快）后复跑；② 本表**不改阈值**（改阈值＝放宽口径，须另拍）；③ 已发现的**代理串味缺陷**另立条目登记（见 `root_cause_finding_2026_09_18`），本批**不修**",
+      "evidence": "data/tmp/b5_work/x20/rerun_perf.txt · rerun_noproxy.txt · data/tmp/b5_work/x18b/gate_a.txt · gate_b.txt"
     },
     {
       "id": "tests/integration/test_full_flow.py::TestPerformance::test_response_time",
       "nature": "环境依赖",
       "depends_on": [
-        "本机 LLM 后端（Ollama 等）",
-        "出网代理（.env 的 HTTP_PROXY，Clash）"
+        "本机 LLM 后端（Ollama；在役模型 qwen2.5:7b-instruct-q4_0-gpu 等 3 个）",
+        "出网代理（`config/.env:14-15` 注入 `HTTP_PROXY`/`HTTPS_PROXY=http://127.0.0.1:7890`，Clash）",
+        "「本机推理路径足够快」本身（≤2s 中位）—— 这两条用例的隐含前置"
       ],
-      "symptom": "assert elapsed < 2000 实测稳态中位 6357ms（同一根因：每次 chat 约 6.3s）",
-      "why_not_flake": "同上：确定红、A/B 同红；该用例 docstring 自己已承认『属测试脆弱』，但脆弱源是环境而非写死逻辑",
+      "symptom": "`assert elapsed < 2000`：稳态中位 **6357ms**（默认路径）／**11257ms**（`NO_PROXY` A/B）",
+      "why_not_flake": "同上：确定红、A/B 同红；用例 docstring 自称『属测试脆弱』，但**脆弱源是环境**（推理路径慢 + 网络路径被死代理串味），不是写死逻辑",
+      "ab_2026_09_18": "同 `test_concurrent_requests`：`NO_PROXY` 后 **11257ms**，比默认的 6357ms **更慢** ⇒ 直连也不达标",
       "owner": "DSH/DS（复跑）",
       "plan": "同上",
-      "evidence": "data/tmp/b5_work/x18b/gate_a.txt · gate_b.txt · perf_fixed.txt · perf_head.txt"
+      "evidence": "data/tmp/b5_work/x20/rerun_perf.txt · rerun_noproxy.txt · data/tmp/b5_work/x18b/gate_a.txt · gate_b.txt"
     }
   ],
+  "root_cause_finding_2026_09_18": {
+    "title": "应用侧 Ollama 探测被 `config/.env` 的 HTTP_PROXY 串味（裸 `requests.get`，trust_env 默认 True）",
+    "severity": "**不影响本表结论**（A/B 已证伪『代理是唯一原因』）；但**是独立缺陷**，另立条目登记、本批不修",
+    "mechanism": [
+      "`config/.env:14-15` 注入 `HTTP_PROXY`/`HTTPS_PROXY=http://127.0.0.1:7890`（为 #27 沙箱 yt-dlp 下载外网而设，**有意保留**：`tests/unit/test_proxy_sandbox_fix.py:30` 断言其必须存在）",
+      "`agent_gateway_enhanced.py:75-84` 仅在 `.env` **无**代理时才清 `os.environ` 代理 ⇒ 有代理时全进程继承",
+      "`core/lib/llm_client.py:121-123`（`_ensure_ollama`）与 `:135`（`_ollama_available`）用**裸 `requests.get`** ⇒ `trust_env` 默认 True ⇒ 连 `127.0.0.1:11434` 也被送去 `7890`",
+      "而同一类 `:107` **明确**设了 `self._session.trust_env = False` ⇒ **同类内自相矛盾**：主 session 绕代理，探测路径不绕",
+      "`_ollama_available` 以 `except Exception: self._ollama_available = False` **吞异常** ⇒ 代理一死，进程内**永久**判定「Ollama 不可用」（`_ollama_checked=True`，不再重试）＝ **静默降级**（L-08 同族）"
+    ],
+    "evidence": "pytest 输出内 WARNING：`[LLM] Ollama 探测失败… HTTPConnectionPool(host='127.0.0.1', port=7890) … ProxyError('Unable to connect to proxy')` ⇒ 直证裸探测走了代理（data/tmp/b5_work/x20/rerun_perf.txt）",
+    "precedent": "同族旧案 `docs/reports/v9_deepseek_proxy_error_20260824.md`（2026-08-24）：当时修了 `deepseek_adapter` 的 `_DS_SESSION.trust_env=False` 与主 session，**未覆盖这两处裸探测** ⇒ 属**未修尽的同族残留**",
+    "proposed_fix": "**待拍，本批不修**：探测改用 `self._session`（已有 `trust_env=False`）或显式 `proxies={}`；并把吞异常改为**可观测**（记 WARN 而非静默 False）"
+  },
   "explicitly_not": {
     "flake": "未登记进 failure_ledger.json::flaky_watch，也未登记进 known_failures —— 不放宽口径、不把环境问题常态化",
     "threshold_change": "未修改 assert elapsed < 30 / < 2000 的任何阈值（改阈值＝放宽口径）",
-    "offline_mode": "全树 grep OFFLINE|MOCK_LLM|LLM_STUB = 0 命中（无官方离线模式开关）"
+    "offline_mode": "全树 grep OFFLINE|MOCK_LLM|LLM_STUB = 0 命中（无官方离线模式开关）",
+    "code_fix_in_this_batch": "`root_cause_finding_2026_09_18` 的修法**未实施**（属改行为 ⇒ 待拍）"
   }
 }
