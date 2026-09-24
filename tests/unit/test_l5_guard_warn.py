@@ -1,12 +1,33 @@
 # -*- coding: utf-8 -*-
 """L5 单测: 空参拦截(不进审批) + 预算 80% 预警"""
 import sys
+import re
 
 sys.path.insert(0, ".")
 import agent_gateway_enhanced as main
 from core.gateway.shared_state import empty_arg_error as _empty_arg
 
 _SRC = open(main.__file__, encoding="utf-8").read()
+
+def _guard_block(src, name):
+    """(a) 块定位: 按「函数签名 + 块首标记」取函数块 —— 不按行号、不按某行字面(承 DS 2026-09-23 前置 (a))"""
+    m = re.search(r"^def " + re.escape(name) + r"\(", src, re.M)
+    if not m:
+        return ""
+    nxt = re.search(r"^def ", src[m.end():], re.M)
+    return src[m.start(): m.end() + (nxt.start() if nxt else len(src))]
+
+
+def _a_ok(loop_src):
+    """(a) 判据本体 —— 可对任意源跑(供负向对照): 块内见 token_stage(..., water_tok) 调用, 且不自算阈值"""
+    _g = _guard_block(loop_src, "_token_water_guard")
+    if not _g:
+        return False
+    if "from core.gateway.budget import token_stage" not in _g.replace('"', ""):
+        return False
+    if not re.search(r"token_stage\(\s*[^)]*\bwater_tok\b", _g):
+        return False
+    return not ("_warn80_tok" in _g or re.search(r"water_tok\s*\*", _g))
 
 
 def test_empty_arg_helper():
@@ -54,10 +75,31 @@ def test_empty_arg_repeat_steer_wired():
 
 
 def test_budget_warn80_wired():
-    """预算 80% 时注入收敛预警(不中断); 100% 才正常收尾（S6-E 归位 loop.py _token_water_guard）"""
+    """预算 80% 预警(不中断)+100% 收尾 —— (a) 接线面: 走单一来源 budget.token_stage  (b) 语义面: token_stage 返回值"""
     _LOOP = open("core/gateway/v9_bridge/loop.py", encoding="utf-8").read()
     assert "_budget_warned80 = False" in _SRC  # 调用方初始化
-    assert "[预算预警]" in _LOOP and "80%%" in _LOOP
-    assert "_warn80_tok = int(water_tok * _wr_s5)" in _LOOP
+    assert "[预算预警]" in _LOOP and "80%%" in _LOOP  # 行为文案仍在(不中断)
     assert "_token_water_hit = True" in _SRC  # 调用方消费 break
-    assert _LOOP.index("_warn80_tok = int") < _LOOP.index("if tokens >= water_tok:")
+    # (a) 接线: 80% 判定必须走单一来源 budget.token_stage(⛔ 不再自算阈值 · 承 DS 拍板 (a))
+    assert "from core.gateway.budget import token_stage" in _LOOP.replace('"', "")
+    # 断言粒度 = 「签名/块首标记」+ 块内调用(不断「某一行字面」—— 承 DS 2026-09-23 前置 (a))
+    assert _a_ok(_LOOP), "(a) 接线: _token_water_guard 块内须见 token_stage(..., water_tok) 且不自算阈值"
+    assert _a_ok(_LOOP.replace("token_stage(tokens, water_tok)", "0")) is False  # 负向对照: 判据有齿
+    # (b) 语义: token_stage 的返回值(单一判定面 · 承 DS 拍板 (b))
+    from core.gateway.budget import token_stage, WARN_RATIO, CTX_COMPRESS_RATIO
+    b = 1000
+    assert (WARN_RATIO, CTX_COMPRESS_RATIO) == (0.8, 0.8)  # 同值不同源: 两个语义各自单源
+    assert token_stage(int(b * WARN_RATIO) - 1, b) == "ok"
+    assert token_stage(int(b * WARN_RATIO), b) == "warn80"
+    assert token_stage(b, b) == "water"
+    assert token_stage(b + 1, b) == "over"
+    # 窗口侧语义: ⛔ 不得留裸 0.8 字面(单一来源 = CTX_COMPRESS_RATIO)
+    # 面(承 初审_219 §三 · 面须写清): 窗口侧 = agent_gateway_enhanced.py + core/gateway/v9_chat/bridge_call.py
+    # 面界(承 初审_220 低危 · 补等价式): 去空白后比字面 ⇒ 覆盖 *0.8 / * 0.8 / *0.80 / *4/5 / *80/100 / *(0.8);
+    #   ⛔ 面外 = 经变量/别名绕开(如 _r=0.8; x*_r) 或跨行拆写 ⇒ 残余敞口如实留
+    for _p in ("agent_gateway_enhanced.py", "core/gateway/v9_chat/bridge_call.py"):
+        _s = open(_p, encoding="utf-8").read()
+        assert "CTX_COMPRESS_RATIO" in _s, "窗口侧阈值须走常量: " + _p
+        _n = re.sub(r"[ \t]+", "", _s)
+        for _lit in ("*0.8", "*0.80", "*4/5", "*80/100", "*(0.8)"):
+            assert _lit not in _n, "窗口侧 ⛔ 不得留裸 0.8 等价字面(" + _lit + "): " + _p

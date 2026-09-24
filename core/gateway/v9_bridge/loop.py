@@ -182,20 +182,21 @@ def _init_bridge_state(*, messages, tools, user_id, session_id, model, _thinking
 
     # R1(2026-08-30 架构根治): 轮次上限改为 token 水位驱动 — 不再按轮次硬截断。
     try:
-        from core.gateway.shared_state import _load_v9_execution_policy as _lv9r
+        from core.gateway.shared_state import _load_v9_execution_policy
 
         _max_bridge_rounds = int(
-            ((_lv9r() or {}).get("execution_budget", {}) or {}).get("max_bridge_rounds", 100) or 100
+            ((_load_v9_execution_policy() or {}).get("execution_budget", {}) or {}).get("max_bridge_rounds", 100) or 100
         )
     except Exception:
         _max_bridge_rounds = 100
     # R1: token 水位预算(默认 50 万 token, 与 P0 费用保护同一配置键)
+    # I6(2026-09-22 · DP-1): 预算取数走 budget.load_budget 单一来源(取值源不变: 仍读同一 policy)
     try:
-        from core.gateway.shared_state import _load_v9_execution_policy as _lv9w
+        from core.gateway.shared_state import _load_v9_execution_policy
 
-        _water_tok = int(
-            ((_lv9w() or {}).get("execution_budget", {}) or {}).get("per_task_token_budget", 500000) or 500000
-        )
+        from core.gateway.budget import load_budget
+
+        _water_tok = int(load_budget(_load_v9_execution_policy()))
     except Exception:
         _water_tok = 500000
 
@@ -244,25 +245,29 @@ def _token_water_guard(*, tokens, water_tok, budget_warned80, bmsg):
 
     契约：返回 dict {budget_warned80, token_water_hit}。
     token_water_hit=True 时调用方 break 并置 _bridge_exhausted=False（正常收尾，非耗尽/非中断）。
+
+    I6(2026-09-22 · DP-1): 80% 预警与水位判定**均走 budget.token_stage**（阈值/判定唯一来源）。
     """
     try:
         # L5(2026-09-05 预算预警): 达预算 80% 注入收敛提示(不中断, 让 Agent 提前收尾)
-        from core.gateway.budget import _WARN_RATIO as _wr_s5
+        # I6(2026-09-22 · DP-1): 80% 判定收敛到 budget.token_stage 单一判定 —— 本处不再自算阈值
+        from core.gateway.budget import token_stage
 
-        _warn80_tok = int(water_tok * _wr_s5)
-        if not budget_warned80 and tokens >= _warn80_tok:
+        _stage = token_stage(tokens, water_tok)
+        if not budget_warned80 and _stage in ("warn80", "water", "over"):
             budget_warned80 = True
             _wtr80 = "[预算预警] token 已消耗 %d(>= 预算 %d 的 80%%)。请立即收敛：" "不再做新的侦察/重读/重试，基于现有结果完成剩余步骤并输出最终结论。" % (
                 tokens,
                 water_tok,
             )
             bmsg["content"] = (bmsg.get("content") or "") + chr(10) + chr(10) + _wtr80
-            print(f"[BUDGET_WARN80] tokens {tokens} >= {_warn80_tok}(预算 80%), 注入收敛预警")
-        if tokens >= water_tok:
+            print(f"[BUDGET_WARN80] tokens {tokens} stage {_stage}(预算 80%), 注入收敛预警")
+        if _stage in ("water", "over"):
             _wtr_hint = f"[系统] 任务 token 消耗 {tokens} 已达预算 {water_tok}。" f"请基于已完成的操作直接输出最终总结/结论，不要再调用新工具。"
             bmsg["content"] = (bmsg.get("content") or "") + chr(10) + chr(10) + _wtr_hint
             print(f"[R1_TOKEN_WATER] tokens {tokens} >= 预算 {water_tok}, 注入收敛并正常收尾")
             return {"budget_warned80": budget_warned80, "token_water_hit": True}
     except Exception:
-        pass
+        # I6: 失败即"不命中"(fail-safe) —— 与旧 pass 的落点一致, 但不再留裸 except:pass
+        return {"budget_warned80": budget_warned80, "token_water_hit": False}
     return {"budget_warned80": budget_warned80, "token_water_hit": False}
