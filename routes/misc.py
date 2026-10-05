@@ -9,7 +9,26 @@ from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 
+from core.gateway import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
+
 bp = Blueprint("misc_routes", __name__)
+
+# ===== ⭐ T2-刀12 §二（2026-10-05 · PM 补令）：产出面之**测试痕**辨 ====
+#   级 A · 名形：dir 名以**器名**起（门禁/探针）⇒ 铁定测试痕
+#   级 B · 内容：产物之题/内容含「检测到重复操作」（回路闸）∨「E2E」（端到端探针）
+PLAN_TRACE_NAME_PREFIXES = ("canary_", "pm011_", "session_stream_test", "p9_", "pa_selftest", "probe_", "e2e_", "test_")
+PLAN_TRACE_TEXT_MARKS = ("检测到重复操作", "E2E")
+
+
+def _plan_trace_filter_meta(view):
+    """⭐ T2-刀12 §二：滤之「形」之自陈（面／判据逐条 ⇒ 可复算）。"""
+    return {
+        "面之径逐字": "data/plans",
+        "view": view,
+        "名形判据": list(PLAN_TRACE_NAME_PREFIXES),
+        "内容判据": list(PLAN_TRACE_TEXT_MARKS),
+        "注": "名形 ⇒ 器名即门禁/探针（铁定）；内容 ⇒ 回路闸/E2E 之痕（逐条可核）",
+    }
 
 
 @bp.route("/v5/tts", methods=["POST"])
@@ -65,12 +84,23 @@ def v9_plans_list():
     Query 参数:
         session_id: 可选，按会话过滤
         kind: 可选，'plan' | 'report' | 'decision' 过滤类型
+        view: 可选，'all'（缺省 · 既有之形 ⇔ 锤不破）| 'real'（真产出）| 'test'（测试痕）
     """
     _sid = request.args.get("session_id", "")
     _kind = request.args.get("kind", "")
+    # ⭐ T2-刀12 §二：`view` —— 缺省 `all`（既有之形 ⇔ 零回归）；假值 ⇒ **400 点名**（假值之负控 · ⇔ 静默兜底）
+    _view = (request.args.get("view") or "all").strip().lower()
+    if _view not in ("all", "real", "test"):
+        return jsonify({"success": False,
+                        "error": "view 须 ∈ all|real|test（收 %r）—— 假值之负控" % _view,
+                        "missing": ["view"], "kind": "bad_param", "route": "/v9/plans/list"}), 400
     _plans_dir = Path("data/plans")
     if not _plans_dir.exists():
-        return jsonify({"success": True, "assets": []})
+        return jsonify({"success": True, "assets": [], "real": [], "test_trace": [],
+                        "counts": {"面之径逐字": "data/plans", "dirs_total": 0, "files_total": 0,
+                                   "before": 0, "real": 0, "test_trace": 0, "shown": 0,
+                                   "truncated": False},
+                        "filter": _plan_trace_filter_meta(_view)})
     _dirs = [_plans_dir / _sid] if _sid else sorted(_plans_dir.iterdir())
     assets = []
     for _d in _dirs:
@@ -91,12 +121,57 @@ def v9_plans_list():
                     _meta["title"] = _f.stem
                     _meta["ts"] = _f.stat().st_mtime
                     _meta["content"] = ""
-                if _kind and _meta.get("kind") != _kind:
-                    continue
+                # ⭐ T2-刀12 §二：本件之「痕」之判（名形 ⇒ 头 400 B 之内容痕）
+                #   ⚠ 修正①：非 `.json` 之 `title` 为文件名词干、`content` 恒空
+                #             ⇒ 旧判恒不命中（假接线）；今直读文件头
+                #   ⚠ 修正②：判**先于** `kind` 滤（滤移至后）⇒ 免「痕件被滤
+                #             ⇒ 该 dir 漏判」（假绿之同族）
+                _why = ""
+                if str(_d.name).lower().startswith(PLAN_TRACE_NAME_PREFIXES):
+                    _why = "名形"
+                else:
+                    _head = ""
+                    try:
+                        with _f.open("rb") as _fh:
+                            _head = _fh.read(400).decode("utf-8", "replace")
+                    except Exception:
+                        _head = ""
+                    _blob = "%s %s %s" % (_meta.get("title") or "", _meta.get("content") or "", _head)
+                    for _mk in PLAN_TRACE_TEXT_MARKS:
+                        if _mk in _blob:
+                            _why = "内容:" + _mk
+                            break
+                _meta["_mark"] = _why   # 私键 · 待后端归总后 pop（⇔ 外带）
                 assets.append(_meta)
             except Exception:
                 continue
-    return jsonify({"success": True, "assets": assets[:100]})
+    _dirs_n = sum(1 for _d in _dirs if _d.is_dir())
+    # ⭐ T2-刀12 §二：`kind` 滤（移至此 ⇒ 判据 ⇔ 被滤）
+    _kept = [a for a in assets if (not _kind) or a.get("kind") == _kind]
+    _name_trace = set()
+    for _a in _kept:
+        if str(_a.get("session_id") or "").lower().startswith(PLAN_TRACE_NAME_PREFIXES):
+            _name_trace.add(_a.get("session_id") or "")
+    for _a in _kept:
+        _mark = _a.pop("_mark", "")
+        _why = ("名形" if (_a.get("session_id") or "") in _name_trace else _mark) or ""
+        _a["trace"] = bool(_why)
+        _a["trace_why"] = _why
+    _real = [a for a in _kept if not a.get("trace")]
+    _trace = [a for a in _kept if a.get("trace")]
+    _sel = {"all": _kept, "real": _real, "test": _trace}[_view]
+    _shown = _sel[:100]
+    return jsonify({
+        "success": True,
+        "assets": _shown,
+        "real": _real[:100],
+        "test_trace": _trace[:100],
+        "counts": {"面之径逐字": "data/plans", "dirs_total": _dirs_n,
+                   "files_total": len(_kept), "before": len(_kept),
+                   "real": len(_real), "test_trace": len(_trace),
+                   "shown": len(_shown), "truncated": len(_sel) > 100},
+        "filter": _plan_trace_filter_meta(_view),
+    })
 
 
 @bp.route("/api/endpoints", methods=["GET"])
@@ -195,7 +270,7 @@ def submit_feedback():
                 print(f"[Feedback] 训练数据达 {len(train_data)} 条，触发训练")
                 import subprocess
 
-                subprocess.Popen(["python", "scripts/train_model.py", "--quick"], cwd=Path(__file__).parent)
+                _proc.popen_hidden(["python", "scripts/train_model.py", "--quick"], cwd=Path(__file__).parent)
         except Exception as e:
             print(f"[Feedback] 训练触发失败: {e}")
 

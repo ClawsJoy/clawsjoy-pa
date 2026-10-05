@@ -10,6 +10,49 @@ brain: 可调用对象(context_text)->str; 默认返回结构化文本(测试/�
 import json
 import time
 from pathlib import Path
+import threading   # ⭐ PM 2026-10-05（承 技总 970 §三 · 我落）：护 post() 之「读-改-写」
+
+_LOCKS, _LOCKS_GUARD = {}, threading.Lock()
+
+
+def _lock_for(path):
+    """进程内 per-path 锁（⛔ msvcrt ／ ⛔ 新依赖 · 与 subtask_executor 同形分族）。"""
+    with _LOCKS_GUARD:
+        _lk = _LOCKS.get(str(path))
+        if _lk is None:
+            _lk = _LOCKS[str(path)] = threading.Lock()
+        return _lk
+
+
+# ⭐ PM 2026-10-05 22:34 §四⒝-2（技总之域）：会话档之**源标**（加性字段 · ⛔ 破既有读者）
+#   病（逐字）：档行＝{"seq","role","text","topic","ts"} ⇒ **无源标** ⇒ 档读者（PM ／ 老板 ／
+#     日后之席）无从辨「模型断言」vs「有据之答」；老板所见「T1已完成」之编造正出此路
+#     ⇒ 屏上有标 ／ **档中无标** ⇒ 事后取证唯见模型之言 ＝ 看似有据（承「假绿」之族）。
+#   ⇒ 加**加性键**（JSONL 加键 ＝ 向后兼容 · ⛔ 改 `text` 之体 · ⛔ 改既有四键）：
+#     `origin`         答之来源类别（⭐ PM 1183 §五.3：原名 `src` 与响应 `src`＝走径标 **同字异义** ⇒ 改 `origin` · 一名一义）
+#                      ｜`refused`（闸拒 · 无据不答）｜`unspecified`（调用方未声明 ⇒ ⛔ 当有据）
+#     `grounded`       bool ／ ⛔ 缺键（缺键 ＝ 未标 ⇔ ⛔「无据」）
+#     `answer_source`  str（后端之原值：decision ／ knowledge ／ refused ／ model ／ …）⇒ 供回指
+#   ⚠ **唯当有值 ⇒ 落键**（⛔ 落 None ／ ⛔ 落空串 ⇒ 免「假标」）⇒ 旧行形不变。
+#   ⚠ ⭐ **两写路同形**（PM 定 · 须与 CW 对齐）：`/v9/pa/dialog`（脑路）与
+#     `POST /v9/pa/turn`（前端写路）**同键同义** ⇒ 唯键名与形一致，读者方可一比。
+ORIGIN_MODEL = "model"
+ORIGIN_GROUNDED = "grounded"
+ORIGIN_REFUSED = "refused"
+ORIGIN_UNSPECIFIED = "unspecified"
+
+
+def _post_row(row, origin=None, grounded=None, answer_source=None):
+    u"""源标之加性字段（⛔ 覆盖既有四键 · 唯当有值 ⇒ 落键）。"""
+    if origin is not None and str(origin) != "":
+        row["origin"] = str(origin)
+    if grounded is not None:
+        if isinstance(grounded, str):
+            grounded = grounded.strip().lower() in ("1", "true", "yes", "y", "有据")
+        row["grounded"] = bool(grounded)
+    if answer_source is not None and str(answer_source) != "":
+        row["answer_source"] = str(answer_source)
+    return row
 
 
 class DialogSession:
@@ -32,11 +75,16 @@ class DialogSession:
         with open(self.path, "a", encoding="utf-8") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    def post(self, role, text, topic=None):
-        rows = self._read()
-        seq = (rows[-1]["seq"] + 1) if rows else 1
-        row = {"seq": seq, "role": role, "text": str(text)[:4000], "topic": topic, "ts": time.strftime("%H:%M:%S")}
-        self._append(row)
+    def post(self, role, text, topic=None, origin=None, grounded=None, answer_source=None):
+        # ⭐ PM 2026-10-05（承 技总 970 §三）：⭐ 只包「读-改-写」（`seq` 之算在锁内）
+        #   负控之证（技总 `971 §三`）：拆锁下 8 线程 × 50 ⇒ 重号 79 ／ 丢 2 轮
+        # ⭐ PM 2026-10-05 22:34 §四⒝-2：**源标之加性字段**（见 `_post_row` 之注）
+        with _lock_for(self.path):
+            rows = self._read()
+            seq = (rows[-1]["seq"] + 1) if rows else 1
+            row = {"seq": seq, "role": role, "text": str(text)[:4000], "topic": topic, "ts": time.strftime("%H:%M:%S")}
+            _post_row(row, origin=origin, grounded=grounded, answer_source=answer_source)
+            self._append(row)
         return row
 
     def history(self, n=20):
@@ -71,7 +119,8 @@ class DialogRuntime:
     def session(self, sid):
         return DialogSession(sid, self.data_dir)
 
-    def respond(self, sid, user_text, topic=None, brain=None, profile_brief="", ledger_brief=""):
+    def respond(self, sid, user_text, topic=None, brain=None, profile_brief="", ledger_brief="",
+                origin=None, grounded=None, answer_source=None):
         s = self.session(sid)
         s.post("user", user_text, topic=topic)
         ctx = s.context_text(profile_brief, ledger_brief)
@@ -79,5 +128,9 @@ class DialogRuntime:
             reply = "PA(%s): 议题【%s】已记录; 待办见账本, 需要商量或分派就说。" % (sid, topic or s.latest_topic())
         else:
             reply = brain(ctx)
-        s.post("assistant", reply, topic=topic or s.latest_topic())
+        # ⭐ PM 2026-10-05 22:34 §四⒝-2：本路**本即脑（模型）路** ⇒ 缺省标 `model`
+        #   （真值 · ⛔ 冒 `grounded`）；调用方知其实（如闸已判有据）⇒ 以显式值覆之。
+        s.post("assistant", reply, topic=topic or s.latest_topic(),
+               origin=(origin or ORIGIN_MODEL), grounded=grounded,
+               answer_source=(answer_source or ORIGIN_MODEL))
         return {"session_id": sid, "topic": topic or s.latest_topic(), "context_used": ctx, "reply": reply}

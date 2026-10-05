@@ -89,6 +89,33 @@ def _shape(doc):
     return True, ""
 
 
+#: ⭐ T2-刀19-补 §二：拍板之**用途**分类（`验收 ／ 自检 ／ 测试`之拍板会被前填为面之「拍板来源」）
+NONBUSINESS_MARKS = (u'验收', u'自检', u'复验', u'selfcheck', u'selftest', u'e2e', u'canary',
+                     u'探针', u'测试', u'test', u'probe', u'干跑')
+
+
+def usage_of(rec):
+    u'''拍板之**用途**：`业务` ∨ `非业务`（返回 `(用途, 命中词)`）。
+
+    ⭐ 由（PM 刀19-补 §二）：T1 交付面之「拍板来源」取**后端 log 之最新「采纳」** ⇒ 验收之拍板
+    会**前填**为业务之来源（污染）。分类 ⇒ 面之默认唯**业务**（⛔ 删行：非业务另栏照录）。
+    '''
+    blob = u' '.join(str((rec or {}).get(k) or '') for k in ('task', 'note', 'session_id'))
+    low = blob.lower()
+    for m in NONBUSINESS_MARKS:
+        if m.lower() in low:
+            return u'非业务', m
+    return u'业务', ''
+
+
+def split_by_usage(rows):
+    u'''按用途分栏：返回 `(业务行, 非业务行)`（皆**原行** · ⛔ 改值）。'''
+    biz, nb = [], []
+    for r in (rows or []):
+        (biz if usage_of(r)[0] == u'业务' else nb).append(r)
+    return biz, nb
+
+
 class DecisionStore:
     def __init__(self, data_dir="data/v9/pa"):
         self.dir = Path(data_dir)

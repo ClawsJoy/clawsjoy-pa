@@ -30,6 +30,14 @@ from core.pa.state_out import read_state, write_state
 # 接入能力分级（与 computer-use 阶梯一致）
 ACCESS_LADDER = ("L4", "L3", "L2", "L1", "L0")
 
+# ---- 席位（T2-刀2 · 2026-10-05）：真源 ＝ `paseo agent ls --json` 之落件 ------------
+# 分立之由：`roster.json` 是**能力端点册**（机件/服务/外脑），席位册是**席**册 ⇒ 两册各一形。
+KIND_SEAT = "seat"
+#: 四种权（承 PM 097 §二「域须明何权」）：写码 ／ 起停 ／ 部署 ／ 裁决复核
+GOVERNANCE_RIGHTS = ("写码", "起停", "部署", "裁决复核")
+#: 席位册之件名（与 `roster.json` 分立）
+SEAT_ROSTER_FILE = "seat_roster.json"
+
 _DEFAULT_CARDS = [
     {
         "id": "ds_chat",
@@ -233,33 +241,117 @@ def upsert(card):
     return {"ok": True, "added": card["id"]}
 
 
+def seat_roster_path():
+    """席位册之径（与 `roster.json` 分立 —— 能力端点册 ⛔ 席位册）。"""
+    d = os.getenv("PA_DATA_DIR", "data/v9/pa")
+    os.makedirs(d, exist_ok=True)
+    return os.path.join(d, SEAT_ROSTER_FILE)
+
+
+def seats():
+    """席位册之卡（**只读**）。件**缺** ⇒ `[]` ＋ 一行 stderr（⛔ 静默 · ⛔ 以 `0` 充「已扫」）。"""
+    p = seat_roster_path()
+    if not os.path.exists(p):
+        return []
+    try:
+        import json as _json
+        with open(p, encoding="utf-8") as _fh:
+            doc = _json.load(_fh)
+    except Exception as e:
+        import sys as _sys
+        _sys.stderr.write("[roster] 席位册不可解析（%s）：%s\n" % (type(e).__name__, p))
+        return []
+    out = doc.get("seats") if isinstance(doc, dict) else None
+    return out if isinstance(out, list) else []
+
+
+def by_kind(kind):
+    """按 `kind` 取卡（`kind="seat"` ⇒ 席位册；T2-刀2.3）。"""
+    k = (kind or "").strip()
+    if not k:
+        return []
+    if k == KIND_SEAT:
+        return seats()
+    return [c for c in load().get("cards", []) if c.get("kind") == k]
+
+
+def _card_brief(c):
+    return {"id": c.get("id"), "name": c.get("name"),
+            "level": (c.get("access") or {}).get("level"),
+            "role": c.get("role"), "kind": c.get("kind"),
+            "from": (KIND_SEAT if c.get("kind") == KIND_SEAT else "roster")}
+
+
+def by_governance(right):
+    """按**四种权**找席（T2-刀2.3）：写码 ／ 起停 ／ 部署 ／ 裁决复核。"""
+    r = (right or "").strip()
+    if not r:
+        return []
+    return [_card_brief(c) for c in seats() if (c.get("governance") or {}).get(r) is True]
+
+
 def by_capability(keyword):
-    """按能力标签找人 —— PA 派活时的第一步: 谁能干这个活?"""
+    """按能力标签找人（PA 派活第一步）＋ **四权亦可**（T2-刀2.3）。
+
+    面 ＝ `roster.json` 之卡 ＋ **席位册**之席（`capabilities` ＋ `governance` 之真权）。
+    """
     kw = (keyword or "").strip()
     if not kw:
         return []
     out = []
-    for c in load().get("cards", []):
-        blob = " ".join([c.get("name", ""), c.get("role", "")] + list(c.get("capabilities") or []))
+    for c in list(load().get("cards", [])) + list(seats()):
+        gov = c.get("governance") or {}
+        blob = " ".join([str(c.get("name", "")), str(c.get("role", ""))]
+                        + list(c.get("capabilities") or [])
+                        + [k for k, v in gov.items() if v is True])
         if kw in blob:
-            out.append(
-                {
-                    "id": c["id"],
-                    "name": c.get("name"),
-                    "level": (c.get("access") or {}).get("level"),
-                    "role": c.get("role"),
-                }
-            )
+            out.append(_card_brief(c))
     return out
 
 
-def summary():
-    """给 PA 决策用的简表: 谁 / 什么级别 / 能干什么 / 有多脆。"""
+def _governance_source():
+    """四权归口之面之径逐字 ＋ 印（懒引 `agent_scan` —— ⛔ 循环引）。"""
+    try:
+        from core.pa import agent_scan as _AS
+        return _AS.governance_source()
+    except Exception as e:
+        return {"面之径逐字": os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        "agent_scan.py"), "err": type(e).__name__}
+
+
+def summary(kind=None):
+    """给 PA 决策用的简表: 谁 / 什么级别 / 能干什么 / 有多脆。
+
+    `kind="seat"` ⇒ 唯**席位册**（T2-刀2.3）。**既有键与语义 ⛔ 变**（唯加 `kinds`／`seat_count`）。
+    """
+    k = (kind or "").strip()
+    if k == KIND_SEAT:
+        rows = seats()
+        return {
+            "kind": KIND_SEAT,
+            "面名": "组织席位册",
+            "别于": "GET /v9/pa/roster（能力端点册 · 源 roster.json）",
+            "count": len(rows),
+            "source": seat_roster_path(),
+            "rights": list(GOVERNANCE_RIGHTS),
+            # ★ T2-刀14 §二.7：四权之**源**（面之径逐字 ＋ 印）—— 承「面须钉」
+            "governance_source": _governance_source(),
+            "rows": [{"id": c.get("id"), "name": c.get("name"), "role": c.get("role"),
+                      "归口": (c.get("governance") or {}).get("归口"),
+                      "caps": c.get("capabilities"), "governance": c.get("governance"),
+                      "level": (c.get("access") or {}).get("level"),
+                      "scope": "本机", "approved": True} for c in rows],
+        }
     cards = load().get("cards", [])
-    return {
-        "count": len(cards),
+    # ⭐ T2-刀8 §〇（2026-10-05 · PM 令）：`kind` **真筛** —— 此前非 `seat` 之 kind 一律**静默落回全册**
+    #   ⇒ `?kind=<任意>` 皆 `count 14`（**假筛** · 假数比无面更坏）。⛔ 恒同；⛔ 以全册充筛果。
+    kinds_all = sorted({c.get("kind") for c in cards if c.get("kind")})
+    avail = kinds_all + [KIND_SEAT]
+    sel = [c for c in cards if c.get("kind") == k] if k else list(cards)
+    out = {
+        "count": len(sel),
         "by_level": {
-            lv: [c["id"] for c in cards if (c.get("access") or {}).get("level") == lv] for lv in ACCESS_LADDER
+            lv: [c["id"] for c in sel if (c.get("access") or {}).get("level") == lv] for lv in ACCESS_LADDER
         },
         "rows": [
             {
@@ -270,6 +362,21 @@ def summary():
                 "caps": c.get("capabilities"),
                 "fragility_n": len(c.get("fragility") or []),
             }
-            for c in cards
+            for c in sel
         ],
+        "kinds": {kk: len([c for c in sel if c.get("kind") == kk])
+                  for kk in sorted({c.get("kind") for c in sel if c.get("kind")})},
+        "seat_count": len(seats()),
+        "面名": "能力端点册",
+        "别于": "GET /v9/pa/seats（组织席位册 · 源 seat_roster.json · 真源 `paseo agent ls --json`）",
+        "kinds_available": avail,
+        "filter": {"面": _path(), "滤": (("kind == %r" % k) if k else "无（全册）"),
+                   "式": "逐卡等值比较（==）", "过面": len(cards), "命中": len(sel)},
     }
+    if k:
+        out["kind"] = k
+        out["verdict"] = (("筛 kind=%s ⇒ %d 张（⛔ 非全册 %d 张 ⇒ 真筛 · 承刀8 §〇）"
+                           % (k, len(sel), len(cards))) if sel else
+                          ("⛔ 无 kind=%s 之卡 ⇒ 0 张（可选：%s）"
+                           % (k, "／".join(avail))))
+    return out

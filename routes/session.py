@@ -8,6 +8,19 @@ from flask import Blueprint, jsonify, request
 bp = Blueprint("session_routes", __name__)
 
 
+def _missing(_key):
+    """必填缺失 ⇒ 400 ＋ 定位（PM-011 N11：同一键 ⛔ 不许两套码；形制 `<路由>: 缺 <键>`）。
+
+    ⭐ T2-刀8 §三（2026-10-05 · PM 裁「准办」）：**只增** `missing` ＋ `kind` 两键 ——
+      由：面之「**0 件**」与「**缺参 400**」同形而 ⛔ 可辨 ⇒ 读者误把错渲染成空（承「空 ⛔ 混 缺」）。
+      ⛔ 破既有 `400` 之形（`success:false` ＋ `error` 逐字保 · 承裁「只增键」）。
+    """
+    _rule = request.url_rule
+    _rt = (_rule.rule if _rule is not None else "?").lstrip("/")
+    return jsonify({"success": False, "error": "%s: 缺 %s" % (_rt, _key),
+                    "missing": [_key], "kind": "missing_param", "route": _rt}), 400
+
+
 @bp.route("/v9/replay/<path:session_id>", methods=["GET"])
 def v9_replay_session(session_id):
     """#6: LLM 端到端回放 — 从 SessionLog 事件日志重建完整对话(LLM 调用输入等价)。
@@ -54,7 +67,7 @@ def v9_preempt():
     _pj = request.json or {}
     _pj_sid = _pj.get("session_id", "")
     if not _pj_sid:
-        return jsonify({"success": False, "error": "缺少 session_id"}), 400
+        return _missing("session_id")
     try:
         from core.gateway.shared_state import request_preempt
 
@@ -83,7 +96,7 @@ def v9_subtask_create():
         _stc_spec = _stc_spec.get("task") or json.dumps(_stc_spec, ensure_ascii=False)
     _stc_spec = str(_stc_spec).strip()
     if not _stc_spec:
-        return jsonify({"success": False, "error": "task_spec 必填"})
+        return _missing("task_spec")
     from core.gateway.subtask_executor import SubtaskDepthError, resolve_depth, submit
 
     # 委托深度预算: 请求传父深度(depth), 子任务深度=父+1; 超 maxDepth(默认 3) 拒绝
@@ -110,11 +123,48 @@ def v9_subtask_create():
 def v9_subtask_status():
     """任务3: 查询子任务状态列表（前端卡片轮询）"""
     _sts = request.args or {}
-    _sts_uid = _sts.get("user_id", "default")
-    _sts_sid = _sts.get("session_id", "default")
+    # ⭐ PM 2026-10-04（承 技总 954 §一 · PM-011 N11）：缺键 ⛔ 静默落 default
+    #   —— 否则「缺键」与「真无件」同形 ⇒ 量具/用户误判（派活演示批即栽此）。
+    if not _sts.get("user_id"):
+        return _missing("user_id")
+    if not _sts.get("session_id"):
+        return _missing("session_id")
+    _sts_uid = _sts.get("user_id")
+    _sts_sid = _sts.get("session_id")
     from core.gateway.subtask_executor import list_subtasks
 
     return jsonify({"success": True, "subtasks": list_subtasks(_sts_uid, _sts_sid)})
+
+
+@bp.route("/v9/subtask/stop", methods=["POST"])
+def v9_subtask_stop():
+    """⭐ T2-刀8 §五：**置标志**之停止／撤回（`mode ∈ cancel|withdraw` · ⛔ 硬杀）。"""
+    _sp = request.json or {}
+    if not _sp.get("user_id"):
+        return _missing("user_id")
+    if not _sp.get("session_id"):
+        return _missing("session_id")
+    if not _sp.get("task_id"):
+        return _missing("task_id")
+    from core.gateway.subtask_executor import stop
+
+    r = stop(_sp.get("user_id"), _sp.get("session_id"), _sp.get("task_id"),
+             mode=_sp.get("mode") or "cancel", by=_sp.get("by") or "", reason=_sp.get("reason") or "")
+    return jsonify(r) if r.get("ok") else (jsonify(r), 400)
+
+
+@bp.route("/v9/subtask/resume", methods=["POST"])
+def v9_subtask_resume():
+    """⭐ T2-刀8 §五：**断点续** —— 重投 `interrupted` 件（⛔ 续无全规格者）。"""
+    _rp = request.json or {}
+    if not _rp.get("user_id"):
+        return _missing("user_id")
+    if not _rp.get("session_id"):
+        return _missing("session_id")
+    from core.gateway.subtask_executor import resume
+
+    return jsonify(resume(_rp.get("user_id"), _rp.get("session_id"),
+                          task_id=_rp.get("task_id"), model=_rp.get("model") or "deepseek-v4-flash"))
 
 
 @bp.route("/v9/goal/history", methods=["GET"])

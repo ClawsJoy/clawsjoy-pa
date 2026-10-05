@@ -10,9 +10,12 @@
 """
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
+from core.lib.port_config import gateway_base_url
+from core.pa import _proc as _proc   # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
 DEFAULT_REVIEW_RULES = [
     ("artifact", "执行结果必须有产物(文件/文本/URL), 不能空手交付"),
@@ -21,23 +24,61 @@ DEFAULT_REVIEW_RULES = [
 ]
 
 
-def make_contract(task_text):
-    """生成 TaskContract(复用 F0 内核; 失败降级最小契约)。"""
+def resolve_seat(token):
+    """席之解析（T2-刀1 ① · T2-刀24 §二 初）：收 shortId · **亦认 name** ⇒ 落 shortId。
+
+    ⭐ `shortId` ＝ **`7` 位**（如 `5c01a0f`）—— 与 `paseo agent send <shortId>` **同一口径**；
+    ⛔ 用 UUID 前 `8` 位（如 `5c01a0f1`）—— 那是**另一口径**（分词标 · ⛔ 混为一谈）。
+
+    真源 ＝ 席位册（`roster.seats()`）；⛔ 凭印象 · ⛔ 硬编。
+    认不出 ⇒ 返 `""`（⛔ 静默兜底 —— 由调用方报错拒派）。
+    """
+    t = str(token or "").strip()
+    if not t:
+        return ""
+    try:
+        from core.pa import roster as R
+        seats = R.seats()
+    except Exception:
+        return ""
+    for c in seats:
+        if t == str(c.get("id")):
+            return str(c["id"])
+    low = t.lower()
+    for c in seats:
+        if low == str(c.get("name") or "").strip().lower():
+            return str(c["id"])
+    return ""
+
+
+def make_contract(task_text, to_seat=None):
+    """生成 TaskContract(复用 F0 内核; 失败降级最小契约)。
+
+    2026-10-05（T2-刀1 ①）：增**席轴** `to_seat`（收 shortId · 亦认 name ⇒ 落 shortId）。
+    ⭐ T2-刀24 §二：`to_seat` 之**真源 ＝ `shortId`（`7` 位** · 如 `5c01a0f`）⇒ 面 ／ 件 ／ 文档 皆逐字 `7` 位；
+    UUID 前 `8` 位（`5c01a0f1`）为**另一口径** ⇒ 须分词标（⛔ 混为一谈）。
+    ⛔ 改既有键；`to_seat` 空 ⇒ ⛔ 加键（保旧形）。
+    """
     try:
         from core.gateway.task_contract import compile_contract
 
         c = compile_contract("pa_task", task_text)
         if c:
+            if to_seat:
+                c["to_seat"] = to_seat
             return c
     except Exception:
         pass
-    return {
+    c = {
         "task_id": "task_%d" % int(time.time()),
         "objective": task_text,
         "nodes": [{"type": "verify", "question": task_text}],
         "phase": "planned",
         "_fallback": True,
     }
+    if to_seat:
+        c["to_seat"] = to_seat
+    return c
 
 
 class StubExecutor:
@@ -50,14 +91,15 @@ class StubExecutor:
     def run(self, contract):
         f = self.out_dir / ("artifact_%s.txt" % contract.get("task_id", "x")[:12])
         f.write_text("PA 分派执行产物: " + str(contract.get("objective", ""))[:200], encoding="utf-8")
-        return {"ok": True, "artifact": str(f), "summary": "已产出产物文件 %s" % f.name}
+        return {"ok": True, "artifact": str(f), "summary": "已产出产物文件 %s" % f.name,
+                "stage": "executed"}
 
 
 class V9GatewayExecutor:
     """真实执行: 调 live 网关 /v9/agent/chat(独立 session), 返回末条 assistant 文本。"""
 
     def __init__(self, url=None, user_id="pa_dispatch", session_prefix="pa_dispatch"):
-        self.url = (url or os.getenv("V9_URL", "http://127.0.0.1:5002")).rstrip("/")
+        self.url = (url or os.getenv("V9_URL") or gateway_base_url()).rstrip("/")
         self.user_id = user_id
         self.session_prefix = session_prefix
 
@@ -84,9 +126,74 @@ class V9GatewayExecutor:
                 content = (doc.get("data") or {}).get("choices", [{}])[0].get("message", {}).get("content", "")
             except Exception:
                 content = str(doc)[:2000]
-            return {"ok": bool(content), "artifact": content[:8000], "summary": "V9 执行返回 %d 字" % len(content or "")}
+            return {"ok": bool(content), "artifact": content[:8000],
+                    "summary": "V9 执行返回 %d 字" % len(content or ""),
+                    "stage": ("executed" if content else "failed")}
         except Exception as e:
-            return {"ok": False, "error": str(e)[:200], "summary": "V9 调用失败"}
+            return {"ok": False, "error": str(e)[:200], "summary": "V9 调用失败",
+                    "stage": "failed"}
+
+
+# ---- 席轴之投递（T2-刀1 ③ · 2026-10-05）--------------------------------------
+# 形之真源（技术总监一手读 2026-10-05 · `D:\paseo-workspace\_tools\wake_send.py`）：
+#   powershell -NoProfile -ExecutionPolicy Bypass -File D:\npm-global\paseo.ps1 agent send <席> --prompt-file <件> --no-wait
+# ⇒ 本器**同形复用**（同一入口 · 同一 rc 语义：0 已投递 ／ 1 该刻被拒 ／ 2 用法错 ／ 3 件不存在）。
+# ⛔ 另造运输 ／ ⛔ 直连他方平台 ／ ⛔ 静默兜底。
+SEAT_PASEO_PS1 = os.getenv("PA_SEAT_PASEO_PS1", r"D:\npm-global\paseo.ps1")
+SEAT_OUTBOX = os.getenv("PA_SEAT_OUTBOX", "data/v9/pa/seat_outbox")
+SEAT_SEND_TIMEOUT = int(os.getenv("PA_SEAT_SEND_TIMEOUT", "180"))
+
+
+class SeatExecutor:
+    """把**件**投到席（⛔ 平台动作 —— upload ／ save ／ publish 恒人点）。
+
+    件先落**耐久之箱**（`data/v9/pa/seat_outbox/<task_id>.md`）再投 ⇒ **件源在 ⇒ 凭据在**。
+    投递之果只认 `paseo` 之 rc（⛔ 以「我发过」自证）；rc≠0 ⇒ `ok=False` ＋ `stage=send_failed`。
+    """
+
+    def __init__(self, to_seat, outbox=None, pasear=None, timeout=None):
+        self.to_seat = str(to_seat or "").strip()
+        self.outbox = Path(outbox or SEAT_OUTBOX)
+        self.ps1 = pasear or SEAT_PASEO_PS1
+        self.timeout = int(timeout or SEAT_SEND_TIMEOUT)
+
+    def build_piece(self, contract):
+        """件之正文（⛔ 平台动作 · 唯派件）。"""
+        return ("---\ntype: 派件\nfrom: PA（V9 · /v9/pa/dispatch）\nto_seat: %s\ntask_id: %s\nat: %s\n---\n\n"
+                "## 一 目标\n\n%s\n\n## 二 界\n\n"
+                "- 本件由 PA 派发（席轴之派）⇒ ⛔ 平台动作（upload／save／publish 恒人点）。\n"
+                "- 回执请走**既有回执面** ⭐＝ `POST /v9/pa/dispatch/receipt`\n"
+                "  `{task_id, to_seat, 果, 印, stage, note}`（⛔ 另造运输 · ⛔ 以 `paseo send` 回执 —— 那不落 registry）。\n"
+                "  四段 ＝ 已派 ⇒ 已收 ⇒ 在做 ⇒ 已收口（每段附刻 · 只进不退）。\n"
+                "- `to_seat` 之形 ＝ **shortId**（`7` 位 · 如 `5c01a0f`）；⛔ UUID 前 `8` 位（另一口径 · ⛔ 混为一谈）。\n") % (
+            self.to_seat, contract.get("task_id"), time.strftime("%Y-%m-%d %H:%M:%S"),
+            str(contract.get("objective", ""))[:4000])
+
+    def run(self, contract):
+        if not self.to_seat:
+            return {"ok": False, "error": "to_seat 空 ⇒ 拒派（⛔ 静默兜底）",
+                    "stage": "send_failed"}
+        try:
+            self.outbox.mkdir(parents=True, exist_ok=True)
+            f = self.outbox / ("%s.md" % str(contract.get("task_id") or int(time.time())))
+            f.write_text(self.build_piece(contract), encoding="utf-8")
+        except Exception as e:
+            return {"ok": False, "stage": "send_failed",
+                    "error": "件落盘失败（⛔ 静默）：%s" % type(e).__name__}
+        cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", self.ps1,
+               "agent", "send", self.to_seat, "--prompt-file", str(f), "--no-wait"]
+        try:
+            r = _proc.run_hidden(cmd, capture_output=True, timeout=self.timeout)
+        except Exception as e:
+            return {"ok": False, "artifact": str(f), "stage": "send_failed",
+                    "error": "投递未起（%s）" % type(e).__name__, "cmd": " ".join(cmd)}
+        out = ((r.stdout or b"") + (r.stderr or b"")).decode("utf-8", "replace").strip()
+        okk = (r.returncode == 0)
+        return {"ok": okk, "artifact": str(f), "rc": r.returncode,
+                "summary": "投到席 %s ⇒ rc=%s（0＝已投递 ／ 1＝该刻被拒 ／ 3＝件不存在）"
+                           % (self.to_seat, r.returncode),
+                "stage": ("sent" if okk else "send_failed"), "capture": out[:300],
+                "cmd": " ".join(cmd)}
 
 
 def review(contract, result, profile_brief="", rules=None):
@@ -199,6 +306,8 @@ def dispatch_and_review(contract, result, profile_brief="", executor=None, recor
         "reasons": verdict["reasons"],
         "result_ok": result.get("ok"),
         "artifact_head": str(result.get("artifact") or "")[:120],
+        "to_seat": contract.get("to_seat"),
+        "stage": str(result.get("stage") or "queued"),
     }
     if record is not None:
         record.add(row)

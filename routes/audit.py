@@ -8,6 +8,19 @@ from core.lib.gateway_helpers import read_agent_state
 bp = Blueprint("audit_routes", __name__)
 
 
+def _missing(_key):
+    """必填缺失 ⇒ 400 ＋ 定位（PM-011 N11：同一键 ⛔ 不许两套码；形制 `<路由>: 缺 <键>`）。
+
+    ⭐ T2-刀8 §三（2026-10-05 · PM 裁「准办」）：**只增** `missing` ＋ `kind` 两键 ——
+      由：面之「**0 件**」与「**缺参 400**」同形而 ⛔ 可辨 ⇒ 读者误把错渲染成空（承「空 ⛔ 混 缺」）。
+      ⛔ 破既有 `400` 之形（`success:false` ＋ `error` 逐字保 · 承裁「只增键」）。
+    """
+    _rule = request.url_rule
+    _rt = (_rule.rule if _rule is not None else "?").lstrip("/")
+    return jsonify({"success": False, "error": "%s: 缺 %s" % (_rt, _key),
+                    "missing": [_key], "kind": "missing_param", "route": _rt}), 400
+
+
 @bp.route("/v9/audit/escalations", methods=["GET"])
 def v9_audit_escalations():
     """越权拦截记录: GET /v9/audit/escalations?user_id=xx&session_id=xx
@@ -18,7 +31,7 @@ def v9_audit_escalations():
     _uid = _q.get("user_id", "default")
     _sid = _q.get("session_id", "")
     if not _sid:
-        return jsonify({"success": False, "error": "session_id 必填"})
+        return _missing("session_id")
     try:
         _st = read_agent_state(_uid, _sid)
         _rows = _st.get("escalations") or []
@@ -39,7 +52,7 @@ def v9_audit_tool_flow():
     _q = request.args or {}
     _sid = _q.get("session_id", "")
     if not _sid:
-        return jsonify({"success": False, "error": "session_id 必填"})
+        return _missing("session_id")
     try:
         from core.gateway.audit import read_audit_records
 
@@ -77,7 +90,7 @@ def v9_audit_approvals():
     _uid = _q.get("user_id", "default")
     _sid = _q.get("session_id", "")
     if not _sid:
-        return jsonify({"success": False, "error": "session_id 必填"})
+        return _missing("session_id")
     try:
         _st = read_agent_state(_uid, _sid)
         _rows = _st.get("approvals") or []

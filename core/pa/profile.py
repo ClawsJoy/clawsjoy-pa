@@ -159,7 +159,7 @@ class ProfileStore:
                 continue
             lines.append("【%s】" % d)
             for e in top:
-                mark = "" if e.get("status") == "confirmed" else "(提案)"
+                mark = "" if e.get("status") == "confirmed" else "(待确认)"
                 lines.append("  - %s %s[%s] (%s)" % (e["value"], mark, e.get("confidence"), e.get("date")))
         return "\n".join(lines)
 

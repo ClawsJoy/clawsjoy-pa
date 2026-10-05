@@ -8,7 +8,8 @@ import os
 from pathlib import Path
 
 from core.pa.dialog import DialogRuntime
-from core.pa.dispatch import DispatchRecord, StubExecutor, V9GatewayExecutor, dispatch_and_review, make_contract
+from core.pa.dispatch import (DispatchRecord, SeatExecutor, StubExecutor, V9GatewayExecutor,
+                              dispatch_and_review, make_contract)
 from core.pa.events import EventLog
 from core.pa.ledger import TodoStore
 from core.pa.profile import ProfileStore
@@ -81,6 +82,9 @@ class PaCore:
                     brain=p.get("brain"),
                     profile_brief=p.get("profile_brief", self.profile.chat_brief(p.get("text", ""))),
                     ledger_brief=p.get("ledger_brief", ""),
+                    # ⭐ PM 2026-10-05 22:34 §四⒝-2：源标之透传（⛔ 本层自造值 · ⛔ 覆盖后端之判）
+                    origin=p.get("origin"), grounded=p.get("grounded"),
+                    answer_source=p.get("answer_source"),
                 )
                 return {"ok": True, "dialog": r}
             if action == "dialog_context":
@@ -94,18 +98,20 @@ class PaCore:
                 return {"ok": True, "md": md}
             # ---- 分派 + 审核 ----
             if action == "dispatch":
-                contract = make_contract(p["task_text"])
+                to_seat = str(p.get("to_seat") or "").strip()
+                contract = make_contract(p["task_text"], to_seat=to_seat)
                 ex = p.get("executor")
                 if ex is None:
-                    ex = StubExecutor(str(self.artifacts_dir))
+                    ex = SeatExecutor(to_seat) if to_seat else StubExecutor(str(self.artifacts_dir))
                 result = ex.run(contract)
                 row = dispatch_and_review(
                     contract, result, profile_brief=self.profile.brief(), record=self.dispatch_rec
                 )
                 return {"ok": True, "contract": contract, "result": result, "review": row}
             if action == "dispatch_v9":
-                contract = make_contract(p["task_text"])
-                ex = V9GatewayExecutor(url=p.get("url"))
+                to_seat = str(p.get("to_seat") or "").strip()
+                contract = make_contract(p["task_text"], to_seat=to_seat)
+                ex = SeatExecutor(to_seat) if to_seat else V9GatewayExecutor(url=p.get("url"))
                 result = ex.run(contract)
                 row = dispatch_and_review(
                     contract, result, profile_brief=self.profile.brief(), record=self.dispatch_rec

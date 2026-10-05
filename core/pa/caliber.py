@@ -117,8 +117,32 @@ VISIBLE_FIELDS = (
 )
 
 
+def _store_cards():
+    """真源：外置 store（`data/v9/pa/caliber.json`）优先；无 store ⇒ 回落源码内种子 CALIBER。
+    返回 (cards, source)。store **存在但损坏 ⇒ 抛出**（fail-loud，⛔ 不静默回种子）。
+    """
+    import os
+    from pathlib import Path
+
+    p = Path(os.getenv("PA_DATA_DIR", "data/v9/pa")) / "caliber.json"
+    if not p.is_file():
+        return list(CALIBER), "seed"
+    from core.pa.caliber_store import CaliberStore
+
+    st = CaliberStore(str(p.parent))
+    return st.cards(), "store"
+
+
+def effective_cards():
+    return _store_cards()[0]
+
+
+def source():
+    return _store_cards()[1]
+
+
 def _patterns():
-    return [(c["id"], c["topic"], c["status"], c["pattern"], c["note"]) for c in CALIBER]
+    return [(c["id"], c["topic"], c["status"], c["pattern"], c["note"]) for c in effective_cards()]
 
 
 def check(pages):
@@ -144,11 +168,12 @@ def check(pages):
 
 
 def summary():
-    return [{"id": c["id"], "topic": c["topic"], "status": c["status"], "note": c["note"]} for c in CALIBER]
+    return [{"id": c["id"], "topic": c["topic"], "status": c["status"], "note": c["note"], "owner": c.get("owner"), "updated": c.get("updated"),
+                "supersedes": c.get("supersedes"), "change_count": c.get("change_count", 0)} for c in effective_cards()]
 
 
 def counts():
     s = {"confirmed": 0, "unverified": 0, "pending": 0}
-    for c in CALIBER:
+    for c in effective_cards():
         s[c["status"]] = s.get(c["status"], 0) + 1
     return s

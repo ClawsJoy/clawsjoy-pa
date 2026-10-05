@@ -12,7 +12,7 @@ import re
 import shutil
 import time
 from pathlib import Path
-from core.lib.paths import vault_root
+from core.lib.paths import check_path_len, vault_root, write_text_lf
 
 VAULT_ROOT = str(vault_root())
 
@@ -43,7 +43,7 @@ class BrainSync:
                 due = " due=%s" % it.get("due") if it.get("due") else ""
                 lines.append("- [ ] %s (id: %s kind: %s%s)" % (it.get("title"), it.get("id"), k, due))
             lines.append("")
-        path.write_text("\n".join(lines), encoding="utf-8")
+        write_text_lf(path, "\n".join(lines))
         return str(path)
 
     def parse_ledger(self, path=None):
@@ -77,6 +77,7 @@ class BrainSync:
         dest_dir = self.assets / kind
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / src.name
+        check_path_len(dest)  # 非文本写出口（附件落库）
         shutil.copy2(src, dest)
         link = "![[%s]]" % (dest.relative_to(self.vault).as_posix())
         return {"ok": True, "dest": str(dest), "link": link, "size": src.stat().st_size}
@@ -98,7 +99,7 @@ class BrainSync:
             body.append("- [ ] %s" % name)
         if not unread:
             body.append("(无未读)")
-        path.write_text("\n".join(body), encoding="utf-8")
+        write_text_lf(path, "\n".join(body))
         return len(unread)
 
     def daily_standup(self, path=None):
@@ -128,5 +129,5 @@ class BrainSync:
         lines.append("## 近 3 日")
         lines += ["- [ ] %s (id:%s due:%s)" % (i["title"], i["id"], i.get("due")) for i in soon] or ["(无)"]
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("\n".join(lines), encoding="utf-8")
+        write_text_lf(path, "\n".join(lines))
         return {"overdue": len(overdue), "today": len(today_items), "soon": len(soon)}
