@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function(){ try{ PA_FACES.hide(); 
      ① PA_GAP.todo(why) ⇒ ⒜ 未接 · 待办（M1）＝ 后端无此面 ／ 无此键 ⇒ 将来会接；
      ② PA_GAP.off(why)  ⇒ ⛔ 不接（红线）      ＝ 不会有 ⇒ ⛔ 以「未接」暗许「将来会接」＝ 软性虚诺；
      ③ PA_GAP.down(why) ⇒ 不可达              ＝ 后端此刻不在 ／ 未应答 ⇒ ⛔ ≠ 未接 · ⛔ 读成真 0。
-   ⚠ 静态壳（`pa.html` · ⭐ 唯一壳 —— 承 pm 1203 §一：副本 `web/pa_v3.html` 已于 2026-10-05 删 · TD 716bc31）⛔ 调 JS ⇒ 其 4 行静态标**逐字抄此三形**（无 JS 兜底）；
+   ⚠ 静态壳（`pa.html` · ⭐ 唯一壳 —— 承 pm 1203 §一：副本 `web/pa_v3.html` 已于 2026-10-05 删 · TD 716bc31）⛔ 调 JS ⇒ 其 3 行静态标**逐字抄此三形**（无 JS 兜底）；
      运行期由 `today.js` 之 `paSrcWrite` **认领覆盖**（双保险 · ⛔ 二说 · 承 pm 18:00 §一）。 */
 window.PA_GAP = {
   todo: function(why){ return '⒜ 未接 · 待办（M1）' + (why ? ('｜为何未接：' + why) : ''); },
