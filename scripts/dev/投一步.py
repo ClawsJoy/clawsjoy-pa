@@ -12,8 +12,9 @@ r"""投一步.py —— 件-投-醒 一步之器（落箱 ＋ 落行 ＋ 醒 · 
       --cat 报 --need X --note Y                # 默认 **演**（⛔ 落盘）
   （加 --go ⇒ 真办：落箱 ＋ 落行 ＋ 醒）
   python -X utf8 -B scripts\dev\投一步.py --self-test   # 自证（含 **反控**：醒必败 ⇒ 须返非零）
-  ⚠ 席名（2026-10-06 承 pm 1294 §三 · 并收）：CW 席之**台账名** ＝ 「CodexWindows线」（⛔ SEATS 之「V9工程师·全史席」）
-    ⇒ 二键并存 · **以台账之名为准**（投 CW 之件 ⇒ --to CodexWindows线 · 免 --to-id）。
+  ⚠ 席名（2026-10-06 承 pm 1294 §三 · 并收 ／ pm 1298 §二 · 落账归一）：CW 席之**台账名** ＝ 「CodexWindows线」
+    （⛔ SEATS 之「V9工程师·全史席」）⇒ 二键并存（**别名只作「入」** ⇒ 投 CW 之件免 --to-id）
+    ⇒ ⭐⭐ **落行须归一为台账之名**（CANON：V9工程师·全史席 ⇒ CodexWindows线）⇒ ⛔ 别名入账。
 
 退出码：0 = 三步皆成（演毕亦然）｜2 = 用法错｜3 = 草稿不在｜4 = 落箱败（BOM ／ CR ／ 件之完 ／ 箱内异）
         ｜5 = 落行败（透传其 rc）｜6 = 已落行（复合键在 ⇒ ⛔ 复落）｜7 = **醒败**｜8 = 已投（凭在 ⇒ ⛔ 复投）
@@ -46,6 +47,12 @@ SEATS = {
     # （我一手核 · 全 1,540 行：发件 384 ／ 收件 78 ／ 全册 ⛔ 见「V9工程师·全史席」）。
     # ⇒ 并收为**别名键**（**台账之名为准** ⇒ 投 CW 之件免 --to-id · ⛔ 二名致误）。
     u"CodexWindows线": "b2a5182",
+}
+
+# 2026-10-06 承 pm 1298 §二（**落账归一**）｜pm 1302 §四.2（令）：
+# 别名只作「入」⇒ **落行之 recv 须归一为台账之名**（⛔ 二名入账 ⇒ 扫 CW 之件必漏）。
+CANON = {
+    u"V9工程师·全史席": u"CodexWindows线",
 }
 
 
@@ -351,6 +358,10 @@ def selftest():
     print(u"  %s 显报含「书名 ＋ 席 ＋ 凭」 ⇒ %s" % (u"OK " if hit else u"✗ ", m))
     ok = ok and hit
 
+    print(u"[自证 5 席名归一（承 pm 1298 §二 ／ pm 1302 §四.2 · 别名 ⛔ 入账）]")
+    res(u"SEATS 二键 ⇔ 同 id（别名只作入）", SEATS.get(u"V9工程师·全史席") == SEATS.get(u"CodexWindows线"), True)
+    res(u"CANON 归一台账之名", CANON.get(u"V9工程师·全史席"), u"CodexWindows线")
+    res(u"CANON 幂等", CANON.get(u"CodexWindows线", u"CodexWindows线"), u"CodexWindows线")
     print(u"[总判] %s" % (u"PASS" if ok else u"FAIL"))
     return 0 if ok else 1
 
@@ -382,16 +393,19 @@ def main():
         print(u"[用法错] 席位「%s」⛔ 在表 ⇒ 以 --to-id 明书（rc=2）｜表：%s"
               % (a.to, u" ／ ".join(sorted(SEATS))))
         return 2
+    recv = CANON.get(a.to, a.to)
     name = a.name or os.path.basename(a.src)
     date = a.date or now_date()
     ts = a.ts or now_ts()
     dry = not a.go
     print(u"【投一步】%s ｜ 件 ＝ %s ｜ 席 ＝ %s（%s）｜ 号 ＝ %s ／ 日 ＝ %s ／ 类 ＝ %s"
           % (u"演（⛔ 落盘 · 加 --go 真办）" if dry else u"真办", name, a.to, tid, a.num, date, a.cat))
+    if recv != a.to:
+        print(u"落账之名（归一）＝ %s（别名「%s」唯作入 · ⛔ 入账 · 承 pm 1298 §二）" % (recv, a.to))
     print(u"刻（器取）＝ %s ／ 箱 ＝ %s" % (ts, XT))
     skipped = []
     for label, fn in ((u"① 落箱", lambda: step_box(a.src, name, dry=dry)),
-                      (u"② 落行", lambda: step_land(a.num, date, a.sender, a.to, name, a.cat,
+                      (u"② 落行", lambda: step_land(a.num, date, a.sender, recv, name, a.cat,
                                                      a.need, a.note, ts, dry=dry)),
                       (u"③ 醒", lambda: step_wake(name, tid, dry=dry))):
         rc, msg = fn()
