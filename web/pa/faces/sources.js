@@ -24,7 +24,7 @@ const PA_SRC_DECL = [
   {k:'local', seq:'ⓝ', n:'本机素材', avail:'部分可用',
    by:null,     /* ⭐ pm_1039 §三：本行改由 paSourceLocalBy() **动态取真源** ⇒ ⛔ 硬编目录名 */
    src:'/v9/pa/ask（grounded ／ evidence ／ searched ／ threshold ／ read_at）',
-   note:'⚠ 逐面件数取真源（/v9/pa/ask 之 scope ／ faces ／ searched）：收件箱 ／ 知识库 ／ 文件 ／ 台账 ／ 台账·信通；⭐ 本批新接：出图（检索面名 ＝ 文件·产出）／ 记忆（检索面名 ＝ 梦中月水中花）；⛔ 不接：平台（红线 · ⛔ 代操作他方平台）⇒ ⛔ 装成可用；未命中 ⇒ 回落模型'},
+   note:'⚠ 逐面件数取真源（/v9/pa/ask 之 scope ／ faces ／ searched）：收件箱 ／ 知识库 ／ 文件 ／ 台账 ／ 台账·信通；⭐ 本批新接：出图（检索面名 ＝ 文件·产出）／ 记忆（检索面名 ＝ 梦中月水中花）；' + PA_GAP.off('⛔ 代操作他方平台') + '：平台 ⇒ ⛔ 装成可用；未命中 ⇒ 回落模型'},
   {k:'model', seq:'ⓞ', n:'模型', avail:'按快照',
    by:'对话答（未命中 ／ 域外之答 ⇒ 标「模型生成 · ⛔ 非本机素材」）',
    src:'/v9/pa/dialog（chan:pa）／ /v9/agent/chat（chan:agent）；可用性源 ＝ pa/ui_state.json 之「本地在」「远端态」「远端因」',
