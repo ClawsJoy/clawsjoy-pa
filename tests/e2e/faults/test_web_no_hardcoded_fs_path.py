@@ -24,7 +24,38 @@ BANNED = [
     ("本机绝对路径", r"/home/flybo/"),
 ]
 
-TARGETS = ["web/pa.html"]
+# 拆面（承 pm 1334 §二.2）：面 ＝ 壳 ＋ 诸支（径逐字 · 取自 CW 1333 §一 之活面表 · ⛔ 通配 ／ ⛔ 手列）
+TARGETS = [
+    "web/pa.html",
+    "web/pa/boot.js",
+    "web/pa/core.js",
+    "web/pa/faces.json",
+    "web/pa/pa.css",
+    "web/pa/pa_v3.css",
+    "web/pa/ui_state.json",
+    "web/pa/测试痕_清单.json",
+    "web/pa/faces/archive.js",
+    "web/pa/faces/authz.js",
+    "web/pa/faces/caliber.js",
+    "web/pa/faces/cards.js",
+    "web/pa/faces/chat.js",
+    "web/pa/faces/collect.js",
+    "web/pa/faces/config.js",
+    "web/pa/faces/drawer.js",
+    "web/pa/faces/files.js",
+    "web/pa/faces/input.js",
+    "web/pa/faces/more.js",
+    "web/pa/faces/products.js",
+    "web/pa/faces/profile.js",
+    "web/pa/faces/selfdesc.js",
+    "web/pa/faces/send.js",
+    "web/pa/faces/session.js",
+    "web/pa/faces/shell.js",
+    "web/pa/faces/sources.js",
+    "web/pa/faces/status.js",
+    "web/pa/faces/tasks.js",
+    "web/pa/faces/today.js",
+]
 
 
 def _unescape_js(line):
