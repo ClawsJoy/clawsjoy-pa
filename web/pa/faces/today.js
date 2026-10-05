@@ -175,7 +175,7 @@ function paSrcFaceSrc(sf, name, f){
   return '源：GET /v9/pa/source_faces（按名取 ⇒ 名「' + name + '」）'
     + (f ? ('｜role ' + (f.role || '?') + ' · kind ' + (f.kind || '?')
             + '｜聚合之式：' + (f['聚合之式'] || '⚠ 后端未给 聚合之式')) : '')
-    + '｜取数刻 ' + ((sf && sf.at) ? sf.at : '⚠ 刻缺（后端未给 at ⇒ ⛔ 以屏刻充数刻 · 承 L76）')
+    + '｜取数刻 ' + PA_STAMP.fmt((sf && sf.at) ? sf.at : '⚠ 刻缺（后端未给 at ⇒ ⛔ 以屏刻充数刻 · 承 L76）')
     + ((f && f['印']) ? ('｜本面之印 ' + f['印'])
                        : ('｜面册之印（全印 · ⛔ 逐面） ' + ((sf && sf['印']) ? sf['印'] : '⚠ 印缺')))
     + '｜器之印 ' + ((sf && sf['印器']) ? sf['印器'] : '⚠ 印器缺')
@@ -232,7 +232,7 @@ async function paLoadSrcFaces(o){
     + ' · 作业 调度 ' + (cD ? cD.rows : PA_GAP.down()) + ' ／ PES ' + (o.nR === null ? PA_GAP.down() : o.nR)
     + ' · 台账 ' + books.length + ' 本' + (missAll.length ? '（⚠ 四键 ⛔ 齐）' : '')
     + ' · 记忆 ' + (o.nLine === null ? PA_GAP.down() : o.nLine + ' 行')
-    + ' · 素材面 ' + (_sf ? ('2 面（文件 ' + (_fFile ? (paSrcFaceValue(_fFile) || '缺量') : '缺') + ' ／ 出图 ' + (_fDraw ? (paSrcFaceValue(_fDraw) || '缺量') : '缺') + ' · 刻 ' + (_sf.at || '刻缺') + '）') : PA_GAP.todo())
+    + ' · 素材面 ' + (_sf ? ('2 面（文件 ' + (_fFile ? (paSrcFaceValue(_fFile) || '缺量') : '缺') + ' ／ 出图 ' + (_fDraw ? (paSrcFaceValue(_fDraw) || '缺量') : '缺') + ' · 刻 ' + PA_STAMP.fmt(_sf.at || '刻缺') + '）') : PA_GAP.todo())
     + ((_sf && _fFile && _fDraw) ? '' : (' ／ ' + (_sf ? '待办 ' : '缺 ') + (2 - ((_fFile ? 1 : 0) + (_fDraw ? 1 : 0))) + ' 面'))
     + ' ＋ ⒝ ' + PA_GAP.off() + ' 1（平台 · 红线）');
   /* ⭐ pm 19:05 令 §一：活面之数 ⇒ 同屏附「取数刻」＋逾阈显陈旧（第四态）。
