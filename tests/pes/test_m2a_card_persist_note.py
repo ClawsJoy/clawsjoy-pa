@@ -24,7 +24,12 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读）：标注表 ＝ faces/cards.js；提示行 ＝ 壳 web/pa.html；
+#   `esc` ＝ faces/session.js；`.pa-card-note` 样式 ＝ pa.css。
+PA = (ROOT / "web" / "pa.html",
+      ROOT / "web" / "pa" / "faces" / "cards.js",
+      ROOT / "web" / "pa" / "faces" / "session.js",
+      ROOT / "web" / "pa" / "pa.css")
 
 _MOD_START = "const PA_CARD_DEF = {"
 _MOD_END = "async function paWriteDecide("
@@ -34,7 +39,7 @@ _BOSS_TEXT = "ⓘ 本卡片不持久化，刷新后消失；记录见消息日�
 
 
 def _src() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _card_module() -> str:
