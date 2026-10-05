@@ -35,6 +35,17 @@ from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 
 logger = logging.getLogger(__name__)
 
+def _err_digest(resp):
+    """⭐ 零落盘（承 pm_1368 §三 令二）：远端错体 ⇒ ⛔ 原文入盘（事件 ／ 日志 皆落盘）。
+    唯「状态 ＋ 类 ＋ 长度」出 —— 原文 ⛔ 出（本机 stdout/stderr 被 logs/*.log 收 ⇒ 「屏」亦落盘）。"""
+    try:
+        _b = getattr(resp, "text", "") or ""
+    except Exception:
+        _b = ""
+    _c = _b.lstrip()[:1]
+    _k = "empty" if not _b else ("json" if _c in ("{", "[") else "text")
+    return "HTTP %s · 体 %d B · %s" % (getattr(resp, "status_code", "?"), len(_b), _k)
+
 
 # X-21（2026-09-18 拍）：本机服务探测**不得走代理**。
 # `.env` 注入 `HTTP_PROXY`（为沙箱 yt-dlp 下载有意保留）；不显式绕开时，
@@ -639,11 +650,11 @@ class LLMClient:
                                 yield line.decode("utf-8")
                         return
                     if resp.status_code >= 400:
-                        print(f"[LLM] API {resp.status_code} 响应: {resp.text[:500]}")
+                        print(f"[LLM] API 响应（体 ⛔ 落盘 · 唯摘要）: {_err_digest(resp)}")
                         _err_log = Path(__file__).resolve().parents[2] / "logs" / "api_errors.log"
                         _err_log.parent.mkdir(parents=True, exist_ok=True)
                         with open(_err_log, "a", encoding="utf-8") as _ef:
-                            _ef.write(f"[LLM] API {resp.status_code}: {resp.text[:1000]}\n")
+                            _ef.write(f"[LLM] API {_err_digest(resp)}\n")
                     result = resp.json()
                     # ★ P3（PA 自病单）：空答须报因与量（区分「内容空」与「调用失败」）
                     _ch = (result.get("choices") or [{}])[0] or {}
@@ -673,8 +684,8 @@ class LLMClient:
                     return response_text
 
                 if resp.status_code >= 400 and resp.status_code < 500 and resp.status_code != 429:
-                    raise Exception(f"API_CLIENT_ERROR: HTTP {resp.status_code}: {resp.text[:200]}")
-                last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                    raise Exception(f"API_CLIENT_ERROR: {_err_digest(resp)}")
+                last_error = _err_digest(resp)
 
             except requests.Timeout:
                 last_error = "超时"
