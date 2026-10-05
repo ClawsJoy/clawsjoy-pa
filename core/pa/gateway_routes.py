@@ -2592,23 +2592,24 @@ def register_pa_routes(app, brain=None):
     #   通道已在 core/gateway/shared_state.py（add_steer ／ drain_steer · 消费性）⇒ 本面唯「入队」。
     #   载荷 ／ 回执之字段名与形 ＝ 本 docstring（CW 候此 · 承 PM 1178 §四）。
     _STEER_MAX_TEXT = 500           # ＝ shared_state.add_steer 之硬截（str(text)[:500]）⇒ 面先拦 · ⛔ 静默截断
-    _STEER_KINDS = ("改令", "接管")  # 前端两钮（tasks.js 之 paIntervene）之意图 ⇒ 回执须载「所按何钮」
+    _STEER_KINDS = ("改令",)          # ⭐ PM 1253 §三 裁：唯「改令」（「接管」＝ 待立项 · 须先定义 · 承 PM 1230 §五）
 
     def _steer_missing(_key):
-        u"""缺参 400：形逐字承 routes/session.py 之 _missing（PM T2-刀8 §三 之 canonical）⇒ 同一键 ⛔ 两套码。"""
+        u"""缺参 400：**壳从蓝图**（`ok`）＋ **键从族**（`missing` ／ `kind` ／ `route` ＝ `session` 族之 canonical）⇒ 承 PM 1253 §二 裁（⛔ 两族混壳）。"""
         _rule = request.url_rule
         _rt = (_rule.rule if _rule is not None else "?").lstrip("/")
-        return jsonify({"success": False, "error": u"%s: 缺 %s" % (_rt, _key),
+        return jsonify({"ok": False, "error": u"%s: 缺 %s" % (_rt, _key),
                         "missing": [_key], "kind": "missing_param", "route": _rt}), 400
 
     @bp.route("/v9/pa/steer", methods=["POST"])
     def pa_steer():
         u"""POST /v9/pa/steer —— 把一条「下一步指导」入 steer 通道（**消费性**：每轮 drain 即清）。
 
-        载荷（JSON body）：`session_id`（必）／`text`（必 · ≤500 字）／`kind`（默「改令」· ∈{改令,接管}）
+        载荷（JSON body）：`session_id`（必）／`text`（必 · ≤500 字）／`kind`（默「改令」· ⭐ 唯 `{改令}`：接管 ＝ 待立项 · ⛔ 送）
           ／`user_id`（选 · 唯留痕）／`topic`（选 · 唯留痕）⇒ 缺参 400（形 ＝ routes/session.py 之 _missing）。
-        回执（200）：`success` ＋ `queued` ＋ 通道之读（`drain_semantics` ／ `inject_point`）
+        回执（200）：`ok` ＋ `queued` ＋ 通道之读（`drain_semantics` ／ `inject_point`）
           ＋ 四键同形（`at` ／ `刻之性` ／ `面之径逐字` ／ `印`）。
+        ⚠ 形（PM 1253 §二 裁）：**壳从蓝图**（`ok` ／ `err` · 本蓝图 idiom）· **键从族**（`missing` ／ `kind` ／ `route` ＝ `session` 族之 canonical · ⛔ 两族混壳）。
         ⚠ ⛔ 报 `queued_count`：通道唯 `drain_steer`（取走即清）· **无 peek** ⇒ 得数必先消费（假报「已清」）。
         ⚠ 界：`add_steer(session_id, …)` 之键**唯 `session_id`**（⛔ 含 `user_id`）⇒ 同 sid 异用户 ⛔ 隔离（照实载界）。
         """
@@ -2623,19 +2624,21 @@ def register_pa_routes(app, brain=None):
         if not text.strip():
             return _steer_missing("text")
         if len(text) > _STEER_MAX_TEXT:
-            return jsonify({"success": False,
+            return jsonify({"ok": False,
                             "error": u"v9/pa/steer: text 超限（%d ＞ %d 字）" % (len(text), _STEER_MAX_TEXT),
                             "allowed_max": _STEER_MAX_TEXT, "text_len": len(text),
                             "kind": "over_limit", "route": "v9/pa/steer"}), 400
         kind = str(data.get("kind") or "").strip() or "改令"
         if kind not in _STEER_KINDS:
-            return jsonify({"success": False, "error": u"v9/pa/steer: kind 未知：%s" % kind[:20],
+            # ⭐ PM 1253 §三：⛔ 唯 `allowed` —— 「接管」须附其由（＝ 待立项 · 须先定义）
+            _why = u"（接管 ＝ 待立项（须先定义）· 承 PM 1230 §五）" if kind == "接管" else u""
+            return jsonify({"ok": False, "error": u"v9/pa/steer: kind 未知：%s%s" % (kind[:20], _why),
                             "allowed": list(_STEER_KINDS),
                             "kind": "bad_value", "route": "v9/pa/steer"}), 400
         _SS.add_steer(sid, text)
         print(u"[STEER] POST /v9/pa/steer session=%s kind=%s len=%d" % (sid, kind, len(text)))
         return jsonify({
-            "success": True, "route": "v9/pa/steer", "channel": "steer", "queued": True,
+            "ok": True, "route": "v9/pa/steer", "channel": "steer", "queued": True,
             "session_id": sid, "text": text, "text_len": len(text), "max_text": _STEER_MAX_TEXT,
             "kind": kind, "user_id": (str(data.get("user_id") or "") or None),
             "topic": (str(data.get("topic") or "") or None),

@@ -5,8 +5,13 @@ u"""recipe —— 序②：开 `POST /v9/pa/steer` 面（core/pa/gateway_routes.
 病：通道已在 core/gateway/shared_state.py（add_steer ／ drain_steer · 消费性）· 缺者唯 HTTP 面。
 形：唯插入（numstat 之删须 0）＋ 路由清单一行；⛔ 动判据 ／ 退码 ／ `_core` ／ 他路 ／ `web/**`。
 ⛔ 通用之器在 ../safe_edit.py；本件唯「本批之字面」。
-用法：python -X utf8 -B <本件> <二|all> [--apply]   （⛔ 无 --apply ⇒ 只演）
-      python -X utf8 -B <本件> --verify            （由底回放 ／ 比对记录之「出」）
+
+⭐ 补（叠改 · 一改一底 · 承 PM 1253 之裁）：⒈ **裁一** —— 信封 ⭐ `success` ⇒ `ok`（**壳从蓝图 · 键从族**）
+  ⇒ ⛔ 动「缺参之键集」（`error` ／ `missing` ／ `kind` ／ `route` 一字 ⛔ 动）⒉ **裁二** —— `_STEER_KINDS`
+  ⭐ 收为 `{改令}`（「接管」＝ 待立项 · 须先定义）＋ 其 `400` 附其由（⛔ 唯 `allowed`）⒊ 其器之 docstring
+  同改（**辞须与机制合** —— ⛔ 留旧壳之述）。
+用法：python -X utf8 -B <本件> <二|补|all> [--apply]   （⛔ 无 --apply ⇒ 只演）
+      python -X utf8 -B <本件> --verify               （由底回放 ／ 比对记录之「出」）
 """
 import os
 import sys
@@ -85,13 +90,35 @@ _STEER_BLOCK = [
       u'  POST /v9/pa/steer            steer 通道入队(下一步指导 · 消费性: 每轮 drain 即清; 缺参 400)']),
 ])]
 
-EDITS = {"二": 二}
-ORDER = ["二"]
+补 = [(u"core/pa/gateway_routes.py · 序②之补正（PM 1253 裁一 ／ 裁二）", "core/pa/gateway_routes.py", [
+    ("sub", u'        u"""缺参 400：形逐字承 routes/session.py 之 _missing（PM T2-刀8 §三 之 canonical）⇒ 同一键 ⛔ 两套码。"""',
+            u'        u"""缺参 400：**壳从蓝图**（`ok`）＋ **键从族**（`missing` ／ `kind` ／ `route` ＝ `session` 族之 canonical）⇒ 承 PM 1253 §二 裁（⛔ 两族混壳）。"""'),
+    ("sub", u'    _STEER_KINDS = ("改令", "接管")  # 前端两钮（tasks.js 之 paIntervene）之意图 ⇒ 回执须载「所按何钮」',
+            u'    _STEER_KINDS = ("改令",)          # ⭐ PM 1253 §三 裁：唯「改令」（「接管」＝ 待立项 · 须先定义 · 承 PM 1230 §五）'),
+    ("sub", u'／`kind`（默「改令」· ∈{改令,接管}）',
+            u'／`kind`（默「改令」· ⭐ 唯 `{改令}`：接管 ＝ 待立项 · ⛔ 送）'),
+    ("sub", u'回执（200）：`success` ＋ `queued`',
+            u'回执（200）：`ok` ＋ `queued`'),
+    ("sub", u'          ＋ 四键同形（`at` ／ `刻之性` ／ `面之径逐字` ／ `印`）。\n        ⚠ ⛔ 报 `queued_count`',
+            u'          ＋ 四键同形（`at` ／ `刻之性` ／ `面之径逐字` ／ `印`）。\n        ⚠ 形（PM 1253 §二 裁）：**壳从蓝图**（`ok` ／ `err` · 本蓝图 idiom）· **键从族**（`missing` ／ `kind` ／ `route` ＝ `session` 族之 canonical · ⛔ 两族混壳）。\n        ⚠ ⛔ 报 `queued_count`'),
+    ("sub", u'        return jsonify({"success": False, "error": u"%s: 缺 %s" % (_rt, _key),',
+            u'        return jsonify({"ok": False, "error": u"%s: 缺 %s" % (_rt, _key),'),
+    ("sub", u'            return jsonify({"success": False,\n                            "error": u"v9/pa/steer: text 超限',
+            u'            return jsonify({"ok": False,\n                            "error": u"v9/pa/steer: text 超限'),
+    ("sub", u'            return jsonify({"success": False, "error": u"v9/pa/steer: kind 未知：%s" % kind[:20],\n                            "allowed": list(_STEER_KINDS),\n                            "kind": "bad_value", "route": "v9/pa/steer"}), 400',
+            u'            # ⭐ PM 1253 §三：⛔ 唯 `allowed` —— 「接管」须附其由（＝ 待立项 · 须先定义）\n            _why = u"（接管 ＝ 待立项（须先定义）· 承 PM 1230 §五）" if kind == "接管" else u""\n            return jsonify({"ok": False, "error": u"v9/pa/steer: kind 未知：%s%s" % (kind[:20], _why),\n                            "allowed": list(_STEER_KINDS),\n                            "kind": "bad_value", "route": "v9/pa/steer"}), 400'),
+    ("sub", u'            "success": True, "route": "v9/pa/steer", "channel": "steer", "queued": True,',
+            u'            "ok": True, "route": "v9/pa/steer", "channel": "steer", "queued": True,'),
+])]
+
+EDITS = {"二": 二, "补": 补}
+ORDER = ["二", "补"]
 
 # 何批之改 ⇒ 用何器之印（底 ⇒ 出 · 供 --verify 由底回放）
 BASES = [
     ("二", 0, "core/pa/gateway_routes.py", "4f2b0a4e661157d0", "98a350b4a20b055b"),
+    ("补", 0, "core/pa/gateway_routes.py", "98a350b4a20b055b", "6b8c21c9b09fbfaf"),
 ]
 
 if __name__ == "__main__":
-    raise SystemExit(S.cli(EDITS, ORDER, bases=BASES, title=u"序② · 开 POST /v9/pa/steer 面（一改一底）"))
+    raise SystemExit(S.cli(EDITS, ORDER, bases=BASES, title=u"序② · 开 POST /v9/pa/steer 面 ＋ 补正（一改一底）"))
