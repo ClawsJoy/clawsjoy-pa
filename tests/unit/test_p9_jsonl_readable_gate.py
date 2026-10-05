@@ -32,7 +32,8 @@ sys.path.insert(0, str(ROOT))
 
 from core.pa.gateway_routes import _jsonl_lines, _lines_delta  # noqa: E402
 
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径）：P9 判据块之家 ＝ web/pa/faces/send.js
+PA = ROOT / "web" / "pa" / "faces" / "send.js"
 GR = ROOT / "core" / "pa" / "gateway_routes.py"
 SCRATCH = ROOT / "data" / "tmp" / "_p9_jsonl_readable"
 
@@ -372,4 +373,3 @@ def test_turn_route_survives_locked_session_file():
         "读不到却报了数字（0 会被读成「是空的」）"
     assert j["recorded"] is False, "读数不可得竟报 recorded=true ⇒ 假绿"
     assert j["session_error"], "会话写腿失败没在回执里留痕（被吞掉了）"
-
