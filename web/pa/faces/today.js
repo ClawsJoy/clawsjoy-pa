@@ -244,6 +244,10 @@ async function paLoadSrcFaces(o){
       else _lMiss = true;
     });
     PA_STALE.mark(document.getElementById('srcRowChat'), null, '会话（源 GET /v9/pa/threads · 后端未给取数刻）');
+    /* ⭐ pm 1346 §二.2（枚举同族）：素材**二面**之取数刻（`sf.at`）已上屏（源行 · `paSrcFaceSrc`）
+       ⇒ 同族 ⇒ 须标（旧唯五 `srcRow*` ＋ 三 `*Src` 有标 ⇒ 此二行漏 · ⛔ 只补「#paUiStateRow」一处）。 */
+    PA_STALE.mark(document.getElementById('srcRowFile'), (_sf && _sf.at) ? _sf.at : null, '素材面·文件（GET /v9/pa/source_faces）');
+    PA_STALE.mark(document.getElementById('srcRowDraw'), (_sf && _sf.at) ? _sf.at : null, '素材面·出图（GET /v9/pa/source_faces）');
     PA_STALE.mark(document.getElementById('srcRowLedger'), _lMiss ? null : _lAt, '台账（机账 · 三本之最旧取数刻）');
     PA_STALE.mark(document.getElementById('srcRowDispatch'), (o.d && o.d.at) ? o.d.at : null, '作业（调度件 · GET /v9/pa/dispatch/history）');
     PA_STALE.mark(document.getElementById('srcRowRuns'), (o.runs && o.runs.generated_at) ? o.runs.generated_at : null, '作业（PES 运行 · GET /v9/pes/runs）');
@@ -369,8 +373,13 @@ async function paLoadToday(){
   }
   /* ⭐ pm_刀16p §二.1：「待裁」之**两源须 ≡** —— ① `GET /v9/pa/profile` 之 `status=proposed`（nProp）
      ② `GET /v9/pa/context` 之 `counts.pending`（nPendCtx）｜两源 ⛔ 等 ⇒ **显红**（⛔ 取其一掩之 · 承 pm_086）。 */
-  const nPendCtx = (ctx && ctx.counts && typeof ctx.counts.pending === 'number') ? ctx.counts.pending : null;
+  /* ⭐ pm 1346 §二.1：**「后端未应答」⟷「应答在 · 唯键不在」须分形** —— 承 core.js:65「回退支」＝不可达之**特形**
+     ⇒ 其文须与「无此面」分形（⛔ 同形 ⇒ 读方必误）；旧守 `pendOk` 一括二形 ⇒ 同支出二辞（此处「不可达」⟷ 源行「回退支」＝二说）。
+     据须**可判**：`ctx` 之在否 ⇔ `counts.pending` 之键之在否。 */
+  const ctxOk = !!ctx;
+  const nPendCtx = (ctxOk && ctx.counts && typeof ctx.counts.pending === 'number') ? ctx.counts.pending : null;
   const pendOk = (nPendCtx !== null);
+  const pendGap = pendOk ? null : (ctxOk ? PA_GAP.fallback('context.counts.pending') : PA_GAP.down('后端未应答'));
   const statOk = (nConf !== null);
   const xBad = (statOk && (nConf !== psplit.fact.length || nProp !== psplit.prop.length))
             || (statOk && pendOk && nPendCtx !== nProp);
@@ -381,14 +390,14 @@ async function paLoadToday(){
        + ' · 面内派生（brief 文）：无「(提案)」标 ' + psplit.fact.length + ' 行 ／ 带标 ' + psplit.prop.length + ' 行'
        + (xBad ? ' ⚠ 两源 ⛔ 齐（承 pm_刀22p：⛔ 当「已定」）' : '')
        + ' · 待裁之两源：profile ' + (statOk ? (nProp + ' 条') : PA_GAP.down())
-       + ' ⟷ context.counts.pending ' + (pendOk ? (nPendCtx + ' 条') : PA_GAP.down())
+       + ' ⟷ context.counts.pending ' + (pendOk ? (nPendCtx + ' 条') : pendGap)
        + ((statOk && pendOk) ? (nPendCtx === nProp ? ' ≡' : ' ⚠ ⛔ 齐（显红）') : ' ⚠ 缺一源')
        + ' · 单例（本机 1 个客户）')
     : '未知（后端未应答 ／ 无读数）');
   paV3Txt('paTodayProfileSrc', '源：GET /v9/pa/context（brief）｜已定 ／ 待裁 之真源：GET /v9/pa/profile（字段 status · '
     + (statOk ? ('实 entries ' + nEnt + ' ⇒ confirmed ' + nConf + ' ／ proposed ' + nProp + ' ／ revised ' + nRev) : '**' + PA_GAP.down('后端未应答') + '**')
     + '）｜⛔ 不以「行数 − 节数」自算充之（承 pm_刀10）｜待裁之第二源：GET /v9/pa/context 之 counts.pending（'
-    + (pendOk ? (nPendCtx + ' 条') : '**' + PA_GAP.fallback('context.counts.pending') + '**')
+    + (pendOk ? (nPendCtx + ' 条') : '**' + pendGap + '**')
     + '）｜两源不等 ⇒ 显红（承 pm_刀16p §二.1）｜画像件 '
     + ((pmeta && pmeta.exists) ? (String(pmeta.path || '') + '（sha16 ' + String(pmeta.sha16 || '未知') + '）') : '未知（GET /v9/pa/build 未应答）')
     + ' ｜ 采样刻 ' + (pstamp || '未知（GET /v9/pa/build 未应答）')
@@ -407,6 +416,8 @@ async function paLoadToday(){
   paV3Txt('paTodayPendingSrc',
     '源：GET /v9/audit/approvals（session_id=' + curSession() + '）｜GET /v9/pes/runs'
     + (runs && runs.generated_at ? ('（**数之刻** ' + runs.generated_at + '）') : '（⚠ 后端未给 generated_at ⇒ 刻缺 · ⛔ 以屏刻充数刻）'));
+  /* ⭐ pm 1346 §二.2（枚举同族）：本行亦持后端取数刻（`runs.generated_at`）而上屏（上行「数之刻」）⇒ 同族 ⇒ 须标。 */
+  if(window.PA_STALE){ PA_STALE.mark(document.getElementById('paTodayPendingSrc'), (runs && runs.generated_at) ? runs.generated_at : null, '待你裁（源 GET /v9/pes/runs）'); PA_STALE.tick(); }
   paV3Txt('srcRuns', (nR === null) ? PA_GAP.down() : (nR + ' 件'));
 
   /* ③ 昨夜整合：无真源 ⇒ 明说未接（⛔ 编） */
