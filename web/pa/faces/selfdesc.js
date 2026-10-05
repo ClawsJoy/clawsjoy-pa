@@ -1275,7 +1275,7 @@ async function paSelfCompose(key, pre){
     U.push('· 会话面 ' + (nThr === null ? PA_GAP.down('无读数') : nThr + ' 条') + ' · 作业面 ' + (nRun === null ? PA_GAP.down('无读数') : nRun + ' 件') + ' · 记忆自身 ' + (nL === null ? PA_GAP.down() : nL + ' 行'));
     U.push('· 界面快照：采样刻 ' + (ui && ui['刻'] ? ui['刻'] : '未知') + '（约每小时一轮）');
     U.push('· 权限档 ' + (pm && pm.level ? pm.level : '未知') + ' · 工具流水 ' + (fl ? (fl.nTask + ' 任务 ／ ' + fl.tools.length + ' 工具') : PA_GAP.down()));
-    U.push('尚未接入 ' + paSelfCount(sf) + '：');
+    U.push('未接 ' + paSelfCount(sf) + '：');
     U.push('· 画像素材面（左栏「来源面」· ⛔ 检索面）' + PA_GAP.todo() + '：' + (sf.miss.length ? sf.miss.join(' ／ ') : '（无）'));
     U.push('· ⭐ ⒝ ⛔ 不接（红线）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
     U.push('· ⚠ 不可达（后端此刻不在）：' + (sf.unreach.length ? sf.unreach.join(' ／ ') : '（无）'));
@@ -1338,7 +1338,7 @@ async function paSelfCompose(key, pre){
     const sf = paSelfSrcFaces();
     U.push('权限与边界（五层 · 如实）');
     paSelfPermRows().forEach(function(r){ U.push(r.n + ' ' + r.k + '：' + r.v); });
-    U.push('已接 ' + sf.read.length + ' 面 ／ 尚未接入 ' + sf.miss.length + ' 面 ／ ⛔ 不接（红线）' + sf.off.length + ' 面（＝画像素材面 · 与左栏「来源面」同源 · ⛔ 检索面）：');
+    U.push('已接 ' + sf.read.length + ' 面 ／ 未接 ' + sf.miss.length + ' 面 ／ ⛔ 不接（红线）' + sf.off.length + ' 面（＝画像素材面 · 与左栏「来源面」同源 · ⛔ 检索面）：');
     U.push('· 已接：' + (sf.read.length ? sf.read.join(' ／ ') : '（无）'));
     U.push('· ' + PA_GAP.todo() + '：' + (sf.miss.length ? sf.miss.join(' ／ ') : '（无）'));
     U.push('· ⭐ ⒝ ⛔ 不接（红线）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
