@@ -29,7 +29,8 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径）：P9 判据块之家 ＝ web/pa/faces/send.js
+PA = ROOT / "web" / "pa" / "faces" / "send.js"
 OLD_PA = ROOT / ".rollback_codex" / "pa.html.before_p9_20260929_0900"
 SCRATCH = ROOT / "data" / "tmp" / "_p9_bug1_negative"
 
