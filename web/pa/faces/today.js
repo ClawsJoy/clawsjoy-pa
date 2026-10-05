@@ -196,12 +196,12 @@ async function paLoadSrcFaces(o){
   const _fDraw = paSrcFaceOf(_sf, '出图');
   paSrcWrite('srcRowFile', '📄 文件',
     _sf ? (paSrcFaceValue(_fFile) || '（后端应答无 量 ⇒ 照实缺）')
-        : PA_GAP.todo('读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实）'),
+        : PA_GAP.down('读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实）'),
     paSrcFaceSrc(_sf, '文件', _fFile),
     !!(_sf && !_fFile));
   paSrcWrite('srcRowDraw', '🎨 出图',
     _sf ? (paSrcFaceValue(_fDraw) || '（后端应答无 量 ⇒ 照实缺）')
-        : PA_GAP.todo('读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实）'),
+        : PA_GAP.down('读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实）'),
     paSrcFaceSrc(_sf, '出图', _fDraw),
     !!(_sf && !_fDraw));
   /* ② 作业轴：两名分列（⛔ 一词盖两义） */
