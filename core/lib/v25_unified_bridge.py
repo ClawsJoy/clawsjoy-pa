@@ -14,6 +14,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 # 导入 Redis 管理器
 try:
     from core.lib.redis_manager import redis_manager
@@ -37,7 +41,7 @@ class V25UnifiedBridge:
         self._recommender = None
         
         # Redis 连接状态
-        self._redis_enabled = redis_manager is not None
+        self._redis_enabled = bool(redis_manager is not None and getattr(redis_manager, "enabled", False))
         
         # 本地内存缓存（作为 Redis 不可用时的降级）
         self._local_memory = {}
@@ -115,6 +119,7 @@ class V25UnifiedBridge:
         except Exception as e:
             print(f"   ⚠️ DecisionEvaluator 加载失败: {e}")
             self._evaluator = None
+            logger.warning("[V25_BRIDGE] DecisionEvaluator 加载失败 ⇒ 降级为 None（⛔ 静默降级）: %s", e)
     
     def _init_recommender(self):
         """初始化能力推荐器"""

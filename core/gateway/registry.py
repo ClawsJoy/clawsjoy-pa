@@ -50,7 +50,7 @@ def _init_registries():
             _total += len(items)
             logger.info(f"[REGISTRY] {_yaml_path} \u2192 {len(items)} \u6761 {_entity_type} \u5df2\u5165\u5e93")
         except Exception as e:
-            logger.info(f"[REGISTRY] {_yaml_path} \u5165\u5e93\u5931\u8d25: {e}")
+            logger.warning(f"[REGISTRY] {_yaml_path} \u5165\u5e93\u5931\u8d25: {e}")
     logger.info(f"[REGISTRY] \u603b\u8ba1\u5165\u5e93 {_total} \u6761\u6ce8\u518c\u8868\u8bb0\u5f55")
     # 扫描 config/orchestration/templates.yaml 入库 SAG（plan_template：拆解模板库积累）
     _template_yaml = "config/orchestration/templates.yaml"
@@ -70,10 +70,11 @@ def _init_registries():
             _tmpl_total += 1
         logger.info("[REGISTRY] {} -> {} \u6761 plan_template \u5df2\u5165\u5e93".format(_template_yaml, _tmpl_total))
     except Exception as e:
-        logger.info("[REGISTRY] {} \u5165\u5e93\u5931\u8d25: {}".format(_template_yaml, e))
+        logger.warning("[REGISTRY] {} \u5165\u5e93\u5931\u8d25: {}".format(_template_yaml, e))
     # 扫描 engine/ 下 Python 模块入库 SAG（project_id=default，与 search_with_hyperedges 默认查询一致）
     _engine_dir = "engine"
     _engine_total = 0
+    _engine_failed = 0  # ⭐ 失败单列（老板 2026-10-03 裁 · ③）：⛔ 混进成功数
     try:
         for _root, _dirs, _files in os.walk(_engine_dir):
             for _fname in sorted(_files):
@@ -86,10 +87,12 @@ def _init_registries():
                     extractor.extract_and_upsert(_fpath, _content, project_id="default")
                     _engine_total += 1
                 except Exception as _e:
-                    logger.info(f"[ENGINE_SAG] {_fpath} 入库失败: {_e}")
-        logger.info(f"[ENGINE_SAG] engine/ 共入库 {_engine_total} 个 Python 模块")
+                    _engine_failed += 1
+                    logger.warning(f"[ENGINE_SAG] {_fpath} 入库失败: {_e}")
+        logger.info(f"[ENGINE_SAG] engine/ 共入库 {_engine_total} 个 Python 模块（失败 {_engine_failed}）")
     except Exception as _e:
-        logger.info(f"[ENGINE_SAG] 扫描 engine/ 失败: {_e}")
+        _engine_failed += 1
+        logger.warning(f"[ENGINE_SAG] 扫描 engine/ 失败: {_e}（成功 {_engine_total} · 失败 {_engine_failed}）")
     # 扫描 tasks.json 任务定义
     _task_json_paths = [
         "config/tasks.json",
@@ -138,7 +141,7 @@ def _init_registries():
                 _kw_total += 1
         logger.info(f"[REGISTRY] {_keyword_yaml} \u2192 {_kw_total} \u6761 keyword \u5df2\u5165\u5e93")
     except Exception as e:
-        logger.info(f"[REGISTRY] {_keyword_yaml} \u5165\u5e93\u5931\u8d25: {e}")
+        logger.warning(f"[REGISTRY] {_keyword_yaml} \u5165\u5e93\u5931\u8d25: {e}")
     # 预加载精准投喂配置到缓存
     # Agent 启动自检：标记硬编码旧任务脚本为 EXPIRED
     _legacy_scripts = [
@@ -179,11 +182,12 @@ def _init_registries():
         logger.info(f"[SELF_CHECK] plan_legacy_ 已存在 ({_existing[0].stem})，跳过创建")
     _init_precision_feed_cache()
     # #87 dependency_graph.json → SAG（幂等：upsert_entity ON CONFLICT DO UPDATE）
+    _edge_total = 0
+    _edge_failed = 0
     try:
         _graph_file = Path("core/lib/dependency_graph.json")
         if _graph_file.exists():
             _graph = json.loads(_graph_file.read_text(encoding="utf-8"))
-            _edge_total = 0
             for _src, _imps in (_graph or {}).items():
                 for _imp in list(dict.fromkeys(_imps or []))[:30]:
                     extractor.upsert_entity({
@@ -193,9 +197,10 @@ def _init_registries():
                         "file_path": f"core/lib/{_src}",
                     })
                     _edge_total += 1
-            logger.info(f"[REGISTRY] dependency_graph.json → {_edge_total} 条 dependency_edge 已入库")
+            logger.info(f"[REGISTRY] dependency_graph.json → {_edge_total} 条 dependency_edge 已入库（失败 {_edge_failed}）")
     except Exception as e:
-        logger.info(f"[REGISTRY] dependency_graph.json 入库失败: {e}")
+        _edge_failed += 1
+        logger.warning(f"[REGISTRY] dependency_graph.json 入库失败: {e}（成功 {_edge_total} 条 · 失败 {_edge_failed}）")
     _load_sag_index_cache()
 
 
@@ -228,7 +233,7 @@ def _load_sag_index_cache():
         _sag_index_cache = _cache
         logger.info(f"[SAG_INDEX] 预加载 {len(_sag_index_cache)} 条 code_entities 到内存")
     except Exception as e:
-        logger.info(f"[SAG_INDEX] 预加载失败: {e}")
+        logger.warning(f"[SAG_INDEX] 预加载失败: {e}")
         _sag_index_cache = {}
 
 

@@ -11,6 +11,8 @@ from core.lib.unified_config import unified_config
 """监控整合器 - 整合旁路监控和健康检查"""
 
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
@@ -77,7 +79,7 @@ class MonitoringIntegration:
         """触发自愈"""
         try:
             # 尝试调用自愈技能
-            result = subprocess.run(
+            result = _proc.run_hidden(
                 [
                     "curl",
                     "-s",

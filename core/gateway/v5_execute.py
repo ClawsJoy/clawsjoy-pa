@@ -14,6 +14,7 @@ from core.gateway.execute_agent_task import _execute_agent_task
 from core.gateway.quota_manager import _check_discuss_token_budget
 from core.lib.gateway_helpers import cleanup_task_context
 from core.lib.v8.ledger import ledger
+from core.lib.port_config import gateway_base_url
 
 logger = logging.getLogger(__name__)
 
@@ -356,7 +357,7 @@ def v5_execute_handler():
             msg = f"**{v['title']}**\n{v['channel']} | {v['url']}"
             try:
                 r = _r.post(
-                    "http://localhost:5002/v8/discord/notify",
+                    gateway_base_url() + "/v8/discord/notify",
                     json={"channel_id": channel_id, "message": msg, "username": "YouTube"},
                     timeout=5,
                 )
@@ -370,7 +371,7 @@ def v5_execute_handler():
             import requests as _r
 
             _r.post(
-                "http://localhost:5002/v8/discord/notify",
+                gateway_base_url() + "/v8/discord/notify",
                 json={"channel_id": channel_id, "message": proactive, "username": "ClawsJoy"},
                 timeout=5,
             )

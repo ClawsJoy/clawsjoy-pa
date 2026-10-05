@@ -12,6 +12,8 @@ from core.lib.unified_config import unified_config
 import json
 import subprocess
 
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
+
 from core.lib.memory_simple import memory
 
 
@@ -22,7 +24,7 @@ class VideoPlanner:
     def create_plan(self, topic, segments):
         """调用 video-director 生成分镜规划"""
         try:
-            result = subprocess.run(
+            result = _proc.run_hidden(
                 [
                     "node",
                     f"{self.skill_path}/scripts/plan.js",

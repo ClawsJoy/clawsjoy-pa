@@ -8,7 +8,11 @@
 #   ② cu_learning 的 persist_sop（直调 write_vault_note，绕过 ①）
 #   ③ execute_command（core/gateway/security.py 的 _SYS_ESCAPE_PATTERNS 不含 /mnt，不拦）
 # 只在一条上加规矩必漏另两条 → 判据放在工具执行的统一入口 _run_item。
-_VAULT_MARKERS = ("/mnt/d/Obsidian", "Obsidian/ClawsJoy", "/mnt/d/obsidian")
+# 2026-09-28(成对改): 路径指纹改引**唯一真源** core.lib.paths.vault_markers()
+# （此前本文件写死三个串 ⇒ 脑根一改，本条判据在场却打错对象）。同名常量保留 = 兼容既有断言。
+from core.lib.paths import contains_vault_marker, vault_markers
+
+_VAULT_MARKERS = vault_markers()
 _OBS_WRITE_ACTIONS = ("write_note", "update_sop", "append_pitfall", "write_draft", "update_draft")
 _WRITE_SIGNALS = (">>", ">", "tee ", "cp ", "mv ", "rm ", "mkdir ", "touch ", "truncate ", "sed -i", "dd ", "open(")
 
@@ -30,7 +34,9 @@ def _is_vault_write(tool, args):
             return True, "cu_learning.persist_sop"
     if t in ("execute_command", "run_command", "shell"):
         _cmd = str(a.get("command") or "")
-        if not (any(m in _cmd for m in _VAULT_MARKERS) or "Obsidian" in _cmd):
+        # 保守兜底「Obsidian」字面**保留**（只可收紧不可放宽）：命令串出现该词即按 vault 写
+        # 处理，比精确判据宽 —— 宁可多拦。⛔ 不得据此省掉 contains_vault_marker()。
+        if not (contains_vault_marker(_cmd) or "Obsidian" in _cmd):
             return False, ""
         # 收紧（2026-09-13，修我自己的误伤）：此前只要命令串里出现 vault 路径就判写 ->
         # grep/cat/ls 这类读也被当成写，续跑期 PA 连读 vault 自证都做不了。
@@ -727,7 +733,10 @@ def _pending_card_view(_pw):
     try:
         from core.pes.authorization import HoldQueue as _HQ_pcv
 
-        _view["revoke_window"] = _HQ_pcv().visibility(str(_view.get("id") or ""))
+        _vw = _HQ_pcv().visibility(str(_view.get("id") or ""))
+        # ⭐ T2-刀26 §二（丁 · PM 拍）：唯「悬置中」（`external-pending`）方呈窗 ——
+        #   已批 ／ 已拒 ／ 已释（`external-final` ／ `revoked`）⇒ ⛔ 再显（免「假窗口」）。
+        _view["revoke_window"] = _vw if _vw.get("state") == "external-pending" else {"show": False}
     except Exception:
         _view["revoke_window"] = {"show": False}
     return _view
@@ -800,6 +809,22 @@ def _run_approval_gate(
                 for _i in (_pending_writes[session_id].get("items", []) if _is_batch else [_pending_writes[session_id]])
             )
             print(f"[WRITE_GATE] {'批量' if _is_batch else '单'}写待确认 x{_wp_count}: {_wp_paths[:160]}")
+            # ⭐ T2-刀26 §二（PM 拍 · 丁「可撒」）：写审批**悬置即入 `HoldQueue`** ⇒
+            #   `_pending_card_view` 之 `revoke_window` 始 `{"show": True, "seconds_left": N}`
+            #   （旧：产品侧 0 调用点 ⇒ 恒 `{"show": False}` ⇒「撤销窗口」形同虚设）。
+            #   ⛔ 阻塞：唯**记**（窗口 ＝ 同一 `_PENDING_TTL` ⇒ 与 `expires_in_s` 同源）；⛔ 硬杀。
+            try:
+                import os as _os_h
+                from core.gateway.write_gate import _PENDING_TTL as _TTL_h
+                from core.pes.authorization import HoldQueue as _HQ_h
+
+                _hid = str(_pending_writes[session_id].get("id") or "")
+                _hw = int(_os_h.environ.get("PA_WRITE_HOLD_S", "0") or 0) or int(_TTL_h)
+                if _hid and _hw > 0:
+                    _HQ_h().hold(_hid, "write_file", _hw,
+                                 {"session_id": session_id, "path": _wp_paths[:120]})
+            except Exception:
+                pass
             for _pi in _pending_writes[session_id].get("items", []) if _is_batch else [_pending_writes[session_id]]:
                 _ptool = _pi.get("tool", _bfn or "write_file")
                 _ppath = _pi.get("path") or str(_pi.get("command", ""))[:120]

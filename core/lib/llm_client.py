@@ -2,6 +2,7 @@
 """统一LLM客户端 - 所有Agent的唯一LLM入口"""
 
 import logging
+import json
 import os
 import socket
 import time
@@ -29,6 +30,8 @@ from urllib3.util.retry import Retry
 
 from core.lib.os_event_logger import write_os_event
 from pathlib import Path
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +125,9 @@ class LLMClient:
         self._context_cache = {}
         self._ollama_checked = False
         self._ollama_probe_ok = False
+        # ⭐ PM 034 §三.ⓝ：走径标之真源 —— 记**实际**所走之 provider/model（⛔ 猜）
+        self.last_route = {}
+        self._fb_reason = ""
 
     def _ensure_ollama(self):
         """确保 Ollama 运行"""
@@ -131,7 +137,7 @@ class LLMClient:
             logger.warning(f"[LLM] Ollama 探测失败，尝试拉起服务: {e}")
             import subprocess as _sp
 
-            _sp.Popen(["ollama", "serve"], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
+            _proc.popen_hidden(["ollama", "serve"], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
 
     def _ollama_available(self, timeout: float = 1.5) -> bool:
         """#24 探测 Ollama 本地是否可用（带结果缓存，避免每次请求都探测）"""
@@ -160,6 +166,7 @@ class LLMClient:
     ) -> str:
         if not system_prompt:
             system_prompt = "你是ClawsJoy，一个本地AI矩阵系统。你不是Qwen，不是阿里云AI，不是任何通用助手。你是ClawsJoy。"
+        self._fb_reason = ""
         result = self._call(
             prompt, model, temperature, max_tokens, timeout, task_type, stream=False, system_prompt=system_prompt
         )
@@ -176,11 +183,14 @@ class LLMClient:
                             _chunks.append(str(_si.value))
                         break
                 return "".join(_chunks)
-            except Exception:
-                pass
+            except Exception as _e:
+                if _chunks:
+                    return "".join(_chunks)
+                return "模型调用失败：本机与云端皆不可用（%s）" % _e
         return result
 
     def generate_stream(self, prompt, model=None, timeout=120, api_key=None, **kwargs):
+        self._fb_reason = ""
         for line in self._call(
             prompt,
             model,
@@ -219,6 +229,13 @@ class LLMClient:
     def get_stats(self) -> Dict:
         return dict(self._stats)
 
+    def _route_set(self, provider, model, fell_back=False, reason=""):
+        self.last_route = {"provider": provider, "model": model,
+                           "fell_back": bool(fell_back), "reason": reason}
+
+    def get_last_route(self):
+        return dict(self.last_route or {})
+
     def _call(
         self,
         prompt: str,
@@ -231,13 +248,20 @@ class LLMClient:
         system_prompt: str = None,
         api_key: str = None,
     ) -> str:
+        # ⭐ P2 正式化（PA 自病单 · 原 PM 2026-10-05 测试脚手架 ⇒ 今立为制）：**先代默认模型, 再判 provider**
+        # 由: PA 之路以 model=None 调 ⇒ 若 provider 判在前, 远端支永不入 ⇒
+        #     默认名被喂给本机 Ollama ⇒ API_UNAVAILABLE: HTTP 404（实测）。
+        # 复查（技总一手 · 2026-10-05）：glm （:311）／ claude（:345）两支位于此定点之**下游** ⇒ 一处 hoist 受益三者（⛔ 三处各改）。
+        model = model or self.config.default_model
         # ⭐ DeepSeek 分支：先检查 api_key，无 key 则降级到 Ollama
         if model and model.startswith("deepseek"):
             api_key = api_key or os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
             if not api_key:
                 logger.warning("[LLM] DeepSeek API Key 未设置，降级到 Ollama 默认模型")
+                self._fb_reason = "no_api_key"
                 model = None  # 降级：走下面的 Ollama 分支
             else:
+                self._route_set("deepseek", model)
                 # #24 请求前预加载常用上下文到缓存，减少首Token等待
                 self._preload_context_cache(system_prompt, task_type)
                 try:
@@ -252,28 +276,8 @@ class LLMClient:
                         api_key=api_key,
                     )
                     if stream:
-                        # #24 首Token优先：若 Ollama 本地可用，先由 Ollama 快速产出首段
-                        if self._ollama_available():
-                            try:
-                                fast_gen = self._call(
-                                    prompt,
-                                    self.config.default_model,
-                                    temperature,
-                                    max_tokens,
-                                    timeout,
-                                    task_type,
-                                    stream=True,
-                                    system_prompt=system_prompt,
-                                )
-                                first = next(fast_gen, None)
-                                if first:
-                                    yield first
-                                    # DeepSeek 补充后续内容
-                                    for chunk in gen:
-                                        yield chunk
-                                    return
-                            except Exception as e:
-                                logger.warning(f"[LLM] Ollama 首Token快速响应失败，回退 DeepSeek 流式: {e}")
+                        # ★ §二.3 裁（PM 2026-10-05 · 拆混路）：云端流式 ⛔ 掺本机首 token
+                        # 由：首 token 本机 ／ 后续云端 ⇒ 答体两模型混成 ⇒ 走径标必假 ⇒ 路径须唯一可归
                         yield from gen
                         return
                     try:
@@ -282,7 +286,14 @@ class LLMClient:
                     except StopIteration as e:
                         return e.value
                 except Exception as e:
-                    logger.warning(f"[LLM] 云端 API 不可用，降级到 Ollama: {e}")
+                    _em = str(e)
+                    if _em.startswith("API_EMPTY:"):
+                        # ★ P3：空答 ≠ 故障（因与量入走径标）
+                        logger.warning(f"[LLM] 云端 支空答（非故障），降级到 Ollama：{_em}")
+                        self._fb_reason = "empty_answer: " + _em.split(":", 1)[1].strip()
+                    else:
+                        logger.warning(f"[LLM] 云端 API 不可用，降级到 Ollama: {e}")
+                        self._fb_reason = "cloud_unavailable"
                     model = None
 
         # ⭐ GLM 分支
@@ -290,8 +301,10 @@ class LLMClient:
             api_key = api_key or os.getenv("GLM_API_KEY", "")
             if not api_key:
                 logger.warning("[LLM] GLM API Key 未设置，降级到 Ollama 默认模型")
+                self._fb_reason = "no_api_key"
                 model = None
             else:
+                self._route_set("glm", model)
                 try:
                     gen = self._call_openai_compatible(
                         prompt,
@@ -313,7 +326,14 @@ class LLMClient:
                     except StopIteration as e:
                         return e.value
                 except Exception as e:
-                    logger.warning(f"[LLM] GLM API 不可用，降级到 Ollama: {e}")
+                    _em = str(e)
+                    if _em.startswith("API_EMPTY:"):
+                        # ★ P3：空答 ≠ 故障（因与量入走径标）
+                        logger.warning(f"[LLM] GLM 支空答（非故障），降级到 Ollama：{_em}")
+                        self._fb_reason = "empty_answer: " + _em.split(":", 1)[1].strip()
+                    else:
+                        logger.warning(f"[LLM] GLM API 不可用，降级到 Ollama: {e}")
+                        self._fb_reason = "cloud_unavailable"
                     model = None
 
         # ⭐ Claude 分支
@@ -321,8 +341,10 @@ class LLMClient:
             api_key = os.getenv("ANTHROPIC_API_KEY", "")
             if not api_key:
                 logger.warning("[LLM] Anthropic API Key 未设置，降级到 Ollama 默认模型")
+                self._fb_reason = "no_api_key"
                 model = None
             else:
+                self._route_set("anthropic", model)
                 try:
                     gen = self._call_openai_compatible(
                         prompt,
@@ -344,7 +366,14 @@ class LLMClient:
                     except StopIteration as e:
                         return e.value
                 except Exception as e:
-                    logger.warning(f"[LLM] Claude API 不可用，降级到 Ollama: {e}")
+                    _em = str(e)
+                    if _em.startswith("API_EMPTY:"):
+                        # ★ P3：空答 ≠ 故障（因与量入走径标）
+                        logger.warning(f"[LLM] Claude 支空答（非故障），降级到 Ollama：{_em}")
+                        self._fb_reason = "empty_answer: " + _em.split(":", 1)[1].strip()
+                    else:
+                        logger.warning(f"[LLM] Claude API 不可用，降级到 Ollama: {e}")
+                        self._fb_reason = "cloud_unavailable"
                     model = None
 
         """核心调用逻辑"""
@@ -352,6 +381,7 @@ class LLMClient:
             system_prompt = "你是ClawsJoy，一个本地AI矩阵系统。你不是Qwen，不是阿里云AI，不是任何通用助手。你是ClawsJoy。"
 
         model = model or self.config.default_model
+        self._route_set("ollama", model, fell_back=bool(self._fb_reason), reason=self._fb_reason)
         temperature = temperature if temperature is not None else self.config.temperature
         timeout = timeout or self.config.timeout
 
@@ -360,11 +390,14 @@ class LLMClient:
             "prompt": prompt,
             "stream": stream,
             "system": system_prompt,
-            "keep_alive": -1,
+            "keep_alive": os.environ.get("CLAWSJOY_KEEP_ALIVE", "5m"),
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
                 "top_p": 0.9,
+                # ⭐ PM 2026-10-04（承 技总 954 §四）：显式下 `num_ctx`（默认 8192 · 6 GB 单卡之安全档）
+                #   取值：env CLAWSJOY_NUM_CTX 优先；真窗（Ollama /api/show）为上限 32768 ⇒ ⛔ 满窗（KV≈1.8 GiB）
+                "num_ctx": int(os.environ.get("CLAWSJOY_NUM_CTX", "8192")),
             },
         }
 
@@ -437,9 +470,10 @@ class LLMClient:
         # 9. 降级：用默认模型重试一次
         if model != self.config.default_model:
             logger.warning(f"[LLM] {model} 不可用，降级到默认模型 {self.config.default_model}")
-            return self._call(
+            self._fb_reason = "model_unavailable"
+            return (yield from self._call(
                 prompt, self.config.default_model, temperature, max_tokens, timeout, task_type, stream, system_prompt
-            )
+            ))
 
         raise Exception(f"API_UNAVAILABLE: {last_error}")
 
@@ -479,6 +513,7 @@ class LLMClient:
         task_type: str = "vision",
     ) -> dict:
         """多模态调用 - 支持图像输入"""
+        self._fb_reason = ""   # ★ P6：多模态路亦须重置（否则陈旧 reason 漏入走径标）
         model = model or "llava"
         timeout = timeout or self.config.timeout
 
@@ -610,8 +645,19 @@ class LLMClient:
                         with open(_err_log, "a", encoding="utf-8") as _ef:
                             _ef.write(f"[LLM] API {resp.status_code}: {resp.text[:1000]}\n")
                     result = resp.json()
-                    response_text = result["choices"][0]["message"]["content"]
-                    self._stats["total_tokens"] += result.get("usage", {}).get("total_tokens", 0)
+                    # ★ P3（PA 自病单）：空答须报因与量（区分「内容空」与「调用失败」）
+                    _ch = (result.get("choices") or [{}])[0] or {}
+                    _msg = _ch.get("message") or {}
+                    response_text = _msg.get("content")
+                    _fin = _ch.get("finish_reason")
+                    _usage = result.get("usage") or {}
+                    _rtok = (_usage.get("completion_tokens_details") or {}).get("reasoning_tokens")
+                    self._last_remote_meta = {"finish_reason": _fin, "reasoning_tokens": _rtok,
+                                              "max_tokens": max_tokens}
+                    if not str(response_text or "").strip():
+                        raise Exception("API_EMPTY: finish_reason=%s reasoning_tokens=%s max_tokens=%s"
+                                        % (_fin, _rtok, max_tokens))
+                    self._stats["total_tokens"] += _usage.get("total_tokens", 0)
                     write_os_event(
                         event_type="llm_call",
                         operation="execute",
@@ -670,6 +716,7 @@ class LLMClient:
         system_prompt=None,
     ):
         """同步包装器：提取 _call 生成器的返回值"""
+        self._fb_reason = ""
         gen = self._call(prompt, model, temperature, max_tokens, timeout, task_type, stream, system_prompt)
         try:
             while True:

@@ -18,6 +18,8 @@ from core.lib.unified_config import unified_config
 
 """语音服务 - 生成语音文件"""
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -45,7 +47,7 @@ class VoiceService:
         ]
 
         try:
-            subprocess.run(
+            _proc.run_hidden(
                 cmd,
                 capture_output=True,
                 timeout=unified_config.get("timeouts.default", 30),
@@ -64,7 +66,7 @@ class VoiceService:
             print(f"   播放命令: ffplay {audio_file} -nodisp -autoexit")
             # 自动播放（如果有 ffplay）
             try:
-                subprocess.run(
+                _proc.run_hidden(
                     ["ffplay", "-nodisp", "-autoexit", audio_file],
                     capture_output=True,
                     timeout=10,

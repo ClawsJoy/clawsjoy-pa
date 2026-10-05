@@ -4,6 +4,7 @@
 import os
 import time
 from dotenv import load_dotenv
+from core.lib.port_config import gateway_base_url
 
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(_PROJECT_ROOT, "config", ".env"))
@@ -18,7 +19,7 @@ def notify(who: str, message: str, channel_id: str = None):
         return
     for attempt in range(3):
         try:
-            _r.post("http://localhost:5002/v8/discord/notify",
+            _r.post(gateway_base_url() + "/v8/discord/notify",
                     json={"channel_id": ch, "message": message, "username": who},
                     timeout=30)
             return

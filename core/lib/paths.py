@@ -47,6 +47,158 @@ def vault_root():
     return Path(WIN_VAULT if IS_WINDOWS else WSL_VAULT)
 
 
+# ===== 件名长度守护（2026-09-28 落 · 承「命名无上限」逮 ＋ 对端回件 §五）=====
+MAX_NAME_BYTES = 200
+# 派生名预算（CEO 2026-09-28 §三）：授权名 ≤ 200 B ＋ 最长派生后缀 `.before_<16hex>` = 24 B
+# ⇒ 派生名 ≤ 224 ≤ NAME_MAX(255)（余 31 B · 并容 `.sha256` 之 7 B）。
+# ⇒ 派生写点（如 `write_file` 的 `.bak`）按本上限判，⛔ 别拿 200 去卡派生名（会误拒合法派生件）。
+MAX_DERIVED_NAME_BYTES = 224
+
+
+def check_name_len(path, limit=MAX_NAME_BYTES):
+    """件名（basename）UTF-8 字节数 <= ``limit`` ⇒ 否则 **fail-loud 拒写**。
+
+    为什么按**字节**而非字数：``ext4`` 的 ``NAME_MAX`` 是 **255 字节**；一个中文字
+    占 3 B ⇒ 80 个中文字 = 240 B **超限**，但按字数看只有 80（看着很短）。
+    ⇒ 超限即当场炸 —— 写了对端（WSL）也读不到（``ENAMETOOLONG``）⇒ 宁可拒写，
+      ⛔ 不落一个「本侧看得见、对端读不到」的件。
+
+    ⚠ 只查 **basename**；父目录段同受 ``NAME_MAX`` 约束，本函数**不覆盖**（待证）。
+    """
+    name = os.path.basename(str(path))
+    n = len(name.encode("utf-8"))
+    if n > limit:
+        raise ValueError(
+            "件名 UTF-8 %dB > %dB ⇒ 拒写（WSL/ext4 ENAMETOOLONG ⇒ 对端读不到）: %s"
+            % (n, limit, name)
+        )
+    return n
+
+
+def check_path_len(path, limit=MAX_NAME_BYTES):
+    """路径**每一段**（含父目录段）UTF-8 字节数 <= ``limit`` ⇒ 否则 **fail-loud**。
+
+    ⚠ 为什么要查父段：``NAME_MAX`` 是**逐段**约束 —— 「件名短、父目录段超限」同样
+    ``ENAMETOOLONG``。只查 basename ＝ 判据**只打在半段上**（承 DS 2026-09-28 裁
+    「守护扩到父目录段」）。
+    返回最长段的字节数；超限则报**是哪一段**（便于定位）。
+    """
+    worst, worst_seg = 0, ""
+    for seg in Path(str(path)).parts:
+        if seg in ("/", "\\", "."):
+            continue
+        n = len(seg.encode("utf-8"))
+        if n > worst:
+            worst, worst_seg = n, seg
+    if worst > limit:
+        raise ValueError(
+            "路径段 UTF-8 %dB > %dB ⇒ 拒写（WSL/ext4 ENAMETOOLONG 逐段生效 ⇒ 对端读不到）: %s"
+            % (worst, limit, worst_seg)
+        )
+    return worst
+
+
+def write_text_lf(path, text, encoding="utf-8", limit=MAX_NAME_BYTES):
+    """写文本件**强制 LF**（⛔ 不随平台翻 CRLF）—— vault 写点的唯一出口。
+
+    为什么必须显式：``Path.write_text()`` 默认 ``newline=None`` ⇒ 在 Windows 上把
+    ``\n`` 翻成 ``\r\n``（本机实测 ``write_text("x\n")`` -> ``b"x\r\n"``）。
+    vault 是**跨平台镜像面**（WSL 侧按 LF 播种/镜像/比对）⇒ 本侧写入一旦带 CRLF：
+      · 同一逻辑内容按字节分成两份 ⇒ ``sha16`` 与对端不等（四元组对不上）
+      · 镜像判据只能靠「归一 EOL 后逐位同」勉强过 ⇒ 判据被稀释
+      · 清单 ``bytes`` 读数随写入者变化 ⇒ 报数不稳
+    ⇒ 承 CEO 2026-09-28 终裁 §一③ / §三②：「**写进 vault 的镜像须纯 LF**」。
+    ⇒ 承「成对改 ＋ 反例门」：门 = ``tests/unit/test_vault_write_lf.py``。
+    ⇒ 同址另挂**路径段守护** ``check_path_len()``（**逐段** · 含父目录段 · UTF-8 ≤ 200 B
+      ⇒ 否则**拒写** · 门 = ``tests/unit/test_vault_write_namelen.py``）：超名件对端（WSL）
+      读不到（``ENAMETOOLONG``）⇒ 宁可不落，⛔ 不落「本侧看得见、对端读不到」的件。
+      （``check_name_len()`` 仍在，只查 basename —— 供「只关心件名」的调用方用。）
+    ``limit`` 默认 ``MAX_NAME_BYTES``（授权名）；**派生名**写点（``.bak`` / ``.sha256`` /
+      ``.before_*``）传 ``MAX_DERIVED_NAME_BYTES``（= 224 = 200 ＋ 24 B 派生后缀 ≤ 255）。
+
+    ⚠ 沙箱镜像面（``sync_knowledge_to_sandbox`` 与 ``update_sop`` 的 ``dst``）**不在**本函数
+    范围：CEO 同裁「沙箱镜像 ⛔ 不要求逐位同（判据 = 归一 EOL 后逐位同）」⇒ 那两处**不动**。
+    """
+    p = Path(path)
+    check_path_len(p, limit)  # 逐段（含父目录段）—— 只查 basename 是判据打半段
+    if p.parent and not p.parent.exists():
+        p.parent.mkdir(parents=True, exist_ok=True)
+    with open(p, "w", encoding=encoding, newline="") as f:
+        f.write(text)
+    return p
+
+
+# ===== vault（Obsidian）路径判据的唯一真源（2026-09-28 成对改）=====
+# 为什么必须唯一：vault 旁挂着**两处安全判据** ——
+#   ① core/gateway/guards/registry.py 的 vault 归类（读工具被拦时给哪个提示）
+#   ② core/gateway/v9_bridge/tool_runner.py 的「续跑期禁写 vault」统一守卫
+# 判据各自写死路径串时，脑根一改 ⇒ 判据**在场却打错对象**（判据还在，判的不是真对象）。
+# ⇒ 判据一律引本模块：is_vault_path()（精确）/ contains_vault_marker()（过包括）。
+#
+# 历史串只作**跨平台文本回落**：日志 / 载荷 / 命令串里出现的是 WSL 形态
+# `/mnt/d/Obsidian/...` 或片段 `Obsidian/ClawsJoy`，而脑根实算是 `D:\Obsidian\...`。
+# ⛔ 不得只留历史串 —— 那样 vault 一搬家判据就瞎（这正是本子类要防的）。
+VAULT_LEGACY_MARKERS = ("/mnt/d/Obsidian", "Obsidian/ClawsJoy", "/mnt/d/obsidian")
+
+
+def _norm_path(text):
+    """判据用的归一化：反斜杠 → 正斜杠 + 小写（跨平台形态可比较）。
+
+    ⚠ 只用于「是不是 vault」这类**过包括**判断，⛔ 不用于落盘 —— POSIX 上反斜杠
+    是合法文件名字符，归一化会改变文件名语义。
+    """
+    return str(text or "").replace("\\", "/").lower()
+
+
+def path_forms(root):
+    """同一目录的**另一平台形态**（Windows `D:\\...` ↔ WSL `/mnt/d/...`）。
+
+    为什么单立：脑根在**同一台机上两形态并存**（Windows 看 `D:...`，WSL 看 `/mnt/d/...`）
+    ⇒ 凡需「两形态都认」之处（vault 判据 ／ 前端把引用链接化的前缀 ／ 清单对齐）一律
+    引本函数，⛔ 不各写一份（承「不复制第二份判据」）。
+    """
+    _root = str(root or "")
+    if not _root:
+        return ()
+    out = [_root]
+    _slash = _root.replace("\\", "/")
+    _low = _slash.lower()
+    if _low.startswith("d:/obsidian/"):
+        out.append("/mnt/d/Obsidian/" + _slash[len("D:/Obsidian/"):])
+    elif _low.startswith("/mnt/d/obsidian/"):
+        out.append("D:/Obsidian/" + _slash[len("/mnt/d/Obsidian/"):])
+    return tuple(dict.fromkeys(m for m in out if m))
+
+
+def vault_markers():
+    """vault 的路径指纹 = **实算真源** ＋ 历史串（原样大小写；判据内部再归一化）。
+
+    实算真源同时给出「另一形态」变体：同一台机两形态并存（Windows 看 `D:\\...`，
+    WSL 看 `/mnt/d/...`），两边文本都要能被认出。
+    """
+    out = list(path_forms(vault_root()))
+    out.extend(VAULT_LEGACY_MARKERS)
+    return tuple(dict.fromkeys(m for m in out if m))
+
+
+def is_vault_path(path):
+    """`path` 是否指向本机 vault（**精确判据**：前缀实算 ＋ 历史串回落）。"""
+    _p = _norm_path(path).rstrip("/")
+    if not _p:
+        return False
+    _root = _norm_path(vault_root()).rstrip("/")
+    if _root and (_p == _root or _p.startswith(_root + "/")):
+        return True
+    return any(_norm_path(m) in _p for m in VAULT_LEGACY_MARKERS)
+
+
+def contains_vault_marker(text):
+    """自由文本（命令串 / 需求描述）里是否出现 vault 指纹（**过包括**判据）。"""
+    _t = _norm_path(text)
+    if not _t:
+        return False
+    return any(_norm_path(m) in _t for m in vault_markers())
+
 def _win_default_browsers():
     """Playwright 在 Windows 上的**自带默认**缓存：``%LOCALAPPDATA%\\ms-playwright``。
 

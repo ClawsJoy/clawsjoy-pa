@@ -22,6 +22,8 @@ import ast
 import json
 import os
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 import sys
 import traceback
 from datetime import datetime
@@ -147,7 +149,7 @@ def collect_written_files(messages: List[Dict], base_dir: Path, project_root: st
 
     import subprocess
 
-    result = subprocess.run(
+    result = _proc.run_hidden(
         ["git", "diff", "--name-only", "HEAD~1", "HEAD"], cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
     # 批188 · 缺陷2 第二层（真根因）：git diff **看不见「新建未跟踪」文件** ⇒ 新产物（如 docs/x.md）
@@ -157,7 +159,7 @@ def collect_written_files(messages: List[Dict], base_dir: Path, project_root: st
     if result.returncode == 0 and result.stdout.strip():
         _diff_names |= {x.strip() for x in result.stdout.strip().split(chr(10)) if x.strip()}
     try:
-        _un = subprocess.run(
+        _un = _proc.run_hidden(
             ["git", "ls-files", "--others", "--exclude-standard"], cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace"
         )
         if _un.returncode == 0 and _un.stdout.strip():
@@ -169,7 +171,7 @@ def collect_written_files(messages: List[Dict], base_dir: Path, project_root: st
     )
     if not (result.returncode == 0 and result.stdout.strip()):
         # 兜底：HEAD~1 不存在（首次提交/浅克隆）时，回退到 HEAD
-        result = subprocess.run(
+        result = _proc.run_hidden(
             ["git", "diff", "--name-only", "HEAD"], cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace"
         )
     if result.returncode == 0 and result.stdout.strip():
@@ -257,6 +259,8 @@ def run_verify(files, base_dir, timeout=20):
 
     checked = []
     failed = []
+    # 2026-09-21 · 镜像 LIVE v2（Step3「包名/__init__.py 先证再用」）：前提不成立的件数必须外露
+    _skipped_no_pkg = 0
     for f in files:
         _abs = f.get("absolute")
         if not _abs or not _abs.exists():
@@ -268,31 +272,64 @@ def run_verify(files, base_dir, timeout=20):
                 # 第一道快速冒烟：compile 失败即短路，不再进入子进程校验
                 compile(_code, str(_abs), "exec")
                 # 第二道校验：py_compile 子进程，timeout 兜底
-                _proc = subprocess.run(
+                _res = _proc.run_hidden(
                     [sys.executable, "-m", "py_compile", str(_abs)],
                     capture_output=True,
                     text=True,
                     timeout=timeout, encoding="utf-8", errors="replace"
                 )
-                if _proc.returncode != 0:
-                    _err = (_proc.stderr or _proc.stdout or "").strip()
+                if _res.returncode != 0:
+                    _err = (_res.stderr or _res.stdout or "").strip()
                     failed.append({"path": f.get("path", ""), "error": f"py_compile 校验失败: {_err or '未知错误'}"})
                     continue
                 # 第三道校验：import 导入测试（importlib 子进程，timeout 兜底）
-                _rel = _abs.relative_to(base_dir) if base_dir else Path(_abs.name)
-                _mod = str(_rel).replace(os.sep, ".").replace("/", ".")
-                if _mod.endswith(".py"):
-                    _mod = _mod[:-3]
-                _imp = subprocess.run(
-                    [sys.executable, "-c", f"import {_mod}"],
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout, encoding="utf-8", errors="replace"
-                )
-                if _imp.returncode != 0:
-                    _ierr = (_imp.stderr or _imp.stdout or "").strip()
-                    failed.append({"path": f.get("path", ""), "error": f"import 导入测试失败: {_ierr or '未知错误'}"})
-                    continue
+                # 2026-09-21 · 镜像 LIVE v2（DS 831 裁①：v2 语义 + 保留 v9 编码硬化）——
+                #   旧行为两处假红：
+                #   (1) _mod = _abs.relative_to(base_dir) 拼点分名（沙箱里得 clawsjoy_dev.core.lib.x），
+                #       而子进程不开 cwd ⇒ 沙箱里每个 .py 都 ModuleNotFoundError ⇒ 恒红；
+                #   (2) 件不在 base_dir 下时 relative_to 抛 ValueError ⇒ 被 except (SyntaxError, ValueError)
+                #       当成「运行级语法错误」⇒ 又一条假红。
+                #   新行为（先证再用）：(1) 先证：从文件目录向上走连续包链（每层须有 __init__.py）；
+                #   链为空 ⇒ 前提不成立 ⇒ 不判（裸脚本没有「按模块名导入」这回事，compile+py_compile 已判过），
+                #   只计数外露 skipped_import_no_pkg；(2) 再用：import root ＝ 包链之外的那一层，
+                #   子进程 cwd=root（这样 core.lib.x 才解析得到）；(3) 真导入失败 ⇒ 照旧判红（有齿）。
+                _in_tree = True
+                if base_dir:
+                    try:
+                        _abs.relative_to(base_dir)
+                    except ValueError:
+                        _in_tree = False
+                _probe = _abs.parent
+                _chain = []
+                if _in_tree:
+                    while (_probe / "__init__.py").exists():
+                        if base_dir and _probe == Path(base_dir):
+                            break  # 沙箱根：链到此为止（不把沙箱目录名当包名）
+                        _chain.append(_probe.name)
+                        if _probe.parent == _probe:
+                            break
+                        _probe = _probe.parent
+                    _root = _probe
+                if (not _in_tree) or (not _chain):
+                    _skipped_no_pkg += 1
+                else:
+                    _mod = ".".join(reversed(_chain)) + "." + _abs.stem
+                    _imp = _proc.run_hidden(
+                        [sys.executable, "-c", f"import {_mod}"],
+                        capture_output=True,
+                        text=True,
+                        timeout=timeout, encoding="utf-8", errors="replace",
+                        cwd=str(_root),
+                    )
+                    if _imp.returncode != 0:
+                        _ierr = (_imp.stderr or _imp.stdout or "").strip()
+                        failed.append(
+                            {
+                                "path": f.get("path", ""),
+                                "error": f"import 导入测试失败（root={_root.name} mod={_mod}）: {_ierr or '未知错误'}",
+                            }
+                        )
+                        continue
                 checked.append(str(_abs))
             except subprocess.TimeoutExpired:
                 failed.append({"path": f.get("path", ""), "error": f"子进程校验超时（>{timeout}s）"})
@@ -308,7 +345,7 @@ def run_verify(files, base_dir, timeout=20):
                     failed.append({"path": f.get("path", ""), "error": "文件为空（0 字节）"})
             except OSError as e:
                 failed.append({"path": f.get("path", ""), "error": f"无法读取: {e}"})
-    return {"passed": len(failed) == 0, "checked": checked, "failed": failed}
+    return {"passed": len(failed) == 0, "checked": checked, "failed": failed, "skipped_import_no_pkg": _skipped_no_pkg}
 
 
 def content_verify(files, task_goal="", base_dir=None):
@@ -365,6 +402,16 @@ def content_verify(files, task_goal="", base_dir=None):
     _kws = [k for k in _kws if not any(n in k for n in _noise) and not any(a in k for a in _action)]
     checked = []
     failed = []
+    _skipped_irrelevant = 0
+    _kws_empty = not _kws
+    # 2026-09-20 · DSH 修（DS 769/775 裁「Step4 收窄到任务相关产物 ＋ 空不判」）：
+    #   ① **空不判**：_kws 为空 ⇒ **只跳过「关键词命中」这一判**；**存在/可读/非空照旧判**
+    #      （⚠ 实测教训：v1 把整个判据早退 ⇒ 连空文件也不再失败 ⇒ 被既有用例
+    #       test_content_verify_empty_still_fails 抓红 ⇒ 已收窄）；
+    #   ② 只对「任务相关产物」判关键词（路径命中任务关键词）；
+    #   ③ 其余文件**只计数（skipped_irrelevant）不判**；④ 相关产物**照旧要求命中**（判据有齿）。
+    #   动因：A3（建会话即 seed）后 collect_written_files 把整个沙箱当「写入面」
+    #   ⇒ 旧 Step4 对每一件都要求命中关键词 ⇒ 必然全红（假红）。
     for f in files:
         _abs = f.get("absolute")
         if not _abs or not _abs.exists():
@@ -378,22 +425,25 @@ def content_verify(files, task_goal="", base_dir=None):
         if not _content.strip():
             failed.append({"path": f.get("path", ""), "error": "文件内容为空"})
             continue
-        if _kws:
+        if not _kws_empty:
+            _p_fname = str(f.get("path", "")).lower()
+            if not any(k.lower() in _p_fname for k in _kws):
+                _skipped_irrelevant += 1
+                continue
             _matched = sum(1 for k in _kws if k in _content)
             _need = max(1, len(_kws) // 2)
-            # 文件路径与任务目标相关性校验
-            _fname = f.get("path", "").lower()
-            _fname_match = sum(1 for k in _kws if k.lower() in _fname)
-            if _fname_match == 0 and len(_kws) >= 3:
-                failed.append({"path": f.get("path", ""), "error": f"文件路径与任务目标不相关（文件名未命中任何关键词）"})
-                continue
             if _matched < _need:
                 failed.append(
-                    {"path": f.get("path", ""), "error": f"内容核验未通过：目标关键词命中 {_matched}/{len(_kws)}，少于 {_need}"}
+                    {"path": f.get("path", ""), "error": f"内容核验未通过（任务相关产物）：目标关键词命中 {_matched}/{len(_kws)}，少于 {_need}"}
                 )
                 continue
         checked.append(str(_abs))
-    return {"passed": len(failed) == 0, "checked": checked, "failed": failed}
+    # 2026-09-20 · DSH：**计数必须外露**（DS 口径「其余只计数不判」⇒ 不报数＝等于没计）
+    _ret = {"passed": len(failed) == 0, "checked": checked, "failed": failed,
+            "skipped_irrelevant": _skipped_irrelevant}
+    if _kws_empty:
+        _ret["skipped"] = "任务目标无可判关键词 ⇒ 空不判（仅跳过关键词命中判定；存在/可读/非空仍判）"
+    return _ret
 
 
 def generate_report(result, task_name="", session_id="", user_id="", base_dir=None):
@@ -565,7 +615,7 @@ def _check_done_when(done_when: str, base_dir: Path) -> dict:
         result["detail"] = f"文件{'存在' if result['passed'] else '不存在'}: {path}"
     elif check.startswith("command_success:"):
         cmd = check[16:]
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30, cwd=str(base_dir), encoding="utf-8", errors="replace")
+        r = _proc.run_hidden(cmd, shell=True, capture_output=True, text=True, timeout=30, cwd=str(base_dir), encoding="utf-8", errors="replace")
         result["passed"] = r.returncode == 0
         result["detail"] = f"命令返回码={r.returncode}: {cmd}"
     elif check.startswith("file_contains:"):

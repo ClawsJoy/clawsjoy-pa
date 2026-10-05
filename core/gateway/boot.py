@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """P3-A 启动块（从 agent_gateway_enhanced.py if __name__ 主体归位，2026-09-12）。"""
 import json
+import os
 import threading as _threading
 import time
 from datetime import datetime
@@ -13,6 +14,16 @@ from core.lib.unified_config import unified_config
 
 def run_gateway_startup(app):
     """P3-A 启动：守卫挂载 / SAG / 回填 / 队列恢复 / 脏数据清理 / 平台 / 浏览器 / run。"""
+
+    # Windows 副本(2026-09-19): loopback 不得走代理。
+    # 背景: config/.env:14-15 注入 HTTP_PROXY/HTTPS_PROXY=http://127.0.0.1:7890(Clash)。
+    # 于是**本机**调用也被塞进代理 —— 实测 PA /v9/pa/proxy → 灵犀桥(3890) 报
+    # "Remote end closed connection without response"，同一条路径在 WSL 侧不报。
+    # 这里只补 loopback 的例外; 出网仍照旧走代理(不改变原有行为)。
+    for _pk in ("NO_PROXY", "no_proxy"):
+        _pv = os.environ.get(_pk, "")
+        if "127.0.0.1" not in _pv:
+            os.environ[_pk] = ",".join([x for x in (_pv, "127.0.0.1", "localhost", "::1") if x])
 
     from core.lib.hook_manager import HookManager
     from core.lib.startup import startup_manager

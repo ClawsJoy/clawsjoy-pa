@@ -6,6 +6,7 @@ from core.gateway.sag_feedback import _record_path_pattern
 from core.gateway.sandbox_git import _git_status, _sandbox_git_post_write, _sandbox_git_pre_write
 from core.gateway.shared_state import _consecutive_reads, _read_cache, _last_read_fingerprints, _js_rollback_count, _search_file_cache, _session_artifacts, _session_write_tracker, _content_hashes, _tracker_setdefault
 from core.lib.paths import runtime_tmp_path
+from core.gateway import _proc as _proc  # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 import json
 import logging
 from datetime import datetime
@@ -13,6 +14,12 @@ from pathlib import Path
 from flask import request, jsonify
 
 logger = logging.getLogger(__name__)
+
+
+def _missing(_key):
+    """必填缺失 ⇒ 400 ＋ 定位（PM-011 N11：同一键 ⛔ 不许两套码；形制 `<路由>: 缺 <键>`）。"""
+    _rule = request.url_rule
+    return jsonify({"success": False, "error": "%s: 缺 %s" % ((_rule.rule if _rule is not None else "?").lstrip("/"), _key)}), 400
 
 def v9_sandbox_write_handler():
     data = _unified_preprocess(request.json or {})
@@ -23,7 +30,7 @@ def v9_sandbox_write_handler():
     if ".git" in str(filepath).split("/"):
         raise ValueError("禁止操作 .git 目录")
     if not filepath:
-        return jsonify({"success": False, "error": "write_file path 不能为空"})
+        return _missing("path")
     target = _normalize_path(filepath, user_id, session_id)
     content = data.get("content", "")
     _stash_ref = _sandbox_git_pre_write(user_id, session_id)
@@ -45,7 +52,7 @@ def v9_sandbox_write_handler():
             _os.unlink(_tf.name)
 
     if not filepath:
-        return jsonify({"success": False, "error": "path 必填"})
+        return _missing("path")
     
     # 通用路径补全：如果路径不以 clawsjoy_dev/ 开头且不存在，尝试加前缀
     if not target.exists() and not str(filepath).startswith("clawsjoy_dev/"):
@@ -132,7 +139,7 @@ def v9_sandbox_write_handler():
                 # JS 文件写入后语法校验，失败则回滚
                 if str(target).endswith('.js'):
                     import subprocess as _sp
-                    _result = _sp.run(['node', '-c', str(target)], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
+                    _result = _proc.run_hidden(['node', '-c', str(target)], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
                     if _result.returncode != 0:
                         target.write_text('\n'.join(original_lines), encoding='utf-8')
                         _key = str(target)
@@ -410,8 +417,10 @@ def v9_sandbox_write_finalize_handler():
     session_id = data.get("session_id", "default")
     target_path = data.get("path", "")
     temp_path = data.get("temp_path", "")
-    if not target_path or not temp_path:
-        return jsonify({"success": False, "error": "path 和 temp_path 必填"})
+    if not target_path:
+        return _missing("path")
+    if not temp_path:
+        return _missing("temp_path")
     _temp = Path(temp_path)
     if not _temp.exists():
         return jsonify({"success": False, "error": f"临时文件不存在: {temp_path}"})

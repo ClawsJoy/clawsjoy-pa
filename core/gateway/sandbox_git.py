@@ -8,6 +8,7 @@ from pathlib import Path  # 批181：safe_git_commit/_git_toplevel 需要（此�
 from core.gateway.path_utils import _resolve_main_repo
 from core.gateway.shared_state import _session_git_tracker, _tracker_setdefault
 from core.lib.gateway_helpers import _get_sandbox_base
+from core.gateway import _proc as _proc  # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ def _git_toplevel(cwd):
     try:
         import subprocess
 
-        _r = subprocess.run(
+        _r = _proc.run_hidden(
             ["git", "rev-parse", "--show-toplevel"], cwd=str(cwd), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         _o = (_r.stdout or "").strip()
@@ -60,17 +61,17 @@ def safe_git_commit(base, files, message, *, require_toplevel=None, timeout=15):
             logger.info(f"[SAFE_COMMIT] 拒绝提交: {_det['reason']} toplevel={_top} require={_want}")
             return False, _det
     try:
-        _add = subprocess.run(
+        _add = _proc.run_hidden(
             ["git", "add", "--"] + _files, cwd=str(base), capture_output=True, text=True, timeout=timeout, encoding="utf-8", errors="replace"
         )
         if _add.returncode != 0:
             _det["reason"] = f"git add 失败: {(_add.stderr or _add.stdout).strip()[:200]}"
             return False, _det
-        _st = subprocess.run(
+        _st = _proc.run_hidden(
             ["git", "diff", "--cached", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=timeout, encoding="utf-8", errors="replace"
         )
         _staged = [x.strip() for x in (_st.stdout or "").splitlines() if x.strip()]
-        _pr = subprocess.run(
+        _pr = _proc.run_hidden(
             ["git", "rev-parse", "--show-prefix"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         _prefix = (_pr.stdout or "").strip() if _pr.returncode == 0 else ""
@@ -79,18 +80,18 @@ def safe_git_commit(base, files, message, *, require_toplevel=None, timeout=15):
         if _extra:
             _det["staged_extra"] = _extra[:10]
             _det["reason"] = "暂存区含非本次文件（已取消暂存并拒绝提交）"
-            subprocess.run(
+            _proc.run_hidden(
                 ["git", "reset", "-q", "HEAD", "--"] + _extra, cwd=str(base), capture_output=True, timeout=timeout
             )
             logger.info(f"[SAFE_COMMIT] 拒绝提交: {_det['reason']} extra={_extra[:5]}")
             return False, _det
-        _c = subprocess.run(
+        _c = _proc.run_hidden(
             ["git", "commit", "-m", str(message)[:200]], cwd=str(base), capture_output=True, text=True, timeout=timeout, encoding="utf-8", errors="replace"
         )
         if _c.returncode != 0:
             _det["reason"] = f"git commit 失败: {(_c.stderr or _c.stdout).strip()[:200]}"
             return False, _det
-        _h = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
+        _h = _proc.run_hidden(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
         _det["commit"] = (_h.stdout or "").strip()
         return True, _det
     except Exception as _e:
@@ -109,7 +110,7 @@ def _has_git_diff():
         import os
         import subprocess
 
-        _r = subprocess.run(
+        _r = _proc.run_hidden(
             ["git", "diff", "--name-only"],
             cwd=os.path.dirname(os.path.abspath(__file__)),
             capture_output=True,
@@ -129,7 +130,7 @@ def _sandbox_git_pre_write(user_id, session_id, sandbox_base=None):
     if not (base / ".git").exists():
         return None
     try:
-        r = subprocess.run(["git", "stash", "create"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
+        r = _proc.run_hidden(["git", "stash", "create"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
         return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else None
     except Exception:
         return None
@@ -157,7 +158,7 @@ def _sandbox_git_post_write(user_id, session_id, filepath, stash_ref, sandbox_ba
             py_compile.compile(str(target), doraise=True)
         except (SyntaxError, py_compile.PyCompileError) as e:
             if stash_ref:
-                subprocess.run(
+                _proc.run_hidden(
                     ["git", "stash", "apply", stash_ref], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
                 )
             raise Exception(f"语法检查失败，已自动回滚: {e}")
@@ -166,7 +167,7 @@ def _sandbox_git_post_write(user_id, session_id, filepath, stash_ref, sandbox_ba
         # 剥离 clawsjoy_dev/ 前缀：git cwd 已是沙箱根，带前缀会导致 git add 失败
         _git_filepath = filepath.replace("clawsjoy_dev/", "", 1) if filepath.startswith("clawsjoy_dev/") else filepath
         # 只 add 目标文件，不用 -A 避免提交无关变更
-        result_add = subprocess.run(
+        result_add = _proc.run_hidden(
             ["git", "add", _git_filepath], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         if result_add.returncode != 0:
@@ -178,7 +179,7 @@ def _sandbox_git_post_write(user_id, session_id, filepath, stash_ref, sandbox_ba
 
             _diff_dir = base / "data" / "diffs"
             _diff_dir.mkdir(parents=True, exist_ok=True)
-            _rd = subprocess.run(
+            _rd = _proc.run_hidden(
                 ["git", "diff", "--cached", "--", _git_filepath],
                 cwd=str(base),
                 capture_output=True,
@@ -224,10 +225,10 @@ def _sandbox_git_post_exec(user_id, session_id, command):
         return
     try:
         # 检查工作区是否有实际变更，无变更则不 commit
-        result_diff = subprocess.run(
+        result_diff = _proc.run_hidden(
             ["git", "diff", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
-        result_staged = subprocess.run(
+        result_staged = _proc.run_hidden(
             ["git", "diff", "--cached", "--name-only"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         if not result_diff.stdout.strip() and not result_staged.stdout.strip():
@@ -311,7 +312,7 @@ def _track_git_commit(user_id, session_id, committed_files=None):
         import subprocess
 
         base = _get_sandbox_base(user_id, session_id)
-        _rl = subprocess.run(
+        _rl = _proc.run_hidden(
             ["gi" + "t", "log", "-1", "--format=%h %s"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
         )
         if _rl.returncode == 0 and _rl.stdout.strip():
@@ -342,7 +343,7 @@ def _git_status(user_id, session_id, sandbox_base=None):
     _uncommitted = []
     if (base / ".git").exists():
         try:
-            _ru = subprocess.run(
+            _ru = _proc.run_hidden(
                 ["gi" + "t", "status", "--porcelain"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace"
             )
             if _ru.returncode == 0:

@@ -5,10 +5,35 @@
 不影响现有行为）。
 """
 import os
+import time
 
 # 懒加载：extractor 在 DATABASE_URL 缺失时会抛 ValueError，延迟到首次调用
 _extractor = None
 _extractor_loaded = False
+
+# 降级态自印（老板 2026-10-03 裁：两态各留一行带刻 + 报压制了多少条）
+_DEG = {"down": False, "suppressed": 0}
+
+
+def _ts():
+    return time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _note_degraded(exc):
+    """状态变化时才打一行（不是每次调用都打 —— 否则 2,991 行刷屏）。"""
+    _DEG["suppressed"] += 1
+    if not _DEG["down"]:
+        _DEG["down"] = True
+        print("[SAG_BRIDGE][DEGRADE %s] 编目不可用，转「仅落盘」：%s" % (_ts(), exc))
+    elif _DEG["suppressed"] % 500 == 0:
+        print("[SAG_BRIDGE][DEGRADE %s] 降级中，累计压制 %d 条" % (_ts(), _DEG["suppressed"]))
+
+
+def _note_recovered():
+    if _DEG["down"]:
+        print("[SAG_BRIDGE][RECOVER %s] 编目恢复；降级期间压制 %d 条" % (_ts(), _DEG["suppressed"]))
+    _DEG["down"] = False
+    _DEG["suppressed"] = 0
 
 
 def _get_extractor():
@@ -40,15 +65,18 @@ def register_entity(entity_type, entity_name, signature="", file_path="", relate
         ext = _get_extractor()
         if ext is None:
             return False
-        return ext.upsert_entity({
+        _ok = ext.upsert_entity({
             "entity_type": entity_type,
             "entity_name": str(entity_name)[:200],
             "signature": str(signature)[:2000],
             "file_path": str(file_path)[:500],
             "related_entities": related_entities or [],
         })
+        if _ok:
+            _note_recovered()
+        return _ok
     except Exception as e:
-        print(f"[SAG_BRIDGE] register_entity 失败(忽略): {e}")
+        _note_degraded(e)
         return False
 
 

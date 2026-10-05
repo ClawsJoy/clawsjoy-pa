@@ -74,8 +74,51 @@ def run_chat_entry(*, data, deps):
         # 批222·A（老板拍板）：**seed 门前移到回合入口最早安全点** —— 位于 _single_run_guard 之后、
         # recover_session / ROUND / LLM / tool_call **之前**；未通过 ⇒ **短路该回合（零执行）**。
         try:
+            # A3（DS 裁 #27 ＝「会话创建时 seed」；三问裁：缩 scope / LIVE 树 / 不硬链接）
+            #   会话首入 ⇒ 建沙箱并 seed（实测 ≈21 MB；照字面全 scope 是 2.17 GB / 86,355 files ⇒
+            #   与「PA 首用不卡」相悖）。落痕由 seed_sandbox 写；失败 **fail-loud**（返回显式 message）。
+            #   回滚：V9_SEED_ON_CREATE=0（不改代码）；源覆盖：V9_SEED_SOURCE=<path>。
+            if str(_os_w.environ.get("V9_SEED_ON_CREATE", "1")) != "0":
+                try:
+                    from core.gateway.seed_on_create import ensure_seeded as _ensure_seeded
+
+                    _sd = _ensure_seeded(str(data.get("user_id") or ""), str(data.get("session_id") or ""))
+                    if _sd.get("created"):
+                        print(
+                            "[SEED_ON_CREATE] 建沙箱并 seed: %s（files=%s src_files=%s commit=%s）"
+                            % (
+                                _sd.get("sandbox"),
+                                (_sd.get("record") or {}).get("file_count"),
+                                (_sd.get("record") or {}).get("source_file_count"),
+                                (_sd.get("record") or {}).get("commit"),
+                            )
+                        )
+                except Exception as _soc_e:
+                    print("[SEED_ON_CREATE] seed 失败（fail-loud）: %s" % _soc_e)
+                    return (
+                        {
+                            "success": False,
+                            "status": "seed_failed",
+                            "seed_error": True,
+                            "message": "会话 sandbox seed 失败：%s（查 V9_SEED_SOURCE / 磁盘）" % str(_soc_e)[:200],
+                        },
+                        "json",
+                    )
             from core.gateway.sandbox_seed import task_entry_gate as _teg
             _g2 = _teg(str(data.get("user_id") or ""), str(data.get("session_id") or ""))
+            # 2026-09-20 · DSH 修（缺陷1「写确认回执断」· DS 已认 A1）：
+            #   审批回执（approve_*）= **同一 run 的延续**，与 _single_run_guard 的豁免口径一致（见 :346/:364）。
+            #   修正前：seed 门跑在「回执分发」（recover_session 内）之前且**无豁免** ⇒ 未 seed 会话里
+            #   人拍「仅本次」的回执被短路，载荷 {blocked,status,reason} **无 message/error**
+            #   ⇒ 前端 pa.html:2233 渲染成「确认未生效：未知响应」（**假成交**）。
+            #   安全性：回执只对**已存在**的 _pending_writes[session_id] 生效（无 pending ⇒ write_expired），
+            #   不会凭空写入；故豁免不放大权限面。
+            #   运行期回滚开关：V9_SEED_GATE_EXEMPT_APPROVALS=0 ⇒ 退回旧行为。
+            if str(_os_w.environ.get("V9_SEED_GATE_EXEMPT_APPROVALS", "1")) != "0" and any(
+                _k_appr in (data or {}) for _k_appr in _APPROVAL_KEYS
+            ):
+                print("[SEED_GATE] 审批回执豁免（approve_* = 同一 run 的延续）⇒ 不短路，交回执自身逻辑")
+                _g2 = {"allowed": True, "status": "approval_exempt", "reason": "approve_* 豁免：回执是同一 run 的延续（DSH A1）"}
             if not _g2.get("allowed"):
                 print("[SEED_GATE] 回合入口拦下（短路，未进 ROUND）: %s" % str(_g2.get("reason"))[:140])
                 # 批222·A-2：**blocked 记录必须真落盘**（可独立查询）—— plan 空 + 明确原因。

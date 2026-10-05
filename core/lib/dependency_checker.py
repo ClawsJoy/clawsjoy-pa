@@ -11,6 +11,8 @@ from core.lib.unified_config import unified_config
 """依赖检查器 - 检查代码依赖"""
 import re
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 import sys
 
 
@@ -34,7 +36,7 @@ class DependencyChecker:
     @staticmethod
     def check_installed(package):
         """检查包是否已安装"""
-        result = subprocess.run(
+        result = _proc.run_hidden(
             [sys.executable, "-c", f"import {package.split('.')[0]}"],
             capture_output=True,
         )

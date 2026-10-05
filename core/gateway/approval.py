@@ -15,6 +15,18 @@ from core.gateway.write_gate import (
 )
 
 
+def _hold_release(_pw_like):
+    u'''⭐ T2-刀26 §二（丁 · PM 拍）：写审批**落定** ⇒ **释**其 `HoldQueue`（撤销窗口随之闭合 · ⛔ 残留）。'''
+    try:
+        from core.pes.authorization import HoldQueue as _HQ_rel
+
+        _hid = str((_pw_like or {}).get("id") or "")
+        if _hid:
+            _HQ_rel().release(_hid)
+    except Exception:
+        pass
+
+
 def _approval_payload(_r):
     """把「审批回执分发」的返回统一成 **可 JSON 序列化的 dict**（批146 修契约）。
 
@@ -167,6 +179,7 @@ def _handle_write_approval(user_id, session_id, messages, model, approve):
             print("[GRANT_FAIL] %s" % _ge)
         _action = "approve"
     if _action in ("approve", "approve_all", "approve_selected"):
+        _hold_release(_pending_writes.get(session_id))
         _pending_writes[session_id]["approved"] = True
         if _is_batch:
             # R3 批量: 选择批准的子集(approve_all=全部; approve_selected=ids 匹配)
@@ -238,6 +251,7 @@ def _handle_write_approval(user_id, session_id, messages, model, approve):
         _resp = _resume_bridge_after_approval(user_id, session_id, messages, model, _p)
         return _resp
     elif _action == "reject":
+        _hold_release(_pending_writes.get(session_id))
         _pending_writes.pop(session_id, None)
         _persist_pending_writes(user_id, session_id)  # #106 清除持久化
         print(f"[WRITE_GATE] 老板拒绝写入: {_p.get('tool')} {_p.get('path','')[:80]}")

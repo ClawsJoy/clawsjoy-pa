@@ -3,6 +3,8 @@
 
 import os
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 from datetime import datetime
 from pathlib import Path
 
@@ -57,19 +59,19 @@ def check_hot_topics_count():
 def on_memory_large(event, data):
     """记忆过大时触发学习"""
     print(f"[{datetime.now()}] 📚 记忆文件过大，触发学习循环")
-    subprocess.Popen(["python3", "scripts/learning_loop.py"], cwd=os.getcwd())
+    _proc.popen_hidden(["python3", "scripts/learning_loop.py"], cwd=os.getcwd())
 
 
 def on_high_error_rate(event, data):
     """高错误率时触发自愈"""
     print(f"[{datetime.now()}] 🔧 错误率过高，触发自愈")
-    subprocess.Popen(["bash", "scripts/auto_evolve.sh"], cwd=os.getcwd())
+    _proc.popen_hidden(["bash", "scripts/auto_evolve.sh"], cwd=os.getcwd())
 
 
 def on_topics_full(event, data):
     """话题过多时触发清理"""
     print(f"[{datetime.now()}] 🧹 热点话题过多，触发清理")
-    subprocess.Popen(["python3", "scripts/cleanup_hot_topics.py"], cwd=os.getcwd())
+    _proc.popen_hidden(["python3", "scripts/cleanup_hot_topics.py"], cwd=os.getcwd())
 
 
 # ========== 注册条件触发 ==========

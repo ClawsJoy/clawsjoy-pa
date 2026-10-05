@@ -4,6 +4,8 @@
 import os
 import platform
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -59,7 +61,7 @@ class HardwareProbe:
 
         # NVIDIA GPU
         try:
-            result = subprocess.run(
+            result = _proc.run_hidden(
                 [
                     "nvidia-smi",
                     "--query-gpu=name,memory.total,memory.free,memory.used",
@@ -87,7 +89,7 @@ class HardwareProbe:
         # Apple Silicon / Metal
         if not gpus and platform.system() == "Darwin":
             try:
-                result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True, encoding="utf-8", errors="replace")
+                result = _proc.run_hidden(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True, encoding="utf-8", errors="replace")
                 if "Apple" in result.stdout:
                     gpus.append(
                         {
@@ -103,7 +105,7 @@ class HardwareProbe:
         # Intel/AMD集成显卡（Linux）
         if not gpus and platform.system() == "Linux":
             try:
-                result = subprocess.run(["lspci"], capture_output=True, text=True, encoding="utf-8", errors="replace")
+                result = _proc.run_hidden(["lspci"], capture_output=True, text=True, encoding="utf-8", errors="replace")
                 for line in result.stdout.split("\n"):
                     if "VGA" in line or "3D" in line:
                         gpus.append(

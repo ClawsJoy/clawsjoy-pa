@@ -4,6 +4,8 @@ import ast
 import json
 import os
 import re
+import threading
+import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -18,6 +20,11 @@ except Exception:
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+# ===== 检索域闸（老板 2026-10-03 裁 · 域 ＝ default）=====
+# 域 ＝ "default"：本检索器只认 default 域之件；改域 ⇒ 改此处一处（⛔ 散成字面常量多处）。
+SEARCH_DOMAIN_PROJECT_ID = "default"
 
 
 def _format_path_for_agent(path: str) -> str:
@@ -35,6 +42,59 @@ def _format_path_for_agent(path: str) -> str:
     return path
 
 
+# ===== 检索精度闸（老板 2026-10-03 裁 · 最小词长 + 词边界）=====
+# 判例（修前）：`"no"` 命中 `no_proxy`（`"no" ⊂ "nexi**no**stent"`）、
+# `"clean"` 命中 `cleanup_task_context`（`"clean" ⊂ "**clean**_neg"`）⇒
+# 任取一个乱串都能命中 ⇒ **「反例空」这一判据在修前恒不成立**（常态之值非零 ⇒ 面作废）。
+_KW_MIN_ASCII = 3
+_KW_MIN_CJK = 2
+_KW_SPLIT_RE = re.compile(r"[_\-\./\s]+")
+
+
+def query_tokens(query: str) -> set:
+    """把 query 切成可比 token（小写）：ASCII 按 `_ - . /` 与空白拆分，CJK 段整体保留。"""
+    _q = str(query or "").lower()
+    _toks = set()
+    for _seg in re.findall(r"[\u4e00-\u9fff]+", _q):
+        if len(_seg) >= _KW_MIN_CJK:
+            _toks.add(_seg)
+    for _ident in re.findall(r"[a-z0-9][a-z0-9_]*", _q):
+        for _p in _KW_SPLIT_RE.split(_ident):
+            if len(_p) >= _KW_MIN_ASCII:
+                _toks.add(_p)
+    return _toks
+
+
+def kw_hit(keyword: str, tokens) -> bool:
+    """关键词是否命中：**token 全等**（⛔ 不用裸子串），ASCII token 须 >= 3 字符。"""
+    _k = str(keyword or "").lower().strip()
+    if not _k:
+        return False
+    if re.search(r"[\u4e00-\u9fff]", _k):
+        return any(len(_t) >= _KW_MIN_CJK and (_t in _k or _k in _t) for _t in tokens)
+    for _p in _KW_SPLIT_RE.split(_k):
+        if len(_p) >= _KW_MIN_ASCII and _p in tokens:
+            return True
+    return False
+
+
+def boundary_hit(term: str, text: str) -> bool:
+    """`term` 在 `text` 中按**词边界**命中。
+
+    `_` 计作边界 ⇒ `extractor` 命中 `code_entity_extractor`（保留 snake_case 召回），
+    而 `no` ⛔ 不命中 `nonexistent`（`n` 是字母 ⇒ 非边界）。
+    """
+    _t = str(term or "").lower()
+    _s = str(text or "").lower()
+    if not _t or not _s:
+        return False
+    if re.search(r"[\u4e00-\u9fff]", _t):
+        return _t in _s
+    if len(_t) < _KW_MIN_ASCII:
+        return False
+    return re.search(r"(?<![a-z0-9])" + re.escape(_t) + r"(?![a-z0-9])", _s) is not None
+
+
 def _chinese_query_terms(query: str) -> list:
     """中文 query 拆分为整句 + 中文段 + 二元组；补充英文标识符（下划线拆分）与数字，提升 ILIKE 召回率"""
     terms = [query]
@@ -48,13 +108,79 @@ def _chinese_query_terms(query: str) -> list:
         terms.extend(part for part in ident.split("_") if part)
     # 数字 token
     terms.extend(re.findall(r"\d+", query))
+    # 检索精度闸（老板 2026-10-03 裁 · 最小词长）：ASCII 词元 < 3 字符不参与匹配。
+    terms = [t for t in terms if re.search(r"[\u4e00-\u9fff]", t) or len(t.strip()) >= _KW_MIN_ASCII]
     return list(dict.fromkeys(terms))
+
+
+def _ts():
+    return time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+class DbUnavailable(RuntimeError):
+    """DB 不可达（断路器打开时抛出）：不建连、不重试。"""
+
+
+class _DbBreaker:
+    """DB 不可达断路器：一次探测 -> 指数退避(1,2,4,...) -> 封顶 300s。
+
+    为什么需要：``_get_extractor()`` 是惰性构造，库不在时**每次调用**都会新建
+    连接池并各开一条 TCP 连接。实测 2026-10-03 19:27 那一跑：2,991 次
+    ``port 5432 failed``、启动 6 min 40 s。
+
+    纪律（老板 2026-10-03 裁）：降级 / 恢复两态各留一行**带刻**；
+    退避期间须报**压制了多少条**（静默压制又成假绿）。
+    """
+
+    def __init__(self, base: float = 1.0, cap: float = 300.0):
+        self._base = base
+        self._cap = cap
+        self._lock = threading.Lock()
+        self._fails = 0
+        self._open_until = 0.0
+        self.skipped_downgraded = 0   # 退避窗内被压制（未建连）的调用数
+        self.opened = 0    # 进入降级态次数（状态变化才 +1）
+
+    def allow(self) -> bool:
+        with self._lock:
+            if time.monotonic() < self._open_until:
+                self.skipped_downgraded += 1
+                return False
+            return True
+
+    def ok(self):
+        with self._lock:
+            if self._fails:
+                print("[DB_BREAKER][RECOVER %s] DB 可达，编目恢复；降级期间共压制 %d 条"
+                      % (_ts(), self.skipped_downgraded))
+            self._fails = 0
+            self._open_until = 0.0
+
+    def fail(self, exc):
+        with self._lock:
+            self._fails += 1
+            delay = min(self._cap, self._base * (2 ** (self._fails - 1)))
+            was_open = time.monotonic() < self._open_until
+            self._open_until = time.monotonic() + delay
+            if not was_open:      # 只在「降级态」这个状态变化时打
+                self.opened += 1
+                print("[DB_BREAKER][DEGRADE %s] DB 不可达(第 %d 次)：%s"
+                      % (_ts(), self._fails, exc))
+                print("[DB_BREAKER][DEGRADE %s] 退避 %.0fs（上限 %.0fs）；窗内不再建连，已压制 %d 条"
+                      % (_ts(), delay, self._cap, self.skipped_downgraded))
+            return delay
+
+
+_DB_BREAKER = _DbBreaker()
 
 
 class ConnectionPool:
     """基于 psycopg2 SimpleConnectionPool 的连接池（最小连接数 2，最大连接数 10）"""
 
     def __init__(self, db_url: str, minconn: int = 2, maxconn: int = 30):
+        # connect_timeout：让每次探测有界（不再挂 OS 默认超时）
+        if "connect_timeout" not in db_url:
+            db_url = db_url + ("&" if "?" in db_url else "?") + "connect_timeout=3"
         self._pool = SimpleConnectionPool(minconn, maxconn, dsn=db_url)
 
     def getconn(self):
@@ -1229,13 +1355,19 @@ class CodeEntitySearcher:
                 """
                 SELECT * FROM code_entities
                 WHERE project_id = %s
+                  AND entity_type NOT IN ('tool_flow', 'audit_event')
                   AND (entity_name ILIKE %s OR signature ILIKE %s)
                 LIMIT 1
             """,
                 (project_id, f"%{term}%", f"%{term}%"),
             )
-            primary = cur.fetchone()
-            if primary:
+            _cand = cur.fetchone()
+            if _cand is None:
+                continue
+            # 检索精度闸（老板 2026-10-03 裁 · 词边界）：SQL 是 ILIKE **模糊**匹配，
+            # 命中须再过一道词边界复验 —— 否则 "no" 会命中 "nonexistent"。
+            if boundary_hit(term, _cand.get("entity_name")) or boundary_hit(term, _cand.get("signature")):
+                primary = _cand
                 break
 
         if not primary:
@@ -1322,6 +1454,18 @@ class CodeEntitySearcher:
 
     def query_context_by_keywords(self, keywords: List[str], task_name: str = None) -> List[Dict]:
         """在 steps_summary 和 code_entities 中按关键词模糊匹配，返回上下文摘要列表"""
+        # 关键词闸（老板 2026-10-03 裁）：空/坏关键词（""／None）⇒ 早退 · ⛔ 查库
+        # 由：`ILIKE '%%'` 命中全表 ⇒ 空关键词 ＝ 面作废（与「反例空」同族），且它是静默的。
+        _raw_kw = list(keywords) if keywords else []
+        _valid_kw = [k for k in _raw_kw if isinstance(k, str) and k.strip()]
+        if len(_valid_kw) != len(_raw_kw):
+            logger.warning(
+                "[code_entity_extractor] 关键词闸：丢弃 %d 个空/坏关键词（⛔ 未查库 —— ILIKE '%%' 会命中全表）",
+                len(_raw_kw) - len(_valid_kw),
+            )
+        if not _valid_kw:
+            return []
+        keywords = _valid_kw
         conn = self._pool.getconn()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         results = []
@@ -1362,10 +1506,12 @@ class CodeEntitySearcher:
                 cur.execute(
                     """
                     SELECT * FROM code_entities
-                    WHERE entity_name ILIKE %s OR signature ILIKE %s
+                    WHERE project_id = %s
+                      AND entity_type NOT IN ('tool_flow', 'audit_event')
+                      AND (entity_name ILIKE %s OR signature ILIKE %s)
                     LIMIT 20
                 """,
-                    (f"%{kw}%", f"%{kw}%"),
+                    (SEARCH_DOMAIN_PROJECT_ID, f"%{kw}%", f"%{kw}%"),
                 )
                 entities = cur.fetchall()
                 for e in entities:
@@ -1380,6 +1526,28 @@ class CodeEntitySearcher:
                             "relevance": 0.8,
                         }
                     )
+
+            # 域闸自检（域 ＝ default）：被滤掉之「非 default 域」件数 > 0 ⇒ 喊一行（⛔ 静默丢）
+            _kw_pats = [f"%{str(k)}%" for k in keywords if k]
+            if _kw_pats:
+                try:
+                    cur.execute(
+                        """
+                        SELECT count(*) AS n FROM code_entities
+                        WHERE project_id <> %s
+                          AND entity_type NOT IN ('tool_flow', 'audit_event')
+                          AND (entity_name ILIKE ANY(%s::text[]) OR signature ILIKE ANY(%s::text[]))
+                    """,
+                        (SEARCH_DOMAIN_PROJECT_ID, _kw_pats, _kw_pats),
+                    )
+                    _dropped = cur.fetchone()["n"]
+                    if _dropped:
+                        logger.warning(
+                            "[code_entity_extractor] 域闸 project_id=%s：本次检索滤掉 %d 件非本域之件 ⇒ 若须跨域，须先定语义",
+                            SEARCH_DOMAIN_PROJECT_ID, _dropped,
+                        )
+                except Exception as _e:
+                    logger.warning("[code_entity_extractor] 域闸自检失败（⛔ 不动检索结果）: %s", _e)
         finally:
             cur.close()
             self._pool.putconn(conn)
@@ -1485,9 +1653,19 @@ def _get_extractor():
 
     _ctx = _get_ctx()
     _ext = _ctx.get_opt("extractor")
-    if _ext is None:
+    if _ext is not None:
+        return _ext
+    if not _DB_BREAKER.allow():
+        raise DbUnavailable(
+            "DB 不可达，断路器打开中（已压制 %d 条，窗内不建连）" % _DB_BREAKER.skipped_downgraded
+        )
+    try:
         _ext = CodeEntityExtractor()
-        _ctx.provide("extractor", _ext)
+    except Exception as e:
+        _DB_BREAKER.fail(e)
+        raise
+    _DB_BREAKER.ok()
+    _ctx.provide("extractor", _ext)
     return _ext
 
 

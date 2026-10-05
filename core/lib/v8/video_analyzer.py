@@ -7,6 +7,8 @@ import os
 import re
 import shutil
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -54,7 +56,7 @@ class VideoAnalyzer:
             "vfr",
             output_pattern,
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
+        result = _proc.run_hidden(cmd, capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
 
         # 解析 stderr 中的 showinfo 时间戳
         timestamps = []

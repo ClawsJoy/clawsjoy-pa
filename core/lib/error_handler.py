@@ -6,6 +6,7 @@ import traceback
 from functools import wraps
 
 from flask import current_app, jsonify, request
+from werkzeug.exceptions import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,30 @@ def register_error_handlers(app):
             response["error_code"] = e.error_code
         logger.warning(f"AppError: {e.message}")
         return jsonify(response), e.status_code
+
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(e):
+        """PM-011v17 §一 裁：werkzeug 的 HTTP 语义错（400 等）⛔ 不许被下面的 `Exception` 兜成 500。
+
+        依据（一手活日志）：`request.json` 解析失败 ⇒ werkzeug 抛 `BadRequest`（**400 语义**），
+        却被 `@app.errorhandler(Exception)` 按 MRO 接走 ⇒ 对外 500 ⇒ 全库 POST 路由的坏 body 一律 500。
+        判据（PM 原文）：非法 JSON ⇒ **400 ＋ 路由定位**（⛔ 不是裸 400）。
+        """
+        locator = ""
+        try:
+            rule = getattr(request, "url_rule", None)
+            locator = str(rule.rule if rule is not None else (request.path or "")).lstrip("/")
+        except Exception:
+            locator = ""
+        code = getattr(e, "code", None) or 500
+        cause = getattr(e, "__cause__", None)
+        if code == 400 and type(cause).__name__ == "BadRequest":
+            msg = "body 不是合法 JSON"
+        else:
+            msg = (getattr(e, "description", "") or "").strip() or ("HTTP %s" % code)
+        error_text = ("%s: %s" % (locator, msg)).rstrip(": ") if locator else msg
+        logger.warning("HTTPException %s -> %s", code, error_text)
+        return jsonify({"success": False, "error": error_text, "status_code": code}), code
 
     @app.errorhandler(Exception)
     def handle_generic_error(e):

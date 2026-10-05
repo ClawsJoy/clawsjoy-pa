@@ -9,6 +9,7 @@
 5. _v9_bridge_loop 以 bridge_loop_fn 传入（防循环 import）。
 """
 import json
+import os
 import queue
 import threading
 import time
@@ -23,6 +24,7 @@ from core.gateway.message_assembler import (
     _validate_messages,
 )
 from core.gateway.shared_state import _guard_log
+from core.gateway.budget import CTX_COMPRESS_RATIO
 
 
 def prepare_request(*, messages, tools, model, user_id, session_id):
@@ -34,7 +36,7 @@ def prepare_request(*, messages, tools, model, user_id, session_id):
         _est_now = _tg_estimate(messages, tools)
         _n_msgs = max(len(messages), 1)
         _avg_tok = max(_est_now / _n_msgs, 1)
-        _target_tok = _budget_now * 0.8
+        _target_tok = _budget_now * CTX_COMPRESS_RATIO
         _keep_dyn = max(min(int(_target_tok / _avg_tok), 20), 4)
         import tiktoken as _tk
 
@@ -189,6 +191,35 @@ def make_stream_response(
         except Exception:
             return 1500000
 
+    def _turn_stall_ms():
+        """静默下限（毫秒）。0/None = 不限。默认 900000（15 分钟）。
+
+        为什么要有它（PM-011 · 2026-09-30 · PM 判据「任何流式响应必须在有限时间内
+        给出终态 done 或 error」）：
+          现场 05:42（session=pa_mu6fxm7z）worker 进入工具阶段后**零日志、零进度、
+          零终态**；turns.db 里该 turn 直到 900s 心跳超时扫描才被判 STALE
+          ⇒ 前端只能无限心跳（「疑似卡住」），**沉默 15 分钟没有任何终态**；
+          而 turn_timeout_ms(1500s)=25 分钟才收口，对「有限时间」不合格。
+        取值理由（900s 不是新造的数）：本仓既有约定 `turn_registry.STALE_AFTER_SEC=900`
+          ＝「900s 无更新即异常」，只是那口径**是被动的**（只把 turn 标 STALE，不发终态）。
+          本闸把它**变成主动的**：同一个 900s 读数 ⇒ 立刻发 error + [DONE]。
+        ⚠ 已知误差面（照实标，⛔ 不掩盖）：进度事件只**每轮**发一条
+          （agent_gateway_enhanced.py:976 「每轮循环结束回调」），所以单轮的合法静默
+          上限 ≈ max_parallel_tools(4) × tool_timeout_ms(320s) = 1280s > 900s
+          ⇒ 「4 个串行 exclusive 工具各打满 320s」这一极端场景会被误判成停滞。
+          根治＝把进度事件降到**每工具**粒度（下一件）；本件只做「沉默必成终态」。
+        """
+        try:
+            _env = os.getenv("V9_TURN_STALL_MS")
+            if _env not in (None, ""):
+                return int(_env)
+            from core.gateway.shared_state import _load_v9_execution_policy as _lv9s
+
+            v = ((_lv9s() or {}).get("execution_budget", {}) or {}).get("turn_stall_ms", 900000)
+            return int(v or 0)
+        except Exception:
+            return 900000
+
     def _request_cancel(session_id):
         try:
             from core.gateway.shared_state import request_cancel as _rc
@@ -240,7 +271,9 @@ def make_stream_response(
         # 现在：①任何异常都打 [SSE_ERROR] + traceback ②同时发一条**带 run_id/stage**的 error 事件。
         try:
             yield "data: " + json.dumps({"type": "start", "message": "任务开始执行"}, ensure_ascii=False) + "\n\n"
-            threading.Thread(target=_stream_bridge_worker, daemon=True).start()
+            _last_prog_t = time.time()  # PM-011：停滞判定基线 —— 任何**非心跳**事件到达即刷新
+            _worker = threading.Thread(target=_stream_bridge_worker, daemon=True)
+            _worker.start()
             while True:
                 try:
                     _ev = _evq.get(timeout=5)
@@ -273,6 +306,44 @@ def make_stream_response(
                         yield "data: [DONE]\n\n"
                         _finished = True
                         return
+                    _stall_ms = _turn_stall_ms()
+                    if _stall_ms and (time.time() - _last_prog_t) * 1000 > _stall_ms:
+                        # PM-011 主件（2026-09-30）：worker 还活着但**静默**超过阈值
+                        # ⇒ 主动收口，保证「任何流式响应在有限时间内必有终态」。
+                        # ⛔ 这不是「修好了那个卡住的工具」，是「沉默必须变成可见的失败」
+                        #    —— 与 437 假绿 / 验收-B「过期 0」同族：静默让人以为什么都没发生。
+                        _silent_s = int(time.time() - _last_prog_t)
+                        _request_cancel(session_id)
+                        if _turn_key:
+                            try:
+                                from core.gateway import turn_registry as _tr6
+
+                                _tr6.finish_turn(_turn_key, "FAILED", "turn 停滞：%ds 无进度事件" % _silent_s)
+                            except Exception:
+                                pass
+                        print(
+                            "[SSE_STALL] 收口：session=%s 静默 %ds（阈值 %dms）" % (session_id, _silent_s, _stall_ms),
+                            flush=True,
+                        )
+                        yield "data: " + json.dumps(
+                            {
+                                "type": "error",
+                                "stall": True,
+                                "stage": "turn_stall",
+                                "silent_s": _silent_s,
+                                "run_id": (
+                                    lambda: __import__(
+                                        "core.gateway.run_id", fromlist=["canonical_run_id"]
+                                    ).canonical_run_id(session_id)
+                                )(),
+                                "error": "后端执行线程已静默 %d 秒（期间无任何进度事件）—— 大概率是某个工具卡住未返回。"
+                                "系统已主动收口取消；这不是「没反应」，是超时失败。" % _silent_s,
+                            },
+                            ensure_ascii=False,
+                        ) + "\n\n"
+                        yield "data: [DONE]\n\n"
+                        _finished = True
+                        return
                     if _turn_key:
                         try:
                             from core.gateway import turn_registry as _tr2
@@ -284,6 +355,7 @@ def make_stream_response(
                     continue
                 if _ev.get("type") == "_done_sentinel":
                     break
+                _last_prog_t = time.time()  # 进度事件：刷新停滞基线（心跳不计）
                 yield "data: " + json.dumps(_ev, ensure_ascii=False) + "\n\n"
             _bo = _bridge_result.get("out")
             if _bo is None:

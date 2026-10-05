@@ -663,7 +663,7 @@ def execute(user_id: str, action: str, params: dict, timeout: float = 30.0, sess
     if _conn_user is None:
         return {
             "success": False,
-            "error": "本地浏览器未连接。请在 PA 页点「启动本地浏览器」，或手动运行桌面 agent_client（C:\\Users\\flybo\\Desktop\\agent_client，命令示例：python agent_client.py --user-id <你的ID> --ws ws://127.0.0.1:5007 --chrome）。",
+            "error": "本地浏览器未连接。" + agent_client_hint(),
         }
     # 2026-09-10 老板随时停止: 置位后一切浏览器动作拒绝
     _stop = _stop_reason(_conn_user)
@@ -892,13 +892,47 @@ def _ws_handler_sync(websocket):
             unregister_ws_connection(user_id, reason="disconnect")
 
 
+def ws_port(default: int = 5107) -> int:
+    """WS 端口唯一真源: execution_policy.browser_local.ws_port。
+
+    其他调用点(启动命令/报错文案)必须调本函数, 不得复述数值
+    (否则改端口时只改一处, 另一处静默指向旧端口 —— Windows 副本曾正因此
+    把本机动作发到 WSL 网关。)
+    """
+    try:
+        return int((_policy().get("browser_local", {}) or {}).get("ws_port", default) or default)
+    except Exception:
+        return default
+
+
+# 本文件在 core/lib/v8/ 下 ⇒ 要剥四层才到仓库根(少剥一层会算成 core/scripts/agent_client)。
+_REPO_AGENT_CLIENT = os.path.join(
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ),
+    "scripts",
+    "agent_client",
+)
+
+
+def agent_client_hint() -> str:
+    """拉起本地客户端的命令提示(端口与目录同源, 不复述)。"""
+    return (
+        "请在 PA 页点「启动本地浏览器」，或手动运行本仓库客户端（"
+        + _REPO_AGENT_CLIENT
+        + "，命令示例：python agent_client.py --user-id <你的ID> --ws ws://127.0.0.1:"
+        + str(ws_port())
+        + " --chrome）。"
+    )
+
+
 def start_browser_ws(host: str = "0.0.0.0", port: int = None):
     """启动 WS 服务线程(幂等): 同步 serve 阻塞在线程里, Flask threading 兼容。"""
     global _browser_ws_server, _browser_ws_thread
     if _browser_ws_thread and _browser_ws_thread.is_alive():
         return
     if port is None:
-        port = int((_policy().get("browser_local", {}) or {}).get("ws_port", 5006) or 5006)
+        port = ws_port()
     from websockets.sync.server import serve as _sync_serve
 
     def _run():

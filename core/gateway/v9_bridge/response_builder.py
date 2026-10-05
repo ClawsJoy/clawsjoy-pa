@@ -16,6 +16,7 @@ from core.gateway.execute_agent_task import _update_world_model
 from core.gateway.path_utils import _resolve_path
 from core.lib.gateway_helpers import _get_sandbox_base, cleanup_task_context
 from core.lib.paths import runtime_tmp_path
+from core.gateway import _proc as _proc  # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
 
 def build_bridge_response(
@@ -151,7 +152,7 @@ def build_bridge_response(
                     # 写入后自动语法检测
                     import subprocess as _sp2
 
-                    _syntax_result = _sp2.run(
+                    _syntax_result = _proc.run_hidden(
                         ["python3", "-c", f'compile(open("{_target}").read(), "{_target}", "exec")'],
                         capture_output=True,
                         text=True,

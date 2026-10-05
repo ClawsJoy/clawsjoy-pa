@@ -15,6 +15,8 @@ from core.lib.unified_config import unified_config
 import json
 import logging
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -121,7 +123,7 @@ class SkillValidator:
             result.errors.append("Missing scripts/main.py")
         else:
             # 语法检查
-            proc = subprocess.run(
+            proc = _proc.run_hidden(
                 [sys.executable, "-m", "py_compile", str(main_py)],
                 capture_output=True,
                 text=True, encoding="utf-8", errors="replace"

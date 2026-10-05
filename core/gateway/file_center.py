@@ -5,6 +5,7 @@
 """
 
 import datetime
+import functools
 import hashlib
 import time
 from pathlib import Path
@@ -13,6 +14,65 @@ from urllib.parse import quote
 from flask import jsonify, request
 
 import core.lib.gateway_helpers as _gh
+
+
+class _BadQuery(Exception):
+    """调用方给的查询/载荷不合格 ⇒ 由 `_bad_400` 转 400（⛔ 不是「业务失败」）。"""
+
+
+def _locator():
+    """出错位置：取当前规则（⛔ 不硬编码）。"""
+    _rule = request.url_rule
+    return (_rule.rule if _rule is not None else "?").lstrip("/")
+
+
+def _bad_400(_fn):
+    """唯一 400 出口（装饰器面）：`_BadQuery` ⇒ `{"success": false, "error": <可读面>}` ＋ 400。
+
+    ⚠ 在既有 `try … except Exception` **内部**的拒绝 ⛔ 不能用 `raise _BadQuery`
+    （会被那个 `except` 接走 ⇒ 回到 200+notok ＝ 静默吞）⇒ 那种位置**直接 `return …, 400`**。
+    """
+
+    @functools.wraps(_fn)
+    def _wrapped(*_a, **_kw):
+        try:
+            return _fn(*_a, **_kw)
+        except _BadQuery as _e:
+            return jsonify({"success": False, "error": str(_e)}), 400
+
+    return _wrapped
+
+
+def _query():
+    """GET 查询串 ⇒ `dict`。"""
+    return request.args or {}
+
+
+def _need(_q, _key):
+    """必填查询参数 ⇒ 值（已 `strip`）；缺/空白 ⇒ `_BadQuery`（⛔ 不落默认值）。"""
+    _v = (_q.get(_key) or "").strip()
+    if not _v:
+        raise _BadQuery("%s: 缺 %s" % (_locator(), _key))
+    return _v
+
+
+def _body():
+    """POST JSON 体 ⇒ `dict`；形状不合 ⇒ `_BadQuery`（⛔ 不静默吞成空 dict）。"""
+    _raw = request.get_data(cache=True)
+    _b = request.get_json(silent=True)
+    if _b is None:
+        raise _BadQuery("%s: %s" % (_locator(), "body 不是合法 JSON" if _raw else "body 为空（需要 JSON 对象）"))
+    if not isinstance(_b, dict):
+        raise _BadQuery("%s: body 需要 JSON 对象（拿到 %s）" % (_locator(), type(_b).__name__))
+    return _b
+
+
+def _need_text(_b, _key):
+    """必填文本字段（载荷面）⇒ 值；缺失/空白 ⇒ `_BadQuery`（⛔ 不落默认值）。"""
+    _v = _b.get(_key)
+    if not (isinstance(_v, str) and _v.strip()):
+        raise _BadQuery("%s: 缺 %s" % (_locator(), _key))
+    return _v.strip()
 
 
 def _scan_session_files(sandbox_base, ext=None, type_=None, limit=100, user_id="", session_id=""):
@@ -84,12 +144,11 @@ def _scan_session_files(sandbox_base, ext=None, type_=None, limit=100, user_id="
     return _out[: limit if limit and limit > 0 else 100]
 
 
+@_bad_400
 def v9_files_list_handler():
-    _q = request.args or {}
-    _uid = _q.get("user_id", "default")
-    _sid = _q.get("session_id", "")
-    if not _sid:
-        return jsonify({"success": False, "error": "session_id 必填"})
+    _q = _query()
+    _uid = _need(_q, "user_id")
+    _sid = _need(_q, "session_id")
     try:
         _files = _scan_session_files(
             _gh._get_sandbox_base(_uid, _sid),
@@ -104,13 +163,12 @@ def v9_files_list_handler():
         return jsonify({"success": False, "error": str(_f_err)[:300]})
 
 
+@_bad_400
 def v9_files_content_handler():
-    _q = request.args or {}
-    _uid = _q.get("user_id", "default")
-    _sid = _q.get("session_id", "")
-    _fid = _q.get("id", "")
-    if not _sid or not _fid:
-        return jsonify({"success": False, "error": "session_id 与 id 必填"})
+    _q = _query()
+    _uid = _need(_q, "user_id")
+    _sid = _need(_q, "session_id")
+    _fid = _need(_q, "id")
     try:
         _sb = Path(_gh._get_sandbox_base(_uid, _sid))
         if not _sb.exists():
@@ -130,13 +188,12 @@ def v9_files_content_handler():
         return jsonify({"success": False, "error": str(_fc_err)[:300]})
 
 
+@_bad_400
 def v9_files_diffs_handler():
-    _q = request.args or {}
-    _uid = _q.get("user_id", "default")
-    _sid = _q.get("session_id", "")
-    _path = _q.get("path", "")
-    if not _sid or not _path:
-        return jsonify({"success": False, "error": "session_id 与 path 必填"})
+    _q = _query()
+    _uid = _need(_q, "user_id")
+    _sid = _need(_q, "session_id")
+    _path = _need(_q, "path")
     try:
         _sb = Path(_gh._get_sandbox_base(_uid, _sid))
         _bn = _path.split("/")[-1]
@@ -166,13 +223,12 @@ def v9_files_diffs_handler():
         return jsonify({"success": False, "error": str(_diff_err)[:300]})
 
 
+@_bad_400
 def v9_files_download_handler():
-    _q = request.args or {}
-    _uid = _q.get("user_id", "default")
-    _sid = _q.get("session_id", "")
-    _fid = _q.get("id", "")
-    if not _sid or not _fid:
-        return jsonify({"success": False, "error": "session_id 与 id 必填"})
+    _q = _query()
+    _uid = _need(_q, "user_id")
+    _sid = _need(_q, "session_id")
+    _fid = _need(_q, "id")
     try:
         _sb = Path(_gh._get_sandbox_base(_uid, _sid))
         for _p in _sb.rglob("*"):
@@ -199,15 +255,14 @@ def v9_files_download_handler():
         return jsonify({"success": False, "error": str(_fd_err)[:300]})
 
 
+@_bad_400
 def v9_media_handler():
     import os as _om
 
-    _q = request.args or {}
-    _uid = _q.get("user_id", "default")
-    _sid = _q.get("session_id", "")
-    _rel = _q.get("path", "")
-    if not _sid or not _rel:
-        return jsonify({"success": False, "error": "session_id 与 path 必填"})
+    _q = _query()
+    _uid = _need(_q, "user_id")
+    _sid = _need(_q, "session_id")
+    _rel = _need(_q, "path")
     try:
         _sb = Path(_gh._get_sandbox_base(_uid, _sid)).resolve()
         if not _sb.exists():
@@ -215,7 +270,9 @@ def v9_media_handler():
         _target = (_sb / _rel).resolve()
         # 防穿越: 目标必须位于沙箱内
         if _target != _sb and not str(_target).startswith(str(_sb) + _om.sep):
-            return jsonify({"success": False, "error": "非法路径"})
+            # ⚠ 此处**在 try 内** ⇒ `raise _BadQuery` 会被下面 `except Exception` 接走
+            #   （＝回到 200+notok ＝ 静默吞）⇒ 必须**直接 return 400**。
+            return jsonify({"success": False, "error": "%s: 非法路径" % _locator()}), 400
         if not _target.is_file():
             return jsonify({"success": False, "error": "文件不存在"})
         _suffix = _target.suffix.lower()
@@ -240,27 +297,21 @@ def v9_media_handler():
         return jsonify({"success": False, "error": str(_m_err)[:300]})
 
 
+@_bad_400
 def v9_files_save_handler():
-    try:
-        _b = request.get_json(silent=True) or {}
-    except Exception:
-        _b = {}
-    _uid = _b.get("user_id", "default")
-    _sid = _b.get("session_id", "")
-    _fname = str(_b.get("filename") or "").strip()
+    _b = _body()
+    _uid = _need_text(_b, "user_id")
+    _sid = _need_text(_b, "session_id")
+    _fname = _need_text(_b, "filename")
     _content = str(_b.get("content") or "")
-    if not _sid:
-        return jsonify({"success": False, "error": "session_id 必填"})
-    if not _fname:
-        return jsonify({"success": False, "error": "filename 必填"})
     _safe = Path(_fname).name  # 只取 basename(防 ../)
     if not _safe:
-        return jsonify({"success": False, "error": "非法文件名"})
+        raise _BadQuery("%s: 非法文件名" % _locator())
     if not _safe.lower().endswith(".md"):
         _safe = _safe.rsplit(".", 1)[0] if "." in _safe else _safe
         _safe += ".md"
     if len(_content) > 200 * 1024:
-        return jsonify({"success": False, "error": "内容超限(≤200KB)"})
+        raise _BadQuery("%s: 内容超限(≤200KB)" % _locator())
     try:
         _reports_dir = Path(str(_gh._get_sandbox_base(_uid, _sid))) / "data" / "reports"
         _reports_dir.mkdir(parents=True, exist_ok=True)

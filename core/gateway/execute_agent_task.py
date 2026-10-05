@@ -22,6 +22,7 @@ from core.gateway.sag_feedback import _build_code_edges, _update_sag_edge_learni
 
 logger = logging.getLogger(__name__)
 from core.gateway.sandbox_git import _auto_merge_to_main, _has_git_diff
+from core.gateway import _proc as _proc  # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 from core.gateway.shared_state import (
     _auto_merge_cooldown,
     _guard_log,
@@ -606,13 +607,13 @@ def _execute_agent_task(
             if not (_agent_dir / ".git").exists():
                 logger.info(f"[sub:{sub_task_id}] [SAVE_STATE] Git 仓库不存在（未找到 .git 目录），跳过提交")
             else:
-                _sub.run(
+                _proc.run_hidden(
                     ["git", "-C", str(_agent_dir), "add", ".agent_state.json"],
                     capture_output=True,
                     text=True,
                     timeout=10,
                 )
-                _diff_res = _sub.run(
+                _diff_res = _proc.run_hidden(
                     ["git", "-C", str(_agent_dir), "diff", "--cached"],
                     capture_output=True,
                     text=True,
@@ -622,7 +623,7 @@ def _execute_agent_task(
                     logger.info(f"[sub:{sub_task_id}] [SAVE_STATE] Git diff 为空，可能文件路径错误，请检查")
                 else:
                     _commit_msg = f"state: {status}"
-                    _sub.run(
+                    _proc.run_hidden(
                         ["git", "-C", str(_agent_dir), "commit", "-m", _commit_msg],
                         capture_output=True,
                         text=True,
@@ -1749,7 +1750,7 @@ def _execute_agent_task(
                             import subprocess as _sp_deg
 
                             _agent_dir_deg = _sb_task3
-                            _diff_deg = _sp_deg.run(
+                            _diff_deg = _proc.run_hidden(
                                 ["git", "-C", str(_agent_dir_deg), "diff", "--name-only"],
                                 capture_output=True,
                                 text=True,
@@ -1904,6 +1905,9 @@ def _execute_agent_task(
                         "messages": messages,
                         "task_id": task_id,
                         "agent_id": sub_task_id or task_id,
+                        # ⭐ PM 2026-10-04（承 技总 958 §二.⒝ · 老板「批」）：子任务之标识入载荷
+                        #   ⇒ `ApprovalGuard` 据此早返（免审批）∧ 锚点B 不读 ⇒ 越权仍拒
+                        "sub_task_id": sub_task_id,
                     },
                     scope_key=_scope_key,
                 )
@@ -1936,6 +1940,17 @@ def _execute_agent_task(
                             {"role": "tool", "tool_call_id": tc.get("id", ""), "content": _deny_reason + _deny_hint}
                         )
                         continue
+                    if _g_status == "write_pending":
+                        # ⭐ PM 2026-10-04（承 技总 957 §三 ⒜）：待审 ⛔ 当「硬失败」
+                        #   子任务路无人工审批面 ⇒ 落「待审」态并返回，由上层按 status 处置
+                        _wp_reason = str(_guard_deny.get("reason", "写入待审批（未提供 reason）"))
+                        messages.append(
+                            {"role": "user",
+                             "content": "[系统] " + _wp_reason + "。本步为**待审批** ⇒ 本任务停于该步（⛔ 当失败）。"}
+                        )
+                        _save_state("pending", _wp_reason, total_tokens)
+                        _notify_fail({"code": "WRITE_PENDING", "message": _wp_reason})
+                        return
                     _save_state("failed", _guard_deny.get("reason", "工具调用被拒绝"))
                     _notify_fail({"code": "GUARD_DENY", "message": _guard_deny.get("reason", "工具调用被拒绝")})
                     return

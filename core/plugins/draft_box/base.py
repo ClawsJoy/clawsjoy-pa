@@ -15,20 +15,15 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from core.lib.paths import vault_root
+from core.lib.paths import check_path_len, vault_root, write_text_lf
 
 
 def _vault_root() -> Path:
-    """vault 根(与 precision_inject._vault_path 一致, 避免循环依赖直接读配置)"""
-    try:
-        import yaml
-        with open("config/v9/execution_policy.yaml", encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-        p = (cfg.get("obsidian") or {}).get("vault_path", "")
-        if p and Path(p).exists():
-            return Path(p)
-    except Exception:
-        pass
+    """vault 根（唯一真源 = core.lib.paths.vault_root()；2026-09-28 成对改）。
+
+    此前本函数自己再读一遍 execution_policy.yaml ⇒ 与 precision_inject._vault_path
+    成为**两份口径**（脑根一改即分裂）。现一律委托 vault_root()。
+    """
     return vault_root()
 
 
@@ -113,6 +108,7 @@ class DraftBoxPlugin:
                     else:
                         # 图片/小文件: 复制进 assets/
                         dst = assets / src.name
+                        check_path_len(dst)  # 非文本写出口：copy2/move 目标名同受 NAME_MAX 约束
                         shutil.copy2(src, dst)
                         media_info.append({"name": src.name, "type": "image",
                                            "action": "copied", "path": str(dst)})
@@ -121,7 +117,7 @@ class DraftBoxPlugin:
                     media_info.append({"name": str(mf), "action": "error", "error": str(e)})
             media_txt = (chr(10) + chr(10) + chr(10).join(media_body)) if media_body else ""
             note_txt = (chr(10) + chr(10) + "> 媒体说明: " + self.media_note) if self.media_note else ""
-            fpath.write_text(fm + chr(10) + chr(10) + body + media_txt + note_txt, encoding="utf-8")
+            write_text_lf(fpath, fm + chr(10) + chr(10) + body + media_txt + note_txt)
             return {"success": True, "path": str(fpath),
                     "rel_path": fpath.relative_to(root).as_posix(), "media": media_info}
         except Exception as e:
@@ -159,7 +155,7 @@ class DraftBoxPlugin:
                 import re as _re_up
                 fm = _re_up.sub(r'(?m)^title: ".*"$', 'title: "' + str(title).replace('"', '\\"') + '"', fm)
             new_txt = (fm + chr(10) + chr(10) + new_body) if fm else new_body
-            p.write_text(new_txt, encoding="utf-8")
+            write_text_lf(p, new_txt)
             changed = new_txt != orig
             return {"success": True, "path": str(p),
                     "rel_path": p.relative_to(root).as_posix(), "changed": changed}
@@ -182,12 +178,13 @@ class DraftBoxPlugin:
             txt = txt.replace("published: null", "published: " + now_iso)
             if post_url:
                 txt = txt.replace('post_url: null', 'post_url: \"' + str(post_url) + '\"')
-            p.write_text(txt, encoding="utf-8")
+            write_text_lf(p, txt)
             # 移入 已发布/{platform}/
             pub_dir = root / "已发布" / self.platform
             pub_dir.mkdir(parents=True, exist_ok=True)
             dst = pub_dir / p.name
             if p.parent != dst.parent:
+                check_path_len(dst)  # 非文本写出口：copy2/move 目标名同受 NAME_MAX 约束
                 shutil.move(str(p), str(dst))
             return {"success": True, "path": str(dst), "status": "published"}
         except Exception as e:
@@ -250,6 +247,7 @@ class DraftBoxPlugin:
                     dst = assets / src.name
                     if dst.exists():
                         dst = assets / (src.stem + "_dup" + src.suffix)
+                    check_path_len(dst)  # 非文本写出口：copy2/move 目标名同受 NAME_MAX 约束
                     shutil.copy2(src, dst)
                     archived.append({
                         "name": dst.name, "type": (src.suffix or "file").lstrip(".").lower(),

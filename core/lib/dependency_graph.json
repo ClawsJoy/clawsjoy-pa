@@ -3606,5 +3606,839 @@
     "pathlib",
     "typing",
     "engine.lib.logger"
+  ],
+  "engine\\__init__.py": [
+    "sys",
+    "pathlib",
+    "engine.active.core",
+    "engine.active_learning.core",
+    "engine.audit.core",
+    "engine.causal.core",
+    "engine.common.core",
+    "engine.dialogue.core",
+    "engine.document.core",
+    "engine.dynamic_knowledge.core",
+    "engine.embedding.local_embedding",
+    "engine.emotion.core",
+    "engine.event.core",
+    "engine.evolution.autonomous",
+    "engine.evolution.core",
+    "engine.hook.core",
+    "engine.knowledge.core",
+    "engine.learning.core",
+    "engine.marketplace.core",
+    "engine.memory.core",
+    "engine.meta.core",
+    "engine.monitor.core",
+    "engine.multimodal.audio",
+    "engine.multimodal.video",
+    "engine.multimodal.vision",
+    "engine.observability.metrics",
+    "engine.observability.tracer",
+    "engine.openclaw.core",
+    "engine.orchestration.core",
+    "engine.planning.core"
+  ],
+  "engine\\base.py": [
+    "abc",
+    "datetime",
+    "typing"
+  ],
+  "engine\\client.py": [
+    "engine.active",
+    "engine.knowledge",
+    "engine.memory",
+    "engine.profile",
+    "engine.reasoning",
+    "engine.semantic"
+  ],
+  "engine\\manager.py": [
+    "importlib",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\metrics.py": [
+    "core.lib.unified_config",
+    "time",
+    "prometheus_client"
+  ],
+  "engine\\news_engine.py": [
+    "os",
+    "requests",
+    "typing",
+    "dotenv"
+  ],
+  "engine\\openclaw.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "engine\\orchestrator.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "threading",
+    "typing",
+    "core.lib.unified_config"
+  ],
+  "engine\\reasoning.py": [
+    "typing"
+  ],
+  "engine\\skill_loader.py": [
+    "sys",
+    "pathlib",
+    "core.lib.skill_loader_v3"
+  ],
+  "engine\\tracer.py": [
+    "json",
+    "time",
+    "datetime",
+    "functools",
+    "pathlib"
+  ],
+  "engine\\active\\__init__.py": [
+    "engine.active.core"
+  ],
+  "engine\\active\\core.py": [
+    "engine.lib.logger",
+    "datetime",
+    "typing",
+    "core.autonomous.active_closed_loop"
+  ],
+  "engine\\active\\integration.py": [
+    "typing",
+    "engine.active",
+    "engine.profile",
+    "engine.semantic"
+  ],
+  "engine\\active_learning\\__init__.py": [
+    "engine.active_learning.core"
+  ],
+  "engine\\active_learning\\core.py": [
+    "json",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\atomic\\atomic_engine_v25.py": [
+    "uuid",
+    "logging",
+    "datetime",
+    "typing",
+    "core.lib.json_standard",
+    "core.lib.json_builder",
+    "core.lib.v25_unified_bridge",
+    "core.agents.wisdom.wisdom_factory",
+    "core.lib.skill_recommender"
+  ],
+  "engine\\audit\\__init__.py": [
+    "engine.audit.core"
+  ],
+  "engine\\audit\\core.py": [
+    "engine.lib.logger",
+    "json",
+    "threading",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\base\\configurable_engine.py": [
+    "yaml",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\causal\\__init__.py": [
+    "engine.causal.core"
+  ],
+  "engine\\causal\\core.py": [
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\chain\\video_feedback_chain.py": [
+    "re",
+    "subprocess",
+    "sys",
+    "pathlib",
+    "engine.semantic_params.mapper"
+  ],
+  "engine\\common\\__init__.py": [
+    "engine.common.core"
+  ],
+  "engine\\common\\core.py": [
+    "hashlib",
+    "json",
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\dialogue\\__init__.py": [
+    "engine.dialogue.core"
+  ],
+  "engine\\dialogue\\core.py": [
+    "collections",
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\document\\__init__.py": [
+    "engine.document.core"
+  ],
+  "engine\\document\\core.py": [
+    "engine.lib.logger",
+    "hashlib",
+    "sys",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.vector_knowledge_center"
+  ],
+  "engine\\dynamic_knowledge\\__init__.py": [
+    "engine.dynamic_knowledge.core"
+  ],
+  "engine\\dynamic_knowledge\\core.py": [
+    "collections",
+    "datetime",
+    "typing",
+    "engine.embedding.local_embedding",
+    "engine.lib.logger",
+    "re"
+  ],
+  "engine\\embedding\\__init__.py": [
+    "engine.embedding.local_embedding"
+  ],
+  "engine\\embedding\\core.py": [
+    "datetime",
+    "typing",
+    "engine.embedding.local_embedding"
+  ],
+  "engine\\embedding\\local_embedding.py": [
+    "hashlib",
+    "sys",
+    "pathlib",
+    "typing",
+    "engine.lib.logger",
+    "core.lib.vector_knowledge_center"
+  ],
+  "engine\\embedding\\optimized.py": [
+    "core.lib.unified_config",
+    "typing",
+    "requests"
+  ],
+  "engine\\emotion\\__init__.py": [
+    "engine.emotion.core"
+  ],
+  "engine\\emotion\\core.py": [
+    "collections",
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\enhanced_semantic\\__init__.py": [
+    "engine.semantic.enhanced"
+  ],
+  "engine\\enhanced_semantic\\core.py": [
+    "datetime",
+    "typing",
+    "engine.semantic.enhanced"
+  ],
+  "engine\\event\\__init__.py": [
+    "engine.event.core"
+  ],
+  "engine\\event\\core.py": [
+    "engine.lib.logger",
+    "datetime",
+    "typing",
+    "core.lib.event_bus"
+  ],
+  "engine\\events\\skill_handlers.py": [
+    "re",
+    "datetime",
+    "pathlib",
+    "typing",
+    "core.lib.event_bus"
+  ],
+  "engine\\evolution\\__init__.py": [
+    "engine.evolution.core"
+  ],
+  "engine\\evolution\\autonomous.py": [
+    "pathlib",
+    "json",
+    "random",
+    "collections",
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\evolution\\core.py": [
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\evolution\\keyword_learner.py": [
+    "json",
+    "re",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\evolution\\self_learning.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.evolution.keyword_learner"
+  ],
+  "engine\\evolution\\skill_learner.py": [
+    "json",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\evolution\\vector_sync.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\generator\\__init__.py": [
+    "engine.generator.skill_composer",
+    "engine.generator.skill_creator"
+  ],
+  "engine\\generator\\skill_composer.py": [
+    "dataclasses",
+    "enum",
+    "typing",
+    "re"
+  ],
+  "engine\\generator\\skill_creator.py": [
+    "re",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\hook\\__init__.py": [
+    "engine.hook.core"
+  ],
+  "engine\\hook\\core.py": [
+    "engine.lib.logger",
+    "collections",
+    "datetime",
+    "typing"
+  ],
+  "engine\\image\\analyzer.py": [
+    "base64",
+    "tempfile",
+    "pathlib",
+    "typing",
+    "sys",
+    "skills.vision.scripts.main"
+  ],
+  "engine\\image\\sd_generator.py": [
+    "base64",
+    "io",
+    "pathlib",
+    "torch",
+    "PIL",
+    "diffusers"
+  ],
+  "engine\\knowledge\\__init__.py": [
+    "engine.knowledge.core"
+  ],
+  "engine\\knowledge\\core.py": [
+    "engine.lib.logger",
+    "datetime",
+    "typing",
+    "core.lib.knowledge_registry"
+  ],
+  "engine\\learning\\__init__.py": [
+    "engine.learning.core"
+  ],
+  "engine\\learning\\core.py": [
+    "collections",
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\lib\\config_loader.py": [
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "engine\\lib\\logger.py": [
+    "logging",
+    "sys",
+    "datetime",
+    "pathlib"
+  ],
+  "engine\\lib\\path_manager.py": [
+    "os",
+    "pathlib"
+  ],
+  "engine\\market\\__init__.py": [
+    "engine.market.core"
+  ],
+  "engine\\market\\core.py": [
+    "engine.lib.logger",
+    "importlib",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\marketplace\\__init__.py": [
+    "engine.marketplace.core"
+  ],
+  "engine\\marketplace\\core.py": [
+    "hashlib",
+    "json",
+    "tempfile",
+    "zipfile",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\memory\\__init__.py": [
+    "engine.memory.core"
+  ],
+  "engine\\memory\\core.py": [
+    "datetime",
+    "typing",
+    "engine.lib.logger",
+    "core.butler.memory_manager"
+  ],
+  "engine\\meta\\__init__.py": [
+    "engine.meta.core"
+  ],
+  "engine\\meta\\core.py": [
+    "json",
+    "random",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\monitor\\__init__.py": [
+    "engine.monitor.core"
+  ],
+  "engine\\monitor\\core.py": [
+    "engine.lib.logger",
+    "sys",
+    "datetime",
+    "pathlib",
+    "typing",
+    "psutil",
+    "socket"
+  ],
+  "engine\\multimodal\\__init__.py": [
+    "engine.multimodal.audio",
+    "engine.multimodal.video",
+    "engine.multimodal.vision"
+  ],
+  "engine\\multimodal\\audio.py": [
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\multimodal\\video.py": [
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\multimodal\\vision.py": [
+    "base64",
+    "json",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\observability\\__init__.py": [
+    "engine.observability.metrics",
+    "engine.observability.tracer"
+  ],
+  "engine\\observability\\metrics.py": [
+    "threading",
+    "time",
+    "collections",
+    "datetime",
+    "typing"
+  ],
+  "engine\\observability\\tracer.py": [
+    "uuid",
+    "contextvars",
+    "datetime",
+    "typing"
+  ],
+  "engine\\openclaw\\__init__.py": [
+    "engine.openclaw.core"
+  ],
+  "engine\\openclaw\\core.py": [
+    "hashlib",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "requests",
+    "yaml",
+    "engine.lib.logger",
+    "engine.skill_matrix.core"
+  ],
+  "engine\\orchestration\\__init__.py": [
+    "engine.orchestration.core"
+  ],
+  "engine\\orchestration\\core.py": [
+    "asyncio",
+    "threading",
+    "datetime",
+    "typing",
+    "engine.lib.logger",
+    "engine"
+  ],
+  "engine\\orchestration\\task_manager.py": [
+    "json",
+    "dataclasses",
+    "datetime",
+    "enum",
+    "pathlib",
+    "typing",
+    "core.lib.parallel_scheduler",
+    "time",
+    "concurrent.futures",
+    "core.lib.code_entity_extractor"
+  ],
+  "engine\\orchestration\\user_friendly.py": [
+    "dataclasses",
+    "datetime",
+    "enum",
+    "typing"
+  ],
+  "engine\\planning\\__init__.py": [
+    "engine.planning.core"
+  ],
+  "engine\\planning\\core.py": [
+    "engine.lib.logger",
+    "datetime",
+    "typing",
+    "core.agents.builtin.orchestrator.agent"
+  ],
+  "engine\\proactive\\__init__.py": [
+    "engine.proactive.core"
+  ],
+  "engine\\proactive\\core.py": [
+    "collections",
+    "datetime",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\profile\\__init__.py": [
+    "engine.profile.core"
+  ],
+  "engine\\profile\\core.py": [
+    "engine.lib.logger",
+    "datetime",
+    "typing",
+    "core.butler.memory_manager"
+  ],
+  "engine\\ratelimit\\__init__.py": [
+    "engine.ratelimit.core"
+  ],
+  "engine\\ratelimit\\core.py": [
+    "engine.lib.logger",
+    "time",
+    "collections",
+    "datetime",
+    "typing"
+  ],
+  "engine\\reasoning\\__init__.py": [
+    "engine.reasoning.core"
+  ],
+  "engine\\reasoning\\core.py": [
+    "datetime",
+    "typing",
+    "engine.lib.logger",
+    "core.intelligence.decision_engine"
+  ],
+  "engine\\recommend\\__init__.py": [
+    "engine.recommend.core"
+  ],
+  "engine\\recommend\\core.py": [
+    "collections",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\rl\\__init__.py": [
+    "engine.rl.core"
+  ],
+  "engine\\rl\\core.py": [
+    "json",
+    "random",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\scheduler\\__init__.py": [
+    "engine.scheduler.core"
+  ],
+  "engine\\scheduler\\core.py": [
+    "engine.lib.logger",
+    "threading",
+    "time",
+    "datetime",
+    "typing"
+  ],
+  "engine\\security\\__init__.py": [
+    "engine.security.desensitizer"
+  ],
+  "engine\\security\\audit.py": [
+    "typing",
+    "json",
+    "threading",
+    "datetime",
+    "pathlib"
+  ],
+  "engine\\security\\datamask.py": [
+    "hashlib",
+    "json",
+    "re",
+    "datetime",
+    "typing"
+  ],
+  "engine\\security\\desensitize.py": [
+    "typing",
+    "hashlib",
+    "re",
+    "datetime"
+  ],
+  "engine\\security\\desensitizer.py": [
+    "re"
+  ],
+  "engine\\security\\lifecycle.py": [
+    "json",
+    "shutil",
+    "threading",
+    "time",
+    "datetime",
+    "pathlib",
+    "engine.lib.logger"
+  ],
+  "engine\\semantic\\__init__.py": [
+    "engine.semantic.core"
+  ],
+  "engine\\semantic\\core.py": [
+    "datetime",
+    "typing",
+    "engine.lib.logger",
+    "engine.semantic.engine_config",
+    "time"
+  ],
+  "engine\\semantic\\engine_config.py": [
+    "typing",
+    "core.lib.unified_config"
+  ],
+  "engine\\semantic\\enhanced.py": [
+    "datetime",
+    "typing",
+    "engine.embedding.local_embedding",
+    "engine.lib.logger",
+    "re",
+    "core.lib.unified_config"
+  ],
+  "engine\\semantic\\vector_learner.py": [
+    "time",
+    "pathlib",
+    "typing",
+    "core.lib.vector_knowledge_center"
+  ],
+  "engine\\semantic\\engines\\base.py": [
+    "abc",
+    "typing"
+  ],
+  "engine\\semantic\\engines\\config_engine.py": [
+    "time",
+    "pathlib",
+    "typing",
+    "yaml",
+    "engine.semantic.engines.base"
+  ],
+  "engine\\semantic\\engines\\llm_engine.py": [
+    "json",
+    "re",
+    "threading",
+    "time",
+    "pathlib",
+    "typing",
+    "yaml",
+    "engine.semantic.engines.base",
+    "core.lib.unified_config",
+    "requests",
+    "core.lib.smart_adapter"
+  ],
+  "engine\\semantic\\engines\\rule_engine.py": [
+    "pathlib",
+    "typing",
+    "yaml",
+    "engine.semantic.engines.base",
+    "core.lib.unified_config"
+  ],
+  "engine\\semantic\\engines\\vector_engine.py": [
+    "hashlib",
+    "time",
+    "typing",
+    "engine.semantic.engines.base",
+    "core.lib.vector_knowledge_center",
+    "core.lib.unified_config"
+  ],
+  "engine\\semantic_params\\image_mapper.py": [
+    "re"
+  ],
+  "engine\\semantic_params\\mapper.py": [
+    "re",
+    "typing"
+  ],
+  "engine\\semantic_params\\spatial_mapper.py": [
+    "re",
+    "typing"
+  ],
+  "engine\\semantic_params\\video_mapper.py": [
+    "re"
+  ],
+  "engine\\skill\\__init__.py": [
+    "engine.skill.core"
+  ],
+  "engine\\skill\\core.py": [
+    "datetime",
+    "typing",
+    "engine.skill_matrix.core"
+  ],
+  "engine\\skill_matrix\\__init__.py": [
+    "engine.skill_matrix.core"
+  ],
+  "engine\\skill_matrix\\core.py": [
+    "json",
+    "sys",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml",
+    "engine.lib.logger",
+    "core.lib.skill_loader_v3"
+  ],
+  "engine\\skill_matrix\\openclaw.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "yaml"
+  ],
+  "engine\\skill_matrix\\security.py": [
+    "json",
+    "re",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\skill_matrix_v2\\__init__.py": [
+    "engine.skill_matrix_v2.core"
+  ],
+  "engine\\skill_matrix_v2\\core.py": [
+    "datetime",
+    "typing",
+    "engine.lib.logger",
+    "engine.skill_matrix.core"
+  ],
+  "engine\\skill_v2\\__init__.py": [
+    "engine.skill_matrix_v2.core"
+  ],
+  "engine\\skill_v2\\core.py": [
+    "datetime",
+    "typing",
+    "engine.skill_matrix.core"
+  ],
+  "engine\\synthetic\\__init__.py": [
+    "engine.synthetic.generator"
+  ],
+  "engine\\synthetic\\generator.py": [
+    "json",
+    "random",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\tenant\\__init__.py": [
+    "engine.tenant.core"
+  ],
+  "engine\\tenant\\core.py": [
+    "json",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger"
+  ],
+  "engine\\transfer\\__init__.py": [
+    "engine.transfer.core"
+  ],
+  "engine\\transfer\\core.py": [
+    "json",
+    "collections",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.embedding.local_embedding",
+    "engine.lib.logger"
+  ],
+  "engine\\vector\\__init__.py": [
+    "engine.vector.enhanced"
+  ],
+  "engine\\vector\\enhanced.py": [
+    "dataclasses",
+    "typing",
+    "numpy",
+    "engine.lib.logger",
+    "core.lib.vector_knowledge_center",
+    "engine.skill_matrix.core"
+  ],
+  "engine\\workflow\\__init__.py": [
+    "engine.workflow.core"
+  ],
+  "engine\\workflow\\core.py": [
+    "engine.lib.logger",
+    "json",
+    "datetime",
+    "pathlib",
+    "typing"
+  ],
+  "engine\\workflows\\__init__.py": [
+    "engine.workflows.smart_qa"
+  ],
+  "engine\\workflows\\smart_qa.py": [
+    "sys",
+    "pathlib",
+    "engine.knowledge",
+    "engine.profile",
+    "engine.semantic"
+  ],
+  "engine\\youtube\\__init__.py": [
+    "engine.youtube.auth"
+  ],
+  "engine\\youtube\\auth.py": [
+    "json",
+    "os",
+    "datetime",
+    "pathlib",
+    "typing",
+    "engine.lib.logger",
+    "sys",
+    "gateway_endpoint"
   ]
 }

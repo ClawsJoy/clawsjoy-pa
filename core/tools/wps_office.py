@@ -11,7 +11,7 @@ Provider 策略(按优先级自动选择):
 wpsai 前置(调用前必须满足, 否则明确报错不假成功):
   - 网关可达 WPS-AI proxy(同机 127.0.0.1:3890 或 ssh -L 转发), env WPS_AI_URL/WPS_AI_TOKEN
   - WPS 演示正打开且【已保存】的空白演示文稿(1 页)作为工作区(灵犀拒绝未保存临时文档)
-  - 生成期间保持 WPS 前台/不切宿主; 每调用 25s 超时, 首败即停
+  - 生成期间保持 WPS 前台/不切宿主; 每调用 25s 超时, 首败即停(唯一例外: **读类**遇"宿主未命中"形状 ⇒ 有限重试; 写类不重试, 见 _wpsai_call_retry)
 md 约定与 python-pptx 兜底一致: 顶层 '#' 或 '## P?N' 一页一条; 每条 bullet 压至 <=120 字
 """
 import json
@@ -164,6 +164,63 @@ def _wpsai_call(name, args, timeout=25):
     return st, body
 
 
+# ---------- 宿主未命中兼容层(2026-09-19 · 本线 · v2 收窄) ----------
+# 根因(只读实证): 灵犀桥(plugin-wps proxy-server.js)在多 add-in 连接之间"轮流派发",
+#   落到非目标宿主的请求其 Application.ActivePresentation 为 null ⇒ 报"未检测到打开的 WPS 演示"。
+#   实测: wpp_* 连打 12 次 = 恰好 6 成 6 败; get_host_info 连打 12 次严格交替(wps<->wpp)。
+# 判据: 同一工具连打 N 次 host 必须恒定; 现网不恒定 ⇒ 红(桥侧根因仍在, 本层只是兼容层)。
+#
+# v2 收窄三处(DSH 初审 198a63b8 危险方向 ②③⑤; 另修 ④):
+#   ① **只给读类重试**(调用方显式 retry_ok=True); 写类**一律不重试** —— 重试会把写搬到
+#      **另一个宿主**上, 而起点校验过的"空白工作区"只属于起点那个宿主 ⇒ 可能改到别的实例里
+#      开着的真实文件; `wpp_delete_slide` 还非幂等。**写类 = 硬闸: 无开关可开**(见下行 v3)。
+# v3(2026-09-19 · DSH 二轮 38286268 §三-8「库层死开关」): 删 `WPS_AI_RETRY_WRITES`。
+#   原因: 产品路径的三处写(模板/删页/另存)本来就**不接**重试层 ⇒ 那个 env 零消费 = 死开关,
+#   而"开了也不生效"会被下一个人读成设计。现行口径 = 「写类永不重试」; 要恢复写类重试, 必须
+#   先有宿主粘性/幂等判据(见未覆盖面 3/4), 而不是先有这个开关。
+#   ② 形状判据从"**包含**"收紧为"**以之为首**" —— 反例: error="保存失败：未检测到打开的 WPS 演示"
+#      本质是**保存失败**, 含目标子串却不是宿主未命中 ⇒ 旧写法会去重试一个写调用。
+#   ③ 重试上限解析失败一律落 **1**(fail-closed, 不再 fail-open 回落 3); 要开读类重试须显式设 >=2。
+# 回退开关: WPS_AI_RETRY_ATTEMPTS=1 ⇒ 读类也不重试 = 改前口径(逐项一致, 由复算器 A' 格钉住)。
+_HOST_MISS_MARK = "未检测到打开的 WPS 演示"
+
+
+def _wpsai_retry_attempts():
+    try:
+        n = int(os.getenv("WPS_AI_RETRY_ATTEMPTS", "3"))
+    except Exception:
+        n = 1
+    return max(1, n)
+
+
+def _is_host_miss(body):
+    """形状判据(收窄版): **以**标记为首**才算宿主未命中(不是包含)。"""
+    return str(body.get("error") or "").strip().startswith(_HOST_MISS_MARK)
+
+
+def _wpsai_call_retry(name, args, timeout=25, attempts=None, retry_ok=False):
+    """只在"宿主未命中"形状上重试的调用层; 返回 (status, body, 重试次数)。
+
+    retry_ok: 调用方**声明这是读类**(只读、可安全重做)。
+              **False ⇒ 永不重试**(写类硬闸 · 无 env 开关 · v3)。
+    """
+    if not retry_ok:
+        st, body = _wpsai_call(name, args, timeout=timeout)
+        return st, body, 0
+    n = _wpsai_retry_attempts() if attempts is None else max(1, int(attempts))
+    used = 0
+    st, body = -1, {}
+    for i in range(1, n + 1):
+        st, body = _wpsai_call(name, args, timeout=timeout)
+        if st == 200 and body.get("ok"):
+            return st, body, used
+        if not _is_host_miss(body) or i >= n:
+            return st, body, used
+        used += 1
+        time.sleep(0.4)
+    return st, body, used
+
+
 def _win_path(linux_path):
     """把 /mnt/c /mnt/d 相对输出路径翻译成 Windows 路径(供 WPS 写盘)。"""
     p = str(linux_path).replace("/", "\\")
@@ -183,7 +240,7 @@ def _require_alive():
 
 def _require_clean_workspace():
     """要求 WPS 演示打开且已保存的空白工作区(<=2 页且正文为空), 避免误写真实文件。"""
-    st, body = _wpsai_call("wpp_get_presentation_info", {})
+    st, body, host_retries = _wpsai_call_retry("wpp_get_presentation_info", {}, retry_ok=True)
     if st != 200 or not body.get("ok"):
         return False, body.get("error") or "未检测到打开的 WPS 演示(请先 Ctrl+S 保存空白演示文稿并保持前台)"
     info = body.get("value") or {}
@@ -193,12 +250,12 @@ def _require_clean_workspace():
     if total < 1 or total > 2:
         return False, "工作区应只有 1 张空白页(当前 %d 页): 请新建并保存空白演示文稿" % total
     for i in range(1, total + 1):
-        st2, b2 = _wpsai_call("wpp_read_slide", {"index": i})
+        st2, b2, _r2 = _wpsai_call_retry("wpp_read_slide", {"index": i}, retry_ok=True)
         shapes = ((b2.get("value") or {}).get("shapes") or []) if b2.get("ok") else []
         for s in shapes:
             if (s.get("text") or "").strip():
                 return False, "工作区第 %d 页含已有内容, 请新建空白演示文稿避免误写" % i
-    return True, {"initial": total}
+    return True, {"initial": total, "host_miss_retries": host_retries}
 
 
 def _pptx_from_md_wpsai(pages, out_path):
@@ -221,14 +278,23 @@ def _pptx_from_md_wpsai(pages, out_path):
             kind = _template_kind(i, total, page)
             args = _template_args(kind, page)
             args["templateName"] = kind
-            st, body = _wpsai_call("wpp_apply_template", args)
+            st, body = _wpsai_call("wpp_apply_template", args)   # 写类: 不重试(v2 收窄①)
             if st != 200 or not body.get("ok"):
                 return {"success": False, "error": "第 %d 页模板失败: %s" % (i, body.get("error") or ("HTTP %d" % st))}
         for _ in range(initial):
-            _wpsai_call("wpp_delete_slide", {"index": 1})
-        st, body = _wpsai_call("wpp_save_as", {"path": win_out, "format": "pptx"})
+            st_d, body_d = _wpsai_call("wpp_delete_slide", {"index": 1})
+            if st_d != 200 or not body_d.get("ok"):
+                return {"success": False, "error": "删除工作区占位页失败(不冒充成功): %s" % (body_d.get("error") or ("HTTP %d" % st_d))}
+        st, body = _wpsai_call("wpp_save_as", {"path": win_out, "format": "pptx"})   # 写类: 不重试
         if st != 200 or not body.get("ok"):
             return {"success": False, "error": "另存失败: %s" % (body.get("error") or ("HTTP %d" % st))}
+
+        st_v, body_v, _rv = _wpsai_call_retry("wpp_get_presentation_info", {}, retry_ok=True)
+        got = -1
+        if st_v == 200 and body_v.get("ok"):
+            got = int((body_v.get("value") or {}).get("slideCount") or -1)
+        if got != total:
+            return {"success": False, "error": "产物页数核对未过: 期望 %d 页, 实读 %s(读回失败或页数不符) —— 不冒充成功" % (total, got)}
     except Exception as e:
         return {"success": False, "error": "wpsai 排版中断: %s" % str(e)[:200]}
 

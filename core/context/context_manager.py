@@ -1,5 +1,6 @@
 """上下文管理模块 — 合并 manager + retriever + filter_net"""
 
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -79,8 +80,35 @@ def _parse_flow_summary(summary, tool_name):
     return _ok, _elapsed
 
 
-def _append_tool_metric(tool_name, session_id, user_id, success, elapsed_ms, ts):
-    """追加一行指标到 JSONL(线程安全)"""
+# ⭐ T2-刀9 §二（2026-10-05 · PM 裁「准你办」）：失败之**因**之分
+#   首辨「**闸之拦** ⟷ **器之坏**」（承「假红亦病」：拦不是坏）。
+#   标识取**真源**：失败行之 `error` 原文（`AuditGuard` 传 `result.get("error")` · 见 guards/registry.py:640）
+FAIL_KIND_MARKS = (
+    ("guard_deny", ("[guard_deny]", "guard_deny", "越权", "工具调用被拒绝", "被拦截", "forbidden")),
+    ("write_pending", ("write_pending", "待审批", "写入待审")),
+    ("not_found", ("文件不存在", "目录不存在", "不存在", "not found", "no such file", "filenotfounderror")),
+    ("timeout", ("timeout", "timed out", "超时")),
+)
+FAIL_KIND_BLOCK = ("guard_deny", "write_pending")          # 「闸之拦」
+FAIL_KIND_BROKEN = ("tool_error", "not_found", "timeout")  # 「器之坏」
+
+
+def classify_fail_kind(result_summary, tool_name=""):
+    """⭐ T2-刀9 §二：失败之因分类（仅失败行调；成功行 ⛔ 调）。"""
+    _low = str(result_summary or "").lower()
+    for _k, _marks in FAIL_KIND_MARKS:
+        for _m in _marks:
+            if _m.lower() in _low:
+                return _k
+    return "tool_error"
+
+
+def _append_tool_metric(tool_name, session_id, user_id, success, elapsed_ms, ts, fail_kind=None):
+    """追加一行指标到 JSONL(线程安全)
+
+    ⭐ T2-刀9 §二：**只增** `fail_kind` 一键（失败之因；成功行 ⛔ 调）。
+    ⚠ 旧行**无此键** ⇒ 面须以「键在否」分「**旧行未标**」⟷「新行已标」（承「式未标 ＝ 缺」）。
+    """
     try:
         import os as _os
 
@@ -102,6 +130,7 @@ def _append_tool_metric(tool_name, session_id, user_id, success, elapsed_ms, ts)
                             "success": success,
                             "elapsed_ms": int(elapsed_ms or 0),
                             "ts": float(ts or time.time()),
+                            "fail_kind": (str(fail_kind) if fail_kind else None),
                         },
                         ensure_ascii=False,
                     )
@@ -111,18 +140,55 @@ def _append_tool_metric(tool_name, session_id, user_id, success, elapsed_ms, ts)
         pass
 
 
+_TF_STAMP_LOCK = None
+_TF_STAMP_LAST = [0]
+
+
+def _next_tool_flow_stamp():
+    """审计键之刻：**毫秒** + 同进程严格递增（老板 2026-10-03 裁「秒 -> 毫秒」）。
+
+    为什么：原式 ``int(time.time())`` 是**秒**粒度 ⇒ 同一秒内的两次调用**同名**，
+    第二条被 ``upsert_entity`` 吞掉。实测 2026-10-03 20:49:05：两发
+    ``/v9/sandbox/query_index`` 只落 1 行（``tool_flow::query_index::1791031745``）。
+    审计是「每一句都能被查」的地基 ⇒ 键必须唯一。
+    反例门：同秒连发两次 ⇒ 须落**两**行。
+    """
+    global _TF_STAMP_LOCK
+    import threading
+    if _TF_STAMP_LOCK is None:
+        _TF_STAMP_LOCK = threading.Lock()
+    with _TF_STAMP_LOCK:
+        _ms = int(time.time() * 1000)
+        if _ms <= _TF_STAMP_LAST[0]:
+            _ms = _TF_STAMP_LAST[0] + 1
+        _TF_STAMP_LAST[0] = _ms
+        return _ms
+
+
 def record_tool_flow(tool_name, args, result_summary, user_id, session_id):
     """工具调用后记录流水入 SAG + #20 指标 JSONL"""
     _ok, _el = _parse_flow_summary(result_summary, tool_name)
-    _append_tool_metric(tool_name, session_id, user_id, _ok, _el, time.time())
+    # ⭐ T2-刀9 §二：失败行落**因**（成功行 ⛔ 调）
+    _fk = (None if _ok else classify_fail_kind(result_summary, tool_name))
+    _append_tool_metric(tool_name, session_id, user_id, _ok, _el, time.time(), fail_kind=_fk)
     try:
         from core.lib.code_entity_extractor import extractor
 
-        entity_name = f"tool_flow::{tool_name}::{int(time.time())}"
+        entity_name = f"tool_flow::{tool_name}::{_next_tool_flow_stamp()}"
+        # ⭐ 写入面改形（老板 2026-10-03 裁 · ② · 出新版）：旧形把 args（含 query 原文）
+        # 逐字写进 signature ⇒ 谁搜过什么永久留在检索面 ⇒ 污染（ILIKE 命中自己的审计行）
+        # ＋ 隐私双料。新形（sigv=2）：args 只留 sha256 ＋ 条数，⛔ 不留原文。
+        # 判据：写入后用原文子串在全表搜 ⇒ 须 0 命中（不回流）。
+        _args_obj = args if isinstance(args, dict) else {}
+        _args_sha256 = hashlib.sha256(
+            json.dumps(_args_obj, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()
         signature = json.dumps(
             {
+                "sigv": 2,
                 "tool": tool_name,
-                "args": args if isinstance(args, dict) else {},
+                "args_sha256": _args_sha256,
+                "args_n": len(_args_obj),
                 "summary": result_summary[:200],
                 "user_id": user_id,
                 "session_id": session_id,
@@ -195,12 +261,16 @@ def tool_flow_stats(window_hours=24, limit=100000):
                     _ok = _rec.get("success")
                     _ms = int(_rec.get("elapsed_ms", 0) or 0)
                     for _bucket, _k in ((_by_tool, _tool), (_by_task, _sid)):
-                        _b = _bucket.setdefault(_k, {"count": 0, "success": 0, "fail": 0, "elapsed": []})
+                        _b = _bucket.setdefault(_k, {"count": 0, "success": 0, "fail": 0, "elapsed": [],
+                                                     "fail_kinds": {}})
                         _b["count"] += 1
                         if _ok is True:
                             _b["success"] += 1
                         elif _ok is False:
                             _b["fail"] += 1
+                            # ⭐ 旧行无 `fail_kind` 键 ⇒ 照实记「未标」（⛔ 填「坏」⇒ 免假红）
+                            _fk2 = _rec.get("fail_kind") or "未标（旧行无此键 ⇒ 因未知）"
+                            _b["fail_kinds"][str(_fk2)] = _b["fail_kinds"].get(str(_fk2), 0) + 1
                         _b["elapsed"].append(_ms)
 
         def _finalize(_bucket):
@@ -208,6 +278,10 @@ def tool_flow_stats(window_hours=24, limit=100000):
             for _k, _b in _bucket.items():
                 _n = _b["count"]
                 _sr = round(_b["success"] * 100.0 / _n, 1) if _n else 0.0
+                _fk = _b.get("fail_kinds") or {}
+                _blk = sum(v for k, v in _fk.items() if k in FAIL_KIND_BLOCK)
+                _brk = sum(v for k, v in _fk.items() if k in FAIL_KIND_BROKEN)
+                _unl = sum(v for k, v in _fk.items() if k not in FAIL_KIND_BLOCK and k not in FAIL_KIND_BROKEN)
                 _out[_k] = {
                     "count": _n,
                     "success": _b["success"],
@@ -215,15 +289,27 @@ def tool_flow_stats(window_hours=24, limit=100000):
                     "success_rate": _sr,
                     "avg_ms": round(sum(_b["elapsed"]) / _n, 1) if _n else 0,
                     "p95_ms": _p95(_b["elapsed"]),
+                    # ⭐ T2-刀9 §二：失败之因分布 ＋ 「拦 ⟷ 坏」之合
+                    "fail_kinds": _fk,
+                    "blocked_vs_broken": {"blocked": _blk, "broken": _brk, "unlabeled": _unl},
                 }
             return _out
 
+        _bt = _finalize(_by_tool)
+        _bk = _finalize(_by_task)
+        _blk_n = sum(v["blocked_vs_broken"]["blocked"] for v in _bt.values())
+        _brk_n = sum(v["blocked_vs_broken"]["broken"] for v in _bt.values())
+        _unl_n = sum(v["blocked_vs_broken"]["unlabeled"] for v in _bt.values())
         return {
             "generated_at": time.time(),
             "window_hours": window_hours,
             "total": _total,
-            "by_tool": _finalize(_by_tool),
-            "by_task": _finalize(_by_task),
+            "by_tool": _bt,
+            "by_task": _bk,
+            "blocked_vs_broken": {"blocked": _blk_n, "broken": _brk_n, "unlabeled": _unl_n},
+            "judge": ("「拦」＝闸之拦（guard_deny ＋ write_pending · ⛔ 器之坏）；"
+                      "「坏」＝器之坏（tool_error ＋ not_found ＋ timeout）；"
+                      "「unlabeled」＝旧行无 `fail_kind` 键 ⇒ 因**未知**（⛔ 归入坏）"),
         }
     except Exception as _e:
         print(f"[TOOL_METRICS] 统计失败: {_e}")

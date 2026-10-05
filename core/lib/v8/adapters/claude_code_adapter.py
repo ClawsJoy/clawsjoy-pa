@@ -3,6 +3,8 @@
 
 import json
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 from . import BaseAdapter
 
 
@@ -23,7 +25,7 @@ class ClaudeCodeAdapter(BaseAdapter):
         ]
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
+            result = _proc.run_hidden(cmd, capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
             if result.returncode == 0 and result.stdout.strip():
                 data = json.loads(result.stdout)
                 content = data.get("result", data.get("content", result.stdout))

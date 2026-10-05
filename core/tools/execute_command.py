@@ -57,6 +57,12 @@ class ExecuteCommandPlugin(ToolPlugin):
         except Exception as _ip_e:
             pass  # 注入失败不阻断命令执行(仅诊断)
         import subprocess
+        # 2026-10-03 修（CW）· 「shell 死」的真因不在 shell，在 stdin.
+        #   背景：Windows 上 shell=True 走 cmd.exe；而 cmd 的 date 是【交互提问】
+        #   （提示 "Enter the new date: (yy-mm-dd)"）。⛔ 不给 stdin ⇒ 子进程继承网关的 stdin，
+        #   若那是「开了不写」的管道 ⇒ 永久阻塞 ⇒ 撞 320s 工具超时 ⇒ 被报成「shell 通道不可用」。
+        #   实测(2026-10-03)：date + 开管道 stdin ⇒ >6s 阻塞；date + DEVNULL ⇒ 0.02s 返回 rc=1。
+        #   ⚠ 边界：Windows/cmd 下 heredoc 本就不支持，故 DEVNULL 不减少既有能力。
         # P1-2: 工具执行超时从 execution_policy.yaml 读取(默认 30000ms), 不再硬编码 30s
         try:
             _tool_timeout = int(((_load_v9_execution_policy() or {}).get("execution_budget", {}) or {}).get("tool_timeout_ms", 320000) or 320000)
@@ -75,7 +81,7 @@ class ExecuteCommandPlugin(ToolPlugin):
             except Exception:
                 _exec_cwd = base
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=_tool_timeout_s, cwd=str(_exec_cwd), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
+            result = subprocess.run(cmd, shell=True, capture_output=True, stdin=subprocess.DEVNULL, text=True, timeout=_tool_timeout_s, cwd=str(_exec_cwd), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
         except subprocess.TimeoutExpired:
             # P1-2: 长时间测试超时引导 — 不要 nohup 后台 + sleep 轮询
             return {"success": False, "stdout": "",
@@ -102,7 +108,7 @@ class ExecuteCommandPlugin(ToolPlugin):
                 if _abs_pre.exists():
                     _abs_pre.stat()
             try:
-                _res_h = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=_tool_timeout_s, cwd=str(base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
+                _res_h = subprocess.run(cmd, shell=True, capture_output=True, stdin=subprocess.DEVNULL, text=True, timeout=_tool_timeout_s, cwd=str(base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
             except subprocess.TimeoutExpired:
                 return {"success": False, "stdout": "",
                         "stderr": f"命令执行超时(>{int(_tool_timeout_s)}s)。如需运行长时间测试，请改用 timeout 300 同步等待，不要 nohup 后台 + sleep 轮询。",

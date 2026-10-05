@@ -10,6 +10,7 @@ import json
 import threading
 import time
 from pathlib import Path
+from core.gateway import _proc as _proc  # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
 _MEMORY_ROOT = Path("data/projects")
 _LOCK = threading.Lock()
@@ -149,11 +150,11 @@ def persist_session_learning_state(*, messages, user_id, session_id, tokens, _ta
         if not _git_dir.exists():
             import subprocess as _sp
 
-            _sp.run(["git", "init"], cwd=str(project_dir), capture_output=True)
-            _sp.run(["git", "config", "user.name", "ClawsJoy Agent"], cwd=str(project_dir), capture_output=True)
-            _sp.run(["git", "config", "user.email", "agent@clawsjoy.local"], cwd=str(project_dir), capture_output=True)
-            _sp.run(["git", "add", "-A"], cwd=str(project_dir), capture_output=True)
-            _sp.run(["git", "commit", "-m", "sandbox init", "--allow-empty"], cwd=str(project_dir), capture_output=True)
+            _proc.run_hidden(["git", "init"], cwd=str(project_dir), capture_output=True)
+            _proc.run_hidden(["git", "config", "user.name", "ClawsJoy Agent"], cwd=str(project_dir), capture_output=True)
+            _proc.run_hidden(["git", "config", "user.email", "agent@clawsjoy.local"], cwd=str(project_dir), capture_output=True)
+            _proc.run_hidden(["git", "add", "-A"], cwd=str(project_dir), capture_output=True)
+            _proc.run_hidden(["git", "commit", "-m", "sandbox init", "--allow-empty"], cwd=str(project_dir), capture_output=True)
         state_file = project_dir / ".agent_state.json"
         state = {}
         if state_file.exists():

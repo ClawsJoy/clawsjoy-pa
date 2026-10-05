@@ -26,7 +26,7 @@ class RedisCache:
             )
             self.client.ping()
             self.enabled = True
-            print("✅ Redis 缓存已启用")
+            print("✅ Redis 缓存已启用（redis_cache · ping 通过）")
         except Exception as e:
             print(f"⚠️ Redis 连接失败，使用内存缓存: {e}")
             self.enabled = False

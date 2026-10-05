@@ -14,6 +14,7 @@ from core.gateway.path_utils import _format_path_for_agent, _normalize_path
 from core.gateway.quota_manager import _check_discuss_token_budget
 from core.gateway.sag_feedback import _record_path_pattern
 from core.gateway.sandbox_git import _git_status, _sandbox_git_post_exec
+from core.gateway import _proc as _proc  # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 from core.gateway.shared_state import (
     _HEREDOC_MARKERS,
     _SAFE_EXEC_CMDS,
@@ -48,6 +49,24 @@ from core.lib.v8.ledger import ledger
 logger = logging.getLogger(__name__)
 
 
+def _missing_required(_key):
+    """PM-011 N11：必填缺失 ⇒ 400 ＋ 定位（形制 `<路由>: 缺 <键>`）。
+
+    ⭐ 返回 **Response（status 400）**，⛔ 不是 `(resp, 400)` 元组 ——
+    `_with_http_tool_flow` 的 wrapper 要 `_resp.get_json()` 才能把**同一句文案**
+    写进 tool_flow／审计面（承裁 (a)：审计面按 `body` 判，⛔ 不按状态码）；
+    返回元组会让 `.get_json()` 缺席 ⇒ 该次调用在审计面**丢行**。
+    """
+    try:
+        _rule = getattr(request, "url_rule", None)
+        _loc = str(_rule.rule if _rule is not None else (request.path or "")).lstrip("/")
+    except Exception:
+        _loc = "v9/sandbox"
+    _r = jsonify({"success": False, "error": "%s: 缺 %s" % (_loc, _key)})
+    _r.status_code = 400
+    return _r
+
+
 def _get_v9_read_quota(task_hint: str = "") -> int:
     """P1-2 读取配额动态化：按任务类型动态调整读取上限。
 
@@ -71,6 +90,33 @@ def _get_v9_read_quota(task_hint: str = "") -> int:
     return 10
 
 
+def _sandbox_http_shape_guard():
+    """PM-011v17 §二(2) 裁 ＋ PM-011v18 §一 扩批：空载荷／错类型 ⇒ 400（⛔ 不许默认值冒充调用方意图）。
+
+    返回：形状合格 ⇒ `dict`；形状不合格 ⇒ Flask 400 响应（调用方**原样 return**）。
+    ⭐ **本文件 7 个 POST handler 全部走这一个入口**（v18 扩批后 `request.json or {}` 计数 = 0）：
+      · 5 条被 `@_with_http_tool_flow` 包裹的路由（装饰器 wrapper 里先拦一次）；
+      · `list` / `checkpoint` / `rollback`（未装饰 ⇒ 由 handler 自己拦）。
+    ⭐ 每个 handler **自证形状**（⛔ 不把「有装饰器」当在场保证）：承规则「在场 ≠ 生效」——
+      装饰器被摘掉／改名时，handler ⛔ 不许静默退回默认值。
+    """
+    try:
+        rule = getattr(request, "url_rule", None)
+        locator = str(rule.rule if rule is not None else (request.path or "")).lstrip("/")
+    except Exception:
+        locator = "v9/sandbox"
+    raw = request.get_data(cache=True)
+    data = request.get_json(silent=True)
+    if data is None:
+        msg = "body 不是合法 JSON" if raw else "body 为空（需要 JSON 对象）"
+        return jsonify({"success": False, "error": "%s: %s" % (locator, msg)}), 400
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "error": "%s: body 需要 JSON 对象（拿到 %s）" % (locator, type(data).__name__)}), 400
+    if not data:
+        return jsonify({"success": False, "error": "%s: 空载荷（缺必填）" % locator}), 400
+    return data
+
+
 def _with_http_tool_flow(tool_name: str):
     """#88 过滤网完整接入：HTTP 工具路由（v9_sandbox_* handler）统一记录 tool_flow。
 
@@ -86,7 +132,9 @@ def _with_http_tool_flow(tool_name: str):
             from core.gateway.audit import audit_tool_call  # G4: HTTP 工具路由同样全量审计
 
             _start = _t88.time()
-            _data = request.json or {}
+            _data = _sandbox_http_shape_guard()
+            if not isinstance(_data, dict):
+                return _data
             _uid = _data.get("user_id", "guest")
             _sid = _data.get("session_id", "default")
             try:
@@ -122,7 +170,10 @@ def _with_http_tool_flow(tool_name: str):
 
 @_with_http_tool_flow("read_file")
 def v9_sandbox_read_handler():
-    data = request.json or {}
+    _d = _sandbox_http_shape_guard()
+    if not isinstance(_d, dict):
+        return _d
+    data = _d
     user_id = data.get("user_id", "default")
     session_id = data.get("session_id", "default")
     filepath = data.get("path", "")
@@ -134,7 +185,7 @@ def v9_sandbox_read_handler():
         _consecutive_lists[session_id] = 0
         _sess_ls = 0
     if not filepath:
-        return jsonify({"success": False, "error": "path 必填"})
+        return _missing_required("path")
     base = _get_sandbox_base(user_id, session_id)
     base.mkdir(parents=True, exist_ok=True)
     target = _normalize_path(filepath, user_id, session_id)
@@ -490,7 +541,10 @@ def v9_sandbox_read_handler():
 
 @_with_http_tool_flow("search_files")
 def v9_sandbox_search_handler():
-    data = _unified_preprocess(request.json or {})
+    _d = _sandbox_http_shape_guard()
+    if not isinstance(_d, dict):
+        return _d
+    data = _unified_preprocess(_d)
     user_id = data.get("user_id", "default")
     session_id = data.get("session_id", "default")
     # #192 空结果熔断：新任务开始（task_id 变化）时重置计数
@@ -605,7 +659,10 @@ def v9_sandbox_search_handler():
 
 @_with_http_tool_flow("write_file")
 def v9_sandbox_edit_handler():
-    data = request.json or {}
+    _d = _sandbox_http_shape_guard()
+    if not isinstance(_d, dict):
+        return _d
+    data = _d
     user_id = data.get("user_id", "default")
     session_id = data.get("session_id", "default")
     filepath = data.get("path", "")
@@ -613,7 +670,7 @@ def v9_sandbox_edit_handler():
     suffix = data.get("suffix", "")  # 要修改的内容后文
 
     if not filepath:
-        return jsonify({"success": False, "error": "path 必填"})
+        return _missing_required("path")
 
     base = _get_sandbox_base(user_id, session_id)
     base.mkdir(parents=True, exist_ok=True)
@@ -825,10 +882,13 @@ def v9_sandbox_query_index_handler():
     import re as _re
     from pathlib import Path as _Path
 
-    data = request.json or {}
+    _d = _sandbox_http_shape_guard()
+    if not isinstance(_d, dict):
+        return _d
+    data = _d
     query = data.get("query", "")
     if not query:
-        return jsonify({"success": False, "error": "query 必填"})
+        return _missing_required("query")
     _uid = data.get("user_id", "default")
     _sid = data.get("session_id", "default")
     # ===== #210 session 级失败锁定：入口检查 =====
@@ -1007,11 +1067,17 @@ def v9_sandbox_query_index_handler():
             )
 
     results = []
-    query_lower = query.lower()
+    # 检索精度闸（老板 2026-10-03 裁 · 最小词长 + 词边界）：
+    # 原式 `kw.lower() in query_lower or query_lower in kw.lower()` 是**无界子串**匹配 ⇒
+    # 任取一个乱串都能命中（实测 "no" ⊂ "nonexistent"、"clean" ⊂ "clean_neg"）⇒
+    # 「反例空」这一判据在修前**恒不成立**。现改为 **token 全等** 且 ASCII token >= 3 字符。
+    from core.lib.code_entity_extractor import kw_hit as _kw_hit, query_tokens as _query_tokens
+
+    _qtoks = _query_tokens(query)
     for filepath, keywords in _code_indexer._keyword_index.items():
         match_score = 0
         for kw in keywords:
-            if kw.lower() in query_lower or query_lower in kw.lower():
+            if _kw_hit(kw, _qtoks):
                 match_score += 1
         if match_score > 0:
             blocks = _code_indexer.parse_file(filepath)
@@ -1127,7 +1193,10 @@ def v9_sandbox_exec_handler():
     import json as _json
     import logging as _log
 
-    data = _unified_preprocess(request.json or {})
+    _d = _sandbox_http_shape_guard()
+    if not isinstance(_d, dict):
+        return _d
+    data = _unified_preprocess(_d)
     if not data.get("command"):
         return jsonify({"success": False, "error": "缺少 command 参数"}), 400
     user_id = data.get("user_id", "default")
@@ -1199,7 +1268,7 @@ def v9_sandbox_exec_handler():
         _cmd_fixed = _re_heredoc.sub(r"data/projects/[^\"'\s]+/", "", command)
         _cmd_fixed = _re_heredoc.sub(r"(?<![A-Za-z0-9_])\./", "", _cmd_fixed)
         _cmd_fixed = _re_heredoc.sub(r"(?<![A-Za-z0-9_])clawsjoy_dev/", "", _cmd_fixed)
-        result = _sp_heredoc.run(
+        result = _proc.run_hidden(
             _cmd_fixed, shell=True, capture_output=True, text=True, timeout=300, cwd=str(sandbox_base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace"
         )
         return jsonify(
@@ -1223,7 +1292,7 @@ def v9_sandbox_exec_handler():
 
         # cwd 统一为 sandbox_base（与 heredoc 分支一致，避免 base/clawsjoy_dev 双重拼接）
         sandbox_base = _get_sandbox_base(user_id, session_id)
-        result = _sp_inline.run(
+        result = _proc.run_hidden(
             command, shell=True, capture_output=True, text=True, timeout=300, cwd=str(sandbox_base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace"
         )
         return jsonify(
@@ -1413,7 +1482,7 @@ def v9_sandbox_exec_handler():
                             break
                 if _abs.exists():
                     _before_mtimes[str(_abs)] = _abs.stat().st_mtime
-            _res_h2 = subprocess.run(
+            _res_h2 = _proc.run_hidden(
                 command, shell=True, capture_output=True, text=True, timeout=30, cwd=str(base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace"
             )
             if _res_h2.returncode == 0:
@@ -1499,7 +1568,7 @@ def v9_sandbox_exec_handler():
             _sb_err = _check_sandbox_read(command)
             if _sb_err:
                 return jsonify({"success": False, "stdout": "", "stderr": _sb_err, "returncode": 1})
-            result = subprocess.run(
+            result = _proc.run_hidden(
                 command, shell=True, cwd=str(base), env=_SANDBOX_ENV, capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace"
             )
             _resp = {
@@ -1534,7 +1603,7 @@ def v9_sandbox_exec_handler():
 
                 return jsonify({"success": False, "error": "禁止在沙箱外写入文件。所有修改操作必须在项目目录内进行。"})
 
-        result = subprocess.run(
+        result = _proc.run_hidden(
             command, shell=True, cwd=str(base), env=_SANDBOX_ENV, capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace"
         )
         _hint = None
@@ -1606,7 +1675,10 @@ from core.gateway.sandbox_util import (
 def v9_sandbox_checkpoint_handler():
     import subprocess
 
-    data = request.json or {}
+    _d = _sandbox_http_shape_guard()
+    if not isinstance(_d, dict):
+        return _d
+    data = _d
     user_id = data.get("user_id", "default")
     session_id, _auto_sid = _resolve_v9_session_id(user_id, data.get("session_id", "default"))
     message = data.get("message", "Auto checkpoint")
@@ -1617,7 +1689,7 @@ def v9_sandbox_checkpoint_handler():
         # 批181 · 走唯一出口（只提交本次变更 + 要求仓库根=沙箱）
         from core.gateway.sandbox_git import safe_git_commit as _sgc2
 
-        _st2 = subprocess.run(
+        _st2 = _proc.run_hidden(
             ["git", "status", "--porcelain"], cwd=str(base), capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace"
         )
         _files2 = [ln[3:].strip() for ln in (_st2.stdout or "").splitlines() if len(ln) > 3 and ln[3:].strip()]
@@ -1627,7 +1699,7 @@ def v9_sandbox_checkpoint_handler():
         # git commit 成功后生成纯净变更 .patch 文件供用户审核
         patches_dir = base / "data" / "patches"
         patches_dir.mkdir(parents=True, exist_ok=True)
-        r_patch = subprocess.run(
+        r_patch = _proc.run_hidden(
             ["git", "format-patch", "HEAD~1", "-o", str(patches_dir)],
             cwd=str(base),
             capture_output=True,
@@ -1636,7 +1708,7 @@ def v9_sandbox_checkpoint_handler():
         )
         if r_patch.returncode != 0:
             return jsonify({"success": False, "error": r_patch.stderr.strip() or "git format-patch 失败"})
-        r_hash = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
+        r_hash = _proc.run_hidden(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
         patch_files = sorted(patches_dir.glob("*.patch")) if patches_dir.exists() else []
         return jsonify(
             {
@@ -1653,7 +1725,10 @@ def v9_sandbox_checkpoint_handler():
 def v9_sandbox_rollback_handler():
     import subprocess
 
-    data = request.json or {}
+    _d = _sandbox_http_shape_guard()
+    if not isinstance(_d, dict):
+        return _d
+    data = _d
     user_id = data.get("user_id", "default")
     session_id, _auto_sid = _resolve_v9_session_id(user_id, data.get("session_id", "default"))
     target = data.get("target", "HEAD~1")
@@ -1661,8 +1736,8 @@ def v9_sandbox_rollback_handler():
     if not (base / ".git").exists():
         return jsonify({"success": False, "error": "沙箱 Git 仓库未初始化"})
     try:
-        subprocess.run(["git", "reset", "--hard", target], cwd=str(base), capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
-        r_hash = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
+        _proc.run_hidden(["git", "reset", "--hard", target], cwd=str(base), capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
+        r_hash = _proc.run_hidden(["git", "rev-parse", "HEAD"], cwd=str(base), capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace")
         _trk = _tracker_setdefault(
             _session_git_tracker,
             session_id,
@@ -1685,7 +1760,10 @@ def v9_sandbox_rollback_handler():
 def v9_sandbox_list_handler():
     import traceback
 
-    data = _unified_preprocess(request.json or {})
+    data = _sandbox_http_shape_guard()
+    if not isinstance(data, dict):
+        return data
+    data = _unified_preprocess(data)
     _sid_list, _auto_sid = _resolve_v9_session_id(data.get("user_id", "default"), data.get("session_id", "default"))
     # #106 C1 并发修复：per-session 配额（原模块级整数多线程串扰）
     _sess_reads = _consecutive_reads.get(_sid_list, 0)

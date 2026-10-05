@@ -3,6 +3,8 @@
 
 import json
 import subprocess
+
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
@@ -161,7 +163,7 @@ class SkillRecommender:
 
         # 检查 Git 是否可用
         try:
-            subprocess.run(["git", "--version"], capture_output=True, check=True)
+            _proc.run_hidden(["git", "--version"], capture_output=True, check=True)
         except Exception:
             return {
                 "version": self.VERSION,
@@ -176,7 +178,7 @@ class SkillRecommender:
             repo_url = repo_info["url"]
             target_path = self.skills_dir / skill_name
 
-            result = subprocess.run(
+            result = _proc.run_hidden(
                 ["git", "clone", repo_url, str(target_path)],
                 capture_output=True,
                 text=True,

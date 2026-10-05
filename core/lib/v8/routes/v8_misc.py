@@ -23,7 +23,8 @@ def v8_notifications():
         result = list_notifications(limit=limit, offset=offset)
         return _v8_resp_ok(result)
     except Exception as e:
-        return _v8_resp_err(str(e))
+        logger.error("v8/notifications 内部错误: %s", type(e).__name__)
+        return _v8_resp_err("v8/notifications: 内部错误（已记日志）")
 
 
 def v8_notifications_list():
@@ -34,20 +35,30 @@ def v8_notifications_list():
         result = list_notifications(limit=limit, offset=offset)
         return _v8_resp_ok(result)
     except Exception as e:
-        return _v8_resp_err(str(e))
+        logger.error("v8/notifications/list 内部错误: %s", type(e).__name__)
+        return _v8_resp_err("v8/notifications/list: 内部错误（已记日志）")
 
 
 def v8_notifications_read():
     # POST /v8/notifications/read  body: {"id": "..."}
+    # N2c-(a)（PM 2026-09-30 裁）：坏形状 ⇒ 400 ＋ 定位，⛔ 不是 500。
     try:
-        data = request.json or {}
-        nid = data.get("id", "")
-        if not nid:
-            return _v8_resp_err("missing id")
+        data = request.json
+    except Exception:
+        return _v8_resp_err("v8/notifications/read: body 不是合法 JSON", 400)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return _v8_resp_err("v8/notifications/read: body 需要 JSON 对象（拿到 %s）" % type(data).__name__, 400)
+    nid = data.get("id", "")
+    if not nid:
+        return _v8_resp_err("missing id", 400)
+    try:
         result = mark_read(nid)
         return _v8_resp_ok(result)
     except Exception as e:
-        return _v8_resp_err(str(e))
+        logger.error("v8/notifications/read 内部错误: %s", type(e).__name__)
+        return _v8_resp_err("v8/notifications/read: 内部错误（已记日志）")
 
 
 def v8_notifications_read_all():
@@ -56,7 +67,8 @@ def v8_notifications_read_all():
         result = mark_all_read()
         return _v8_resp_ok(result)
     except Exception as e:
-        return _v8_resp_err(str(e))
+        logger.error("v8/notifications/read-all 内部错误: %s", type(e).__name__)
+        return _v8_resp_err("v8/notifications/read-all: 内部错误（已记日志）")
 
 
 def v8_notifications_unread_count():
@@ -65,7 +77,8 @@ def v8_notifications_unread_count():
         result = unread_count()
         return _v8_resp_ok(result)
     except Exception as e:
-        return _v8_resp_err(str(e))
+        logger.error("v8/notifications/unread-count 内部错误: %s", type(e).__name__)
+        return _v8_resp_err("v8/notifications/unread-count: 内部错误（已记日志）")
 
 
 def v8_notifications_stream():
@@ -119,7 +132,15 @@ def v8_discussions_list():
 
 def v8_discussions_save():
     """保存讨论记录到 data/v8/discussions/ 目录"""
-    data = request.json or {}
+    # N2c-(a)（PM 2026-09-30 裁）：坏形状 ⇒ 400 ＋ 定位，⛔ 不是 500。
+    try:
+        data = request.json
+    except Exception:
+        return _v8_resp_err("v8/discussions/save: body 不是合法 JSON", 400)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return _v8_resp_err("v8/discussions/save: body 需要 JSON 对象（拿到 %s）" % type(data).__name__, 400)
     import time as _time
     discussions_dir = Path("data/v8/discussions")
     discussions_dir.mkdir(parents=True, exist_ok=True)
@@ -152,18 +173,27 @@ def v8_discussions_get():
         data = json.loads(filepath.read_text(encoding="utf-8"))
         return jsonify({"success": True, "record": data})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        logger.error("v8/discussions/get 内部错误: %s", type(e).__name__)
+        return jsonify({"success": False, "error": "v8/discussions/get: 内部错误（已记日志）"}), 500
 
 def v8_discord_notify():
     """接收内部通知，通过 Webhook 转发到 Discord（支持多身份）"""
-    data = request.json or {}
+    # N2c-(a)（PM 2026-09-30 裁）：坏形状／缺必填 ⇒ 400 ＋ 定位，⛔ 不是 200／500。
+    try:
+        data = request.json
+    except Exception:
+        return _v8_resp_err("v8/discord/notify: body 不是合法 JSON", 400)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return _v8_resp_err("v8/discord/notify: body 需要 JSON 对象（拿到 %s）" % type(data).__name__, 400)
     channel_id = data.get("channel_id", "")
     content = data.get("message", "")
     username = data.get("username", "")
     avatar_url = data.get("avatar_url", "")
 
     if not channel_id or not content:
-        return jsonify({"success": False})
+        return _v8_resp_err("v8/discord/notify: 缺 channel_id 或 message（⛔ 不给默认值）", 400)
 
     import requests as _r
     payload = {"content": content}

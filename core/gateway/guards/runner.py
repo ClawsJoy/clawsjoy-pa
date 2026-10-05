@@ -21,8 +21,11 @@ from core.gateway.guards.base import EVENT_POST_EXECUTE, EVENT_PRE_EXECUTE
 from core.gateway.guards.registry import mount_guards
 from core.os.context import get_v9_context
 
-# 子任务挂载集(免审批): 不挂 approval/plan/escape — 与现状子任务行为一致
-SUBTASK_GUARD_EXCLUDE = ["approval_guard", "plan_guard", "escape_guard"]
+# 子任务挂载集(免审批): ⭐ PM 2026-10-04（承 技总 958 §二.⒝ · 老板「批」）：
+#   只摘 approval/plan ⇒ ⭐ **留 escape_guard（锚点B · 路径/命令越权确定性拒）**；
+#   由：原表「一并摘 escape」＋ `waterfall` 之 scope **只加不减** ⇒ 一「真减」即连锚点B 同摘 ⇒ **无闸**
+#   ⚠ 真达之路 ＝ `ApprovalGuard` 读载荷 `sub_task_id` 早返（见 `registry.py`）· ⛔ 靠本表（被全局盖过）
+SUBTASK_GUARD_EXCLUDE = ["approval_guard", "plan_guard"]
 # 主任务/主聊天全量挂载
 FULL_GUARD_EXCLUDE: list = []
 

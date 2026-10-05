@@ -2,6 +2,8 @@
 
 import re as _re
 
+from core.lib.paths import (MAX_DERIVED_NAME_BYTES, MAX_NAME_BYTES, check_path_len,
+                            is_vault_path, write_text_lf)
 from core.tools.base import ToolPlugin
 
 
@@ -36,6 +38,21 @@ def _content_incomplete_hint(content: str) -> str:
             return "内容可能不完整: 末尾无完整结尾(疑似被截断), 请检查或重新生成"
     return ""
 
+
+def _emit_vault_safe(path, text, used_for="author"):
+    """按面写：vault 面 ⇒ 走**唯一写出口** ``write_text_lf()``（纯 LF ＋ 逐段字节上限）；
+    非 vault 面 ⇒ 原行为（``Path.write_text`` · 平台默认换行），⛔ 不动。
+
+    为什么必须分面：vault 是**跨平台镜像面**（WSL 侧按 LF 播种/镜像/比对）⇒ 本侧一翻
+    CRLF 就「同一逻辑内容按字节分成两份」（``sha16`` 与对端不等 · 四元组对不上）；
+    非 vault 面（如 ``.bat``）本来可能就要 CRLF ⇒ 不动。
+    承 CEO 2026-09-28 §一③（写进 vault 纯 LF）＋ §三（200 B 界值 · 派生名按 224 B）。
+    """
+    if not is_vault_path(path):
+        path.write_text(text, encoding="utf-8")
+        return path
+    limit = MAX_DERIVED_NAME_BYTES if used_for == "derived" else MAX_NAME_BYTES
+    return write_text_lf(path, text, limit=limit)
 
 class WriteFilePlugin(ToolPlugin):
     name = "write_file"
@@ -100,6 +117,17 @@ class WriteFilePlugin(ToolPlugin):
         except Exception:
             _last_read_fingerprints.clear()
         target = _resolve_path(base, args.get("path", ""))
+        # ★ vault 面：件名／路径段 UTF-8 ≤ 200 B（fail-loud 拒写）—— 在 mkdir / 任何写**之前**查
+        #   ⇒ 拒写零副作用（⛔ 不落半件 · ⛔ 不建父目录）；非 vault 面跳过。
+        #   `.bak` 派生名按派生名预算（200 ＋ 24 ≤ 255）。承 CEO 2026-09-28 §三。
+        if is_vault_path(target):
+            try:
+                check_path_len(target)
+                check_path_len(target.with_suffix(target.suffix + ".bak"), MAX_DERIVED_NAME_BYTES)
+            except ValueError as _e_vault_name:
+                return {"success": False, "error": str(_e_vault_name),
+                        "hint": "vault 件名/路径段 UTF-8 超上限：WSL/ext4 读不到"
+                                "（ENAMETOOLONG）⇒ 拒写。请缩短该段件名。"}
         line = args.get("line", 0)
         content_str = args.get("content", "")
         # D4 单一真源(2026-08-30): SOP 沙箱镜像文件(docs/reports 下)只读 —
@@ -166,12 +194,12 @@ class WriteFilePlugin(ToolPlugin):
                         original_lines[line - 1:] = content_lines
                 else:
                     original_lines[line - 1] = content_str
-                target.write_text("\n".join(original_lines), encoding="utf-8")
+                _emit_vault_safe(target, "\n".join(original_lines))
                 if str(target).endswith('.js'):
                     import subprocess as _sp
                     _result = _sp.run(['node', '-c', str(target)], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
                     if _result.returncode != 0:
-                        target.write_text("\n".join(original_lines), encoding="utf-8")
+                        _emit_vault_safe(target, "\n".join(original_lines))
                         _key = str(target)
                         _js_rollback_count[_key] = _js_rollback_count.get(_key, 0) + 1
                         _count = _js_rollback_count[_key]
@@ -216,10 +244,10 @@ class WriteFilePlugin(ToolPlugin):
                             return {"success": False, "error": f"完整写入模式下新旧内容相似度仅 {similarity:.0%}，原文件 {len(orig_lines)} 行，新文件 {len(new_lines)} 行。如果确认需要覆盖请分步写入。",
                                     "hint": "看起来你想修改文件中的某一行/片段。请用 line 参数精确修改单行(write_file(path=..., line=N, content=...))，或先 read_file 完整读取后用完整内容重写，不要只提交片段。"}
                 backup = target.with_suffix(target.suffix + ".bak")
-                backup.write_text(original, encoding="utf-8")
+                _emit_vault_safe(backup, original, used_for="derived")
             # #98 修复：write_file 自动创建父目录（此前父目录缺失直接 ENOENT，agent 被迫绕 heredoc）
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content_str, encoding="utf-8")
+            _emit_vault_safe(target, content_str)
             _ec_async = _update_world_model(str(target), content_str, user_id, session_id)
             _hint = f"[SAG] {_ec_async}个实体已入库" if (_ec_async or 0) > 0 else ""
             # ★ #168 高行距修改审查：完整写入按新文件行数计算跨度

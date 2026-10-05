@@ -14,21 +14,16 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from core.lib.paths import runtime_tmp_dir, runtime_tmp_path, vault_root
+from core.lib.paths import (check_path_len, runtime_tmp_dir, runtime_tmp_path,
+                            vault_root, write_text_lf)
 
 
 def _vault_root() -> Path:
-    """vault 根(与 precision_inject._vault_path 一致)"""
-    try:
-        import yaml
+    """vault 根（唯一真源 = core.lib.paths.vault_root()；2026-09-28 成对改）。
 
-        with open("config/v9/execution_policy.yaml", encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-        p = (cfg.get("obsidian") or {}).get("vault_path", "")
-        if p and Path(p).exists():
-            return Path(p)
-    except Exception:
-        pass
+    此前本函数自己再读一遍 execution_policy.yaml ⇒ 与 precision_inject._vault_path
+    成为**两份口径**（脑根一改即分裂）。现一律委托 vault_root()。
+    """
     return vault_root()
 
 
@@ -277,7 +272,7 @@ def process_youtube(source_url: str, note_path: str = "", title: str = "") -> Di
             # 2026-09-01 修复: 降级时**新建独立笔记**(学习笔记/视频/), 不覆盖原剪藏(note_fp)。
             # (E2E 发现: 带 note_path 时降级覆盖了 Clippings 原文件 → 原剪藏内容丢失)
             _note_path = note_dir / _fname
-            _note_path.write_text(_note_txt, encoding="utf-8")
+            write_text_lf(_note_path, _note_txt)
             return {"success": True, "degraded": True, "note_path": str(_note_path), "reason": _degraded}
         # 转录
         _tr = _transcribe_audio(_audio_path)
@@ -345,7 +340,7 @@ def process_youtube(source_url: str, note_path: str = "", title: str = "") -> Di
                 + chr(10)
                 + "</details>"
             )
-        _note_path.write_text(_note_txt, encoding="utf-8")
+        write_text_lf(_note_path, _note_txt)
         # 清理临时音频
         try:
             shutil.rmtree(_tmp_dir, ignore_errors=True)
@@ -406,6 +401,7 @@ def process_media(file_path: str, media_type: str = "", title: str = "") -> Dict
         _media_name = src.name
         _assets_dst = assets / _media_name
         if not _assets_dst.exists():
+            check_path_len(_assets_dst)  # 非文本写出口：目标名同受 NAME_MAX 约束
             shutil.copy2(src, _assets_dst)
         # 提取内容
         _transcript = ""
@@ -495,7 +491,7 @@ def process_media(file_path: str, media_type: str = "", title: str = "") -> Dict
                 + chr(10)
                 + "</details>"
             )
-        _note_path.write_text(_note_txt, encoding="utf-8")
+        write_text_lf(_note_path, _note_txt)
         return {
             "success": True,
             "note_path": str(_note_path),

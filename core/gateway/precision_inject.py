@@ -2,12 +2,13 @@
 
 Obsidian 第二大脑集成: vault 扫描检索 + 任务完成写复盘 + 踩坑追加。
 """
+import functools
 import json
 import os
 import re
 import time
 from pathlib import Path
-from core.lib.paths import vault_root
+from core.lib.paths import vault_root, write_text_lf
 
 
 def _tokenize(text):
@@ -40,18 +41,58 @@ def _cosine(v1, v2):
 
 
 def _vault_path():
-    """vault 路径: 从 execution_policy.yaml obsidian.vault_path 读"""
-    try:
-        import yaml
+    """vault 根: **唯一真源** = ``core.lib.paths.vault_root()``（CEO 2026-09-28 ⑤⒜ 启用）。
 
-        with open("config/v9/execution_policy.yaml", encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-        p = (cfg.get("obsidian") or {}).get("vault_path", "")
-        if p and Path(p).exists():
-            return p
-    except Exception:
-        pass
+    2026-09-28(成对改): 此前先读 execution_policy.yaml 的 obsidian.vault_path
+    （写死 WSL 挂载形态），读不到才回落 vault_root() ⇒ 同一台机上并存「配置」与「实探测」
+    两份口径 —— 脑根一改或两边形态不同，判据就读错对象。
+    现统一由 vault_root() 解析（``PA_VAULT_DIR`` → 实探测 → 平台默认）；
+    ``obsidian.vault_path`` 降为**说明**（⛔ 改它不改变行为）。
+    """
     return str(vault_root())
+
+
+# ===== 检索面排除名单（CEO 2026-09-28 ⑧ 终裁 ＋ ⑤⒝）=====
+# `_冷区` = 冷库、`_垃圾箱` = 垃圾桶 ⇒ 参与检索 = 自相矛盾（且违老板「删权归我」的结构）；
+# `.obsidian` = 配置目录、`Templates` = 模板 —— 都非知识。
+# 配置项 obsidian.exclude_dirs 为唯一来源；缺省回落本常量。
+_DEFAULT_EXCLUDE_DIRS = ("_冷区", "_垃圾箱", ".obsidian", "Templates")
+
+
+def _exclude_dirs():
+    """检索排除名单（配置优先 · 缺省回落 _DEFAULT_EXCLUDE_DIRS）。"""
+    _got = _obsidian_cfg().get("exclude_dirs")
+    if isinstance(_got, (list, tuple)):
+        _out = tuple(str(x).strip() for x in _got if str(x).strip())
+        if _out:
+            return _out
+    return _DEFAULT_EXCLUDE_DIRS
+
+
+def _walk_warn(err):
+    """遍历出错要有痕（⛔ 不静默吞）—— 静默丢件是「读数假绿」的老病根。"""
+    print(f"[OBSIDIAN] vault 遍历告警(该子树可能不全): {err}")
+
+
+def _walk_vault_md(root, skip):
+    """遍历 vault 下全部 .md，**在进入排除目录前剪枝**（⛔ 不先递归再过滤）。
+
+    剪枝而非事后过滤，两个理由：
+      ① 排除面件量巨大 —— 事后过滤 = 白读几千件（本机实测全量 8,615 件 / 活区 3,166 件）；
+      ② WSL drvfs 下 readdir 出错会**整棵丢**（DSH 2026-09-27 实测 scan_total 1,034 → 2,257）
+         ⇒ 遍历范围越小，越少踩这一类。
+    输出按路径排序（保持既有 sorted(rglob) 的确定性顺序）。
+    """
+    for dirpath, dirnames, filenames in os.walk(str(root), onerror=_walk_warn):
+        dirnames[:] = sorted(d for d in dirnames if d not in skip)
+        for _name in sorted(filenames):
+            if _name.endswith(".md"):
+                yield Path(dirpath) / _name
+
+
+def _rel_excluded(rel, skip):
+    """相对路径**任一段**落在排除名单 ⇒ 排除（防嵌套的同名目录）。"""
+    return any(_seg in skip for _seg in str(rel).split("/"))
 
 
 def _scan_vault():
@@ -59,15 +100,17 @@ def _scan_vault():
 
     R4(2026-08-31): 原只扫 Reviews/SOPs/Pitfalls 三目录 → 用户手动目录(微信公众号/、
     我的知乎主页/ 等)与 Clippings 自动剪藏检索不到 → Agent 误报「公众号未登记」。
-    现递归扫 vault 根下所有 *.md: 三目录保留 sub 分类(SOP 权威优先), 其余归 general。
-    排除 .obsidian 配置目录与 Templates(模板非知识)。
+    现递归扫 vault 根下所有 *.md: 权威类别(SOPs/Pitfalls/Reviews)走配置解析, 其余归 general。
+    2026-09-28(CEO ⑧ 终裁 ＋ ⑤⒝): 排除名单 = `_冷区` / `_垃圾箱` / `.obsidian` / `Templates`
+    （可在 obsidian.exclude_dirs 配），且**在进入排除目录前剪枝**（见 _walk_vault_md）。
     """
     root = Path(_vault_path())
+    skip = set(_exclude_dirs())
     out = []
-    for f in sorted(root.rglob("*.md")):
+    for f in _walk_vault_md(root, skip):
         rel = f.relative_to(root).as_posix()
-        # 排除 .obsidian 配置与 Templates 模板目录(非知识内容)
-        if rel.startswith(".obsidian") or rel.startswith("Templates"):
+        # 剪枝只管顶层名 ⇒ 嵌套同名目录在这里补一刀
+        if _rel_excluded(rel, skip):
             continue
         try:
             txt = f.read_text(encoding="utf-8", errors="ignore")
@@ -79,8 +122,7 @@ def _scan_vault():
         tm = re.search(r"tags:\s*\[?([^\n\]]*)\]?", fm)
         if tm:
             tags = [t.strip().strip(chr(39)).strip(chr(34)) for t in tm.group(1).split(chr(44)) if t.strip()]
-        # sub 分类: 顶层三目录保留原优先级; 其余目录归 general(检索可用, 权重默认)
-        _top = rel.split("/")[0]
+        # sub 分类: 权威类别走配置根(见 _reviews_sub_label); 其余归 general(检索可用, 权重默认)
         sub = _reviews_sub_label(rel)  # 批198: 复盘迁到「聊天区/复盘」后仍按 Reviews 加权
         title = f.name.replace(".md", "")
         out.append(
@@ -115,13 +157,37 @@ def _reviews_read_dirs():
     return [d for d in out if d.exists()]
 
 
+@functools.lru_cache(maxsize=1)
+def _cfg_roots():
+    """权威度类别根(vault 相对) = 配置 ``obsidian.sops_dir`` / ``pitfalls_dir``。
+
+    2026-09-28(P0-② 成对改): 真源目录由 vault 根 `SOPs/` / `Pitfalls/` 迁到
+    **配置根**(`工作区/SOPs/SOPs` / `开发区/ComputerUse/Pitfalls`) ⇒ 类别判据
+    `_reviews_sub_label()` 必须跟着走, ⛔ 不写死旧前缀(否则权重 1.25/1.2 永不生效)。
+    lru_cache: 逐件扫描免重复读 yaml; `cache_clear()` 供改配置/测试重算
+    (见 tests/unit/test_authority_label.py::test_C_config_driven)。
+    """
+    _cfg = _obsidian_cfg()
+    _s = str(_cfg.get("sops_dir") or "SOPs").strip("/")
+    _p = str(_cfg.get("pitfalls_dir") or "Pitfalls").strip("/")
+    return _s, _p
+
+
 def _reviews_sub_label(rel):
-    # 权威度类别标签：复盘迁到「聊天区/复盘」后仍按 'Reviews' 加权
+    # 权威度类别标签: 复盘迁到「聊天区/复盘」后仍按 'Reviews' 加权
     r = str(rel or "")
     if r.startswith("Reviews/") or "复盘" in r:
         return "Reviews"
     top = r.split("/")[0]
-    return top if top in ("SOPs", "Pitfalls") else "general"
+    if top in ("SOPs", "Pitfalls"):
+        return top  # 历史形态: vault 根直接挂牌
+    # P0-②(2026-09-28 成对改): 真源在配置根下(首段 = 工作区/开发区) ⇒ 按配置根判
+    _sops_root, _pit_root = _cfg_roots()
+    if _sops_root and (r == _sops_root or r.startswith(_sops_root + "/")):
+        return "SOPs"
+    if _pit_root and (r == _pit_root or r.startswith(_pit_root + "/")):
+        return "Pitfalls"
+    return "general"
 
 
 _VALTYPE_WEIGHT = {"SOPs": 1.25, "Pitfalls": 1.2, "Reviews": 0.75}
@@ -651,7 +717,7 @@ def write_task_review(
                 content.append(f"- [[{l}]]")
         else:
             content.append("- （暂无相关笔记）")
-        fpath.write_text(chr(10).join(content), encoding="utf-8")
+        write_text_lf(fpath, chr(10).join(content))
         return str(fpath)
     except Exception as e:
         print(f"[OBSIDIAN] 复盘写入失败: {e}")
@@ -863,8 +929,10 @@ def append_pitfall(issue_text, tags=None):
     if not cfg.get("enabled") or not cfg.get("append_pitfalls"):
         return None
     root = Path(_vault_path())
-    pfile = root / (cfg.get("pitfalls_dir") or "Pitfalls") / (cfg.get("pitfalls_file") or "避坑清单.md")
+    pfile = root / _pitfalls_rel()
     try:
+        # 目标目录缺失 ⇒ 先建（⛔ 不再静默返回 None —— 静默失败正是「追加已断」没被发现的原因）
+        pfile.parent.mkdir(parents=True, exist_ok=True)
         # R15.1: 追加前清洗(去系统提示行/截断残留/重复段), 防"避坑清单尾部被日志污染"
         issue = _cap_par(_clean_vault_text(issue_text), 300)
         if len(issue) < 6:
@@ -879,30 +947,60 @@ def append_pitfall(issue_text, tags=None):
             txt = txt.replace(marker, marker + chr(10) + entry, 1)
         else:
             txt += chr(10) + chr(10) + marker + chr(10) + entry + chr(10)
-        pfile.write_text(txt, encoding="utf-8")
+        write_text_lf(pfile, txt)
         return str(pfile)
     except Exception as e:
         print(f"[OBSIDIAN] 踩坑追加失败: {e}")
         return None
 
 
+# ===== 知识键的路径解析: 目录一律走配置（⛔ 不写死 `SOPs/`）=====
+# 2026-09-28: 写死 `SOPs/` 时 vault 根无该目录 ⇒ 3 个固定键 + 避坑清单 4/4 断链
+# （CEO ② 已一手证：真件在 `工作区/SOPs/SOPs/`）。⇒ 目录走 cfg，换布局不改代码。
+def _sops_dir():
+    """SOP 目录（vault 相对）—— cfg ``obsidian.sops_dir`` 为唯一来源。"""
+    return _cfg_roots()[0]  # 单一来源: 见 _cfg_roots
+
+
+def _sops_rel(filename):
+    """SOP 的 vault 相对路径 = <sops_dir>/<filename>。"""
+    return "%s/%s" % (_sops_dir(), filename)
+
+
+def _pitfalls_rel():
+    """避坑清单的 vault 相对路径（cfg ``pitfalls_dir`` ＋ ``pitfalls_file``）。"""
+    _cfg = _obsidian_cfg()
+    _d = _cfg_roots()[1]  # 单一来源: 见 _cfg_roots
+    _f = str(_cfg.get("pitfalls_file") or "避坑清单.md")
+    return "%s/%s" % (_d, _f)
+
+
+def _knowledge_rel_map():
+    """{vault 相对路径: (知识键, 描述)} —— 供清单标注（逐件读配置太贵 ⇒ 一次算好）。"""
+    out = {}
+    for _k, _info in _KNOWLEDGE_FILES.items():
+        out[_sops_rel(_info["file"])] = (_k, _info.get("desc", ""))
+    out[_pitfalls_rel()] = ("避坑清单", "避坑清单(跨任务坑汇总)")
+    return out
+
+
 # ===== 2026-08-30 知识迁移: 常驻四个知识文件的自动维护 =====
 # 固定映射: 知识键 → (vault 相对路径, 描述, 任务关键词)
 _KNOWLEDGE_FILES = {
     "平台发布工作流": {
-        "rel": "SOPs/平台发布工作流.md",
+        "file": "平台发布工作流.md",
         "desc": "平台发布工作流(知乎/小红书/B站/抖音 SOP)",
         "keywords": ("发布", "知乎", "小红书", "B站", "抖音", "平台", "上传", "草稿", "图文"),
         "sandbox_rel": "docs/reports/platform_publish_workflow.md",
     },
     "番茄推广SOP": {
-        "rel": "SOPs/番茄推广SOP.md",
+        "file": "番茄推广SOP.md",
         "desc": "番茄推广完整落地 SOP(选书/别名/回填)",
         "keywords": ("番茄", "别名", "达人", "推广", "回填", "选书"),
         "sandbox_rel": "docs/reports/fanqie_promotion_sop.md",
     },
     "视频制作SOP": {
-        "rel": "SOPs/视频制作SOP.md",
+        "file": "视频制作SOP.md",
         "desc": "视频制作 SOP(脚本/分镜/配音/B站)",
         "keywords": ("视频", "脚本", "分镜", "配音", "B站", "bilibili", "剪辑"),
         "sandbox_rel": "docs/reports/bilibili_video_script.md",
@@ -924,7 +1022,7 @@ def sync_knowledge_to_sandbox(sandbox_base=None):
     root = Path(_vault_path())
     out = []
     for key, info in _KNOWLEDGE_FILES.items():
-        src = root / info["rel"]
+        src = root / _sops_rel(info["file"])
         if not src.exists():
             out.append((key, "skipped_no_vault"))
             continue
@@ -964,9 +1062,9 @@ def _resolve_knowledge_path(sop_key):
     root = Path(_vault_path())
     key = str(sop_key or "").strip()
     if key in _KNOWLEDGE_FILES:
-        return root / _KNOWLEDGE_FILES[key]["rel"]
+        return root / _sops_rel(_KNOWLEDGE_FILES[key]["file"])
     if key == "避坑清单":
-        return root / (cfg.get("pitfalls_dir") or "Pitfalls") / (cfg.get("pitfalls_file") or "避坑清单.md")
+        return root / _pitfalls_rel()
     # R4: 任意相对路径(含子目录) — 规范化后拼接, 防路径逃逸(../)
     if key and not key.startswith("/"):
         _clean = key.replace("\\", "/")
@@ -1027,26 +1125,16 @@ def list_knowledge_files():
     if not cfg.get("enabled"):
         return []
     root = Path(_vault_path())
+    skip = set(_exclude_dirs())
+    _rel_map = _knowledge_rel_map()  # 逐件读配置太贵 ⇒ 一次算好
     out = []
-    for f in sorted(root.rglob("*.md")):
+    for f in _walk_vault_md(root, skip):
         rel = f.relative_to(root).as_posix()
-        if rel.startswith(".obsidian") or rel.startswith("Templates"):
+        if _rel_excluded(rel, skip):
             continue
-        _top = rel.split("/")[0]
         sub = _reviews_sub_label(rel)  # 批198: 复盘迁到「聊天区/复盘」后仍按 Reviews 加权
-        # 固定 SOP 保留 key/desc(兼容旧调用); 其余通用文件仅路径/分类
-        _key = None
-        _desc = None
-        for _k, _info in _KNOWLEDGE_FILES.items():
-            if rel == _info.get("rel"):
-                _key = _k
-                _desc = _info.get("desc", "")
-                break
-        # 避坑清单: Pitfalls/避坑清单.md 设固定 key(兼容旧调用)
-        _pf = (cfg.get("pitfalls_dir") or "Pitfalls") + "/" + (cfg.get("pitfalls_file") or "避坑清单.md")
-        if rel == _pf:
-            _key = "避坑清单"
-            _desc = "避坑清单(跨任务坑汇总)"
+        # 固定 SOP / 避坑清单 保留 key/desc(兼容旧调用); 其余通用文件仅路径/分类
+        _key, _desc = _rel_map.get(rel, (None, None))
         out.append(
             {
                 "key": _key,
@@ -1079,7 +1167,7 @@ def update_sop(sop_key, section_title, content, append=False):
         print(f"[OBSIDIAN] 未知知识键: {sop_key}, 可选: {list(_KNOWLEDGE_FILES)}")
         return None
     root = Path(_vault_path())
-    fpath = root / info["rel"]
+    fpath = root / _sops_rel(info["file"])
     try:
         title = str(section_title or "").strip()[:60]
         body = str(content or "").strip()[:3000]
@@ -1131,7 +1219,7 @@ def update_sop(sop_key, section_title, content, append=False):
         else:
             txt = txt.rstrip() + chr(10) + chr(10) + block + chr(10)
         txt = re.sub(r"(?m)^updated:.*$", f"updated: {date}", txt, count=1)
-        fpath.write_text(txt, encoding="utf-8")
+        write_text_lf(fpath, txt)
         # D4 单一真源(2026-08-30): vault 写后同步沙箱镜像(docs/reports), 防三份漂移
         try:
             _sb = info.get("sandbox_rel")

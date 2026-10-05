@@ -252,7 +252,12 @@ class EscapeGuard(ToolGuard):
             if sandbox_base is not None and _is_read_path_escape(sandbox_base, _rpath):
                 # 2026-08-30: Obsidian vault 路径(/mnt/d/...) → 引导用 obsidian_knowledge(read)
                 # (Agent 反复用 read_file 读 vault 被拦, 却不知正确工具 → 浪费多轮)
-                _is_vault = "Obsidian/ClawsJoy" in _rpath or _rpath.startswith("/mnt/d/Obsidian")
+                # 2026-09-28(成对改): vault 归类改引**唯一真源** core.lib.paths.is_vault_path()
+                # 此前写死 "Obsidian/ClawsJoy" / "/mnt/d/Obsidian" 两串 ⇒ Windows 原生形态
+                # (D:\Obsidian\...) 认不出 ⇒ 判据在场却打错对象（CEO 2026-09-28 ④）。
+                from core.lib.paths import is_vault_path
+
+                _is_vault = is_vault_path(_rpath)
                 _hint_vault = (
                     "Obsidian 知识库在沙箱外，read_file 无法读取。"
                     "请用 obsidian_knowledge 工具(action=read, sop_key=平台发布工作流/番茄推广SOP/视频制作SOP/避坑清单)读取。"
@@ -373,6 +378,12 @@ class ApprovalGuard(ToolGuard):
         return False
 
     def check(self, payload):
+        # ⭐ PM 2026-10-04（承 技总 958 §二.⒝ · 老板「批」）：**子任务路免审批**
+        #   由：子任务 scope 之 `exclude` 被**全局挂载**盖过（`waterfall` 只加不减）⇒ 声明「免审批」⛔ 达
+        #   ⇒ 以**载荷之 flag** 真达（⛔ 动 waterfall ／ ⛔ 动挂载机制 ⇒ 最小面）
+        #   ⚠ 锚点B（`escape_guard`）**不读此 flag** ⇒ 越权写**仍被确定性拒** ✓
+        if payload.get("sub_task_id"):
+            return None
         tool = payload.get("tool", "")
         if tool not in self._WRITE_TOOLS:
             return None

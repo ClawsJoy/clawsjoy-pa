@@ -8,6 +8,7 @@
 """
 
 import json
+import os
 import logging
 from pathlib import Path
 
@@ -530,6 +531,10 @@ def _finalize_messages(messages):
     return _normalize_tool_calls(_validate_messages(messages))
 
 
+_OLLAMA_CW_CACHE = {}   # ⭐ PM 2026-10-04（承 955 §五）：进程内缓存（同 model 一次 · ⛔ 每请求打 HTTP）
+_CTX_SRC = {}            # ⭐ 源之记（yaml ／ ollama ／ default）⇒ 供预算归一**只**对有真窗者生效
+
+
 def _get_model_context_window(model):
     """读取模型实际 context_window。
 
@@ -546,7 +551,29 @@ def _get_model_context_window(model):
                 return int(m["context_window"])
     except Exception:
         pass
-    # deepseek-v4-flash 默认 context_window
+    # ⭐ PM 2026-10-04（承 技总 955 §五）：yaml 未命中 ⇒ 试 Ollama 真源（/api/show · 取 `*.context_length`）
+    if model in _OLLAMA_CW_CACHE:
+        return _OLLAMA_CW_CACHE[model]
+    try:
+        import urllib.request as _ur
+
+        _base = (os.environ.get("OLLAMA_BASE_URL") or os.environ.get("CLAWSJOY_OLLAMA_BASE")
+                 or "http://127.0.0.1:11434")
+        _req = _ur.Request(_base.rstrip("/") + "/api/show",
+                           data=json.dumps({"model": model}).encode("utf-8"),
+                           headers={"Content-Type": "application/json"})
+        with _ur.urlopen(_req, timeout=2) as _r:
+            _j = json.loads(_r.read().decode("utf-8", "replace"))
+        for _k, _v in (_j.get("model_info") or {}).items():
+            if str(_k).endswith(".context_length") and _v:
+                _OLLAMA_CW_CACHE[model] = int(_v)
+                _CTX_SRC[model] = "ollama"
+                return int(_v)
+    except Exception as _e:
+        print("[CTX_WINDOW] Ollama 真源不可达（model=%s）：%s: %s" % (model, type(_e).__name__, _e))
+    _OLLAMA_CW_CACHE[model] = 65536
+    _CTX_SRC[model] = "default"
+    print("[CTX_WINDOW] 未得真源 ⇒ 回退 65536（model=%s · ⛔ 静默降级）" % model)
     return 65536
 
 
@@ -563,6 +590,14 @@ def _calc_token_budget(model="deepseek-v4-flash", tools=None):
     _out_reserve = 4000
     _tools_est = _tg_estimate([], tools=tools) if tools else 0
     _budget = _cw - _out_reserve - _tools_est
+    # ⭐ PM 2026-10-04（承 技总 955 §五）：预算 ⛔ 超「本次实到之 num_ctx」（否则静默截断 ⇒ 原病只挪位）
+    #   单源：与 `llm_client` 同取 env `CLAWSJOY_NUM_CTX`；⭐ 唯对「真窗取自 Ollama」者生效（⛔ 误伤远端模型）
+    if _CTX_SRC.get(model) == "ollama":
+        try:
+            _num_ctx = int(os.environ.get("CLAWSJOY_NUM_CTX", "8192"))
+            _budget = min(_budget, _num_ctx - _out_reserve - _tools_est)
+        except Exception as _e:
+            print("[TOKEN_BUDGET] num_ctx 归一失败（⛔ 静默）：%s: %s" % (type(_e).__name__, _e))
     return max(_budget, 0)
 
 

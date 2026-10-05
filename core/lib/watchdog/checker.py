@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Dict, Any
 import subprocess
 
+from core.lib import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
+
 
 class Checker(ABC):
     """检测器基类"""
@@ -48,7 +50,7 @@ class ProcessChecker(Checker):
         self.process_name = process_name
 
     def check(self) -> Dict[str, Any]:
-        result = subprocess.run(
+        result = _proc.run_hidden(
             ["pgrep", "-f", self.process_name],
             capture_output=True
         )

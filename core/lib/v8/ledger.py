@@ -21,8 +21,13 @@ class Ledger:
 
     def record_cost(self, server_id: str, agent_name: str, position: str,
                     model: str, tokens: int, unit_price: float,
-                    task_id: str = "", summary: str = "") -> dict:
-        """记录一次花费"""
+                    task_id: str = "", summary: str = "",
+                    currency: str = "CNY") -> dict:
+        """记录一次花费（axis=money）。
+
+        ⭐ 058 §一.1（裁）：账目行须带 `currency`（⛔ 以 `llm_client` 之注释为凭 · 承 L186）。
+        ⭐ 058 §一.2（裁）：账目两轴 —— 本方法记 **钱** 轴；**活动**轴见 `record_activity`。
+        """
         cost = (tokens / 1000) * unit_price
         entry = {
             "timestamp": datetime.now().isoformat(),
@@ -35,6 +40,43 @@ class Ledger:
             "cost": round(cost, 6),
             "task_id": task_id,
             "summary": summary,
+            "axis": "money",
+            "currency": currency,
+        }
+        with open(self._billing_file(server_id), "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        return entry
+
+    def record_activity(self, server_id: str, agent_name: str = "", position: str = "",
+                        model: str = "", tokens=None, wall_s=None, task_id: str = "",
+                        summary: str = "", currency: str = "CNY", source: str = "",
+                        nbytes=None) -> dict:
+        """⭐ 058 §一.2（裁）：**活动**轴 —— 每一**用户可见之轮**须有一行。
+
+        与钱轴之别（⛔ 混）：钱轴 ＝ **外呼**花费（`cost > 0` 方才可能）；活动轴 ＝ **有此一轮**
+        （本机径 `cost = 0.0` ＋ 墙钟 `wall_s`）⇒ ⭐ 由「账上无」不再与「无此轮」相混（承 049／052）。
+
+        ⭐ 2026-10-05（PM 088 §三之令 · 唯加键）：**体量**轴 —— `bytes`（入／出分列之 dict）
+        ＝ 本轮之**收／发体量**，与响应 `cost.bytes` **同源同形**（承 PM 085 §四：成本读面 需可读）。
+        ⚠ 参数名取 `nbytes`（⛔ 掩内置类型 `bytes`）；落**键**仍名 `bytes`（承令：唯加 `bytes` 键）。
+        ⛔ 缺 ⇒ `None`（读者须知「未记」≠ 0 · 承「无数据 ≠ 成本为零」）。
+        """
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "server_id": server_id,
+            "agent": agent_name,
+            "position": position,
+            "model": model,
+            "tokens": tokens,
+            "unit_price": 0.0,
+            "cost": 0.0,
+            "task_id": task_id,
+            "summary": summary,
+            "axis": "activity",
+            "currency": currency,
+            "wall_s": wall_s,
+            "bytes": nbytes,
+            "source": source,
         }
         with open(self._billing_file(server_id), "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
