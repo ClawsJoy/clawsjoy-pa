@@ -185,7 +185,7 @@ function paSelfBusy(){ try{ return !!paRun.busy; }catch(e){ return false; } }  /
 function paSelfEsc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
   return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
 function paSelfYN(v){ return v === true ? '✓' : (v === false ? '✗' : '未知'); }
-function paSelfAt(v){ try{ return (typeof v === 'number' && isFinite(v)) ? new Date(v * 1000).toLocaleString('zh-CN', {hour12:false}) : (v == null ? '未知' : String(v)); }catch(e){ return '未知'; } }
+function paSelfAt(v){ try{ return (v == null) ? '未知' : PA_STAMP.fmt(v); }catch(e){ return '未知'; } }
 
 /* ================= 〇 · 工程注记（用户面只说人话 · 承 pm_1012 §一 ／ §二）=================
    ⭐ 用户面（默认态）⇒ 只人话；工程注记（判定依据 ／ 件号 ／ 律号 ／ 机制说明 ／ 留痕 ／ 候选）⇒ **默认隐藏**，
