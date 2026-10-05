@@ -9,7 +9,7 @@
    来源：web/pa/faces.json（面册）／ /v9/metrics/tool_flow（工具流水）／ /v9/pa/context（画像）
         ／ /v9/pa/permission（权限档）／ /v9/pa/threads（会话面）／ /v9/pes/runs（作业面）／ web/pa/ui_state.json（快照）。
    口径（L76）：读数类 ⇒ 标来源；口径类（身份自述 ／ 读·外发·凭据三层）⇒ 明标「本机固定口径」⇒ ⛔ 冒充真读数。
-   ⚠ 本件唯 v3 页载入（pa_v3.html）；旧 pa.html ⛔ 受影响（⛔ 动共用面件 send.js ／ status.js ／ products.js）。
+   ⚠ 本件由 pa.html（**唯一壳 · 真源**）载入 —— ⭐ 承 pm 1203 §一（2026-10-05 · 副本 web/pa_v3.html 已删 · TD 716bc31）：旧「唯 v3 页载入 ⇒ 旧 pa.html ⛔ 受影响」之**界已反**（今唯 pa.html 一壳 ⇒ 本件之改**及于唯一壳**）（⛔ 动共用面件 send.js ／ status.js ／ products.js）。
    ⚠ 件体（承 pm_1002 §三 补① · 取 (b)）：本件**⛔ 不是面体** —— 本件为**回答层件**：在 paSend 最外层拦
      「自述类」问句、以本机来源拼答 ⇒ **⛔ 注册进 pa/faces.json**（⛔ 假装一面 · 面册仍 22 面）。
    ⚠ 自述之判为**规则表 ＋ 模式**（⛔ 语义模型）⇒ 判定依据默认隐藏于「来源 ／ 详情」（承 L76 如实）。
@@ -2318,9 +2318,9 @@ function paSelfFailText(s){
     };
   }
   /* ⭐ pm_1044 §四（承 L85 ／ L76）：无源态须说人话 —— ⛔ 裸「—」。
-     我一手定位之两处「裸 —」：ⓜ 静态占位 `#runStateSrc` 初值「状态来源：—」（`pa_v3.html:18`；
+     我一手定位之两处「裸 —」：ⓜ 静态占位 `#runStateSrc` 初值「状态来源：—」（`pa.html:18`；
      `paRenderState` 未跑时它就在上面）ⓝ `status.js:22` 之 `paRunSrc` 默认「—（尚未收到后端事件）」。
-     ⇒ 修（唯 v3 专用件 · ⛔ 改 `pa_v3.html` ／ `status.js`）：
+     ⇒ 修（唯 v3 专用件 · ⛔ 改 `pa.html` ／ `status.js`）：
          ① `paSelfNoSrcV` ：认「无源诸形」（空 ／ 以 `—` 开头 ／ 含「尚未收到后端事件」 ／ 含「无请求源」）
          ② `paSelfSrcPass` ：凡无源诸形 ⇒ 统一渲染「本次未发请求」（⛔ 动 `paRunSrc` 本身 · 只改显示）
          ③ 包 `paRenderState`：每次渲染后过一遍；④ 载入即跑一次（修静态占位）
@@ -3151,7 +3151,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
 
 /* ================= 七 · PA-4 人话回执 ＋ PA-3 停手卡（承 pm_1115 · 唯本件 · ⛔ 动共用件）=================
    ⭐ pm_1115 §序：先 PA-4（可查账）⇒ 再 PA-3（停手）｜两件皆以**包装**落（承本线手法 · ⛔ 动共用件）。
-   ⛔ 一字不动：send.js ／ cards.js ／ archive.js ／ products.js ／ status.js ／ pa_v3.html（唯本件 = selfdesc.js）。 */
+   ⛔ 一字不动：send.js ／ cards.js ／ archive.js ／ products.js ／ status.js ／ pa.html（唯本件 = selfdesc.js）。 */
 (function(){
   var SRC = 'pm_1115 §一／§二（本件包装 · ⛔ 动共用件）';
   function Q(id){ try{ return document.getElementById(id); }catch(e){ return null; } }
@@ -3551,7 +3551,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
      ④ 以真 decision ＋ self-addressed 真发；⑥ 以第三人 ∨ 错 decision_id 真打 ⇒ 403。
    ⭐ 回执四件取**后端**（receipt['人话'] ∨ 结构化中文键）—— ⛔ 前端自说（承 pm_1115 §一.1）。
    ⭐ pm_073 §一：探针 ／ 自测 ⇒ **⛔ 入 msgs**（经 API 所驱者之 `say` 传 `false`）；⚠ pm_073 §三：`stop_to` 唯面有真值方传（T1.1）。
-   ⛔ 不动 web/pa_v3.html（pm_071 §七 界：唯 web/pa/faces/*.js）⇒ 面板由本件**自挂载**。 */
+   ⛔ 不动 web/pa.html（pm_071 §七 界：唯 web/pa/faces/*.js）⇒ 面板由本件**自挂载**。 */
 (function(){
   var SRC = 'pm_071 §一／§二 ＋ pm_072 §一 ＋ pm_073 §一／§三 ＋ pm_刀11p ＋ pm_刀15p ／ 刀15p-补 ／ 刀16p（四件填满 · 件之刻 · 报给谁取 deliver/stop · $/件 · 引哪封来信 · 人工步数 · 本件 ⛔ 动共用件）';
   var PANEL = 'paT1Panel';
@@ -4115,7 +4115,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     engDetails(host, d, netErr);
   }
 
-  /* ---------- 8.7 面之自挂载（⛔ 动 pa_v3.html ⇒ 由本件建 ＋ 幂等）---------- */
+  /* ---------- 8.7 面之自挂载（⛔ 动 pa.html ⇒ 由本件建 ＋ 幂等）---------- */
   function fmtTaskId(){
     var el = Q(ID.tid); if(!el) return;
     var b = deliverBody();

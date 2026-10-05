@@ -186,7 +186,7 @@ details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(-
 /* —— 输入区 · 两钮坐标分离（承 pm_1020 §二① ／ L76 之族）—— */
 /* 病（本刻）：在办时 stopBtn 入流 ⇒ sendBtn 左移 ~71px ⇒ 同坐标第二击落「停止」⇒ 误停（比重复提交更险）。
    解：flex order ⇒ stopBtn 恒居 sendBtn 之左（与 sendBtn ⛔ 同位）⇒ sendBtn 坐标逐态恒定（⛔ 同点换钮）。
-   守：⛔ 动 pa.css（共用）／⛔ 动 pa_v3.html（onclick 属性照旧 · DOM 序照旧）。 */
+   守：⛔ 动 pa.css（共用）／⛔ 动 pa.html（onclick 属性照旧 · DOM 序照旧）。 */
 .composer .box > #stopBtn{order:1}
 .composer .box > #sendBtn{order:2}
 
@@ -214,7 +214,7 @@ details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(-
 #thread .msg.selfwait .bubble{color:var(--sub);font-size:12px;line-height:1.75;white-space:pre-wrap;word-break:break-word}
 #thread .msg.selfwait .wsec{font-variant-numeric:tabular-nums}
 /* —— 面之第四态「陈旧」（承 pm 19:05 令 §一：陈旧为面之第四态 · ⛔ 静默显旧数）——
-   置此：pa_v3.css（pa_v3.html 与 pa.html 皆载 pa.css ＋ pa_v3.css ⇒ 一处即两壳）。 */
+   置此：pa_v3.css（pa.html 即载 pa.css ＋ pa_v3.css ⇒ 一处即一壳 · ⭐ 承 pm 1203 §一：副本 web/pa_v3.html 已删）。 */
 .pastale{display:inline-block;font-size:10px;line-height:1.6;color:var(--sub);letter-spacing:0;padding:0 2px}
 .pastale:empty{display:none}
 .pastale.on{color:#d29922;font-weight:600}

@@ -20,7 +20,7 @@ let paV3Face = 'ctx';
 /* ⭐ pm_裁_主面环≤5（承 pm_997 §二 之「8 ⇒ 3」）：环内 ／ 环外须各得其位 ——
    环内（PA_V3_FACES）＝ 今日上下文 ／ 会话 ／ 任务 ／ 环境 ／ 收口（5 面 · Alt+1…5）；
    环外（产品线 ／ 开机）＝ 注入「更多 ▾」之「④ 面」组（各一步可达 · ⛔ 丢功能）。
-   ⛔ 动 pa_v3.html（内容件 · 承 pm_1052／pm_1067）⇒ 环外之钮由 tasks.js 注入 #paMoreBody。 */
+   ⛔ 动 pa.html（内容件 · 承 pm_1052／pm_1067）⇒ 环外之钮由 tasks.js 注入 #paMoreBody。 */
 function paV3Dom(id){
   document.querySelectorAll('#faceTabs button, #paXMoreTabs button').forEach(function(b){
     b.setAttribute('aria-pressed', String(b.getAttribute('data-face') === id));
@@ -81,7 +81,7 @@ async function paGetJson(path){
    ③ 台账轴：**三本机账**（作业账 ／ 授权账 ／ 线账）⇒ ⭐ **四键同形读**（`at` ／ `刻之性` ／ `面之径逐字` ／ `印`）
       —— **一码读 · ⛔ 逐面特判**（特判必漂 · 承 pm 17:51 补令）｜⛔ 前端自算（逐面读其数）｜
       ⛔ 一词盖两义（「台账（机账）」⟷「PA 待办」＝ `context.counts.ledger` · 同名异域）｜**唯读**。
-   ⚠ `pa_v3.html` 之静态行 ＝ **内容件**（承 pm_1052 ／ pm_1067 ⇒ ⛔ 我动）⇒ 于**运行期认领**（按**签文本** · ⛔ 唯凭序）
+   ⚠ `pa.html` 之静态行 ＝ **内容件**（承 pm_1052 ／ pm_1067 ⇒ ⛔ 我动）⇒ 于**运行期认领**（按**签文本** · ⛔ 唯凭序）
      ＋ 补 **行级** id（`srcRow*` —— ⚠ 静态之 `id="srcChat"／"srcRuns"／"srcCtx"` 在**内层 `<span>`** 上 ⇒ ⛔ 当行用 · 否则误嵌）；
      ⛔ 改静态件 ／ ⛔ 改 `*.css`（内联样式代之）。 */
 var paSrcState = null;
@@ -338,7 +338,7 @@ async function paLoadToday(){
   /* ⭐ pm_1061 §五：上屏「实到 `num_ctx`」（真源 ＝ **本函数同一** `GET /v9/pa/context` 之新键 `num_ctx` ⇒ 单源 · ⛔ 另取 ／ ⛔ 硬编 · 承 `L83` ／ `L102`）。
      ＋ 明标「超此值 ⇒ 本机截断」（承「⛔ 静默截断」）｜⭐ 真窗键（如 `context_length`）后端**未落** ⇒ **只报 `num_ctx`**（⛔ 编真窗）。
      ⭐ 用**既有行内文案**（`#paTodayWhen` ＝ `.today .h .when` · `pa_v3.css:28` ⛔ `nowrap` ／ ⛔ `overflow:hidden` ⇒ 可容）
-       —— ⛔ 加控件 ／ ⛔ 加行 ／ ⛔ 动 `pa_v3.html`（内容件 · 老板批）。⛔ 无该键 ⇒ 照实「未知」（⛔ 显旧值）。 */
+       —— ⛔ 加控件 ／ ⛔ 加行 ／ ⛔ 动 `pa.html`（内容件 · 老板批）。⛔ 无该键 ⇒ 照实「未知」（⛔ 显旧值）。 */
   const nctx = (ctx && ctx.num_ctx != null) ? String(ctx.num_ctx) : '';
 
   /* ① 画像（源 /v9/pa/context） */
@@ -458,12 +458,12 @@ function paInitToday(){
 if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', paInitToday); }
 else { paInitToday(); }
 
-/* ⭐ pm_1052 §二（乙）：`#paAboutWhen` 之**静态占位**（`pa_v3.html:143` 之裸「—」 · **内容件 ⛔ 我动**）
-   ⇒ 由**最早可动之 v3 面件**（本件：`pa_v3.html` 脚本序第 `325` 行 · 前于 `tasks`(326)⁄`more`(327)⁄`selfdesc`(328)⁄`sources`(329)）于**解析期**覆盖为人话。
+/* ⭐ pm_1052 §二（乙）：`#paAboutWhen` 之**静态占位**（`pa.html:143` 之裸「—」 · **内容件 ⛔ 我动**）
+   ⇒ 由**最早可动之 v3 面件**（本件：`pa.html` 脚本序第 `325` 行 · 前于 `tasks`(326)⁄`more`(327)⁄`selfdesc`(328)⁄`sources`(329)）于**解析期**覆盖为人话。
    展开「更多」后 ⇒ `selfdesc.js` 之 `paAboutLoad()` 照旧写**「本屏读数 <刻>」**（⛔ 二判 · 本处只补**无读数之首帧**）。
    ① 只改文案（⛔ 加控件 · 首屏控件数不变）；② 只在原值＝裸「—」时覆盖（⛔ 盖真值）。 */
 (function(){
-  /* ⭐ pm_1052 §二：`pa_v3.html`（**内容件 ⛔ 我动**）之**静态「—」占位**共三处
+  /* ⭐ pm_1052 §二：`pa.html`（**内容件 ⛔ 我动**）之**静态「—」占位**共三处
      ⇒ 由**最早可动之 v3 面件**（本件 · 脚本序第 `325` 行，前于 `tasks`(326)⁄`more`(327)⁄`selfdesc`(328)⁄`sources`(329)）
      于**解析期**按**各按各义**覆盖为人话（⛔ 一词套全部 · 承 `L103`）：
        `#paAboutWhen` ⇒ 尚无读数（展开「更多」即取）   （真源：`selfdesc.js` 之 `paAboutLoad()`）
@@ -490,7 +490,7 @@ else { paInitToday(); }
   }
 })();
 
-/* ⭐ pm_1067 §二（我裁 · 承 L142 ／ L103）：`pa_v3.html`（**内容件 ⛔ 我动**）之两处**过期文案**
+/* ⭐ pm_1067 §二（我裁 · 承 L142 ／ L103）：`pa.html`（**内容件 ⛔ 我动**）之两处**过期文案**
    ⇒ 由本件（**最早可动之 v3 面件** · 脚本序第 `325` 行 · 前于 tasks ／ more ／ selfdesc ／ sources）
      于**解析期**「**渲染层覆盖**」（⛔ 待展开 · ⛔ 加控件 · 只换文案）：
      ① `:124`（`#paMorePerm` 之 mnote 之 <b>）—— 旧「写（每次问）」与 `selfdesc.js` 之权限层
@@ -498,7 +498,7 @@ else { paInitToday(); }
      ② `:139`（`#paMoreAbout` 之 mnote 之一文本节点）—— 旧「（该闸只看「知识库 ＋ 收件箱」⇒ 退化成
         知识库机器人）」**已过期**（今检索面之实况见 `POST /v9/pa/ask` 之 scope ／ faces）⇒ 覆盖为真。
      `:126`（`.phead`）系 **准留**（PM 裁 · 其义仍真：那确是**画像素材面**之计数）⇒ ⛔ 动。
-   ⚠ 唯原值 ≡ 旧串时覆盖（⛔ 盖真值）；原串仍在 `pa_v3.html` 盘上（⛔ 我动内容件 ⇒ 漂移之险已报）。 */
+   ⚠ 唯原值 ≡ 旧串时覆盖（⛔ 盖真值）；原串仍在 `pa.html` 盘上（⛔ 我动内容件 ⇒ 漂移之险已报）。 */
 (function(){
   var OLD_B = '读（全局）／ 写（每次问）／ 外发（默认关）／ 凭据（只取布尔）';
   var NEW_B = '读（全局）／ 写（主面每次问 ／ 派活路免审批）／ 外发（默认关）／ 凭据（只取布尔）';

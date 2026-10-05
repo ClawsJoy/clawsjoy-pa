@@ -30,7 +30,7 @@ function paPlanViewSet(v){
   paPlanView = (['real','test','all'].indexOf(String(v)) >= 0) ? String(v) : 'real';
   return paLoadPlans();
 }
-/* ⛔ 动 pa_v3.html（内容件）⇒ 三态选择器由本件**注入** #paPlanQ 之侧（幂等）。 */
+/* ⛔ 动 pa.html（内容件）⇒ 三态选择器由本件**注入** #paPlanQ 之侧（幂等）。 */
 function paPlanViewMount(){
   const q = document.getElementById('paPlanQ'); if(!q || !q.parentNode) return null;
   if(document.getElementById('paPlanView')) return document.getElementById('paPlanView');
@@ -373,7 +373,7 @@ function paFileFilter(){
 
 /* ===== 面 A · 模型供应商（pm_1087 §三 · P0 只读上屏）＝「谁出字」
          面 B · 执行层 agent 名册（pm_1088 §二 Q0 ／ pm_1089 修正：读**既有** `/v9/pa/roster`）＝「谁干活」
-   CW b2a5182 · 2026-10-05 · 唯 pa_v3.html 载入本条 ⇒ ⛔ 动共用件一字（chat.js ／ selfdesc.js 皆未碰）。
+   CW b2a5182 · 2026-10-05 · 唯 pa.html 载入本条 ⇒ ⛔ 动共用件一字（chat.js ／ selfdesc.js 皆未碰）。
    两令共守之界：⛔ 切换模型（候 P1）｜⛔ 连接 agent（候 Q1）｜⛔ 直连远端 ／ 直起进程 ／ 直连 agent（须过网关）
                  ｜⛔ 自动信任 ／ 自动安装｜⛔ 凭据入屏（唯布尔）｜⛔ 越域改 core/**。
    ⛔ 冒充真读数（L76）：后端无此读数 ⇒ **明标「未接」**，⛔ 以硬编表充数。

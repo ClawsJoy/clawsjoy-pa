@@ -1,6 +1,6 @@
 /* ClawsJoy PA v3 · 来源声明（阶段 1 起步 · 承 pm_1033 §二 · CW b2a5182 · 2026-10-04）
    要旨：裁决轴从「问句像什么」换到「证据 ＋ 来源」。
-   ⚠ 本件唯 v3 页载入（pa_v3.html）；旧 pa.html ⛔ 受影响（⛔ 动共用面件 chat.js ／ send.js ／ status.js ／ products.js ／ core.js）。
+   ⚠ 本件由 pa.html（**唯一壳 · 真源**）载入 —— ⭐ 承 pm 1203 §一（2026-10-05 · 副本 web/pa_v3.html 已删 · TD 716bc31）：旧「唯 v3 页载入 ⇒ 旧 pa.html ⛔ 受影响」之**界已反**（今唯 pa.html 一壳）（⛔ 动共用面件 chat.js ／ send.js ／ status.js ／ products.js ／ core.js）。
    ⚠ 本件 ⛔ 是面体（⛔ 注册进 pa/faces.json）—— 本件为**声明 ＋ 呈现层**。
 
    ⭐ 与问域判据（paAskDomain）之关系（pm_1033 §二 验收④ · 须写明）：
