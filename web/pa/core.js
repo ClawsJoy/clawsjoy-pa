@@ -87,9 +87,17 @@ window.PA_STALE = (function(){
   var THRESH_MS = DEF_THRESH_MS;
   var reg = [], refreshFn = null;
 
+  /* ⭐ 受形之扩（承 pm 1348 §二.1 · ⛔ 削其的）：诸后端有以 **epoch 秒** 报刻者
+     （如 `tool_flow.stats.generated_at` ＝ `time.time()`）⇒ 旧形（`Date.parse`）⛔ 解
+     ⇒ 该面之刻恒报「不可解析」。⭐ 界（承 pm 1340 §三「立界须逐例验」）：
+     纯数之串 ∧ 整数部 9–11 位（≈ 1973–5138 之秒值）⇒ 视作 epoch 秒（× 1000 ⇒ ms）；
+     ⛔ 及短数（如 `2026` ⇒ 仍归 `Date.parse` 之年义）· ⛔ 及 13 位之 ms（⇒ 仍归「不可解析」· ⛔ 与秒混）。 */
+  var EPOCH_SEC_RE = /^\d{9,11}(\.\d+)?$/;
   function parseAt(t){
     if(t === undefined || t === null || t === '') return null;
-    var ms = Date.parse(String(t).trim().replace(' ', 'T'));
+    var s = String(t).trim();
+    if(EPOCH_SEC_RE.test(s)){ var sec = parseFloat(s); if(isFinite(sec)) return Math.round(sec * 1000); }
+    var ms = Date.parse(s.replace(' ', 'T'));
     return isNaN(ms) ? null : ms;
   }
   function ageMs(at){ var ms = parseAt(at); return (ms === null) ? null : (Date.now() - ms); }
@@ -167,6 +175,11 @@ window.PA_STALE = (function(){
   };
   return api;
 })();
+
+/* ⭐ PA_STALE（龄标）之射程之界（承 pm 1348 §二.2 ／ pm 1310 §二.2 「记射程」之令）：
+   本器唯及**可挂元素**之活面 —— 徽标插于其所标元素之后（见上 `ensure`）；
+   自述面之「采样刻」**文本块**（如 `selfdesc.js:1276` ／ `:1330` 之 `U.push` 串）**无元素可挂**
+   ⇒ ⛔ 入本器射程（强挂 ⇒ 徽标错位 · 形不合）⇒ 候另立项（`_pm/_cw_立项簿.md` L6）。 */
 
 /* 陈旧之「显式入口」（↻ 刷新）＋ 汇总条 —— **运行期注入**（⛔ 动静态壳：壳 ⛔ 调 JS ⇒ 无 JS 时既无活数亦无陈旧）。 */
 (function(){
