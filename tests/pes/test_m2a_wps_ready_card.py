@@ -26,14 +26,19 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读）：批次块 ／ `esc` ／ 就绪卡渲染 ＝ faces/session.js；
+#   四表（PA_CARD_DEF ／ BODY ／ BIND ／ PERSIST_NOTE）＝ faces/cards.js；
+#   调用点（`paWpsReadyCardRender(s.tool, …)`）＝ faces/send.js。
+PA = (ROOT / "web" / "pa" / "faces" / "session.js",
+      ROOT / "web" / "pa" / "faces" / "cards.js",
+      ROOT / "web" / "pa" / "faces" / "send.js")
 
 _WPS_BLOCK_BEGIN = "批183 · C3/C1：WPS 灵犀未就绪的降级与引导（纯函数块 BEGIN"
 _WPS_BLOCK_END = "批183 · 纯函数块 END"
 
 
 def _src() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _fn(name: str) -> str:
