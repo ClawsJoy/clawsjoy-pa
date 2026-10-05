@@ -947,7 +947,7 @@ async function paLoadEnvFace(){
   var COLS = ['agents','kb','tools','resources'];
   if(topSrc) topSrc.textContent = '面：GET /v9/pa/env（只读四栏）· 后端自报刻 ' + ((j && j.at) ? String(j.at) : '未知') + ' · 前端取刻 ' + at0;
   if(!j){
-    if(top) top.innerHTML = paRow('环境面', PA_GAP.down('GET /v9/pa/env 未应答'), '面：GET /v9/pa/env —— **不可达** ≠ **未接**', true);
+    if(top) top.innerHTML = paRow('环境面', PA_GAP.down('GET /v9/pa/env 未应答'), '面：GET /v9/pa/env', true);
     COLS.forEach(function(c){ paXUnreached('paEnvCol-' + c, c, 'GET /v9/pa/env'); });
     if(jd) jd.innerHTML = paRow('对表', PA_GAP.down('未应答 ⇒ ⛔ 判不齐'), '面：GET /v9/pa/env', true);
     return 0;
@@ -1041,7 +1041,7 @@ async function paLoadLinesFace(){
   var list = document.getElementById('paLinesList');
   if(sEl) sEl.textContent = '面：GET /v9/pa/lines · 后端自报刻 ' + ((j && j.at) ? String(j.at) : '未知') + ' · 前端取刻 ' + at0;
   if(!j){
-    if(head) head.innerHTML = paRow('产品线', PA_GAP.down('未应答'), '面：GET /v9/pa/lines —— **不可达** ≠ **未接**', true);
+    if(head) head.innerHTML = paRow('产品线', PA_GAP.down('未应答'), '面：GET /v9/pa/lines', true);
     if(list) list.innerHTML = '';
     return 0;
   }
