@@ -108,6 +108,17 @@ window.PA_STALE = (function(){
     if(m < 60) return m + ' 分';
     return Math.floor(m / 60) + ' 时 ' + (m % 60) + ' 分';
   }
+  /* ⭐ 刻之显形（承 pm 1350 §二.2 · ⛔ 动判据 · 唯渲形）：epoch 秒（同 `parseAt` 之界）⇒ 本地刻之逐字
+     （形 ≡ `tasks.js:91` 之 `paTsLocal`）；余（ISO 串等）⇒ 原值（⛔ 改）。 */
+  function fmtStamp(t){
+    var s = (t === undefined || t === null) ? '' : String(t);
+    if(!EPOCH_SEC_RE.test(s.trim())) return s;
+    var d = new Date(parseFloat(s) * 1000);
+    if(isNaN(d.getTime())) return s;
+    function z(x){ x = String(x); return x.length >= 2 ? x : ('0' + x); }
+    return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' '
+      + z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds());
+  }
   function stOf(rec){
     if(rec.at === undefined || rec.at === null || rec.at === '') return {k:'nostamp'};
     var a = ageMs(rec.at);
@@ -150,11 +161,11 @@ window.PA_STALE = (function(){
         var s = stOf(rec), txt = '', cls = 'pastale';
         if(s.k === 'nostamp'){ txt = '⚠ 取数刻未给（后端未给 `at` ⇒ 报 PM 转 TD · ⛔ 以屏刻充）'; cls += ' warn'; nNo++; }
         else if(s.k === 'badstamp'){ txt = '⚠ 取数刻不可解析（' + String(rec.at) + '）'; cls += ' warn'; nNo++; }
-        else if(s.k === 'stale'){ txt = '⏳ 已陈旧 · 请刷新（取数刻 ' + String(rec.at) + ' · 已逾 ' + fmtAge(s.age) + '）'; cls += ' on'; nStale++; if(worst === null || s.age > worst) worst = s.age; }
+        else if(s.k === 'stale'){ txt = '⏳ 已陈旧 · 请刷新（取数刻 ' + fmtStamp(rec.at) + ' · 已逾 ' + fmtAge(s.age) + '）'; cls += ' on'; nStale++; if(worst === null || s.age > worst) worst = s.age; }
         var b = rec.badge;
         if(b && b.parentNode){
           b.textContent = txt; b.className = cls;
-          b.title = '活面：' + rec.label + '（取数刻 ' + ((rec.at === null || rec.at === undefined || rec.at === '') ? '未给' : String(rec.at)) + ' · 阈 ' + fmtAge(THRESH_MS) + '）';
+          b.title = '活面：' + rec.label + '（取数刻 ' + ((rec.at === null || rec.at === undefined || rec.at === '') ? '未给' : fmtStamp(rec.at)) + ' · 阈 ' + fmtAge(THRESH_MS) + '）';
         }
         try{ if(rec.el) rec.el.setAttribute('data-pa-stale', s.k); }catch(e){}
       });
