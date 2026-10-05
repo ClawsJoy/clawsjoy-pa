@@ -1,0 +1,291 @@
+{
+ "version": "v1",
+ "updated": "2026-10-04",
+ "product": "ClawsJoy PA 客户端（Windows 壳 + web 面）",
+ "note": "私面（private:true）⇒ open:false ⇒ ① boot.js 里其启动步经 PA_FACES.guard 跳过 ② 其 DOM（dom 选择器）收起。一开关关全体私面＝把 private:true 的面 open 置 false。v3 页为 3 主面（今日上下文／会话／任务）。",
+ "license": {
+  "client": "Apache-2.0",
+  "platform": "AGPL-3.0-only",
+  "sdk": "MIT"
+ },
+ "defaults": {
+  "open": true,
+  "private": false
+ },
+ "boot_order": "core.js → faces/*.js（下列顺序）→ boot.js",
+ "faces": [
+  {
+   "id": "chat",
+   "title": "会话",
+   "file": "faces/chat.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#thread"
+   ],
+   "boot": [
+    "renderThreads",
+    "setMode"
+   ]
+  },
+  {
+   "id": "session",
+   "title": "会话装载与纯函数",
+   "file": "faces/session.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": [
+    "syncPaSession",
+    "renderKbPanel",
+    "paKbPrime"
+   ]
+  },
+  {
+   "id": "shell",
+   "title": "模式栏与顶栏徽标",
+   "file": "faces/shell.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#modes"
+   ],
+   "boot": [
+    "renderModes"
+   ]
+  },
+  {
+   "id": "archive",
+   "title": "归档与配额",
+   "file": "faces/archive.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": [
+    "paQuotaGuard",
+    "paMigrateArchiveToServer"
+   ]
+  },
+  {
+   "id": "caliber",
+   "title": "口径面板",
+   "file": "faces/caliber.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#caliberPanel"
+   ],
+   "boot": [
+    "renderCaliberPanel"
+   ]
+  },
+  {
+   "id": "authz",
+   "title": "授权面板",
+   "file": "faces/authz.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#permPanel"
+   ],
+   "boot": [
+    "renderPermPanel"
+   ]
+  },
+  {
+   "id": "products",
+   "title": "产物与 PPT",
+   "file": "faces/products.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": []
+  },
+  {
+   "id": "status",
+   "title": "运行状态与连接",
+   "file": "faces/status.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#runState",
+    "#connDot",
+    "#runStateSrc",
+    "#paUiStateRow"
+   ],
+   "boot": [
+    "probeConn"
+   ]
+  },
+  {
+   "id": "send",
+   "title": "发送",
+   "file": "faces/send.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": []
+  },
+  {
+   "id": "cards",
+   "title": "展示出口与阻断卡",
+   "file": "faces/cards.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": [
+    "paLoadPesBlocks"
+   ]
+  },
+  {
+   "id": "profile",
+   "title": "右栏 · 画像与待办",
+   "file": "faces/profile.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#pane-boss",
+    ".side .tabs button:nth-child(1)"
+   ],
+   "boot": [
+    "loadSide"
+   ]
+  },
+  {
+   "id": "config",
+   "title": "右栏 · 运行配置",
+   "file": "faces/config.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#pane-cfg",
+    ".side .tabs button:nth-child(2)"
+   ],
+   "boot": [
+    "loadCfg"
+   ]
+  },
+  {
+   "id": "collect",
+   "title": "右栏 · 建档表单",
+   "file": "faces/collect.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#pane-collect",
+    ".side .tabs button:nth-child(3)"
+   ],
+   "boot": []
+  },
+  {
+   "id": "files",
+   "title": "左栏 · 项目文件",
+   "file": "faces/files.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": [
+    "loadFiles"
+   ]
+  },
+  {
+   "id": "input",
+   "title": "输入区",
+   "file": "faces/input.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": []
+  },
+  {
+   "id": "drawer",
+   "title": "抽屉与三栏折叠",
+   "file": "faces/drawer.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": [
+    "panels"
+   ]
+  },
+  {
+   "id": "today",
+   "title": "今日上下文（v3 主面）",
+   "file": "faces/today.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#faceTabs",
+    "#paFaceToday",
+    "#paFaceChat",
+    "#paSrcList",
+    "#paSrcSummary"
+   ],
+   "boot": []
+  },
+  {
+   "id": "admin",
+   "title": "管理面板",
+   "file": null,
+   "href": "admin.html",
+   "open": false,
+   "private": true,
+   "dom": [],
+   "boot": []
+  },
+  {
+   "id": "registry",
+   "title": "注册中心",
+   "file": null,
+   "href": "registry_dashboard.html",
+   "open": false,
+   "private": true,
+   "dom": [],
+   "boot": []
+  },
+  {
+   "id": "delivery",
+   "title": "交付总结",
+   "file": null,
+   "href": "web_summary.html",
+   "open": false,
+   "private": true,
+   "dom": [],
+   "boot": []
+  },
+  {
+   "id": "tasks",
+   "title": "任务与派活（v3 主面）",
+   "file": "faces/tasks.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paFaceTasks"
+   ],
+   "boot": []
+  },
+  {
+   "id": "more",
+   "title": "更多（折叠收纳所）",
+   "file": "faces/more.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paMorePanel",
+    "#paDuty",
+    "#paCards",
+    "#paCardsHint",
+    "#fileList",
+    "#fileSrc",
+    "#caliberPanel",
+    "#permPanel",
+    "#modes",
+    "#pane-boss",
+    "#pane-cfg",
+    "#pane-collect",
+    "#paQuotaBanner"
+   ],
+   "boot": []
+  }
+ ]
+}
