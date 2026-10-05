@@ -31,6 +31,7 @@
   POST /v9/pa/vault/sync       账本/站会/未读 同步到 Obsidian
   POST /v9/pa/archive         归档正文落服务端(X-11 层 1; 按 id 合并, 只写 archived, 写后读回确认)
   GET  /v9/pa/archive/<id>     按 id 取归档正文(查不到 404, 不拿空对象冒充)
+  POST /v9/pa/steer            steer 通道入队(下一步指导 · 消费性: 每轮 drain 即清; 缺参 400)
 """
 import logging
 import os
@@ -2586,6 +2587,65 @@ def register_pa_routes(app, brain=None):
         if r.get("success"):
             return ok({"result": r})
         return jsonify({"ok": False, "error": str(r.get("error") or "动作失败")[:300], "result": r}), 400
+
+    # ---- 序②（2026-10-05 · PM 1235 §三 令）：steer 通道之 HTTP 面（面先钮后 ⇒ 面落 CW 方可去钮之 disabled）----
+    #   通道已在 core/gateway/shared_state.py（add_steer ／ drain_steer · 消费性）⇒ 本面唯「入队」。
+    #   载荷 ／ 回执之字段名与形 ＝ 本 docstring（CW 候此 · 承 PM 1178 §四）。
+    _STEER_MAX_TEXT = 500           # ＝ shared_state.add_steer 之硬截（str(text)[:500]）⇒ 面先拦 · ⛔ 静默截断
+    _STEER_KINDS = ("改令", "接管")  # 前端两钮（tasks.js 之 paIntervene）之意图 ⇒ 回执须载「所按何钮」
+
+    def _steer_missing(_key):
+        u"""缺参 400：形逐字承 routes/session.py 之 _missing（PM T2-刀8 §三 之 canonical）⇒ 同一键 ⛔ 两套码。"""
+        _rule = request.url_rule
+        _rt = (_rule.rule if _rule is not None else "?").lstrip("/")
+        return jsonify({"success": False, "error": u"%s: 缺 %s" % (_rt, _key),
+                        "missing": [_key], "kind": "missing_param", "route": _rt}), 400
+
+    @bp.route("/v9/pa/steer", methods=["POST"])
+    def pa_steer():
+        u"""POST /v9/pa/steer —— 把一条「下一步指导」入 steer 通道（**消费性**：每轮 drain 即清）。
+
+        载荷（JSON body）：`session_id`（必）／`text`（必 · ≤500 字）／`kind`（默「改令」· ∈{改令,接管}）
+          ／`user_id`（选 · 唯留痕）／`topic`（选 · 唯留痕）⇒ 缺参 400（形 ＝ routes/session.py 之 _missing）。
+        回执（200）：`success` ＋ `queued` ＋ 通道之读（`drain_semantics` ／ `inject_point`）
+          ＋ 四键同形（`at` ／ `刻之性` ／ `面之径逐字` ／ `印`）。
+        ⚠ ⛔ 报 `queued_count`：通道唯 `drain_steer`（取走即清）· **无 peek** ⇒ 得数必先消费（假报「已清」）。
+        ⚠ 界：`add_steer(session_id, …)` 之键**唯 `session_id`**（⛔ 含 `user_id`）⇒ 同 sid 异用户 ⛔ 隔离（照实载界）。
+        """
+        from core.gateway import shared_state as _SS
+
+        data = request.get_json(silent=True) or {}
+        sid = str(data.get("session_id") or request.args.get("session_id") or "").strip()
+        if not sid:
+            return _steer_missing("session_id")
+        _raw = data.get("text")
+        text = "" if _raw is None else str(_raw)
+        if not text.strip():
+            return _steer_missing("text")
+        if len(text) > _STEER_MAX_TEXT:
+            return jsonify({"success": False,
+                            "error": u"v9/pa/steer: text 超限（%d ＞ %d 字）" % (len(text), _STEER_MAX_TEXT),
+                            "allowed_max": _STEER_MAX_TEXT, "text_len": len(text),
+                            "kind": "over_limit", "route": "v9/pa/steer"}), 400
+        kind = str(data.get("kind") or "").strip() or "改令"
+        if kind not in _STEER_KINDS:
+            return jsonify({"success": False, "error": u"v9/pa/steer: kind 未知：%s" % kind[:20],
+                            "allowed": list(_STEER_KINDS),
+                            "kind": "bad_value", "route": "v9/pa/steer"}), 400
+        _SS.add_steer(sid, text)
+        print(u"[STEER] POST /v9/pa/steer session=%s kind=%s len=%d" % (sid, kind, len(text)))
+        return jsonify({
+            "success": True, "route": "v9/pa/steer", "channel": "steer", "queued": True,
+            "session_id": sid, "text": text, "text_len": len(text), "max_text": _STEER_MAX_TEXT,
+            "kind": kind, "user_id": (str(data.get("user_id") or "") or None),
+            "topic": (str(data.get("topic") or "") or None),
+            "drain_semantics": u"消费性：drain 即清空（每轮起点消费 ⇒ 追加为 user 消息 · ⛔ 重放）",
+            "inject_point": u"下一轮 LLM 调用前（core/gateway/v9_bridge/round_start.py 每轮 drain_steer）",
+            "at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "刻之性": u"写时（入队之实 · ⛔ 读盘）",
+            "面之径逐字": str(getattr(_SS, "__file__", "") or ""),
+            "印": _code_sha16(pa_steer, _SS),
+        })
 
     @bp.route("/v9/pa/dispatch/history", methods=["GET"])
     def pa_dispatch_history():
