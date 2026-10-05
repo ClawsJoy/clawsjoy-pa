@@ -24,7 +24,15 @@ from core.pes.audit import AuditLog
 from core.pes.run_registry import RunRegistry
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读 · §二.1「出处之判须以『其物在何处』为据 ⇒ 页面 ＝ 壳 ＋ 支」）：
+#   卡块 ／ 载入器 ＝ faces/cards.js；`PA_STATE_DEF` ＝ faces/status.js；`esc` ＝ faces/session.js；
+#   拦截分支（`_res.blocked`）＝ faces/send.js；`.runstate.st-block` 样式 ＝ pa.css；启线 ＝ boot.js。
+PA = (ROOT / "web" / "pa" / "faces" / "cards.js",
+      ROOT / "web" / "pa" / "faces" / "status.js",
+      ROOT / "web" / "pa" / "faces" / "session.js",
+      ROOT / "web" / "pa" / "faces" / "send.js",
+      ROOT / "web" / "pa" / "pa.css",
+      ROOT / "web" / "pa" / "boot.js")
 _PROJ = ROOT / "core" / "pa" / "pes_projection.py"
 
 #: 既有 9 键（Step 0/2 时的冻结值）——Step 3 只允许**追加**，不允许改名/改值/换序
@@ -42,7 +50,7 @@ _ORIGINAL_9 = [
 
 
 def _src() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _card_module() -> str:
@@ -237,7 +245,7 @@ def test_pes_block_loader_is_read_only_and_honest():
     assert "getElementById('thread')" not in fn, "卡片不得写 #thread"
     assert "不渲染任何阻断卡" in fn and "不视为「全绿」" in fn, "缺「取不到/空库不当全绿」的诚实分支"
     assert 'console.warn' in fn
-    assert '_boot("paLoadPesBlocks", paLoadPesBlocks);' in s, "未在启动流程注册"
+    assert '_boot("paLoadPesBlocks", PA_FACES.guard("cards", paLoadPesBlocks));' in s, "未在启动流程注册"
     assert "deg.forEach" in fn, "降级信号未上报"
 
 
