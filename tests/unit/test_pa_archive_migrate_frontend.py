@@ -25,14 +25,16 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读）：X-11 迁移区 ＝ web/pa/faces/archive.js ／ 启动序 ＝ web/pa/boot.js
+PA = (ROOT / "web" / "pa" / "faces" / "archive.js",
+      ROOT / "web" / "pa" / "boot.js")
 
 _START = "/* ---- X-11 层 1：归档正文落服务端"
 _END = "\n/* ---- W-08"
 
 
 def _src() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _region(server: bool = True) -> str:
@@ -44,7 +46,10 @@ def _region(server: bool = True) -> str:
     s = _src()
     i = s.find(_START)
     j = s.find(_END, i)
-    assert i > 0, "未找到 X-11 迁移区"
+    # 哨兵之正（拆面之必然）：`find` 之「未找到」＝ `-1`；块今为面文件之首 ⇒ `i == 0` 合法
+    #   ⇒ ⛔ 再以 `i > 0` 代「找到」（那会把「找到且在首位」误判成「未找到」）。判据 ⛔ 削：仍须「标记在」（`>= 0`）
+    #   ＋ 下二行「区内容物 ＋ ⛔ 越界」照旧把守。
+    assert i >= 0, "未找到 X-11 迁移区"
     assert j > i, "未找到迁移区结束锚点（配额守卫区头）"
     r = s[i:j]
     assert "paMigrateArchiveToServer" in r, "迁移区抽取不完整（锚点或注释被改动）"
@@ -351,8 +356,9 @@ def test_rollback_switch_and_index_keys_are_named_constants():
 def test_boot_runs_migration_after_quota_guard():
     """启动即接（fail-loud）：迁移挂在**配额守卫之后**的启动序列里。"""
     s = _src()
-    g = '_boot("paQuotaGuard", paQuotaGuard);'
-    m = '_boot("paMigrateArchiveToServer", paMigrateArchiveToServer);'
+    # 随器（拆面）：启动序之家 ＝ web/pa/boot.js；调用已包 PA_FACES.guard（承 pm 1334 §三.1）
+    g = '_boot("paQuotaGuard", PA_FACES.guard("archive", paQuotaGuard));'
+    m = '_boot("paMigrateArchiveToServer", PA_FACES.guard("archive", paMigrateArchiveToServer));'
     assert m in s, "迁移未接入启动流程"
     i, j = s.find(g), s.find(m)
     assert 0 < i < j, "迁移应在配额守卫之后运行"
