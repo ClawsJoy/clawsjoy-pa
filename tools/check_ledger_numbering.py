@@ -21,9 +21,27 @@ import re
 import sys
 import tempfile
 
-# 体检项库在 Obsidian（仓库外），可用环境变量覆盖
+# 体检项库在 vault（仓库外）⇒ **路径唯一真源 = core.lib.paths.vault_root()**（2026-09-28 成对改）。
+# 为什么改：此前默认值写死 WSL 形态 `/mnt/d/...`（见下方兜底）⇒ 在 Windows 侧它解析成
+# `D:\mnt\d\...`，既不抛错也找不到真件 ⇒ 工具报「文件不存在」（**判据在场却打错对象**
+# ⇒ Win 侧实为坏件）。覆盖：`CLAWSJOY_HEALTH_LIB` 仍**优先**（保留既有能力）。
+def _default_health_lib():
+    env = os.environ.get("CLAWSJOY_HEALTH_LIB")
+    if env:
+        return env
+    _repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if _repo not in sys.path:
+        sys.path.insert(0, _repo)
+    try:
+        from core.lib.paths import vault_root
+        return str(vault_root() / "收件箱" / "体检项库_V9.md")
+    except Exception:
+        # 兜底只留给「真源不可 import」的环境；⛔ 它**不是**权威值（真源在上）
+        return "/mnt/d/Obsidian/ClawsJoy/ClawsJoy/收件箱/体检项库_V9.md"
+
+
 DEFAULT_TARGETS = [
-    os.environ.get("CLAWSJOY_HEALTH_LIB", "/mnt/d/Obsidian/ClawsJoy/ClawsJoy/收件箱/体检项库_V9.md"),
+    _default_health_lib(),
 ]
 
 _ROW_MD = re.compile(r"^\|\s*(\d+)\s*\|", re.M)  # markdown 表格行: | 12 | ...

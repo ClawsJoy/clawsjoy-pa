@@ -17,8 +17,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.lib.paths import runtime_tmp_path
 from playwright.sync_api import sync_playwright
+from core.lib.port_config import gateway_base_url
 
-BASE = "http://127.0.0.1:5002"
+BASE = gateway_base_url()
 OBSERVER = """
 window.__paStates = [];
 (function(){
