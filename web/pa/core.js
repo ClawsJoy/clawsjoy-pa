@@ -119,6 +119,13 @@ window.PA_STALE = (function(){
     return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' '
       + z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds());
   }
+  /* ⭐⭐ 刻之显形之**公共之器**（承 pm 1359 §二 · 「一处定形」）：诸面之「刻」**皆由此出**
+     ⇒ ⛔ 各面自造 `String()`（自造必漂 ⇒ 同值二形）。
+     ⚠ 界 ≡ `fmtStamp`（⛔ 动判据）：epoch 秒（同 `parseAt` 之界 · 纯数 ∧ 整数部 9-11 位）⇒ 本地刻之逐字；
+     余（ISO 串 ／ 缺文 ／ 不可解）⇒ **原值**（恒等 ⇒ 改之无损）。
+     ⚠ 消费者（本批）：`tasks.js`（后端自报刻 ×5 ／ 收口面「谁批的 ts」／ 件之刻 ×3）
+     ／ `today.js`（素材面取数刻 ×2）／ `selfdesc.js`（拨杆刻 ／ 判据采于 ／ 上下文刻）／ `more.js`（走径采于）。 */
+  window.PA_STAMP = { fmt: fmtStamp, secRe: EPOCH_SEC_RE };
   function stOf(rec){
     if(rec.at === undefined || rec.at === null || rec.at === '') return {k:'nostamp'};
     var a = ageMs(rec.at);
