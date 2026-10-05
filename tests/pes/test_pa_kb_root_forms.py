@@ -9,13 +9,14 @@
 import os
 import subprocess
 
-PA = os.path.join("web", "pa.html")
+# 拆面（承 pm 1334 §三.1 · 惟改径）：知识库根形态二函数之家 ＝ web/pa/faces/session.js。
+PA = (os.path.join("web", "pa", "faces", "session.js"),)
 # JS 侧统一用它拼反斜杠，避免在生成的探针里出现单反斜杠转义（会变成非法/十六进制转义）
 _JBS = "String.fromCharCode(92)"
 
 
 def _extract():
-    s = open(PA, encoding="utf-8").read()
+    s = "\n".join(open(f, encoding="utf-8").read() for f in PA)
     out = ""
     for sig in ("function paKbRootForms(){", "function paKbExtractPaths(text, roots){"):
         i = s.find(sig)
