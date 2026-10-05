@@ -624,7 +624,7 @@ async function paIntervene(kind){
     const res = await paSteerPost(sid, text, '改令');
     if(!res.ok){ out.textContent = '改令：' + res.why; return; }
     out.textContent = '改令：已入队 · 下一轮生效（通道 consumer ＝ 每轮 drain 即清 · ' + String(res.d.inject_point || '?') + '）'
-      + '｜后端 ' + String(res.d.at || '?') + ' · 印 ' + String(res.d['印'] || '?');
+      + '｜后端 ' + PA_STAMP.fmt(res.d.at || '?') + ' · 印 ' + String(res.d['印'] || '?');
     return;
   }
   try{
@@ -945,7 +945,7 @@ async function paLoadEnvFace(){
   var topSrc = document.getElementById('paEnvTopSrc');
   var jd = document.getElementById('paEnvJudge');
   var COLS = ['agents','kb','tools','resources'];
-  if(topSrc) topSrc.textContent = '面：GET /v9/pa/env（只读四栏）· 后端自报刻 ' + ((j && j.at) ? String(j.at) : '未知') + ' · 前端取刻 ' + at0;
+  if(topSrc) topSrc.textContent = '面：GET /v9/pa/env（只读四栏）· 后端自报刻 ' + ((j && j.at) ? PA_STAMP.fmt(j.at) : '未知') + ' · 前端取刻 ' + at0;
   if(!j){
     if(top) top.innerHTML = paRow('环境面', PA_GAP.down('GET /v9/pa/env 未应答'), '面：GET /v9/pa/env', true);
     COLS.forEach(function(c){ paXUnreached('paEnvCol-' + c, c, 'GET /v9/pa/env'); });
@@ -958,7 +958,7 @@ async function paLoadEnvFace(){
   if(window.PA_STALE){ PA_STALE.mark(document.getElementById('paEnvTopSrc'), j.at ? j.at : null, '环境面（GET /v9/pa/env）'); PA_STALE.tick(); }
   var rows = [];
   rows.push(paRow('版', paEsc(String(j.env_version || '缺（后端无 env_version）')), '面：GET /v9/pa/env · 字段 env_version'));
-  rows.push(paRow('刻', paEsc(String(j.at || '缺（后端无 at）')), '面：GET /v9/pa/env · 字段 at（后端自报 · ⛔ 前端 now 顶替 · 承 L76）'));
+  rows.push(paRow('刻', paEsc(PA_STAMP.fmt(j.at || '缺（后端无 at）')), '面：GET /v9/pa/env · 字段 at（后端自报 · ⛔ 前端 now 顶替 · 承 L76）'));
   rows.push(paRow('印（逐栏 sha16）', paEsc(JSON.stringify(j.sha16 || null)), '面：GET /v9/pa/env · 字段 sha16 —— 印须载器（承 PM 089 §二）'));
   rows.push(paRow('密钥守卫', (sg ? ('hits ' + (sg.hits == null ? '缺' : sg.hits) + ' ／ self_hit ' + (sg.self_hit == null ? '缺' : sg.self_hit)) : '缺（后端无 secret_guard）'),
     '面：GET /v9/pa/env · 字段 secret_guard —— ⭐ 密钥唯「有／无」：本面 ⛔ 显值 ／ ⛔ 显长度 ／ ⛔ 显尾号', !sg));
@@ -1039,7 +1039,7 @@ async function paLoadLinesFace(){
   var head = document.getElementById('paLinesHead');
   var sEl  = document.getElementById('paLinesSrc');
   var list = document.getElementById('paLinesList');
-  if(sEl) sEl.textContent = '面：GET /v9/pa/lines · 后端自报刻 ' + ((j && j.at) ? String(j.at) : '未知') + ' · 前端取刻 ' + at0;
+  if(sEl) sEl.textContent = '面：GET /v9/pa/lines · 后端自报刻 ' + ((j && j.at) ? PA_STAMP.fmt(j.at) : '未知') + ' · 前端取刻 ' + at0;
   if(!j){
     if(head) head.innerHTML = paRow('产品线', PA_GAP.down('未应答'), '面：GET /v9/pa/lines', true);
     if(list) list.innerHTML = '';
@@ -1103,7 +1103,7 @@ async function paLoadResumeFace(){
   var at0 = new Date().toLocaleTimeString('zh-CN', {hour12:false});
   var j = await paGetJson(API + '/v9/pa/resume');
   var sEl = document.getElementById('paResumeSrc');
-  if(sEl) sEl.textContent = '面：GET /v9/pa/resume · 后端自报刻 ' + ((j && j.at) ? String(j.at) : '未知') + ' · 前端取刻 ' + at0;
+  if(sEl) sEl.textContent = '面：GET /v9/pa/resume · 后端自报刻 ' + ((j && j.at) ? PA_STAMP.fmt(j.at) : '未知') + ' · 前端取刻 ' + at0;
   if(!j){
     paXUnreached('paResumeHead', '开机面', 'GET /v9/pa/resume');
     paXUnreached('paResumeLeft', '上次断点', 'GET /v9/pa/resume');
@@ -1167,7 +1167,7 @@ async function paLoadRcptFace(){
   var sEl = document.getElementById('paRcptSrc');
   var lEl = document.getElementById('paRcptList');
   var lsEl= document.getElementById('paRcptListSrc');
-  if(sEl) sEl.textContent = '面：GET /v9/pa/dispatch/receipt · 后端自报刻 ' + ((j && j.at) ? String(j.at) : '未知') + ' · 前端取刻 ' + at0;
+  if(sEl) sEl.textContent = '面：GET /v9/pa/dispatch/receipt · 后端自报刻 ' + ((j && j.at) ? PA_STAMP.fmt(j.at) : '未知') + ' · 前端取刻 ' + at0;
   /* ⭐ pm 1346 §二.2（枚举同族）：本面之取数刻（`j.at`）已上屏（上行）⇒ 同族 ⇒ 须标（⛔ 只补「#paUiStateRow」一处）。 */
   if(window.PA_STALE){ PA_STALE.mark(sEl, (j && j.at) ? j.at : null, '收口面（GET /v9/pa/dispatch/receipt）'); PA_STALE.tick(); }
   if(!j){
@@ -1200,8 +1200,8 @@ async function paLoadRcptFace(){
     var tid = String((S && S.task_id) || '?');
     var seat = (S && S.to_seat != null && String(S.to_seat).trim()) ? String(S.to_seat) : null;
     var stage = String((S && S.stage) || '缺');
-    var stageAt = (S && S.stage_at) ? String(S.stage_at) : null;
-    var lastAt = (S && S.last_at) ? String(S.last_at) : null;
+    var stageAt = (S && S.stage_at) ? PA_STAMP.fmt(S.stage_at) : null;
+    var lastAt = (S && S.last_at) ? PA_STAMP.fmt(S.last_at) : null;
     var chase = (S && S.chase_count != null) ? S.chase_count : null;
     var tr = Array.isArray(S && S.transitions) ? S.transitions : [];
     var last = tr.length ? tr[tr.length - 1] : null;
@@ -1219,7 +1219,7 @@ async function paLoadRcptFace(){
       paRow('在册', paEsc(inReg), '面：字段 states[].in_registry —— ⛔ 未在册者拒收口（承 刀4）')
     ].join('');
     var th = tr.length ? tr.map(function(T){
-      return paRow('段 ' + String((T && T.stage) || '?'), paEsc(String((T && T.at) || '缺')),
+      return paRow('段 ' + String((T && T.stage) || '?'), paEsc(PA_STAMP.fmt((T && T.at) || '缺')),
         '果 ' + paEsc(String((T && T['果']) || '缺')) + ' · 印 ' + paEsc(String((T && T['印']) || '缺'))
         + ' · by ' + paEsc(String((T && T.by) || '缺')) + ' · 面：字段 transitions[]'
         + (T && T.note ? ('\n注：' + String(T.note)) : ''));
@@ -1541,7 +1541,7 @@ function paSlotRenderReceipt(http, d, tid){
       : '\u672a\u53d6\u5f97\uff08\u540e\u7aef\u672a\u7ed9\u300c\u6210\u672c\u300d\uff09'));
     L.push('<b>\u8c01\u6279\u7684</b>\uff1a' + paEsc(wh
       ? ((wh['\u4eba'] || '\u2014') + ' \u00b7 ' + (wh['decision_id'] || '\u2014') + ' \u00b7 ' + (wh['decision'] || '\u2014')
-         + ' \u00b7 ts ' + (wh['ts'] == null ? '\u7f3a' : wh['ts']))
+         + ' \u00b7 ts ' + (wh['ts'] == null ? '\u7f3a' : PA_STAMP.fmt(wh['ts'])))
       : '\u672a\u53d6\u5f97'));
     L.push('<span style="color:var(--sub)">task_id ' + paEsc(String(tid || '\u2014'))
       + ' \u00b7 \u771f\u6e90 POST /v9/pa/deliver/mail \u56de\u6267\uff08\u56db\u4ef6 \uff0b \u5f15\u54ea\u5c01\u6765\u4fe1 \uff0b \u4ef6\u4e4b\u523b \uff0b $/\u4ef6 \u7686\u540e\u7aef\u53d6\uff09'
