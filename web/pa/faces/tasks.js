@@ -89,15 +89,15 @@ function paEsc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function
 /* ⭐ pm_刀9 §二 ／ 刀11p §二.2：**刻须可读** —— 后端所给之刻（epoch 秒）⇒ 本地时分之逐字。
    ⛔ 前端自算「当前刻」顶「件之刻」（承 L76「刻须随值」· pm_刀11p §零）。 */
 function paTsLocal(v){
-  function z(n){ n = String(n); return n.length >= 2 ? n : ('0' + n); }
+  /* ⭐ 显形归一（承 pm 1364 §一 裁 ⒜）：唯 `PA_STAMP.fmt` ⇒ ⛔ 自造 `toLocaleString` ／ ⛔ 自造 `z` 补零。 */
   try{
     if(v == null) return null;
     const n = (typeof v === 'number') ? v : parseFloat(v);
     if(!isFinite(n)) return null;
     const d = new Date(n * 1000);
     if(isNaN(d.getTime())) return null;
-    return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' '
-      + z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds());
+    /* ⭐ 有值 ⇒ 器出显形（**原值**投之 · 承 §一 裁 ⒞「不可解 ⇒ 原值上屏」· ⛔ 吞为 null）；`n` ／ `d` 唯作「可用」之判。 */
+    return PA_STAMP.fmt(v);
   }catch(e){ return null; }
 }
 
