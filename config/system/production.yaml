@@ -16,7 +16,7 @@ llm:
 
 vector_store:
   type: "chromadb"
-  persist_directory: "data/chroma"
+  persist_directory: "data/vector_kb"
   collection_name: "memories"
 
 cache:

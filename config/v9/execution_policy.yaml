@@ -23,12 +23,22 @@ execution_budget:
   # turn 级硬时限(毫秒, 2026-09-13 加)。超时 → 置取消标志 + 发 error 事件 + [DONE]。
   # 此前 _stream_gen 超时只发心跳、无限循环 —— 桥接线程挂死后流会永远心跳, 只能重启网关。
   turn_timeout_ms: 1500000  # 25 分钟
+  # PM-011（2026-09-30 · PM 判据）：**任何流式响应必须在有限时间内给出终态 done/error**。
+  # worker 活着但**静默**超过本阈值（无任何非心跳事件）⇒ 主动收口：取消 + error 事件 + [DONE]。
+  # 现场 09-30 05:42（pa_mu6fxm7z）：工具阶段零日志零终态，turns.db 直到 900s 才判 STALE。
+  # 取值理由：本仓既有 turn_registry.STALE_AFTER_SEC=900 已定义「900s 无更新＝异常」，
+  #   只是那个口径是被动的（只标 STALE、不发终态）；本闸把同一读数变成主动终态。
+  # ⚠ 已知误差面：进度事件只每轮发一条 ⇒ 单轮合法静默上限 ≈ 4×320s=1280s > 900s；
+  #   根治＝进度事件降到每工具粒度（下一件）。调小请一句话改本键。
+  turn_stall_ms: 900000  # 15 分钟（< turn_timeout 1500s；env V9_TURN_STALL_MS 可临时覆盖）
   exclusive_tools: ["write_file", "execute_command"]  # 2026-08-24: edit_file/write_large 未注册移除  # P3: 写/命令串行 barrier(永不与其他工具并行)
 
 # ===== V9 本地浏览器操作(Manus 对齐, P1 只读调研) =====
 browser_local:
-  ws_port: 5007              # 扩展 WebSocket 连接端口(独立 WS 服务线程; 低端口被 svchost 占用 ⇒ 上移到本键值（注释不复述数值）)
-  ws_host: localhost         # 扩展连接地址(Chrome 侧): localhost 经 WSL2 localhost 转发可达; 桥接/共享 IP 下 Windows 连 192.168.3.11 不通, 勿用
+  ws_port: 5107              # 扩展 WebSocket 连接端口(独立 WS 服务线程; 数值唯一真源=本键, 调用点不得复述)
+                             # Windows 副本实测(2026-09-19): 5007 不可绑(bind 0.0.0.0:5007 ⇒ WinError 10013
+                             # 权限不允许; WSL 实例的 5007 经 WSL2 localhost 转发占位) ⇒ 与 HTTP 端口(5102)同样错峰
+  ws_host: localhost         # 扩展连接地址(Chrome 侧): Windows 副本同机同栈 ⇒ 直连(不再经 WSL2 localhost 转发)
   domain_whitelist:          # 平台域名白名单(默认 小红书/抖音/B站/知乎/公众号/微博)
     - xiaohongshu.com
     - xhslink.com
@@ -55,10 +65,13 @@ workspace:
 # ===== Obsidian 第二大脑集成(2026-08-29): 知识检索源 + 任务复盘写入 =====
 obsidian:
   enabled: true
-  vault_path: "D:/Obsidian/ClawsJoy/ClawsJoy"   # WSL 挂载; Windows 侧 D:\Obsidian\ClawsJoy
+  # 2026-09-28(成对改): vault_path 降为**说明** —— 真源 = core/lib/paths.py:vault_root()
+  #   （PA_VAULT_DIR → 实探测 → 平台默认）。⛔ 改这里不改变行为。
+  vault_path: "D:/Obsidian/ClawsJoy/ClawsJoy"   # 仅供参考 · ⛔ 非真源
+  exclude_dirs: ["_冷区", "_垃圾箱", ".obsidian", "Templates"]   # 检索排除面(CEO 2026-09-28 ⑧ 终裁)
   reviews_dir: "聊天区/复盘"   # 批198: 按《第二大脑分类规范 v2》目标目录（此前仍写顶层 Reviews ⇒ 迁移回退、972 份堆积）
-  sops_dir: "SOPs"
-  pitfalls_dir: "Pitfalls"
+  sops_dir: "工作区/SOPs/SOPs"   # 2026-09-28: 真件目录(vault 根无 SOPs/ ⇒ 3 键曾 4/4 断链)
+  pitfalls_dir: "开发区/ComputerUse/Pitfalls"   # 2026-09-28: 真件回活区(⛔ 不认 _冷区); 原 Pitfalls/ 不存在
   pitfalls_file: "避坑清单.md"  # 2026-08-30 知识迁移: 常驻避坑文件(旧 avoid_pitfalls.md 内容已并入)
   clippings_dir: "Clippings"   # 2026-08-30 第二大脑: browse/fetch 抓取的新闻/资料自动剪藏目录
   sync_clippings: true          # 抓取成功页面自动同步到 vault Clippings/(幂等去重)

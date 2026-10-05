@@ -1,0 +1,268 @@
+# vault 写面登记表 · 立面级「路径 ⇒ 写者」 · CW（Windows 侧） · 立表 2026-09-28
+#
+# 由来：DS 裁「立」（承 CW 帖 F §一 三护栏自查）。目的 = 把 CEO 终裁 §二 护栏ⓐ
+# 2026-09-28 追补（CW）：`write_file` 工具出口纳入 vault 判据（vault 面走唯一出口 ＋
+#   逐段上限 · fail-loud）；覆盖规则随之扩 `is_vault_path()`（原只认 vault_root()/PA_VAULT_DIR
+#   ⇒ 该出口落在面外 —— 与「C1 门盲区」同型）。
+#       「同路径 ⛔ 不两写者」从一句声明，变成**逐面可机检**的表。
+# 判据：tests/unit/test_vault_write_faces.py
+#   覆盖规则（分母明写）= 扫 core/tools/web/scripts，凡「引 vault 真源
+#   （vault_root()/_vault_root()/VAULT_ROOT/self.vault/PA_VAULT_DIR）＋ 有写调用
+#   （write_text_lf( / .write_text( / write_bytes( / shutil.copy / shutil.move）」的模块
+#   ⇒ 必须在 writers[] 或 exceptions[] 登记；未登记 ⇒ 报红（新增写者必须登记）。
+#   ⚠ 本规则**逮不到的**写者已显式列在 writers[] 里（coverage_gap: true），⛔ 不以「表看着全」充数。
+
+version: 1
+updated: "2026-09-28"
+provenance: "CW 一手扫（data/tmp/cw_wf_probe.py）⇒ 6 候选"
+true_source: "core/lib/paths.py::vault_root()"
+only_text_exit: "core/lib/paths.py::write_text_lf()"
+
+writers:
+  - module: core/lib/paths.py
+    side: cw
+    role: exit
+    faces:
+      - face: "（任意面 · 由调用方给定路径）"
+        evidence:
+          - "core/lib/paths.py:97"
+          - "core/lib/paths.py:117"
+  - module: core/plugins/draft_box/base.py
+    side: cw
+    faces:
+      - face: "草稿箱/{platform}/*.md"
+        evidence:
+          - "core/plugins/draft_box/base.py:84"
+          - "core/plugins/draft_box/base.py:120"
+          - "core/plugins/draft_box/base.py:140"
+          - "core/plugins/draft_box/base.py:158"
+          - "core/plugins/draft_box/base.py:181"
+      - face: "草稿箱/{platform}/assets/*"
+        evidence:
+          - "core/plugins/draft_box/base.py:110"
+          - "core/plugins/draft_box/base.py:112"
+          - "core/plugins/draft_box/base.py:226"
+          - "core/plugins/draft_box/base.py:251"
+      - face: "已发布/{platform}/*"
+        evidence:
+          - "core/plugins/draft_box/base.py:183"
+          - "core/plugins/draft_box/base.py:187"
+  - module: core/plugins/media_processor.py
+    side: cw
+    faces:
+      - face: "学习笔记/{视频|音频|图片|PDF}/*.md"
+        evidence:
+          - "core/plugins/media_processor.py:190"
+          - "core/plugins/media_processor.py:275"
+          - "core/plugins/media_processor.py:343"
+          - "core/plugins/media_processor.py:494"
+      - face: "assets/*"
+        evidence:
+          - "core/plugins/media_processor.py:370"
+          - "core/plugins/media_processor.py:402"
+          - "core/plugins/media_processor.py:405"
+  - module: core/pa/vault_brain.py
+    side: cw
+    faces:
+      - face: "收件箱/PA待办与进度.md"
+        evidence:
+          - "core/pa/vault_brain.py:29"
+          - "core/pa/vault_brain.py:46"
+      - face: "收件箱/_未读索引.md"
+        evidence:
+          - "core/pa/vault_brain.py:87"
+          - "core/pa/vault_brain.py:102"
+      - face: "收件箱/PA每日站会.md"
+        evidence:
+          - "core/pa/vault_brain.py:108"
+          - "core/pa/vault_brain.py:132"
+      - face: "附件/{kind}/*"
+        evidence:
+          - "core/pa/vault_brain.py:26"
+          - "core/pa/vault_brain.py:77"
+          - "core/pa/vault_brain.py:81"
+  - module: core/gateway/precision_inject.py
+    side: cw
+    faces:
+      - face: "{sops_dir}/*.md"
+        evidence:
+          - "core/gateway/precision_inject.py:673"
+          - "core/gateway/precision_inject.py:696"
+          - "core/gateway/precision_inject.py:1019"
+          - "core/gateway/precision_inject.py:1198"
+          - "core/gateway/precision_inject.py:1209"
+      - face: "{pitfalls_dir}/避坑清单.md"
+        evidence:
+          - "core/gateway/precision_inject.py:900"
+          - "core/gateway/precision_inject.py:926"
+  - module: core/tools/write_file.py
+    side: cw
+    guard: "vault 面 ⇒ write_text_lf()（纯 LF ＋ 逐段 ≤200 B · fail-loud；查在 mkdir 之前）；非 vault 面 ⇒ 行为不变"
+    faces:
+      - face: "（vault 内任意路径 · 经审批的通用写）"
+        evidence:
+          - "core/tools/write_file.py:123"  # vault 判据（is_vault_path）＋ 逐段上限（fail-loud）
+          - "core/tools/write_file.py:55"  # 唯一出口：write_text_lf()（派生名按 224 B）
+          - "core/tools/write_file.py:197"  # 行模式写
+          - "core/tools/write_file.py:202"  # JS 回滚写回
+          - "core/tools/write_file.py:247"  # `.bak` 派生名写（≤ 224 B）
+          - "core/tools/write_file.py:250"  # 全文写
+
+exceptions:
+  - module: core/agents/builtin/private_manager.py
+    reason: "同名不同物：其 vault = 私密保险箱 user_dir/vault.json（Fernet 加密）⇒ 与 Obsidian vault ⛔ 无关"
+    evidence:
+      - "core/agents/builtin/private_manager.py:53"
+      - "core/agents/builtin/private_manager.py:57"
+      - "core/agents/builtin/private_manager.py:74"
+exceptions_count: 1
+
+peer_faces:
+  - holder: "对端（WSL 侧 · brain 镜像器持有方）"
+    face: "vault 全域 − 排除面"
+    excludes: [".obsidian", "Templates", "_冷区", "_垃圾箱"]
+    direction: "brain（真源）→ vault（镜像）· 单向"
+    guards:
+      - "M5 不覆盖手改"
+      - "写 vault 纯 LF（CEO §一③）"
+      - "⛔ 隐式回流"
+    provenance: "引自 DSH 自报（线索 · ⛔ 非 CW 一手）"
+
+collision:
+  note: "镜像面 = vault 全域 ⇒ CW 的每个面都落在镜像面内 ⇒ 逐面都是「多写者面」"
+  rule: "多写者面一律靠 M5 护栏（镜像 ⛔ 覆盖手改）＋ 单向（⛔ 隐式回流）；CW 侧同一面 ⛔ 不两写者"
+  cw_faces_all_multi_writer: true
+
+# ── B3（T-6 扩面 · DS mid=418 裁「扩面」）：data/tmp 侧落件脚本面 ─────────────────
+# 由来：本表的覆盖规则只扫 core/tools/web/scripts；而我线落件**实走** data/tmp/*.py ——
+#   唯一写出口 data/tmp/cw_emit.py 取「调用方给的路径」、自身 ⛔ 无 vault 引用（与
+#   core/tools/write_file.py 同族）⇒ 原规则一律逮不到 ⇒ 本面补一条可机检判据。
+# 规则（分母明写）：
+#   R1 凡 data/tmp/*.py（⛔ 不递归）「含 vault 字面 Obsidian[\\/]ClawsJoy ∧（裸写 ∨ 走 emit_text）」者
+#      ⇒ 必须「只走 emit_text」（合规 · 无需登记）或在 tmp_scripts 逐条登记（写目标须写明）。
+#   R2 其中「裸写目标 = vault 变量」者 ⇒ 必须在 deviations 逐条登记（已知偏差 · ⛔ 未删 · 待处置）。
+#   ⚠ 已知边界（⛔ 不假装覆盖）：目标经 os.path.join / Path(...) / 任意调用构造者 ⛔ 逮不到 ——
+#      该取舍**有意**：`os.path.join(仓内, os.path.basename(P))` ＝ 正解存底写法，若对调用透明
+#      传播必生假阳性。反例门 test_B3_counterexample_rule_has_teeth 把该边界钉成断言。
+tmp_scripts_note: "data/tmp 侧面分母（明写 · 两档）：分母 = 含 vault 字面 ∧（裸写 ∨ 走 emit_text）的 data/tmp/*.py。① tmp_emit_only 档（只走唯一出口 emit_text ⇒ 合规）② tmp_scripts 档（有裸写 ⇒ 须逐条给写目标）。⚠ 两档**名单与条数均冻结断言** ⇒ data/tmp 增删任何触碰 vault 的脚本 ⇒ 门必红（fail-loud · ⛔ 不许静默漂移）。本读数 = 09:31 立表 · 09:40 同批更新（＋ data/tmp/cw_t6_emit.py ⇒ 分母 24→25） · 20260928_1804 同批更新（＋ 我线本会话 5 件落件器: cw_ack_switch / cw_dsline_report / cw_newds_reply1 / cw_notice_ceo_route / cw_re_T1T2 ⇒ emit_only 12→17） · 20260928_1805 同批更新（＋ 我线本会话 6 件裸写: cw_ceo_165/166/167/168 · cw_pm_reply169to171 · cw_t6_amend ⇒ tmp_scripts 13→19 · deviations 2→8）"
+tmp_emit_only:
+  - module: data/tmp/cw_ack_switch.py
+  - module: data/tmp/cw_dsline_report.py
+  - module: data/tmp/cw_e_fix1.py
+  - module: data/tmp/cw_e_fix2.py
+  - module: data/tmp/cw_e_fix3.py
+  - module: data/tmp/cw_e_fix4.py
+  - module: data/tmp/cw_e_fix5.py
+  - module: data/tmp/cw_e_fix6.py
+  - module: data/tmp/cw_e_fix7.py
+  - module: data/tmp/cw_e_fix8.py
+  - module: data/tmp/cw_e_fix9.py
+  - module: data/tmp/cw_mk_h.py
+  - module: data/tmp/cw_newds_reply1.py
+  - module: data/tmp/cw_notice_ceo_route.py
+  - module: data/tmp/cw_patch_plan2.py
+  - module: data/tmp/cw_re_T1T2.py
+  - module: data/tmp/cw_t6_emit.py
+tmp_emit_only_count: 17
+tmp_scripts:
+  - module: data/tmp/cw_brain_seed_manifest.py
+    bare_target: "仓内 data/tmp/cw_brain_seed_rows_20260928.json（⛔ 非 vault）"
+    evidence: ["data/tmp/cw_brain_seed_manifest.py:26"]
+  - module: data/tmp/cw_d_backup.py
+    bare_target: "仓内 .rollback_codex（⛔ 非 vault）"
+    evidence: ["data/tmp/cw_d_backup.py:46"]
+  - module: data/tmp/cw_d_fix1.py
+    bare_target: "⛔ 非执行写：命中的是落件正文里引的 markdown 串（Path.write_text 字样）"
+    evidence: ["data/tmp/cw_d_fix1.py:19"]
+  - module: data/tmp/cw_e_fix10.py
+    bare_target: "⛔ 非执行写：落件正文里的 markdown 串（同族）"
+    evidence: ["data/tmp/cw_e_fix10.py:12"]
+  - module: data/tmp/cw_e_v4.py
+    bare_target: "仓内 .rollback_codex（⛔ 非 vault）"
+    evidence: ["data/tmp/cw_e_v4.py:17"]
+  - module: data/tmp/cw_e_v5.py
+    bare_target: "⚠ vault：BAK = P + 「.before_e_v5_」 + ts"
+    evidence: ["data/tmp/cw_e_v5.py:10"]
+  - module: data/tmp/cw_e_v6.py
+    bare_target: "仓内 .rollback_codex（join 构造 ⇒ 目标非 vault）"
+    evidence: ["data/tmp/cw_e_v6.py:14"]
+  - module: data/tmp/cw_mk_g.py
+    bare_target: "⛔ 非执行写：落件正文里的 markdown 串（含本表覆盖规则原文）"
+    evidence: ["data/tmp/cw_mk_g.py:85"]
+  - module: data/tmp/cw_mk_h2.py
+    bare_target: "仓内 data/tmp/cdp/_cw_post309.mjs（⛔ 非 vault）"
+    evidence: ["data/tmp/cw_mk_h2.py:61"]
+  - module: data/tmp/cw_mk_plan.py
+    bare_target: "仓内 data/tmp/_cw_plan_out.txt（⛔ 非 vault）"
+    evidence: ["data/tmp/cw_mk_plan.py:20"]
+  - module: data/tmp/cw_mk_selfcheck.py
+    bare_target: "⛔ 非执行写：落件正文里的 markdown 串（4 处）"
+    evidence: ["data/tmp/cw_mk_selfcheck.py:49", "data/tmp/cw_mk_selfcheck.py:53", "data/tmp/cw_mk_selfcheck.py:66", "data/tmp/cw_mk_selfcheck.py:67"]
+  - module: data/tmp/cw_pathsrc_fix.py
+    bare_target: "仓内（join(ROOT=仓根, rel) ⇒ 非 vault）"
+    evidence: ["data/tmp/cw_pathsrc_fix.py:24"]
+  - module: data/tmp/cw_selfcheck_v2.py
+    bare_target: "⚠ vault：BAK = P + 「.before_selfcheck_v2_」 + ts（另 :59 为正文串）"
+    evidence: ["data/tmp/cw_selfcheck_v2.py:13", "data/tmp/cw_selfcheck_v2.py:59"]
+  - module: data/tmp/cw_ceo_165.py
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(P2 + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
+    evidence: ["data/tmp/cw_ceo_165.py:110"]
+  - module: data/tmp/cw_ceo_166.py
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(P + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
+    evidence: ["data/tmp/cw_ceo_166.py:94"]
+  - module: data/tmp/cw_ceo_167.py
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(PB + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
+    evidence: ["data/tmp/cw_ceo_167.py:152"]
+  - module: data/tmp/cw_ceo_168.py
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(PATH + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
+    evidence: ["data/tmp/cw_ceo_168.py:94"]
+  - module: data/tmp/cw_pm_reply169to171.py
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(p + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
+    evidence: ["data/tmp/cw_pm_reply169to171.py:11"]
+  - module: data/tmp/cw_t6_amend.py
+    bare_target: "⛔ 非 vault 写：命中 shutil.copyfile(DST, BAK) 的**读方向**（DST = codex/ 真件 · BAK = .rollback_codex）⇒ 写目标非 vault（启发式边界 · 与 cw_d_fix1.py 同类）"
+    evidence: ["data/tmp/cw_t6_amend.py:9"]
+tmp_scripts_count: 19
+
+# 已知偏差（R2 命中）：data/tmp 侧脚本**裸写落 vault** ⇒ 绕开唯一出口 emit_text。
+# ⚠ 本批 2 条**⛔ 未删 · 待处置**（处置权归 CEO/DS）：落的是 `.before_*` 存底件，
+#   而承「每稿存底」纪律，存底应落 .rollback_codex（与源件分离）⇒ 落 vault 面即偏差。
+deviations:
+  - module: data/tmp/cw_e_v5.py
+    evidence: ["data/tmp/cw_e_v5.py:10"]
+    bare_target: "vault 变量 BAK（= P + 「.before_e_v5_」 + ts）⇒ 落 codex/ 面"
+    artifacts:
+      - "codex/2026-09-28-codex-回_CEO五件裁与真源根两口径与沙箱镜像实测_v1.md.before_e_v5_20260928_0655（78e5e1c2b5b5ee64 · 27,643 B · 06:55:53）"
+      - "codex/…同上….before_e_v5_20260928_0656（同 sha · 同字节 ⇒ 与 0655 重复落）"
+    status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定；本侧 ⛔ 不擅自删 vault 内件）"
+  - module: data/tmp/cw_selfcheck_v2.py
+    evidence: ["data/tmp/cw_selfcheck_v2.py:13"]
+    bare_target: "vault 变量 BAK（= P + 「.before_selfcheck_v2_」 + ts）⇒ 落 codex/ 面"
+    artifacts:
+      - "codex/2026-09-28-codex-自查_Win侧vault写面与存底面与L2对账读数_v1.md.before_selfcheck_v2_20260928_0641（fba08c66f6953bac · 12,182 B · 06:41:28）"
+    status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（同上）"
+  - module: data/tmp/cw_ceo_165.py
+    evidence: ["data/tmp/cw_ceo_165.py:110"]
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(P2 + 「.sha256」, 「w」)"
+    status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
+  - module: data/tmp/cw_ceo_166.py
+    evidence: ["data/tmp/cw_ceo_166.py:94"]
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(P + 「.sha256」, 「w」)"
+    status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
+  - module: data/tmp/cw_ceo_167.py
+    evidence: ["data/tmp/cw_ceo_167.py:152"]
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(PB + 「.sha256」, 「w」)"
+    status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
+  - module: data/tmp/cw_ceo_168.py
+    evidence: ["data/tmp/cw_ceo_168.py:94"]
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(PATH + 「.sha256」, 「w」)"
+    status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
+  - module: data/tmp/cw_pm_reply169to171.py
+    evidence: ["data/tmp/cw_pm_reply169to171.py:11"]
+    bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(p + 「.sha256」, 「w」)"
+    status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
+  - module: data/tmp/cw_t6_amend.py
+    evidence: ["data/tmp/cw_t6_amend.py:9"]
+    bare_target: "⛔ 非 vault 写：命中 shutil.copyfile(DST, BAK) 的读方向（DST = vault 真件 · BAK = .rollback_codex）"
+    status: "⚠ 启发式假阳（写目标非 vault）· 已登记以免静默 · ⛔ 非真偏差"
+deviations_count: 8

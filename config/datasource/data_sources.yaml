@@ -42,7 +42,7 @@ data_sources:
       - type: "system"
         commands: ["cpu", "memory", "disk"]
       - type: "application"
-        endpoints: ["http://localhost:5002/api/health"]
+        endpoints: ["http://localhost:5102/api/health"]
         
   # 用户反馈
   feedback:

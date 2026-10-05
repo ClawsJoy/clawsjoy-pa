@@ -5,7 +5,7 @@ tasks:
   # 健康检查
   health_check:
     schedule: "*/30"
-    command: "curl -s http://localhost:5002/api/health > /dev/null"
+    command: "curl -s http://localhost:5102/health > /dev/null"
     enabled: true
   
   # 待办提醒
