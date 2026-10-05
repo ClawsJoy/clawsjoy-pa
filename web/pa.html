@@ -218,15 +218,16 @@
   <div class="left">
     <h4>本机画像 · 1 个客户</h4>
     <!-- 承 pm_997 §四.2：⛔ 平铺 7 行 ⇒ 收 1 行摘要，展开才见逐面 -->
-    <div class="srcsum" id="paSrcSummary" onclick="paSrcToggle()" title="本机全上下文＝素材库（只索引）；点开看逐面读数">素材 7 面 ⇒ <b id="paSrcSum">读数中…</b> <span class="caret" id="paSrcCaret">▾</span></div>
+    <div class="srcsum" id="paSrcSummary" onclick="paSrcToggle()" title="本机全上下文＝素材库（只索引）；点开看逐面读数">素材 7 面 ⇒ <b id="paSrcSum">⚠ 无 JS：无读数（须运行期）</b> <span class="caret" id="paSrcCaret">▾</span></div>
     <div class="srclist" id="paSrcList" hidden>
-      <div class="it">💬 会话（含席）<span class="n" id="srcChat">读数中…</span></div>
+      <div class="it">💬 会话（含席）<span class="n" id="srcChat">⚠ 无 JS：无读数（须运行期）</span></div>
       <div class="it">📄 文件<span class="n na">不可达（读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实））</span></div>
-      <div class="it">🧾 台账（机账）<span class="n na">读数中…（三本机账：dispatch/history ／ deliver/authz ／ lines）</span></div>
+      <div class="it">🧾 台账（机账）<span class="n na">⚠ 无 JS：无读数（须运行期 · 三本机账：dispatch/history ／ deliver/authz ／ lines）</span></div>
       <div class="it">🌐 平台<span class="n na">⛔ 不接（红线：⛔ 代操作他方平台）</span></div>
-      <div class="it">🧰 作业<span class="n" id="srcRuns">读数中…</span></div>
+      <div class="it" id="srcRowDispatch">🧰 作业（调度件）<span class="n">⚠ 无 JS：无读数（须运行期）</span></div>
+      <div class="it" id="srcRowRuns">🧰 作业（PES 运行）<span class="n" id="srcRuns">⚠ 无 JS：无读数（须运行期）</span></div>
       <div class="it">🎨 出图<span class="n na">不可达（读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实））</span></div>
-      <div class="it">🧠 记忆自身·二次提取<span class="n" id="srcCtx">读数中…</span></div>
+      <div class="it">🧠 记忆自身·二次提取<span class="n" id="srcCtx">⚠ 无 JS：无读数（须运行期）</span></div>
       <div class="foot">素材只索引；画像只存摘要条，每条可回指素材。⛔ 编数。</div>
     </div>
   </div>
