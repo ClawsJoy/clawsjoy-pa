@@ -137,3 +137,6 @@ _deploy/
 # ===== 运行态／本机部署（承 PM 1200 §三 ／ PM 1201 §四 · ⛔ 入库）=====
 web/pa/ui_state.json
 scripts/win_pa/*.xml
+
+# ===== BOM 闸之基线（本机之面之快照 · --rebase 可再生 ⇒ 派生 · 承 PM 1221 §二.⒜）=====
+core/lib/scan_bom_baseline.json
