@@ -5,6 +5,7 @@ u"""safe_edit —— 通用「按 op 改件」器（去批次 · ⛔ 含某批�
     PM 1183 §二（**印须取自读 · ⛔ 取自算**）
     PM 1178 §五（存底粒度 ＝ 「改」· ⛔ 「件」· 一改一底）
     PM 1187 §二⒜（**assert 是冗余之闸 · ⛔ 代出处**）
+    PM 1292 §四（**底名正形**：底 ＝ 〈件名〉.before_〈印16〉 —— ⛔ 再生点前缀之旧形 · 旧形唯备兼容之读）
 
 用法（由 recipe 调）：
     import safe_edit as S
@@ -38,7 +39,22 @@ def load(rel, root=None):
 
 
 def backup_path(p, h):
+    u"""底之名（**正形** · 承 PM 1292 §四）：〈件名〉.before_〈印16〉 ——
+    ⛔ 点前缀之旧形（旧形唯备兼容之**读** · 承 PM 1292 §四）。"""
+    return "%s%s%s" % (p, DOT_PREFIX, h)
+
+
+def backup_path_legacy(p, h):
+    u"""旧形（点前缀 · .before_〈印16〉.〈件名〉）—— ⛔ 再生；唯备兼容之读。"""
     return os.path.join(os.path.dirname(p), "%s%s.%s" % (DOT_PREFIX, h, os.path.basename(p)))
+
+
+def backup_find(p, h):
+    u"""底之两形之候（**正形先 · 旧形后**）⇒ 路 ∨ None（唯读 · ⛔ 写）。"""
+    for bp in (backup_path(p, h), backup_path_legacy(p, h)):
+        if os.path.exists(bp):
+            return bp
+    return None
 
 
 def make_backup(p):
@@ -132,9 +148,9 @@ def verify(edits, bases):
     for key, idx, rel, hb, hout in bases:
         tg = list(_targets(edits[key]))
         p, _ = load(rel)                       # 唯求「同目录」以定底之路（⛔ 读活件）
-        bp = backup_path(p, hb)
-        if not os.path.exists(bp):
-            print(u"   [无底] %s idx=%d ／ %s" % (key, idx, bp))
+        bp = backup_find(p, hb)
+        if not bp:
+            print(u"   [无底] %s idx=%d ／ %s" % (key, idx, backup_path(p, hb)))
             bad.append(key)
             continue
         b = open(bp, "rb").read()
