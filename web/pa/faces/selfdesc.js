@@ -1412,7 +1412,7 @@ async function paSelfCompose(key, pre){
 }
 function paSelfCount(sf){
   if(!sf) return '（清单未载入）';
-  return '（已接 ' + sf.read.length + ' · ⒜ 未接 · 待办（M1） ' + sf.miss.length
+  return '（已接 ' + sf.read.length + ' · 未接 ' + sf.miss.length
     + ' · ⛔ 不接（红线）' + sf.off.length + ' · 不可达 ' + sf.unreach.length + '）';
 }
 async function paSelfSections(keys){
