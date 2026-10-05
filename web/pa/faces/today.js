@@ -186,22 +186,23 @@ async function paLoadSrcFaces(o){
   const srcOk = paSrcClaim();
   if(!srcOk.ok){ paV3Txt('paSrcSum', '素材面认领 ⛔ 成：' + srcOk.why + '（⛔ 静默降级 ⇒ 报 PM）'); return srcOk; }
   /* ① 一词之性质（⛔ 以「未接」盖「红线」） */
-  paSrcWrite('srcRowPlatform', '🌐 平台', PA_GAP.off('⛔ 代操作他方平台'),
-    '为何不接：⛔ 代操作他方平台 ＝ **红线**（⛔ 待办 · 不会有 ⇒ ⛔ 以「未接」暗许「将来会接」＝ 软性虚诺 · 承 pm 17:47 §二改①）');
+  /* ⚠ why 归**值格**（⛔ 源行）—— 源行之义 ＝ 源之径（承 today.js:111）；且「⛔ 以「未接」暗许「将来会接」＝ 软性虚诺」
+     属**辨义**类 ⇒ ⛔ 上屏（承 pm 1272 §三）。平台面 ⛔ 后端源 ⇒ 源行 ＝ **空**。出处 ＝ PM 17:47 §二改①。 */
+  paSrcWrite('srcRowPlatform', '🌐 平台', PA_GAP.off('⛔ 代操作他方平台'));
   /* ⭐ 素材面两行（承 pm 20:16 §三.⒞）：自 GET /v9/pa/source_faces 取（⛔ 硬编码 · ⛔ 手搓数）。
      ⛔ 缺读源 ／ 缺面 ⇒ 照实「⒜ 未接 · 待办（M1）＋ 为何未接」—— 读源一落 ⇒ 自动转绿（⛔ 装绿）。 */
   const _sf = (o && o.sf) || null;
   const _fFile = paSrcFaceOf(_sf, '文件');
   const _fDraw = paSrcFaceOf(_sf, '出图');
   paSrcWrite('srcRowFile', '📄 文件',
-    _sf ? (paSrcFaceValue(_fFile) || '（后端应答无 量 ⇒ 照实缺）') : PA_GAP.todo(),
-    _sf ? paSrcFaceSrc(_sf, '文件', _fFile)
-        : '为何未接：读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实）',
+    _sf ? (paSrcFaceValue(_fFile) || '（后端应答无 量 ⇒ 照实缺）')
+        : PA_GAP.todo('读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实）'),
+    paSrcFaceSrc(_sf, '文件', _fFile),
     !!(_sf && !_fFile));
   paSrcWrite('srcRowDraw', '🎨 出图',
-    _sf ? (paSrcFaceValue(_fDraw) || '（后端应答无 量 ⇒ 照实缺）') : PA_GAP.todo(),
-    _sf ? paSrcFaceSrc(_sf, '出图', _fDraw)
-        : '为何未接：读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实）',
+    _sf ? (paSrcFaceValue(_fDraw) || '（后端应答无 量 ⇒ 照实缺）')
+        : PA_GAP.todo('读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实）'),
+    paSrcFaceSrc(_sf, '出图', _fDraw),
     !!(_sf && !_fDraw));
   /* ② 作业轴：两名分列（⛔ 一词盖两义） */
   const cD = (o.d && o.d.counts) ? o.d.counts : null;
