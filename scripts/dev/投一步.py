@@ -15,7 +15,7 @@ r"""投一步.py —— 件-投-醒 一步之器（落箱 ＋ 落行 ＋ 醒 · 
   ⚠ 席名（2026-10-06 承 pm 1294 §三 · 并收）：CW 席之**台账名** ＝ 「CodexWindows线」（⛔ SEATS 之「V9工程师·全史席」）
     ⇒ 二键并存 · **以台账之名为准**（投 CW 之件 ⇒ --to CodexWindows线 · 免 --to-id）。
 
-退出码：0 = 三步皆成（演毕亦然）｜2 = 用法错｜3 = 草稿不在｜4 = 落箱败（BOM ／ CR ／ 箱内异）
+退出码：0 = 三步皆成（演毕亦然）｜2 = 用法错｜3 = 草稿不在｜4 = 落箱败（BOM ／ CR ／ 件之完 ／ 箱内异）
         ｜5 = 落行败（透传其 rc）｜6 = 已落行（复合键在 ⇒ ⛔ 复落）｜7 = **醒败**｜8 = 已投（凭在 ⇒ ⛔ 复投）
 
 界：⭐ 本器唯「编排」三步（⛔ 自撰字面 ／ ⛔ 自裁）；其三步之闸各归其器（落台账_行 ／ wake_send）。
@@ -66,9 +66,112 @@ def run(cmd):
     return r.returncode, (r.stdout or "") + (r.stderr or "")
 
 
+# ------------------------------------------------ 件之完（闸一 ／ 二 ／ 三 · 承 pm 1294 §二 ／ pm 1298 §三）
+HAN = u"一二三四五六七八九十"
+SUSPECT_TAIL = (u"（", u"(", u"[", u"：", u":", u"，", u",", u"、", u"＋", u"｜", u"——", u"「", u"/", u"-")
+
+
+def han_to_int(s):
+    u"""汉字数 ⇒ 整数（唯及「十」· 本族之节号 ⛔ 越十）⇒ 失败 ⇒ None。"""
+    if not s:
+        return None
+    if len(s) == 1:
+        return HAN.index(s) + 1 if s in HAN else None
+    if s[0] == u"十" and len(s) == 2 and s[1] in HAN:
+        return 10 + HAN.index(s[1]) + 1
+    if len(s) == 2 and s[1] == u"十" and s[0] in HAN:
+        return (HAN.index(s[0]) + 1) * 10
+    return None
+
+
+def front_matter(text):
+    u"""取 front matter 之行（⛔ 含二界之 ---）⇒ list ∨ None。"""
+    lines = text.split("\n")
+    if not lines or lines[0].strip() != u"---":
+        return None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == u"---":
+            return lines[1:i]
+    return None
+
+
+FM_FIELD = re.compile(u"^([A-Za-z_\u4e00-\u9fff\u00b7][^:]*):[ \t]?(.*)$")
+
+
+def fm_field(fm, name):
+    u"""front matter 之某字段 ⇒ 其值（含续行 · 以空格联）∨ 空串。"""
+    out, on = u"", False
+    for l in (fm or []):
+        m = FM_FIELD.match(l)
+        if m:
+            on = (m.group(1).strip() == name)
+            if on:
+                out = m.group(2)
+            continue
+        if on and l.strip():
+            out = (out + u" " + l.strip()).strip()
+    return out
+
+
+def promised_sections(fm):
+    u"""「动作需求」之 §〈汉字数〉 ⇒ (集, 所取之列逐字) —— ⚠ **唯取本字段** ∧ **§ 须紧接「（」**
+    （承 pm 1298 §三.1 之剔法 ＋ 实探）：本族之诺之形 ≡ （§三）／（§一 · 器取）；
+    ⛔ 取他件之引（如 §五.⒊ 之界 ／ pm 1294 §三 ⇒ 实：1222 ／ 1253 之假红）；
+    ⛔ 取变体（如（器取逐行 · §一）⇒ 宁漏 ⛔ 假红）。"""
+    f = fm_field(fm, u"动作需求")
+    got = set()
+    for m in re.finditer(u"（§[ \t]*([%s]+)" % HAN, f):
+        n = han_to_int(m.group(1))
+        if n:
+            got.add(n)
+    return got, f
+
+
+def heading_sections(text):
+    u"""节标题之汉字数集（## 三 ／ ### 三 ／ ## §三 任一体 —— 承 pm 1294 §二）。"""
+    got = set()
+    for m in re.finditer(u"(?m)^#{2,4}[ \t]*§?[ \t]*([%s]+)(?=[ \t\u3000\u00b7\uff1a\uff0f\uff09]|$)" % HAN, text):
+        n = han_to_int(m.group(1))
+        if n:
+            got.add(n)
+    return got
+
+
+def int_to_han(n):
+    return HAN[n - 1] if 1 <= n <= len(HAN) else str(n)
+
+
+def last_nonblank(text):
+    for l in reversed(text.split("\n")):
+        if l.strip():
+            return l
+    return u""
+
+
+def body_gate(b, text, name):
+    u"""件之完（闸一 ／ 二 ／ 三）⇒ (rc, 报) ∨ None（过）。"""
+    want, field = promised_sections(front_matter(text))
+    miss = sorted(n for n in want if n not in heading_sections(text))
+    if miss:
+        return 4, (u"落箱：⛔ 动作需求 诺之节 ⛔ 见其文（缺：%s）⇒ 疑截断（承 pm 1294 §二 闸一）"
+                   u"｜所取之列逐字 ＝ %s ｜书名 ＝ %s"
+                   % (u"／".join(u"§" + int_to_han(n) for n in miss), field, name))
+    last = last_nonblank(text)
+    if last.rstrip().endswith(SUSPECT_TAIL):
+        return 4, (u"落箱：⛔ 末行疑截断（承 pm 1294 §二 闸二）｜末行逐字 ＝ %s ｜书名 ＝ %s"
+                   % (last, name))
+    if not last:
+        return 4, u"落箱：⛔ 件为「空」（⛔ 无非空之行）｜书名 ＝ %s" % name
+    if not b.endswith(b"\n"):
+        return 4, u"落箱：⛔ 件无尾（末字节 ⛔ ＝ \\n）｜书名 ＝ %s" % name
+    if not any(l.strip() for l in text.split("\n")[:3]):
+        return 4, u"落箱：⛔ 件首三行皆空（疑残）｜书名 ＝ %s" % name
+    return None
+
+
 # ---------------------------------------------------------------- 落箱
 def step_box(src, name, dry=False, box=XT):
-    u"""落箱：草稿 ⇒ 箱（信通）。⭐ 硬闸：⛔ BOM ／ ⛔ CR（须 LF）；箱内已同 ⇒ ⛔ 复写；异 ⇒ 拒。"""
+    u"""落箱：草稿 ⇒ 箱（信通）。⭐ 硬闸：⛔ BOM ／ ⛔ CR（须 LF）／ **件之完（闸一／二／三 · 承 pm 1294 §二）**；箱内已同 ⇒ ⛔ 复写；异 ⇒ 拒。"""
     if not os.path.isfile(src):
         return 3, u"落箱：⛔ 草稿不在：%s" % src
     b = open(src, "rb").read()
@@ -76,6 +179,13 @@ def step_box(src, name, dry=False, box=XT):
         return 4, u"落箱：⛔ 草稿带 BOM（信通之件须 ⛔ BOM）"
     if b"\r" in b:
         return 4, u"落箱：⛔ 草稿带 CR（信通之件须 LF）"
+    try:
+        _t = b.decode("utf-8")
+    except Exception:
+        return 4, u"落箱：⛔ 草稿 ⛔ 合 UTF-8（译码败）"
+    _g = body_gate(b, _t, name)
+    if _g:
+        return _g
     dst = os.path.join(box, name)
     if os.path.isfile(dst):
         d = open(dst, "rb").read()
@@ -203,6 +313,32 @@ def selftest():
     print(u"    其报：" + m)
     rc, m = step_box(os.path.join(tmp, "无此件.md"), "x.md", dry=False, box=box)
     res(u"草不在 ⇒ 3", rc, 3)
+
+    print(u"[自证 4 落箱 · 件之完之反控三（承 pm 1294 §二 ／ pm 1298 §三）]")
+    lack = os.path.join(tmp, "d.md")
+    open(lack, "wb").write(u"---\ntype: 报\ndate: 2026-10-06\n动作需求: 办一（§一）／ 办六（§六）\n---\n\n## 一 甲\n\n正文\n".encode("utf-8"))
+    rc, m = step_box(lack, "d.md", dry=False, box=box)
+    res(u"缺节（诺 §一／§六 · 其文唯 §一）⇒ 4", rc, 4)
+    print(u"    其报：" + m)
+    hit = (u"§六" in m) and (u"动作需求" in m)
+    print(u"  %s 其报含「所缺之节号逐字 ＋ 所取之列逐字」" % (u"OK " if hit else u"✗ "))
+    ok = ok and hit
+    susp = os.path.join(tmp, "e.md")
+    open(susp, "wb").write(u"# 甲\n正文（\n".encode("utf-8"))
+    rc, m = step_box(susp, "e.md", dry=False, box=box)
+    res(u"末悬（末行 ＝「正文（」）⇒ 4", rc, 4)
+    hit = (u"正文（" in m)
+    print(u"  %s 其报含「末行逐字」" % (u"OK " if hit else u"✗ "))
+    ok = ok and hit
+    blank = os.path.join(tmp, "f.md")
+    open(blank, "wb").write(b"\n")
+    rc, m = step_box(blank, "f.md", dry=False, box=box)
+    res(u"空件（唯 \\n）⇒ 4", rc, 4)
+    print(u"    其报：" + m)
+    notail = os.path.join(tmp, "g.md")
+    open(notail, "wb").write(u"# 甲\n正文".encode("utf-8"))
+    rc, m = step_box(notail, "g.md", dry=False, box=box)
+    res(u"无尾（末字节 ⛔ ＝ \\n）⇒ 4", rc, 4)
 
     print(u"[自证 3 醒 · 正控 / 反控（承 pm 1291 §四：反控须证其可达「非零」）]")
     z = [sys.executable, "-c", "import sys; sys.exit(0)"]
