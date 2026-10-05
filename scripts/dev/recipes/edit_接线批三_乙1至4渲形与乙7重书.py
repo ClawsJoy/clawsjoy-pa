@@ -24,12 +24,18 @@ import safe_edit as S
             u'<span class="k">夜间整合</span><span>⛔ 不接（无后端面：真源 ＝ Electron 壳 ／ 调度（轻量路径 · ⛔ 抢显卡 · 与出图互斥检测）· PA 后端 ⛔ 持此值（运行期之文 ＝ today.js:412））</span>'),
 ])]
 
-EDITS = {"乙": 乙}
-ORDER = ["乙"]
+补 = [("web/pa.html · 补正 :114（其内容须存 · 承 CW 1245 §二 ／ PM 1248 §二）", "web/pa.html", [
+    ("sub", u'<span class="k">自启</span><span>⛔ 不接（无后端面：其面已读（GET /v9/pa/resume · version 2026-10-05.2 · 22 键）· 唯不含自启之值（其键皆断点续）⇒ 真源 ＝ 壳 ／ 注册表（HKCU\\...\\Run）⇒ 候「壳行为之实做」立项 ⇒ 一并开面）</span>',
+            u'<span class="k">自启</span><span>⛔ 不接（无后端面：默认开 ＋ 设置里一键关（首启问一次）· 其面已读（GET /v9/pa/resume · version 2026-10-05.2 · 22 键）· 唯不含自启之值（其键皆断点续）⇒ 真源 ＝ 壳 ／ 注册表（HKCU\\...\\Run）⇒ 候「壳行为之实做」立项 ⇒ 一并开面）</span>'),
+])]
+
+EDITS = {"乙": 乙, "补": 补}
+ORDER = ["乙", "补"]
 
 # 何批之改 ⇒ 用何器之印（底 ⇒ 出 · 供 --verify 由底回放）
 BASES = [
     ("乙", 0, "web/pa.html", "278af595116c100d", "18a586f33a23c3c3"),
+    ("补", 0, "web/pa.html", "18a586f33a23c3c3", "457bfb72106b59cb"),
 ]
 
 if __name__ == "__main__":
