@@ -759,7 +759,7 @@ function paXUnreached(id, label, why){
 }
 function paXMissing(id, label, why, key){
   var e = document.getElementById(id);
-  if(e) e.innerHTML = paRow(label, PA_GAP.fallback(key || why), '源：' + why + ' —— **回退支**（后端未给此键 ' + (key || why) + ' ⇒ 此刻不可达）≠ 空（承 pm_076 §一）', true);
+  if(e) e.innerHTML = paRow(label, PA_GAP.fallback(key || why), '源：' + why, true);
 }
 
 const PA_XFACE = [
