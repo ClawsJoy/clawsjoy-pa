@@ -205,7 +205,9 @@ const PA_UI_STATE_POLL_MS = 60000;
 /* ⭐ pm_1045 §三：远端**三态**（真源 ＝ 快照之「远端态」／「远端因」；键归后端 ⇒ ⛔ 我自造 · 承 L102）。
    ⛔ 单以布尔「远端在」判 —— 布尔丢三态（用户 ⛔ 知「为何 ✗」）。
    ⚠ 键缺（旧快照）⇒ 「未知」 ＋ 入「缺键」名单（⛔ 猜 ／ ⛔ 静默退回布尔）。
-   单源（承 L83）：顶栏 ／ 来源面（sources.js）／ 自述依据块（selfdesc.js）三处皆调此处。 */
+   单源（承 L83）：顶栏 ／ 来源面（sources.js）／ 自述依据块（selfdesc.js）三处皆调此处。
+   ⚠ 辨义（承 pm 1367 §二.3）：此处之「远端」＝ **宿主远端机**（快照之「远端态」）⇒ 与模型供应商
+      `remote:deepseek`（＝租算力 · 见 paProvRowHtml）**非一物** ⇒ 二名分列（⛔ 一名二义）。 */
 function paRemoteTri(d){
   var t = (d && typeof d['远端态'] === 'string') ? String(d['远端态']).trim() : '';
   return (t === '未配' || t === '配了但不通' || t === '配了且通') ? t : '';
@@ -498,7 +500,9 @@ function paProvRowHtml(p){
   const name = String(o.label || o.id || '—');
   const id   = String(o.id || '');
   const kind = String(o.kind || '');
-  const kindTxt = (kind === 'local') ? '本机' : ((kind === 'remote') ? '远端' : (kind || '未给'));
+  /* ⭐ 辨义（承 pm 1367 §二.3）：本栏之「远端」＝**模型供应商（租算力）** ⇒ 二名分列 ——
+     ⛔ 与「🌐 平台」栏（红线 · ⛔ 代操作他方平台）混 ／ ⛔ 与宿主远端机之「远端态」（未配 ／ 配了但不通 ／ 配了且通）同物。 */
+  const kindTxt = (kind === 'local') ? '本机' : ((kind === 'remote') ? '远端（租算力）' : (kind || '未给'));
   let mtxt;
   if(!Array.isArray(o.models)) mtxt = '未给';
   else if(!o.models.length) mtxt = '0 个（后端 models: []）';
@@ -509,14 +513,31 @@ function paProvRowHtml(p){
     if(mm.ctx) s += '·ctx' + mm.ctx;
     return s;
   }).join(' ／ ');
-  const k = o.key || {};
-  const ktxt = (typeof k.configured === 'boolean') ? (k.configured ? '✓已配' : '—未配') : '未给';
-  const envn = k.env_name || k.env || '';
+  /* ⭐ 密钥（承 pm 1367 §二.1 · 正 **假阴**）：真源 ＝ 平字段 `key_env` ／ `key_state` ／ `key_configured`
+     （core/pa/providers.py:78-79）⇒ 旧读 `o.key.*`（子对象 · 后端 ⛔ 出）⇒ 恒「未给」 ＝ 假阴 ⇒ 正之。
+     ⚠ 三态 ⛔ 一名蔽二态：`not_required`（无密钥项）⟷ `missing` 须分形（承「一名一义」）。 */
+  const ken    = String(o.key_env == null ? '' : o.key_env);
+  const kstate = String(o.key_state == null ? '' : o.key_state);
+  const ktxt = (typeof o.key_configured === 'boolean')
+    ? (o.key_configured ? '✓已配' : ((kstate === 'not_required') ? '—不需（无此项）' : '—未配'))
+    : ((kstate === 'configured') ? '✓已配' : ((kstate === 'missing') ? '—未配'
+      : ((kstate === 'not_required') ? '—不需（无此项）' : '未给')));
   const enTxt = (typeof o.enabled === 'boolean') ? (o.enabled ? '启用' : '停用') : '未给';
+  /* ⭐ 根（承 pm 1367 §二.2）：后端出 `base_url` ／ `base_url_env` ／ `base_url_wired`（布尔）＋ `base_url_note`
+     ⇒ 旧面 **零字符渲及** ⇒ 须显（⛔ 静默吞其值）｜⚠ `False` ＝「唯显示 · 未生效」⇒ ⛔ 以一名蔽之；
+     ⛔ 前端亦 ⛔ 自断「env 已置」（后端 ⛔ 出此读数）⇒ 唯照其值 ＋ 其注（印随值）。 */
+  const burl  = String(o.base_url == null ? '' : o.base_url);
+  const benv  = String(o.base_url_env == null ? '' : o.base_url_env);
+  const bnote = String(o.base_url_note == null ? '' : o.base_url_note);
+  const wTxt = (typeof o.base_url_wired === 'boolean')
+    ? (o.base_url_wired ? '✓已生效' : '—未生效（唯显示）') : '未给';
   return '<div class="r" data-provider="' + paEsc(id || name) + '"><span class="k">' + paEsc(name) + '</span><span>'
     + paEsc(kindTxt) + ' ／ id ' + paEsc(id || '—') + ' ／ ' + paEsc(enTxt)
-    + ' ／ 密钥 ' + paEsc(ktxt) + (envn ? ('（名 ' + paEsc(envn) + '）') : '')
-    + '<br>模型表：' + paEsc(mtxt) + '</span></div>';
+    + ' ／ 密钥 ' + paEsc(ktxt) + (ken ? ('（名 ' + paEsc(ken) + '）') : '')
+    + '<br>模型表：' + paEsc(mtxt)
+    + '<br>根 ' + paEsc(burl || '未给') + (benv ? ('（env ' + paEsc(benv) + '）') : '') + ' · ' + paEsc(wTxt)
+    + (bnote ? ('｜注：' + paEsc(bnote)) : '')
+    + '</span></div>';
 }
 async function paVendorScan(){
   const box = paProvMount(); if(!box) return null;
@@ -562,7 +583,8 @@ async function paVendorScan(){
       if(rowsEl) rowsEl.innerHTML = (arr.length
         ? arr.map(function(x){ return paProvRowHtml(x); }).join('')
         : '<div class="r"><span class="k">0 项</span><span title="⛔ 与「未接」同词（辨义 · ⛔ 上屏 · 承 pm 1272 §三 · 承 pm 1310 §二.1）">后端 providers: [] ⇒ 照实报 0</span></div>')
-        + '<div class="foot">逐行探法：`GET /v9/pa/providers`（后端读注册表 · 本页唯显示）｜密钥：唯布尔（⛔ 值入屏）｜本段 ⛔ 切换（候 P1）</div>';
+        + '<div class="foot">逐行探法：`GET /v9/pa/providers`（后端读注册表 · 本页唯显示）｜密钥：唯布尔（⛔ 值入屏）｜本段 ⛔ 切换（候 P1）</div>'
+      + '｜⚠ 辨义（承 pm 1367 §二.3）：本栏「远端」＝**模型供应商（租算力）**，与「🌐 平台」栏（红线 · ⛔ 代操作他方平台）二名分列；与宿主远端机之「远端态」（未配 ／ 配了但不通 ／ 配了且通）亦非一物</div>';
     }
   }
   const el = document.getElementById('paProvBox');
