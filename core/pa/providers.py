@@ -14,9 +14,9 @@ PROVIDERS = {
     "local:ollama": {
         "id": "local:ollama", "label": "Local Ollama", "kind": "local",
         "base_url": "http://127.0.0.1:11434", "base_url_env": "OLLAMA_BASE_URL",
-        # PM 037 §A.3：P0 唯显示 · 未生效（接线点 core/lib/llm_client.py:381）
+        # PM 037 §A.3：P0 唯显示 · 未生效（接线点 core/lib/llm_client.py:92 base_url 默认 · ⛔ 自 env 读 ⇒ 未生效；用 at :147 ／ :411 ／ :532）
         "base_url_wired": False,
-        "base_url_note": "P0 唯显示 · 未生效（接线点 core/lib/llm_client.py:381）",
+        "base_url_note": "P0 唯显示 · 未生效（接线点 core/lib/llm_client.py:92 base_url 默认 · ⛔ 自 env 读；用 at :147 ／ :411 ／ :532）",
         "key_env": None, "command": None,
         "models": [
             {"id": "qwen2.5:7b-instruct-q4_0-gpu", "label": "Qwen2.5 7B (GPU)",
@@ -30,7 +30,7 @@ PROVIDERS = {
         "id": "remote:deepseek", "label": "DeepSeek (remote)", "kind": "remote",
         "base_url": "https://api.deepseek.com", "base_url_env": "DEEPSEEK_ENDPOINT",
         "base_url_wired": False,
-        "base_url_note": "P0 唯显示 · 未生效（接线点 core/lib/llm_client.py:381）",
+        "base_url_note": "P0 唯显示 · 半真（env DEEPSEEK_ENDPOINT 已接 core/lib/llm_client.py:571 ／ 注册表 base_url 未读 ⇒ 候 P2 二分）",
         "key_env": "DEEPSEEK_API_KEY", "command": None,
         "models": [
             {"id": "deepseek-v4-flash", "label": "DeepSeek V4 Flash", "isDefault": True, "ctx": 65536},
