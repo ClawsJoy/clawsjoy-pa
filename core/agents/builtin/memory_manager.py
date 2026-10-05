@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# ⛔ 已封（死件 · 缺 core/lib/memory_simple.py · 据 core/lib/_SEALED.md §B2 · 补之门 ／ 解封之门 见该册 · ⛔ 复研）
+# ⛔ C1 径误：from agents.base_agent ⇒ 实家 core/agents/base/base_agent.py（原 :13 ⇒ 封后 :15）· 宿主为死件 B2 ⇒ ⛔ 单修（据 core/lib/_SEALED.md §B2）
 """Memory Manager - Memory Manager 模块
 
 @version: 5.0.0
