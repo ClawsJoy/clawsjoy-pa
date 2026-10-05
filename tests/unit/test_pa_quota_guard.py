@@ -23,14 +23,18 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读）：页面 ＝ 壳 ＋ 支
+#   壳（横幅容器）＝ web/pa.html ／ 启动序 ＝ web/pa/boot.js ／ 守卫区 ＋ saveState ＝ web/pa/faces/archive.js
+PA = (ROOT / "web" / "pa.html",
+      ROOT / "web" / "pa" / "boot.js",
+      ROOT / "web" / "pa" / "faces" / "archive.js")
 
 _START = "/* ---- W-08"
 _END = "function saveState(){"
 
 
 def _src() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _quota_region() -> str:
@@ -195,9 +199,11 @@ def test_banner_element_and_export_button_exist_in_html():
 def test_boot_runs_guard_after_collapse():
     """启动即测（W-08：**提前告警**，不等撞上）：收敛之后跑，且走 _boot（fail-loud）。"""
     s = _src()
-    assert '_boot("paQuotaGuard", paQuotaGuard);' in s, "守卫未接入启动流程"
+    # 随器（拆面）：启动序之家 ＝ web/pa/boot.js；调用已包 PA_FACES.guard（承 pm 1334 §三.1）
+    g = '_boot("paQuotaGuard", PA_FACES.guard("archive", paQuotaGuard));'
+    assert g in s, "守卫未接入启动流程"
     i = s.find("  paCollapseToSingleThread();")
-    j = s.find('_boot("paQuotaGuard", paQuotaGuard);')
+    j = s.find(g)
     assert 0 < i < j, "守卫应在会话收敛之后运行"
 
 
