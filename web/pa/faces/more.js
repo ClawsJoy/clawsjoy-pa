@@ -423,7 +423,7 @@ function paRouteTake(){
 }
 /* 无回执 ⇒ **明标「后端未给」**；⛔ 省此标 —— 省之则用户以为「本机有据」（承 pm_1076 §三 之族）。 */
 function paRouteLine(box){
-  const at = (box && box.at) ? String(box.at) : '';
+  const at = (box && box.at) ? PA_STAMP.fmt(box.at) : '';
   const L  = (box && box.label) ? box.label : null;
   if(!L) return '🔌 走径：src: —（后端未给）' + (at ? (' · 采于 ' + at) : '');
   return '🔌 走径：' + L.text + '（键 ' + L.key + (at ? (' · 采于 ' + at) : '') + '）';
