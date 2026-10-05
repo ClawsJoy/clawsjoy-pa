@@ -1440,13 +1440,13 @@ async function paSelfSections(keys){
    ⚠ 界：⛔ 编数 —— 面名表里之面若 `faces` 无其数 ⇒ 该面标「—」（⛔ 猜 ／ ⛔ 只报总数）。 */
 /* ⭐ pm_1040 §四：**面之定义**（逐面之「根」＋「收什么」）—— 附于「逐面件数」之后（承「可回指」）。
    ⚠ 本表 ＝ **声明层**（真源 ＝ core\pa\gateway_routes.py 之 PA_FACES ／ PA_FACES_SKIP ／ 每件尺寸闸）。
-     根里 `@kb` ⇒ 取**本响应之 `kb_root`**（⛔ 硬编根）；本页未检索 ⇒ 以「知识库根」代（如实 · ⛔ 编）。
+     根里 `@kb` ⇒ 取**本响应之 `kb_root`**（⛔ 硬编根）；本页未检索 ⇒ 以「知识库根」代（如实 · ⛔ 编）。 根里 `@ws` ⇒ **工作区根**之代名（pm 1342 §一.3 · 件① 拔旧违）：⛔ 前端自持盘符（真源 ＝ 后端 PA_FACES 之「文件」面根）⇒ 本页 ⛔ 收该径 ⇒ 以「工作区根（后端未给）」代（如实 · ⛔ 编）。
    ⚠ ⛔ 撑首屏：用户面**只一行**（`paSelfFaceDefText`）；全细（skip 清单 ／ 尺寸闸 ／ `0` 件之两因）入**注记**。 */
 const PA_FACE_DEF = [
   ['收件箱',   '@kb\\收件箱',                        '知识库根之「收件箱」（*.md · 递归）', 'md', '知识库根', '2 MiB'],
   ['知识库',   '@kb\\知识库',                        '知识库根之「知识库」（*.md · 递归）', 'md', '知识库根', '2 MiB'],
-  ['文件',     'D:\\paseo-workspace',                '工作区（*.md ／ *.txt · 递归 · 排除内部目录）', 'md／txt', '工作区', '2 MiB'],
-  ['台账',     'D:\\paseo-workspace\\_auto\\deliver', '仅一式：老板令台账_v1.md（另二式在该根下⛔存在 ⇒ glob 已收窄）', '老板令台账', '_auto', '16 MiB'],
+  ['文件',     '@ws',                                '工作区（*.md ／ *.txt · 递归 · 排除内部目录）', 'md／txt', '工作区', '2 MiB'],
+  ['台账',     '@ws\\_auto\\deliver',                 '仅一式：老板令台账_v1.md（另二式在该根下⛔存在 ⇒ glob 已收窄）', '老板令台账', '_auto', '16 MiB'],
   ['台账·信通', '@kb\\内容工坊\\02_协作\\信通',        '仅一式：投递台账.csv', '投递台账.csv', '信通', '16 MiB']
 ];
 const PA_FACES_SKIP_TXT = '_auto ／ _tmp ／ _tools ／ _seats ／ _pm ／ _cdp_profile ／ _out ／ node_modules ／ __pycache__ ／ .git 等';
@@ -1461,7 +1461,11 @@ function paSelfFaceDefRow(nm, kb, full){
     /* ⭐ pm_1041 §三 之裁：用户面**一行**（只留「收什么」＋**短式代全径**）；全细（全径）入注记。 */
     if(!full) return nm + '＝' + d[4] + '·' + d[3];
     let root = d[1];
+    /* ⭐ pm 1342 §一.3（件① 拔旧违 · 我判其廉 ⇒ 取 ⒝）：⛔ 前端自持盘符常量 —— 工作区根之真源在后端
+       （core\pa\gateway_routes.py 之 PA_FACES「文件」面根）；本页 ⛔ 收该径 ⇒ **如实标「未给」**；
+       父推导（素材面「文件」之 `_交付` 根之父）无一切面可自校 ⇒ 静默显错径（假正）之危 ⇒ ⛔ 取。 */
     if(root.indexOf('@kb') === 0){ root = kb ? (kb + root.slice(3)) : ('知识库根' + root.slice(3)); }
+    if(root.indexOf('@ws') === 0){ root = '工作区根（后端未给）' + root.slice(3); }
     return nm + '＝' + root + '（' + d[2] + '）';
   }
   return nm + '＝（本件未声明 · ⛔ 编一个根）';   /* ⛔ 编（承 L76） */
