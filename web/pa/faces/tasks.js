@@ -411,7 +411,7 @@ async function paLoadTasks(){
      （⛔ 以 `0` 充「未接」）；本页计数照实另书（本页口径 · ⛔ 后端）。 */
   if(stEl) stEl.innerHTML =
     paRow('受理', PA_GAP.todo() + ' · 本页已接 ' + paLocalTasks.length + ' 件',
-      '源：' + PA_GAP.todo('后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）') + '｜本页计数 ＝ 本页已接（本页口径 · ⛔ 后端口径 · ⛔ 以 0 充未接）')
+      '源：后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）｜本页计数 ＝ 本页已接（本页口径）')
   + paRow('在办', inFlightVal, paEsc(srcPlain))
   + paRow('等待外部结果', (dhWaitN !== null)
         ? (dhWaitN === 0 ? '0 件（后端真判据下无待回执之件 · 空态 · 非故障）'
@@ -517,7 +517,7 @@ async function paLoadTasks(){
   paAttachRowTitle(stEl, '在办', inFlightTitle, srcPlain);
   /* ⭐ 刀11p：新改之两行亦被 nowrap ＋ ellipsis 截 ⇒ 补 title（⛔ 截 · 悬停可回 · 零 CSS）。 */
   paAttachRowTitle(stEl, '受理', PA_GAP.todo() + ' · 本页已接 ' + paLocalTasks.length + ' 件',
-    '源：' + PA_GAP.todo('后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）') + '｜本页计数 ＝ 本页已接（本页口径 · ⛔ 后端口径 · ⛔ 以 0 充未接）');
+    '源：后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）｜本页计数 ＝ 本页已接（本页口径）');
   paAttachRowTitle(stEl, '等待外部结果',
     ((dhWaitN === null) ? '未知（后端未应答）' : (dhWaitN + ' 件（席位轴 to_seat 之件 · 待外部回执）')),
     dhSrcLine);
