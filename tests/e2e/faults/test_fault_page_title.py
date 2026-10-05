@@ -4,7 +4,10 @@ import subprocess
 
 
 def _extract():
-    s = open("web/pa.html", encoding="utf-8").read()
+    # 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读）：语义三函数 ＝ web/pa/faces/chat.js；
+    #   `_pptManifestCache` ／ `_planStepIndex` ＝ web/pa/faces/products.js。
+    s = "\n".join(open(f, encoding="utf-8").read() for f in
+                  ("web/pa/faces/chat.js", "web/pa/faces/products.js"))
     i = s.find("const ACTION_SEMANTIC={")
     j = s.find("\n};", i)
     table = s[i : j + 3].replace("const ACTION_SEMANTIC=", "var ACTION_SEMANTIC=", 1)
