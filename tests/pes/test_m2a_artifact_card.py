@@ -23,7 +23,14 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读 · §二.1「出处之判须以『其物在何处』为据 ⇒ 页面 ＝ 壳 ＋ 支」）：
+#   卡块 ＝ faces/cards.js；容器 ／ 提示行 ＝ 壳 web/pa.html；`esc` ＝ faces/session.js；
+#   旧选择器 `.output-card` ＝ faces/products.js；卡样式 ＝ pa.css。
+PA = (ROOT / "web" / "pa.html",
+      ROOT / "web" / "pa" / "faces" / "cards.js",
+      ROOT / "web" / "pa" / "faces" / "session.js",
+      ROOT / "web" / "pa" / "faces" / "products.js",
+      ROOT / "web" / "pa" / "pa.css")
 
 #: 卡片模块区域（统一出口 + 迁移后的卡）
 _MOD_START = "const PA_CARD_DEF = {"
@@ -35,7 +42,7 @@ _ART_END = "  /* M2-A · Step 3.1：阻断卡"
 
 
 def _src() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _card_module() -> str:
