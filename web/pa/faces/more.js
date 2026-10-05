@@ -237,6 +237,13 @@ function paUiEngDetails(raw){
   if(typeof orig !== 'function') return;
   window.paLoadUiState = async function(){
     var d = await orig.apply(this, arguments);
+    /* ⭐ pm 1346 §二.2：本行之**采样刻（`d['刻']`）已上屏**（`more.js:290` 渲）⇒ 须标（承 core.js:85 之律：
+       取数刻与此刻之差 > 阈 ⇒ 显「已陈旧」 · ⛔ 静默显旧数）。
+       ⚠ 「采样刻（快照）」＝ 源之**性**；「已陈旧」＝ 龄之**判** —— 二物 ⛔ 同轴（承 pm 1346 §二.2）⇒ ⛔ 以彼代此。 */
+    if(window.PA_STALE){
+      var _stEl = document.getElementById('paUiStateRow');
+      if(_stEl){ PA_STALE.mark(_stEl, (d && d['刻']) ? d['刻'] : null, '界面态快照（web/pa/ui_state.json）'); PA_STALE.tick(); }
+    }
     try{
       var el = document.getElementById('paUiStateRow');
       /* ⭐ 快照读不到（F2 网络 ／ F3a 坏体）⇒ 用户面只留人话；「因」入 title ／ data-raw ／ 可点注记（承 pm_1018 §二 ⓜ.2 ／ pm_1012 §四 令③）。 */
