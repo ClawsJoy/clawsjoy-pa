@@ -69,7 +69,7 @@ async function saveFields(){
       +' · 汇报'+esc(sw.detail||'中')+(sw.auto_write?' · 可自动写':' · 写需确认'));
     if(w) console.log('[PA建档] 落库', d.fields, sw);
     loadSide();
-  }catch(e){ setCollectMsg('后端不可达'); }
+  }catch(e){ setCollectMsg(PA_GAP.down('后端')); }
 }
 function setCollectMsg(t){ const el=$('collectMsg'); if(el) el.textContent=t||''; }
 ['cfgChan','cfgModel','cfgPerm','cfgAppr'].forEach(id=>$(id).addEventListener('change',saveCfg)); $('cfgVault').addEventListener('change',saveCfg);

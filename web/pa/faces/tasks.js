@@ -701,7 +701,7 @@ async function paSubRouteInit(){
       if(sel.dataset.sig !== sig){
         sel.innerHTML = '';
         if(!rows){
-          const o = document.createElement('option'); o.value = ''; o.textContent = '席册不可达（GET /v9/pa/seats 未应答）';
+          const o = document.createElement('option'); o.value = ''; o.textContent = PA_GAP.down('席册：GET /v9/pa/seats 未应答');
           sel.appendChild(o);
         }else{
           rows.forEach(function(s){
@@ -949,7 +949,7 @@ async function paLoadEnvFace(){
   if(!j){
     if(top) top.innerHTML = paRow('环境面', PA_GAP.down('GET /v9/pa/env 未应答'), '面：GET /v9/pa/env —— **不可达** ≠ **未接**', true);
     COLS.forEach(function(c){ paXUnreached('paEnvCol-' + c, c, 'GET /v9/pa/env'); });
-    if(jd) jd.innerHTML = paRow('对表', '不可达（未应答 ⇒ ⛔ 判不齐）', '面：GET /v9/pa/env', true);
+    if(jd) jd.innerHTML = paRow('对表', PA_GAP.down('未应答 ⇒ ⛔ 判不齐'), '面：GET /v9/pa/env', true);
     return 0;
   }
   var counts = j.counts || null, cols = j.cols || null;
@@ -1245,7 +1245,7 @@ async function paInvFill(){
   if(sel.dataset.sig !== sig){
     sel.innerHTML = '';
     if(!reg){
-      var o = document.createElement('option'); o.value = ''; o.textContent = '册不可达（POST /v9/pa/agent/invoke {} 未应答）';
+      var o = document.createElement('option'); o.value = ''; o.textContent = PA_GAP.down('册：POST /v9/pa/agent/invoke {} 未应答');
       sel.appendChild(o);
     } else {
       reg.forEach(function(x){

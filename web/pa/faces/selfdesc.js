@@ -1272,14 +1272,14 @@ async function paSelfCompose(key, pre){
     const fl = paSelfFlow(d.flow), pm = d.perm, ui = d.ui, sf = paSelfSrcFaces();
     U.push('环境感知与障碍（如实 · ⛔ 泛泛一句）');
     U.push('已接（能读到）：');
-    U.push('· 会话面 ' + (nThr === null ? '不可达 ／ 无读数' : nThr + ' 条') + ' · 作业面 ' + (nRun === null ? '不可达 ／ 无读数' : nRun + ' 件') + ' · 记忆自身 ' + (nL === null ? '不可达' : nL + ' 行'));
+    U.push('· 会话面 ' + (nThr === null ? PA_GAP.down('无读数') : nThr + ' 条') + ' · 作业面 ' + (nRun === null ? PA_GAP.down('无读数') : nRun + ' 件') + ' · 记忆自身 ' + (nL === null ? PA_GAP.down() : nL + ' 行'));
     U.push('· 界面快照：采样刻 ' + (ui && ui['刻'] ? ui['刻'] : '未知') + '（约每小时一轮）');
-    U.push('· 权限档 ' + (pm && pm.level ? pm.level : '未知') + ' · 工具流水 ' + (fl ? (fl.nTask + ' 任务 ／ ' + fl.tools.length + ' 工具') : '不可达'));
+    U.push('· 权限档 ' + (pm && pm.level ? pm.level : '未知') + ' · 工具流水 ' + (fl ? (fl.nTask + ' 任务 ／ ' + fl.tools.length + ' 工具') : PA_GAP.down()));
     U.push('尚未接入 ' + paSelfCount(sf) + '：');
     U.push('· 画像素材面（左栏「来源面」· ⛔ 检索面）' + PA_GAP.todo() + '：' + (sf.miss.length ? sf.miss.join(' ／ ') : '（无）'));
-    U.push('· ⭐ ⒝⛔不接（**红线** ⇒ ⛔ 待办 · 不会有）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
-    U.push('· ⚠ 不可达（后端此刻不在 ⇒ ⛔ ≠ 未接）：' + (sf.unreach.length ? sf.unreach.join(' ／ ') : '（无）'));
-    U.push('· 操作：改令（准接 · POST /v9/pa/steer）｜接管（待立项 · 须先定义）｜真实平台面（⛔ 不接 · 红线）｜夜间整合（无后端面）');
+    U.push('· ⭐ ⒝ ⛔ 不接（红线）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
+    U.push('· ⚠ 不可达（后端此刻不在）：' + (sf.unreach.length ? sf.unreach.join(' ／ ') : '（无）'));
+    U.push('· 操作：改令：准接 · POST /v9/pa/steer｜接管：待立项 · 须先定义｜真实平台面 ⛔ 不接（红线）｜夜间整合：无后端面');
     U.push('障碍：');
     U.push('· 检索面（逐面件数 · 源 /v9/pa/ask 之 scope ／ faces ／ searched · ⛔ 画像素材面）：'
       + (paSelfFaceText(paSelfAskStat.lastScope, paSelfAskStat.lastFaces) || '本页尚未检索')
@@ -1341,8 +1341,8 @@ async function paSelfCompose(key, pre){
     U.push('已接 ' + sf.read.length + ' 面 ／ 尚未接入 ' + sf.miss.length + ' 面 ／ ⛔ 不接（红线）' + sf.off.length + ' 面（＝画像素材面 · 与左栏「来源面」同源 · ⛔ 检索面）：');
     U.push('· 已接：' + (sf.read.length ? sf.read.join(' ／ ') : '（无）'));
     U.push('· ' + PA_GAP.todo() + '：' + (sf.miss.length ? sf.miss.join(' ／ ') : '（无）'));
-    U.push('· ⭐ ⒝⛔不接（红线 ⇒ ⛔ 待办）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
-    U.push('· ⚠ 不可达（⛔ ≠ 未接 · 承 pm_刀12p §〇）：' + (sf.unreach.length ? sf.unreach.join(' ／ ') : '（无）'));
+    U.push('· ⭐ ⒝ ⛔ 不接（红线）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
+    U.push('· ⚠ 不可达：' + (sf.unreach.length ? sf.unreach.join(' ／ ') : '（无）'));
     U.push('· 检索面（源 POST /v9/pa/ask 之 scope ／ faces · ⛔ 画像素材面）：' + paSelfAskFaceBody());
     U.push('· 面之差：「文件」在来源面（＝画像素材面）标未接；但工作区文件面另有来源'
       + '（更多 ▾ · ① 做 · 文件 ⇒ 真数据 25 项）⇒ 二者面不同 · ⛔ 混为一谈。');
@@ -1386,7 +1386,7 @@ async function paSelfCompose(key, pre){
       ? se.rows.slice(0, 20).map(function(x){ return String((x && x.name) || (x && x.id) || '?'); }).join(' ／ ') : '—';
     const nSub = (st && Array.isArray(st.subtasks)) ? st.subtasks.length : null;
     U.push('可调用的 agent（席位 ／ 子代理）');
-    U.push('· 子代理面：' + (nSub === null ? '不可达 ／ 无读数' : (nSub + ' 件')) + '（实时读数）');
+    U.push('· 子代理面：' + (nSub === null ? PA_GAP.down('无读数') : (nSub + ' 件')) + '（实时读数）');
     U.push('· 组织席位册：' + (se && se.count != null ? (se.count + ' 席') : '未知（后端未应答）')
       + '（源 GET /v9/pa/seats · 面名「' + String((se && se.面名) || '组织席位册') + '」）· 实时驻留：' + seatLive
       + '｜名册：' + seatNames);
@@ -1412,8 +1412,8 @@ async function paSelfCompose(key, pre){
 }
 function paSelfCount(sf){
   if(!sf) return '（清单未载入）';
-  return '（已接 ' + sf.read.length + ' · ⒜未接·待办 ' + sf.miss.length
-    + ' · ⛔不接（红线）' + sf.off.length + ' · 不可达 ' + sf.unreach.length + '）';
+  return '（已接 ' + sf.read.length + ' · ⒜ 未接 · 待办（M1） ' + sf.miss.length
+    + ' · ⛔ 不接（红线）' + sf.off.length + ' · 不可达 ' + sf.unreach.length + '）';
 }
 async function paSelfSections(keys){
   const d = await paSelfSrc(keys);
@@ -1762,8 +1762,8 @@ function paPermRender(){
   if(f){
     f.innerHTML = '<div class="ok"><b>画像素材面 · 已读 ' + sf.read.length + ' 面</b>：' + paSelfEsc(sf.read.join(' ／ ') || '（无）') + '</div>'
       + '<div class="na">画像素材面 · ' + PA_GAP.todo() + ' ' + sf.miss.length + ' 面：' + paSelfEsc(sf.miss.join(' ／ ') || '（无）') + '</div>'
-      + '<div class="na">⭐ 画像素材面 · ⒝⛔不接（红线 ⇒ ⛔ 待办） ' + sf.off.length + ' 面：' + paSelfEsc(sf.off.join(' ／ ') || '（无）') + '</div>'
-      + '<div class="na">⚠ 不可达（⛔ ≠ 未接） ' + sf.unreach.length + ' 面：' + paSelfEsc(sf.unreach.join(' ／ ') || '（无）') + '</div>'
+      + '<div class="na">⭐ 画像素材面 · ⒝ ⛔ 不接（红线） ' + sf.off.length + ' 面：' + paSelfEsc(sf.off.join(' ／ ') || '（无）') + '</div>'
+      + '<div class="na">⚠ 不可达 ' + sf.unreach.length + ' 面：' + paSelfEsc(sf.unreach.join(' ／ ') || '（无）') + '</div>'
       + '<div class="ok"><b>检索面（源 POST /v9/pa/ask · ⛔ 画像素材面）</b>：' + paSelfEsc(paSelfAskFaceBody()) + '</div>'
       + '<div>⚠ 面之差：「文件」在来源面（＝画像素材面）标未接；工作区文件面另有来源 <code>POST /v9/sandbox/list</code>'
       + '（更多 ▾ · ① 做 · 文件 ⇒ 真数据 25 项）⇒ 二者面不同 · ⛔ 混为一谈。</div>'

@@ -360,9 +360,9 @@ async function paKbLoad(force){
   try{
     const r=await fetch(paKbApiUrl()); const d=await r.json();
     paKbCache = (d && d.ok) ? d
-      : {rows:[],counts:{}, _fail:'未接（后端已应答但非 ok · HTTP '+r.status+'）',
+      : {rows:[],counts:{}, _fail: PA_GAP.todo('后端已应答但非 ok · HTTP '+r.status),
          degraded:'映射接口不可用：'+((d&&d.error)||r.status)};
-  }catch(e){ paKbCache={rows:[],counts:{}, _fail:'不可达（后端此刻不在 ／ 请求失败）', degraded:'映射接口请求失败：'+e.message}; }
+  }catch(e){ paKbCache={rows:[],counts:{}, _fail: PA_GAP.down('后端此刻不在 ／ 请求失败'), degraded:'映射接口请求失败：'+e.message}; }
   renderKbPanel();
 }
 async function paKbPrime(){
