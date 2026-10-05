@@ -755,7 +755,7 @@ function paXTwo(a, b){
 function paXUnreached(id, label, why){
   var e = document.getElementById(id);
   if(e) e.innerHTML = paRow(label, PA_GAP.down('后端此刻不在 ／ 未应答'),
-    '源：' + why + ' —— **不可达**（此刻不在）≠ **未接**（后端无此面 · 承 pm_刀12p §〇）', true);
+    '源：' + why, true);
 }
 function paXMissing(id, label, why, key){
   var e = document.getElementById(id);
