@@ -18,6 +18,60 @@
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #3a3a4e; }
         th { color: #a1a1aa; }
     </style>
+<!-- PA 私面只读闸（CW b2a5182 · 承 pm_990 §二 ＋ L76）· 2026-10-04
+     读 web/pa/faces.json：本页所属面 open:false ⇒ 中性提示页（⛔ 渲染原内容）。
+     ⚠ 与 web/pa/core.js 之面闸**故意不同**：core.js 管**公开面**（读不到 ⇒ fail-open）；
+       本闸管**私有面**（admin/注册中心/交付总结）⇒ 读不到 / 无法确认 ⇒ **fail-closed（按关闭处理）**——
+       私有面之安全默认是「关」，⛔ 「读不到就当开」。
+     ⛔ 只读 · ⛔ 写任何东西 · ⛔ 改本页业务逻辑（剥掉本块 ≡ 原文件 · 可复算）。 -->
+<script>
+(function(){
+  var ID = "admin";                 /* 本页所属面（faces.json 之 id 真源） */
+  var open = null, why = "", whyRaw = "";
+  var eschtml = function(x){ return String(x == null ? '' : x).replace(/[&<>]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]; }); };
+  try{
+    var r = new XMLHttpRequest();
+    r.open("GET", "pa/faces.json", false);          /* 与 core.js 同径同法（同步读 · 免动启动次序） */
+    r.send(null);
+    if(r.status >= 200 && r.status < 300){
+      var d = JSON.parse(r.responseText), list = (d && d.faces) || [], f = null;
+      for(var i=0;i<list.length;i++){ if(list[i] && list[i].id === ID){ f = list[i]; break; } }
+      if(f){ open = (f.open !== false); }
+      else { why = "名册内无此面 id"; }
+    } else { why = "名册 HTTP " + r.status; }
+  }catch(e){ why = "名册暂时读不到（网络或版本问题）"; whyRaw = String((e && e.message) || e); }
+  if(open === true) return;
+  /* 显式清场：document.open() 之清空在实测中**不完全**（原 <style> 会残留 ⇒ 影响提示页版面）
+     ⇒ 先逐子移除 documentElement，再写提示页（两种清空路径皆得同一结果）。 */
+  try{ var de = document.documentElement; while(de.firstChild){ de.removeChild(de.firstChild); } }catch(e){}          /* 名册明说开放 ⇒ 原内容照常渲染 */
+  document.open();
+  document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
+    + '<title>未开放 \u00b7 ' + ID + '</title>'
+    + '<style>html,body{height:100%;margin:0}'
+    + 'body{display:flex;align-items:center;justify-content:center;background:#1e1e2e;color:#e6e6f0;'
+    + 'font:16px/1.7 -apple-system,"Segoe UI",Arial,sans-serif}'
+    + '.pane{max-width:560px;padding:28px 32px;border:1px solid #3a3a4e;border-radius:12px;background:#2a2a3e}'
+    + '.pane h1{margin:0 0 12px;font-size:18px;color:#f59e0b}'
+    + '.pane p{margin:8px 0;color:#c9c9d6}.pane code{color:#a1a1aa}'
+    + '.pane details.r{margin-top:10px;font-size:12px}.pane details.r summary{cursor:pointer;color:#8b949e}'
+    + '.pane details.r pre{margin:6px 0 0;white-space:pre-wrap;word-break:break-all;color:#8b949e}'
+    + '.pane .w{margin-top:12px;padding-top:10px;border-top:1px solid #3a3a4e;font-size:13px;color:#8b949e}</style>'
+    + '</head><body><div class="pane"><h1>此面未开放（' + ID + '）</h1>'
+    + '<p>面 <code>' + ID + '</code> 在打开名册 <code>web/pa/faces.json</code> 中标为 <code>open:false</code>。'
+    + '这是客户端未启用的私有面（管理面 / 注册中心 / 交付总结），故不显示内容。</p>'
+    + (why ? ('<p class="w">本次是由「无法确认」判定：' + why + '。私有面读不到名册时按关闭处理。</p>'
+        + (whyRaw ? ('<details class="r"><summary>原文</summary><pre>' + eschtml(whyRaw) + '</pre></details>') : '')) : '')
+    + '</div></body></html>');
+  document.close();
+  /* <title> 之显式置：清场路径下 document.open 覆写**不保证** <title> 生效 ⇒ 直接找/建 title 元素。 */
+  try{
+    var te = document.querySelector('title');
+    if(!te){ te = document.createElement('title'); (document.head || document.documentElement).appendChild(te); }
+    te.textContent = '未开放 · ' + ID;
+  }catch(e){}
+  window.stop();
+})();
+</script>
 </head>
 <body>
     <div class="container">

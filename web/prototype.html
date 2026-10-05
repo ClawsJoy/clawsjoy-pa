@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="color-scheme:dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d1117">
+<title>ClawsJoy PA · 形态样张 v3（今日上下文 · 静态 · 不接后端）</title>
+<style>
+/* 视觉逐字沿用 pa.html 之 :root（承 pm_973 §四 · pm_974 §二.3 · pm_976 §二.6 · pm_978 §三） */
+:root{--bg:#0d1117;--card:#161b22;--card2:#1c2129;--border:#30363d;--text:#c9d1d9;--sub:#8b949e;
+--blue:#58a6ff;--green:#3fb950;--red:#f85149;--purple:#bc8cff;--amber:#d2991d;--radius:10px;
+/* 几何：对标 DSH 三栏 AppFrame（值见逐轴表 · 我方 token 名自持） */
+--rail-min:264px;--rail-max:420px;--rail-w:280px;--rail-collapsed:56px;
+--rightbar-w:0px;--middle-min:400px}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.55 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+display:flex;flex-direction:column;overflow:hidden}
+body[data-clj-dark="true"]{--bg:#0d1117}
+/* ---------- 样张控件条（正式面删） ---------- */
+.proto{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:5px 12px;background:#1b2430;
+border-bottom:1px solid var(--border);font-size:12px;color:var(--sub)}
+.proto b{color:var(--amber)}
+.proto .sp{flex:1}
+.proto button{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;
+padding:3px 9px;font-size:12px;cursor:pointer}
+.proto button[aria-pressed="true"]{border-color:var(--blue);color:var(--blue)}
+.proto .geo{margin-left:8px;color:var(--amber);font:11px/1.5 ui-monospace,Consolas,monospace}
+/* ---------- 顶栏 ---------- */
+.topbar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:9px 14px;background:var(--card);
+border-bottom:1px solid var(--border)}
+.brand{font-weight:600;white-space:nowrap}
+.brand span{color:var(--sub);font-weight:400;font-size:12px;margin-left:6px}
+.seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;border:0;color:var(--sub);padding:5px 12px;cursor:pointer;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--card2);color:var(--blue)}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);
+border-radius:999px;padding:4px 10px;font-size:12px;color:var(--sub);white-space:nowrap;cursor:pointer}
+.pill.flat{cursor:default}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block}
+.topbar .sp{flex:1}
+.kbd{font:11px/1 ui-monospace,Consolas,monospace;background:#0b0f14;border:1px solid var(--border);
+border-bottom-width:2px;border-radius:4px;padding:3px 5px;color:var(--sub)}
+/* ---------- 三栏 AppFrame ---------- */
+.main{flex:1;display:grid;grid-template-columns:var(--rail-w) minmax(0,1fr) var(--rightbar-w);min-height:0;
+transition:grid-template-columns .16s ease}
+aside,.col{min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden}
+.left{border-right:1px solid var(--border);background:var(--card);padding:9px;position:relative}
+.right{border-left:1px solid var(--border);background:var(--card);padding:9px;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin}
+.right[hidden],.left .lab[hidden]{display:none}
+.left.collapsed{padding:8px 6px}
+.left.collapsed .lab{display:none}
+h2.sec{font-size:11px;color:var(--sub);letter-spacing:.6px;margin:8px 0 6px;font-weight:600}
+.item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13px}
+.item:hover{background:var(--card2)}
+.item[aria-current="true"]{background:var(--card2);box-shadow:inset 2px 0 0 var(--blue)}
+.item .meta{margin-left:auto;color:var(--sub);font-size:11px;white-space:nowrap}
+.item b{color:var(--text)}
+.railbtn{width:100%;text-align:left;background:transparent;border:0;color:var(--sub);cursor:pointer;padding:6px;border-radius:8px}
+.railbtn:hover{background:var(--card2)}
+/* ---------- 中栏 ---------- */
+.col{display:flex;flex-direction:column}
+.chead{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border)}
+.chead .ttl{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.chev{background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--sub);font-size:11px;padding:2px 7px;cursor:pointer;white-space:nowrap}
+.split{display:inline-flex}
+.split button{background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:3px 9px;cursor:pointer;white-space:nowrap}
+.split button:first-child{border-radius:7px 0 0 7px}
+.split button:last-child{border-radius:0 7px 7px 0;border-left:0}
+/* 主面环 */
+.tabs{flex:0 0 auto;display:flex;gap:2px;padding:0 10px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tabs button{background:transparent;border:0;border-bottom:2px solid transparent;color:var(--sub);padding:7px 12px;cursor:pointer;font-size:13px;white-space:nowrap}
+.tabs button[aria-pressed="true"]{color:var(--blue);border-bottom-color:var(--blue)}
+.faces{flex:1;min-height:0;padding:12px 14px;overflow-y:auto;overflow-x:hidden}
+.facePane{display:none}
+body[data-state="ok"] .facePane.on{display:block}
+/* 今日上下文（首屏主张） */
+.today{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);padding:10px 12px;margin-bottom:12px}
+.today .h{display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:6px}
+.today .h .when{margin-left:auto;color:var(--sub);font-weight:400;font-size:11px}
+.mline{display:flex;gap:8px;padding:3px 0;font-size:13px}
+.mline .ic{width:18px;text-align:center}
+.mline .k{color:var(--sub)}
+.next{margin-top:7px;padding-top:7px;border-top:1px dashed var(--border);display:flex;gap:8px;align-items:center}
+.next .p{color:var(--blue);cursor:pointer}
+.card{margin:9px 0;background:var(--card2);border:1px solid var(--border);border-left:3px solid var(--purple);
+border-radius:var(--radius);padding:9px 12px}
+.card .t{font-weight:600;margin-bottom:3px}
+.card .sub{color:var(--sub);font-size:12px;margin:2px 0 6px}
+.card .a{display:flex;gap:8px;margin-top:7px}
+.card .a button{background:#21262d;color:var(--text);border:1px solid var(--border);border-radius:7px;padding:4px 11px;cursor:pointer}
+.card .a button.p{background:#17351f;border-color:#2b6a3a;color:#7ee08d}
+.card .item{padding:4px 0}
+/* 画像更新条 */
+.upd{margin:0;padding-left:0;list-style:none}
+.upd li{padding:5px 0;border-top:1px dashed var(--border);font-size:13px;display:flex;gap:7px;align-items:baseline;flex-wrap:wrap}
+.upd li:first-child{border-top:0}
+.tag{font-size:11px;border-radius:999px;padding:1px 7px;white-space:nowrap}
+.tag.new{background:#17351f;border:1px solid #2b6a3a;color:#7ee08d}
+.tag.rep{background:#332612;border:1px solid #6a542b;color:#e0c47e}
+.s{color:var(--sub);font-size:11px}
+.multi{font-size:11px;border:1px solid var(--purple);color:var(--purple);border-radius:999px;padding:0 6px}
+.sechead{display:flex;align-items:center;gap:8px;margin:2px 0 8px;font-weight:600}
+.sechead .meta{margin-left:auto;color:var(--sub);font-weight:400;font-size:11px}
+.msg{max-width:74ch;margin:0 0 10px}
+.msg .who{font-size:11px;color:var(--sub);margin-bottom:3px}
+.bub{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:8px 11px;white-space:pre-wrap}
+.msg.me{margin-left:auto}
+.msg.me .bub{background:#14243a;border-color:#274563}
+.files-out{margin-top:6px;font-size:12px;color:var(--sub)}
+.files-out code{background:#0b0f14;border:1px solid var(--border);border-radius:4px;padding:1px 5px;cursor:pointer}
+/* composer */
+.composer{flex:0 0 auto;border-top:1px solid var(--border);background:var(--card);padding:9px 12px}
+.strip{display:flex;gap:6px;align-items:center;margin-bottom:6px;font-size:11px;color:var(--sub);flex-wrap:wrap}
+.chip{background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:2px 9px;cursor:pointer}
+.chip.on{border-color:var(--amber);color:var(--amber)}
+.ta{display:flex;gap:8px;align-items:flex-end}
+textarea{flex:1;resize:none;height:58px;background:#0b0f14;color:var(--text);border:1px solid var(--border);
+border-radius:var(--radius);padding:8px 10px;font:inherit;font-size:var(--clj-fs,14px)}
+textarea:focus{outline:2px solid var(--blue);outline-offset:-1px}
+.send{background:var(--blue);color:#04121f;border:0;border-radius:var(--radius);padding:8px 15px;font-weight:600;cursor:pointer}
+.stop{background:transparent;color:var(--red);border:1px solid var(--red);border-radius:var(--radius);padding:8px 11px;cursor:pointer}
+.hint{color:var(--sub);font-size:11px;margin-top:5px}
+/* 状态态 */
+.state{display:none;margin:14px auto;max-width:46ch;text-align:center;padding:20px;background:var(--card);
+border:1px solid var(--border);border-radius:var(--radius)}
+.state .big{font-size:26px;margin-bottom:5px}
+.state h3{margin:0 0 5px;font-size:15px}
+.state p{color:var(--sub);margin:0 0 12px}
+.state .go{display:flex;gap:8px;justify-content:center}
+.state .go button{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 13px;cursor:pointer}
+.state .go button.p{background:var(--blue);border-color:var(--blue);color:#04121f;font-weight:600}
+.state.err{border-color:#6b2b2b}
+.state.err h3{color:#ff9b95}
+body[data-state="empty"] #stEmpty{display:block}
+body[data-state="error"] #stError{display:block}
+.banner{display:none;margin:9px 14px 0;padding:8px 11px;border-radius:8px;background:#2a1517;
+border:1px solid #6b2b2b;color:#ffb4ae;font-size:13px}
+body[data-state="error"] .banner{display:flex;gap:9px;align-items:center}
+.banner .sp{flex:1}
+.banner button{background:#3a1d1f;color:#ffd7d3;border:1px solid #6b2b2b;border-radius:7px;padding:3px 9px;cursor:pointer}
+/* 键位表 */
+.keys{position:fixed;inset:0;background:rgba(3,6,10,.72);display:none;align-items:center;justify-content:center;z-index:9}
+.keys[data-open="true"]{display:flex}
+.keys .box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px 19px;min-width:440px;outline:none}
+.keys table{border-collapse:collapse;width:100%;font-size:13px}
+.keys td{padding:5px 8px;border-bottom:1px solid var(--border)}
+.keys td:last-child{text-align:right;color:var(--sub)}
+.sr{position:absolute;left:-9999px}
+/* A28 判据 */
+.judge{margin-top:7px;border-top:1px dashed var(--border);padding-top:7px}
+.jrow{display:flex;gap:8px;font-size:12px;padding:2px 0}
+.jk{color:var(--sub);min-width:76px;flex:0 0 auto}
+.jref{color:var(--blue);cursor:pointer}
+.jbadge{display:inline-block;margin-top:6px;font-size:11px;border-radius:999px;padding:1px 8px;background:#332612;border:1px solid #6a542b;color:#e0c47e}
+/* A29 目标条＋阶段条 */
+.zbar{display:flex;flex-direction:column;gap:5px;margin-bottom:7px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--card2)}
+.zgoal{display:flex;align-items:center;gap:8px;font-size:12px}
+.zgoal .zk{color:var(--sub)}
+.zgoal .zmeta{margin-left:auto;color:var(--amber)}
+.zsteps{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sub);flex-wrap:wrap}
+.zstep{border:1px solid var(--border);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.zstep.done{color:var(--green);border-color:#2b6a3a}
+.zstep.on{color:var(--blue);border-color:var(--blue);background:#14243a}
+.zops{margin-left:auto;display:flex;gap:5px}
+.zops button{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer}
+/* A31 派生与并行可见（实例层） */
+.sublist{display:flex;flex-direction:column;gap:6px}
+.subrow{border:1px solid var(--border);border-radius:8px;padding:6px 8px;background:var(--card2)}
+.subrow .r1{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.subrow .r2{color:var(--sub);font-size:11px;margin-top:3px}
+.subrow .r2 b{color:var(--text);font-weight:600}
+.subrow .nm{font-weight:600}
+.subrow .role{color:var(--sub);font-size:11px}
+.subrow .right{margin-left:auto;display:inline-flex;align-items:center;gap:7px}
+.subrow .cost{color:var(--sub);font-size:11px;white-space:nowrap}
+.st{display:inline-block;font-size:11px;border-radius:999px;padding:1px 8px;border:1px solid var(--border)}
+.st.run{color:var(--green);border-color:#2b6a3a}
+.st.idle{color:var(--sub)}
+.st.review{color:var(--amber);border-color:#6a542b}
+.st.stopped{color:var(--red);border-color:#6b2b2b}
+.openwin{background:var(--card2);border:1px solid var(--border);color:var(--blue);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer}
+.openwin:hover{border-color:var(--blue)}
+.par{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--sub);
+border:1px dashed var(--border);border-radius:8px;padding:7px 9px;margin-bottom:8px}
+.par b{color:var(--amber)}
+.par em{color:var(--text);font-style:normal}
+.ivlog{display:flex;flex-direction:column;gap:4px;font-size:12px;margin-top:4px}
+.ivlog .iv{display:flex;gap:8px;align-items:center;padding:4px 7px;border-radius:7px;background:var(--card2);border:1px solid var(--border)}
+.ivlog .iv .t{color:var(--sub);font:11px/1.4 ui-monospace,Consolas,monospace;flex:0 0 auto}
+.toast{position:fixed;right:14px;bottom:14px;background:var(--card2);border:1px solid var(--blue);color:var(--text);
+border-radius:9px;padding:8px 12px;font-size:12px;z-index:20;display:none;box-shadow:0 4px 18px rgba(0,0,0,.45)}
+.toast[data-on="true"]{display:block}
+/* A32 异步回执与不阻塞派活（行为闸） */
+.mine{display:inline-block;font-size:10.5px;border-radius:999px;padding:0 7px;border:1px solid #4b3a6b;color:var(--purple);white-space:nowrap;vertical-align:middle}
+.taskbar{position:sticky;top:0;z-index:2;border:1px solid var(--border);border-radius:8px;background:var(--card);padding:7px 9px;margin-bottom:8px}
+.thd{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;flex-wrap:wrap}
+.thd .gate{margin-left:auto;font-size:10.5px;font-weight:400;color:var(--green);border:1px solid #2b6a3a;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.tlist{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.tmini{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;font-size:11px;color:var(--sub);align-items:center}
+.tmini b{color:var(--text)}
+.tmini .m{border:1px solid var(--border);border-radius:999px;padding:0 7px;white-space:nowrap}
+.tcard{border:1px solid var(--border);border-radius:8px;padding:5px 7px;background:var(--card2)}
+.tcard .t1{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
+.tcard .tid{color:var(--sub);font:11px/1.4 ui-monospace,Consolas,monospace}
+.tcard .ttl{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.tcard .t2{color:var(--sub);font-size:11px;margin-top:2px}
+.tcard .t2 b{color:var(--text)}
+.tcard .t3{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:4px}
+.tcard .t3 button{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:1px 7px;font-size:11px;cursor:pointer}
+.tcard .t3 button:hover{border-color:var(--blue);color:var(--blue)}
+.tcard .eta{color:var(--sub);font-size:10.5px}
+.tcard.paused{opacity:.72}
+.tcard.aborted{border-color:#6b2b2b}
+.tcard.done{border-color:#2b6a3a}
+.st.accepted{color:var(--purple);border-color:#4b3a6b}
+.st.doing{color:var(--blue);border-color:#274563}
+.st.wait{color:var(--amber);border-color:#6a542b}
+.st.done{color:var(--green);border-color:#2b6a3a}
+.st.paused{color:var(--sub)}
+.st.aborted{color:var(--red);border-color:#6b2b2b}
+.thint{color:var(--sub);font-size:11px;margin-top:6px}
+.tsrc{color:var(--sub);font-size:10.5px;margin-top:2px}
+.iodump{white-space:pre-wrap;word-break:break-all;background:#0b0f14;border:1px solid var(--border);border-radius:6px;color:var(--sub);font:10.5px/1.5 ui-monospace,Consolas,monospace;margin:6px 0 0;padding:6px 7px;overflow-wrap:anywhere}
+.tcard.unknown{border-style:dashed}
+.tcard.failed,.tcard.timeout{border-color:#6b2b2b}
+.tcard.degraded,.tcard.shadow{border-color:#6a542b}
+.st.unknown{color:var(--sub);border-color:var(--border)}
+.st.failed,.st.timeout{color:var(--red);border-color:#6b2b2b}
+.st.degraded,.st.shadow{color:var(--amber);border-color:#6a542b}
+.demo{margin-top:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.demo .p{background:var(--blue);color:#04121f;border:0;border-radius:7px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.demo .hint{margin:0}
+.msg .klass{margin-left:6px;color:var(--sub);font-weight:400;font-size:10.5px}
+@media (max-width:1024px){.left{width:var(--rail-collapsed)}}
+</style>
+</head>
+<body data-state="ok" data-clj-dark="true">
+
+<div class="proto" role="region" aria-label="形态样张控件">
+  <b>样张 v3</b><span>静态（不接后端 · 无网络调用）</span>
+  <span class="sp"></span>
+  <button id="bOk" aria-pressed="true" onclick="setState('ok')">今日上下文</button>
+  <button id="bEmpty" aria-pressed="false" onclick="setState('empty')">空态</button>
+  <button id="bErr" aria-pressed="false" onclick="setState('error')">错误态</button>
+  <button id="bLeft" aria-pressed="false" onclick="toggleRail()">收左栏</button>
+  <button id="bRight" aria-pressed="true" onclick="toggleRight()">右栏</button>
+  <button onclick="cycleFont()">字号 <span id="fsTag">14</span>px</button>
+  <button onclick="toggleKeys(true)">键位表 <span class="kbd">F1</span></button>
+  <span class="geo" id="geo">—</span>
+</div>
+
+<div class="topbar">
+  <div class="brand">🦞 ClawsJoy PA<span>陪伴工作台 · 样张 v3</span></div>
+  <div class="seg" id="modes" role="tablist" aria-label="模式">
+    <button role="tab" aria-pressed="true" onclick="setMode(0)">陪伴</button>
+    <button role="tab" aria-pressed="false" onclick="setMode(1)">工作</button>
+    <button role="tab" aria-pressed="false" onclick="setMode(2)">学习</button>
+  </div>
+  <span class="pill flat" title="本机只有一个客户（本机主人）· 无登录面"><span class="dot" id="dot"></span><span id="stat">就绪 · 本地模型 · 权限 2 项</span></span>
+  <span class="sp"></span>
+  <span class="pill flat">👤 本机主人 · 单画像</span>
+  <button class="pill" onclick="toggleKeys(true)">？键位</button>
+</div>
+
+<div class="banner" id="errBanner" role="alert">
+  <span>⚠ <b>后端未应答</b>：读今日上下文失败（超时 3 s）。你的草稿与晨报快照都还在本页，没有丢。</span>
+  <span class="sp"></span>
+  <button onclick="setState('ok')">重试</button>
+  <button onclick="toggleKeys(true)">看下一步</button>
+</div><div class="main" id="frame">
+  <aside class="left" id="left" aria-label="本机画像与来源面">
+    <div class="lab">
+      <h2 class="sec">本机画像 · 1 个客户</h2>
+      <div class="item">🧠 素材 <b>7</b> 面 ⇒ <b>42</b> 条<span class="meta">样张数</span></div>
+      <div class="item">👤 本机主人<span class="meta">唯一画像</span></div>
+      <h2 class="sec">来源面 · 已提取</h2>
+      <div class="item">💬 会话（含 3 席）<span class="meta">14 条</span></div>
+      <div class="item">📄 文件<span class="meta">9 条</span></div>
+      <div class="item">📊 台账<span class="meta">6 条</span></div>
+      <div class="item">📡 平台<span class="meta">5 条</span></div>
+      <div class="item">⚙️ 作业<span class="meta">4 条</span></div>
+      <div class="item">🖼️ 出图<span class="meta">2 条</span></div>
+      <div class="item">🧠 记忆自身 · 二次提取<span class="meta">2 条</span></div>
+      <h2 class="sec">跨源</h2>
+      <div class="item">⇄ 多源条目（≥ 2 面）<span class="meta">6 条</span></div>
+      <div class="hint">素材只索引；画像只存摘要条。每条都可回指到素材。</div>
+    </div>
+    <button class="railbtn" onclick="toggleRail()" title="收起／展开左栏">⟨ 收起</button>
+  </aside>
+
+  <section class="col" aria-label="主面">
+    <div class="chead">
+      <span class="ttl" id="faceTitle">今日上下文</span>
+      <span class="chev" onclick="setFace(6)" title="派生与并行可见 · 实例层（A31）">▾ 子代理 4</span>
+      <span class="chev">🕒 任务 1</span>
+      <span class="split"><button onclick="noop('open-in-app')">打开</button><button onclick="noop('open-in-app-list')">▾</button></span>
+      <span style="flex:1"></span>
+      <span class="chev">⋯</span>
+    </div>
+    <div class="tabs" id="faceTabs" role="tablist" aria-label="主面环">
+      <button role="tab" aria-pressed="true" onclick="setFace(0)">今日上下文</button>
+      <button role="tab" aria-pressed="false" onclick="setFace(1)">会话</button>
+      <button role="tab" aria-pressed="false" onclick="setFace(2)">轨迹</button>
+      <button role="tab" aria-pressed="false" onclick="setFace(3)">产出</button>
+      <button role="tab" aria-pressed="false" onclick="setFace(4)">文件</button>
+      <button role="tab" aria-pressed="false" onclick="setFace(5)">派活</button>
+      <button role="tab" aria-pressed="false" onclick="setFace(6)">子代理</button>
+      <button role="tab" aria-pressed="false" onclick="setFace(7)">任务</button>
+    </div>
+
+    <div class="faces" id="faces" aria-live="polite">
+
+      <div class="facePane on" data-face="ctx">
+        <div class="today">
+          <div class="h">🌤 今日上下文<span class="when">08:1x · 昨夜整合已完成</span></div>
+          <div class="mline"><span class="ic">🌙</span><span class="k">昨夜整合</span><span>8 条碎片 ⇒ 3 条记忆 · 每条带回指（可审）</span></div>
+          <div class="mline"><span class="ic">🧠</span><span class="k">画像更新</span><span>＋4 新增 · ⇄2 取代 · 全部带来源面（下卡）</span></div>
+          <div class="mline"><span class="ic">📌</span><span class="k">待你裁</span><span>1 件产物 · 形态样张 v3（下面那张卡）</span></div>
+          <div class="mline"><span class="ic">⏰</span><span class="k">今天</span><span>2 件事：10:00 校对稿 · 15:00 你要的那份对比</span></div>
+          <div class="next"><span>下一步</span><span class="p" onclick="say('开始：把形态样张 v3 的答复交回去')">把这 1 件裁了 →</span></div>
+        </div>
+
+        <div class="card">
+          <div class="t">🧠 画像更新 · 本机画像（1 个客户）</div>
+          <div class="sub">来源面 ⇒ ＋ 新增 <b>4</b> 条 ／ ⇄ 取代 <b>2</b> 条　·　素材 <b>7</b> 面 ⇒ <b>42</b> 条（样张数）</div>
+          <ul class="upd">
+            <li><span class="tag new">＋新增</span>偏好「先出形态样张，看过再铺代码」<span class="s">来源 会话（含 3 席）</span><span class="multi">多源</span></li>
+            <li><span class="tag new">＋新增</span>口吻「要读数 · 不要形容词」<span class="s">来源 会话</span><span class="multi">多源</span></li>
+            <li><span class="tag new">＋新增</span>作息「22:00–01:00 多在工程」<span class="s">来源 台账</span></li>
+            <li><span class="tag new">＋新增</span>出图偏好「冷色 · 深底」<span class="s">来源 出图</span></li>
+            <li><span class="tag rep">⇄取代</span>旧「先铺代码再看」 ⇒ 新「样张先行」<span class="s">来源 记忆自身 · 二次提取</span></li>
+            <li><span class="tag rep">⇄取代</span>旧「多客户维度」 ⇒ 新「本机单画像」<span class="s">来源 会话 ＋ 台账</span><span class="multi">多源</span></li>
+          </ul>
+          <div class="hint">每条都可回指到素材；指不回 ⇒ 判为幻觉，不进画像。</div>
+        </div>
+
+        <div class="card">
+          <div class="t">📦 产物卡 · 待你裁</div>
+          <div>web/prototype.html v3 —— 形态样张（静态 · 不接后端）。主面＝今日上下文；会话面降为可切之一面。</div>
+          <div class="a">
+            <button class="p" onclick="say('已采纳：按此形态铺全代码')">采纳</button>
+            <button onclick="say('小改：再收一收')">小改</button>
+          <div class="judge">
+            <div class="jrow"><span class="jk">轴</span><span>A28 判（Jev）<span class="mine">我方独有 · DSH 无</span></span></div>
+            <div class="jrow"><span class="jk">判了什么</span><span>这一版形态可交你过目（3 处修已落 · 2 处自判）</span></div>
+            <div class="jrow"><span class="jk">依据哪件</span><span class="jref" onclick="noop('judge-trace')">pm_976 §二 · pm_978 §二 · pm_980 §二 · pm_981 §二（回指 ↗）</span></div>
+            <div class="jrow"><span class="jk">置信</span><span>0.82（样张值）</span></div>
+            <div class="jrow"><span class="jk">影子模式</span><span>是 —— 只出判据，未执行（样张）</span></div>
+            <div class="jrow"><span class="jk">为何降级</span><span>未接后端 ⇒ 拿不到实时读数 ⇒ 判据不完整</span></div>
+            <div class="jbadge">已降级（样张）· 判不出就不说绿</div>
+          </div>
+            <button onclick="say('退回：形态不对')">退回</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="facePane" data-face="chat" id="thread">
+        <div class="sechead">💬 会话<span class="meta">降为可切之一面 · composer 常驻</span></div>
+        <div class="taskbar" id="taskbar">
+          <div class="thd"><span>🧾 在办任务（同一条会话 · 多任务并存 · 样张）</span>
+            <span class="mine">A32 · 我方独有 · DSH 无</span>
+            <span class="gate" id="gate">行为闸：拒件 0 · 拒聊 0 · 假秒停 0 · 忙等语 0</span>
+            <span class="gate" id="gate2">如实闸：合成 0 · 隐失败 0 · 缺来源 0</span></div>
+          <div class="tmini" id="tmini"></div>
+          <div class="demo">
+            <button class="p" id="demoBtn" onclick="runDemo()">演示判据：连发三条（闲聊 ＋ 改令 ＋ 新任务）</button>
+            <button onclick="setFace(7)">全表 →</button>
+          </div>
+        </div>
+        <div class="hint" id="demoOut">输入任何态下皆可用（含空态／错误态）。</div>
+        <div class="msg me"><div class="who">我 · 08:0x</div><div class="bub">先出形态样张，逐轴对标一下桌面壳，别先铺代码。</div></div>
+        <div class="msg"><div class="who">PA · 08:0x</div><div class="bub">好。三栏骨架、右栏让步序、主题呈现器都按对标走；会话／工具／插件面留给后面那两步。</div>
+          <div class="files-out">产出：<code>web/prototype.html</code> · <code>web/prototype.html.before_…</code></div>
+        </div>
+        <div class="msg me"><div class="who">我 · 08:1x</div><div class="bub">画像是从本地跨会话、所有 agent 的上下文里摘要出来的，本机就一个客户。</div></div>
+        <div class="msg"><div class="who">PA · 08:1x</div><div class="bub">收到。画像＝单例；素材＝本机全上下文（会话／文件／台账／平台／作业／出图／记忆自身）；只索引，画像只存摘要条，每条带来源面。左栏已按此列出。</div></div>
+      </div>
+
+      <div class="facePane" data-face="tasks">
+        <div class="sechead">🧾 任务<span class="meta">五态 ＋ 未知 ＋ 失败面 · 每态带来源（样张）</span><span class="mine">A32 · 我方独有 · DSH 无</span></div>
+        <div class="thint">受理不拒 · 打断在下一步边界生效 · 交互不锁而执行排队（不阻塞 ≠ 真并行 · 单卡并发 1）。后端无此读数 ⇒ 显示「未知」（合法态 · ⛔ 猜）；每态皆带状态来源。<br>输入归判（A28 Jev · 样张规则）：改令 ／ 闲聊 ／ 追问 ／ 新任务 —— 由判层分，⛔ 由「忙」分。</div>
+        <div class="tlist" id="tlist"></div>
+      </div>
+
+      <div class="facePane" data-face="trail">
+        <div class="sechead">🧭 轨迹<span class="meta">按轮次组织的事件记录</span></div>
+        <div class="card">
+          <div class="t">轮次 1 · 读盘</div>
+          <div class="item">read<span class="meta">web/prototype.html · 24 KB</span></div>
+          <div class="item">count<span class="meta">静态自证五项 ＝ 0</span></div>
+        </div>
+        <div class="card">
+          <div class="t">轮次 2 · 造样张</div>
+          <div class="item">write<span class="meta">web/prototype.html v3</span></div>
+          <div class="item">shot<span class="meta">三态 · 1280×720</span></div>
+        </div>
+      </div>
+
+      <div class="facePane" data-face="deliver">
+        <div class="sechead">📦 产出<span class="meta">产物卡与文件</span></div>
+        <div class="card">
+          <div class="t">web/prototype.html v3</div>
+          <div>形态样张 · 静态 · 三态可切</div>
+          <div class="a"><button class="p" onclick="noop('open')">打开</button><button onclick="noop('diff')">看差异</button></div>
+        </div>
+        <div class="card">
+          <div class="t">web/pa/faces.json</div>
+          <div>面清单 ＋ 每面 open 旗（同批 · 拆件）</div>
+        </div>
+      </div>
+
+      <div class="facePane" data-face="files">
+        <div class="sechead">📄 文件<span class="meta">项目文件（沙箱）</span></div>
+        <div class="item">📄 web/prototype.html<span class="meta">v3</span></div>
+        <div class="item">📄 web/pa.html<span class="meta">222 KB</span></div>
+        <div class="item">📄 web/pa/faces.json<span class="meta">面清单</span></div>
+        <div class="item">📁 web/pa/faces/<span class="meta">一面一器</span></div>
+      </div>
+
+      <div class="facePane" data-face="seats">
+        <div class="sechead">🧾 派活面<span class="meta">席位 · 对端 · 在办 · 待验收 · 凭据在册（样张）</span><span class="mine">A25／A30 派 · 我方独有 · DSH 无</span></div>
+        <div class="card">
+          <div class="t">在办</div>
+          <div class="item">派件 → CW b2a5182<span class="meta" style="color:var(--blue)">在办 · 1 件</span></div>
+          <div class="item">件 976 / 978 / 980 / 981<span class="meta">对端 PM b136893</span></div>
+        </div>
+        <div class="card">
+          <div class="t">待验收</div>
+          <div class="item">972 → PM<span class="meta" style="color:var(--green)">已收（976）</span></div>
+          <div class="item">975 样张 v2 → PM<span class="meta" style="color:var(--amber)">待过目</span></div>
+          <div class="item">样张 v3 → PM<span class="meta" style="color:var(--amber)">待过目 · 本件</span></div>
+        </div>
+        <div class="card">
+          <div class="t">席位 ／ 对端</div>
+          <div class="item">CW b2a5182<span class="meta" style="color:var(--green)">本席 · 在跑</span></div>
+          <div class="item">PM b136893<span class="meta">对端 · 派件</span></div>
+          <div class="item">技总 f202f89<span class="meta">备查</span></div>
+        </div>
+        <div class="card">
+          <div class="t">凭据在册</div>
+          <div class="item">平台登录态<span class="meta" style="color:var(--amber)">灰区 · 候老板</span></div>
+          <div class="item">明文 token<span class="meta" style="color:var(--green)">仅回环 · 已脱敏</span></div>
+        </div>
+      </div>
+
+      <div class="facePane" data-face="subagents">
+        <div class="sechead">🧬 派生与并行可见<span class="meta">实例层 · 子 agent 派生 ／ 独立窗口 ／ 用户干预（样张）</span><span class="mine">A31 派生 · 我方独有 · DSH 无</span></div>
+
+        <div class="par">
+          <span>⚠</span>
+          <span><b>并行之实：编排并行 · 推理排队</b> ——
+          「并行」＝ 多个子 agent 的<em>编排</em>可同时推进；本地推理仍<em>排队</em>（6 GB 单卡 · num_gpu 并发 1）。
+          ⛔ 别读成「多模型并行」。下表数值均为<em>样张</em>值。</span>
+        </div>
+
+        <div class="card">
+          <div class="t">🧬 子 agent（派生实例 · 4）<span class="meta">点 ⧉ 开独立窗口</span></div>
+          <div class="sublist">
+            <div class="subrow" id="sub-cw-build">
+              <div class="r1"><span class="nm">cw-build</span><span class="role">拆单体</span>
+                <span class="st run" data-role="st">运行中</span>
+                <span class="right"><span class="cost">00:12:31 · ￥0.42</span><button class="openwin" onclick="openSubagent('cw-build')" title="点开独立窗口">⧉</button></span></div>
+              <div class="r2">在办 <b>pa.html 拆件</b> · 最近 <span data-role="act">写 faces/chat.js</span> · 源 <span class="mine">样张</span> 回执 #S-01</div>
+            </div>
+            <div class="subrow" id="sub-cw-shot">
+              <div class="r1"><span class="nm">cw-shot</span><span class="role">截图校对</span>
+                <span class="st review" data-role="st">待验收</span>
+                <span class="right"><span class="cost">00:03:08 · ￥0.05</span><button class="openwin" onclick="openSubagent('cw-shot')" title="点开独立窗口">⧉</button></span></div>
+              <div class="r2">在办 <b>样张 v3 三态</b> · 最近 <span data-role="act">shot 1280×720</span> · 源 <span class="mine">样张</span> 回执 #S-02</div>
+            </div>
+            <div class="subrow" id="sub-cw-recon">
+              <div class="r1"><span class="nm">cw-recon</span><span class="role">面清单</span>
+                <span class="st stopped" data-role="st">已停</span>
+                <span class="right"><span class="cost">00:41:52 · ￥1.37</span><button class="openwin" onclick="openSubagent('cw-recon')" title="点开独立窗口">⧉</button></span></div>
+              <div class="r2">在办 <b>26 页现役判</b> · 最近 <span data-role="act">报告已交</span> · 源 <span class="mine">样张</span> 回执 #S-03</div>
+            </div>
+            <div class="subrow" id="sub-cw-audit">
+              <div class="r1"><span class="nm">cw-audit</span><span class="role">开源核</span>
+                <span class="st idle" data-role="st">空闲</span>
+                <span class="right"><span class="cost">00:00:00 · ￥0.00</span><button class="openwin" onclick="openSubagent('cw-audit')" title="点开独立窗口">⧉</button></span></div>
+              <div class="r2">在办 <b>—</b> · 最近 <span data-role="act">待派</span> · 源 <span class="mine">样张</span> 回执 #S-04</div>
+            </div>
+          </div>
+          <div class="hint">⧉ 开的是<em>独立窗口</em>（该子 agent 的上下文／轨迹／产物）；主面<em>不刷新</em>，保持可读。</div>
+        </div>
+
+        <div class="card">
+          <div class="t">用户干预（窗口内操作 ⇒ 主面该行即变）</div>
+          <div class="ivlog" id="ivlog">
+            <div class="iv" id="ivNone"><span class="t">—</span><span>尚无干预。点任一 ⧉ 开窗，在窗口内 插话 ／ 改令 ／ 暂停 ／ 中止 ／ 接管。</span></div>
+          </div>
+          <div class="hint">主面刷新计数 <b id="bootN">—</b>（样张自证：主面若被刷新，此数会 ≥ 2；干预只改本行，不重载）。</div>
+        </div>
+      </div>
+      <div class="state" id="stEmpty">
+        <div class="big">🌤</div>
+        <h3>今日上下文 · 还是空的</h3>
+        <p>还没有可整合的东西。先跟我说一句，或者把一份文件拖进来 —— 夜里我再来攒早晨这一屏。</p>
+        <div class="go">
+          <button class="p" onclick="focusInput()">开始输入</button>
+          <button onclick="setState('ok')">看一条示例</button>
+        </div>
+      </div>
+      <div class="state err" id="stError">
+        <div class="big">⚠</div>
+        <h3>连不上后端</h3>
+        <p>网关没应答（3 s 超时）。草稿和晨报快照都还在这一页，没有丢。</p>
+        <div class="go">
+          <button class="p" onclick="setState('ok')">重试一次</button>
+          <button onclick="toggleKeys(true)">我该做什么？</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="zbar">
+        <div class="zgoal"><span class="zk">🎯 目标</span><span>把 PA 形态定下来（样张）</span><span class="mine">A29 编 · 我方独有 · DSH 无</span><span class="zmeta">第 2 ／ 4 阶段 · 下一步：拆单体＋faces.json</span></div>
+        <div class="zsteps">
+          <span class="zstep done">1 面清单</span>
+          <span class="zstep on">2 形态样张</span>
+          <span class="zstep">3 拆单体＋faces.json</span>
+          <span class="zstep">4 铺全代码</span>
+          <span class="zops"><button onclick="noop('stage-breakpoint')">断点</button><button onclick="noop('stage-rollback')">回滚</button><button onclick="noop('stage-handoff')">交人</button></span>
+        </div>
+      </div>
+      <div class="strip">
+        <span>模式</span><span class="chip" id="mc0" onclick="setMode(0)">陪伴</span>
+        <span class="chip" id="mc1" onclick="setMode(1)">工作</span>
+        <span class="chip" id="mc2" onclick="setMode(2)">学习</span>
+        <span>·</span><span class="chip" id="goalChip" onclick="noop('goal')">🎯 目标：拆单体</span>
+        <span class="chip" id="planChip" onclick="noop('plan')">🧭 计划模式：关</span>
+        <span class="chip" id="permChip" onclick="noop('permission')">🔑 权限：每次问</span>
+        <span style="flex:1"></span>
+        <span class="chip" id="modelChip" onclick="noop('model')">🧠 本地 · 默认</span>
+      </div>
+      <div class="ta">
+        <label class="sr" for="input">输入</label>
+        <textarea id="input" placeholder="说点什么…（/ 命令 · @ 引用 · Ctrl+Enter 发送 · Esc 停止）" tabindex="0"></textarea>
+        <button class="send" id="sendBtn" tabindex="0" onclick="say()">发送 <span class="kbd">Ctrl+↵</span></button>
+        <button class="stop" tabindex="0" onclick="stop()">停止 <span class="kbd">Esc</span></button>
+      </div>
+      <div class="hint">样张：发送只在本地回显一条，不联网、不落库。</div>
+    </div>
+  </section>
+
+  <aside class="right" id="right" aria-label="右栏">
+    <h2 class="sec">今日账</h2>
+    <div class="item">运行<span class="meta" id="runState">空闲</span></div>
+    <div class="item">整合<span class="meta">8 ⇒ 3</span></div>
+    <div class="item">回指<span class="meta" style="color:var(--green)">3／3 可验</span></div>
+    <div class="item">画像<span class="meta">＋4 ／ ⇄2</span></div>
+    <div class="item">待裁<span class="meta" style="color:var(--amber)">1</span></div>
+    <h2 class="sec">权限门</h2>
+    <div class="item">读 vault<span class="meta" style="color:var(--green)">允许</span></div>
+    <div class="item">写文件<span class="meta" style="color:var(--amber)">每次问</span></div>
+    <div class="item">平台分发<span class="meta" style="color:var(--red)">关</span></div>
+    <div class="hint">来源：今日账取「回执台账 · 日报」；权限门取「授权配置」—— 界面只读真读数，⛔ 前端自算。以上为「样张」值。</div>
+    <h2 class="sec">常驻（样张）</h2>
+    <div class="item">托盘<span class="meta" style="color:var(--green)">开</span></div>
+    <div class="item">开机自启<span class="meta">默认开（可一键关）</span></div>
+    <div class="item">关窗<span class="meta">隐到托盘（≠ 退出）</span></div>
+    <div class="item">夜间整合<span class="meta" style="color:var(--green)">轻量 · 不抢显卡</span></div>
+    <div class="item">退出<span class="meta" style="color:var(--amber)">须显式</span></div>
+    <div class="hint">常驻的是壳与调度，不是模型（过显存门 · 用后即卸）；与出图互斥检测。</div>
+    <h2 class="sec">如实读数（界面态 · 只读 · 样张）</h2>
+    <div class="item">已载<span class="meta">0</span></div>
+    <div class="item">显存 free／total<span class="meta">5292 ／ 6144 MB</span></div>
+    <div class="item">Forever 钉住<span class="meta" style="color:var(--green)">[]（无）</span></div>
+    <div class="item">本地在<span class="meta" style="color:var(--green)">true</span></div>
+    <div class="item">远端在<span class="meta" style="color:var(--green)">true</span></div>
+    <div class="item">远端 host<span class="meta">api.deepseek.com</span></div>
+    <div class="item">刻<span class="meta">样张 · 08:30</span></div>
+    <pre class="iodump">{"已载":0,"显存":{"free":5292,"total":6144},"Forever":[],"本地在":true,"远端在":true,"远端host":"api.deepseek.com","刻":"样张 · 08:30"}</pre>
+    <div class="hint">如实面第一款：界面只读后端一行真读数（形同「模型_双模.py --界面态」）；⛔ 前端自算 · ⛔ 前端直读 nvidia-smi。M1 接线照此形。以上为「样张」值。</div>
+    <h2 class="sec">布局几何（对标读数 · 活着算）</h2>
+    <div class="item">窗宽<span class="meta" id="gVw">—</span></div>
+    <div class="item">左栏<span class="meta" id="gRail">—</span></div>
+    <div class="item">右栏<span class="meta" id="gRight">—</span></div>
+    <div class="item">中栏<span class="meta" id="gMid">—</span></div>
+    <div class="item">断点<span class="meta" id="gBp">—</span></div>
+    <h2 class="sec">下一步</h2>
+    <div class="item">拆 pa.html<span class="meta">本批</span></div>
+    <div class="item">落 faces.json<span class="meta">本批</span></div>
+  </aside>
+</div>
+<div class="keys" id="keys" data-open="false" onclick="if(event.target===this)toggleKeys(false)" role="dialog" aria-modal="true" aria-label="键位表">
+  <div class="box" id="keysBox" tabindex="-1">
+    <h2 class="sec" style="font-size:13px;color:var(--text)">键位表（样张已实现 · Tab 拘于框内 · 关闭还焦点）</h2>
+    <table>
+      <tr><td>切主面 今日上下文／会话／轨迹／产出／文件／派活／子代理／任务</td><td><span class="kbd">Ctrl</span> + <span class="kbd">1</span> … <span class="kbd">8</span></td></tr>
+      <tr><td>发送</td><td><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span></td></tr>
+      <tr><td>停止</td><td><span class="kbd">Esc</span></td></tr>
+      <tr><td>聚焦输入</td><td><span class="kbd">Ctrl</span> + <span class="kbd">K</span></td></tr>
+      <tr><td>切模式 陪伴／工作／学习</td><td><span class="kbd">Alt</span> + <span class="kbd">1</span> / <span class="kbd">2</span> / <span class="kbd">3</span></td></tr>
+      <tr><td>收／展左栏</td><td><span class="kbd">Ctrl</span> + <span class="kbd">B</span></td></tr>
+      <tr><td>键位表</td><td><span class="kbd">F1</span> ／ <span class="kbd">?</span></td></tr>
+      <tr><td>退出（关窗 ＝ 隐到托盘 · ≠ 退出）</td><td>须显式 · 退出前提示「夜间整合将停止」</td></tr>
+    </table>
+    <p class="hint">常驻：托盘开 · 自启默认开（可关）· 关窗隐到托盘 · 夜间整合走轻量路径（不抢显卡）—— 以上为「样张」值。</p>
+    <p class="hint" style="margin-top:9px">Tab 顺序：样张条 → 模式 → 左栏 → 主面环 → 输入 → 发送 → 停止 → 右栏。焦点环 2px 可见；键位表内 <span class="kbd">Tab</span> 循环不出框，<span class="kbd">Esc</span> 关闭并把焦点还给触发按钮。</p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* 样张脚本：几何 ／ 主题呈现 ／ 主面环 ／ 态切换 ／ 键位 ／ 本地回显。⛔ 无网络调用、⛔ 无后端。 */
+var RAIL_MIN=264, RAIL_MAX=420, RAIL_DEF=280, RAIL_COL=56, MID_MIN=400, RB_FIRST=0.45, RB_MAX=0.70, RB_SQUEEZE=300;
+var FACE_TITLES=['今日上下文','会话','轨迹','产出','文件','派活面','子代理','任务'];
+var st={railCollapsed:false, railPref:RAIL_DEF, rightOpen:true, rightPx:null, font:14, face:0};
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+/* 几何服务：右栏先让步以保护中栏（对标 · 我方实现） */
+function geo(){
+  var vw=window.innerWidth, auto = vw<1024;
+  var rail = (st.railCollapsed||auto) ? RAIL_COL : clamp(st.railPref,RAIL_MIN,RAIL_MAX);
+  var rb=0;
+  if(st.rightOpen){
+    rb = st.rightPx!==null ? st.rightPx : Math.round(vw*RB_FIRST);
+    rb = Math.min(rb, Math.round(vw*RB_MAX));
+    var mid = vw-rail-rb;
+    if(mid<MID_MIN){ rb=RB_SQUEEZE; }
+    if(vw-rail-rb<MID_MIN){ rb=0; }            /* 仍不足 ⇒ 通知占用方收起 */
+  }
+  return {vw:vw, rail:rail, right:rb, mid:vw-rail-rb, auto:auto};
+}
+function apply(){
+  var g=geo();
+  document.documentElement.style.setProperty('--rail-w', (st.railCollapsed||g.auto?RAIL_COL:clamp(st.railPref,RAIL_MIN,RAIL_MAX))+'px');
+  document.documentElement.style.setProperty('--rightbar-w', g.right+'px');
+  document.getElementById('left').classList.toggle('collapsed', st.railCollapsed||g.auto);
+  document.getElementById('right').hidden = g.right===0;
+  document.getElementById('geo').textContent = 'vw '+g.vw+' · 左 '+g.rail+' · 右 '+g.right+' · 中 '+g.mid;
+  document.getElementById('gVw').textContent = g.vw+' px';
+  document.getElementById('gRail').textContent = g.rail+' px'+(g.auto?'（<1024 自动收起）':'');
+  document.getElementById('gRight').textContent = g.right? g.right+' px' : '收起';
+  document.getElementById('gMid').textContent = g.mid+' px'+(g.mid<MID_MIN?'（<400 保护中）':'');
+  document.getElementById('gBp').textContent = g.auto? '<1024 已触发' : '≥1024';
+  document.getElementById('bLeft').setAttribute('aria-pressed', String(st.railCollapsed));
+  document.getElementById('bRight').setAttribute('aria-pressed', String(st.rightOpen));
+}
+/* 主题呈现器（对标 · 我方 token 名自持） */
+function present(){
+  document.body.dataset.cljDark='true';
+  document.body.style.setProperty('--clj-fs', st.font+'px');
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m) m.setAttribute('content', getComputedStyle(document.body).backgroundColor);
+}
+function cycleFont(){ st.font = st.font===14?17:(st.font===17?12:14); document.getElementById('fsTag').textContent=st.font; present(); }
+function toggleRail(){ st.railCollapsed=!st.railCollapsed; apply(); }
+function toggleRight(){ st.rightOpen=!st.rightOpen; apply(); }
+/* 主面环 */
+function setFace(i){
+  if(i<0||i>=FACE_TITLES.length) return;
+  st.face=i;
+  document.querySelectorAll('#faceTabs button').forEach(function(b,k){b.setAttribute('aria-pressed',String(k===i));});
+  document.querySelectorAll('.facePane').forEach(function(p){p.classList.toggle('on', p.getAttribute('data-face')===['ctx','chat','trail','deliver','files','seats','subagents','tasks'][i]);});
+  document.getElementById('faceTitle').textContent = FACE_TITLES[i];
+}
+function setMode(i){
+  document.querySelectorAll('#modes button').forEach(function(b,k){b.setAttribute('aria-pressed',String(k===i));});
+  for(var k=0;k<3;k++) document.getElementById('mc'+k).classList.toggle('on', k===i);
+  document.getElementById('modelChip').textContent = ['🧠 本地 · 默认','🧠 本地 · 工作','🧠 本地 · 学习'][i];
+}
+function setState(s){
+  document.body.dataset.state=s;
+  [['bOk','ok'],['bEmpty','empty'],['bErr','error']].forEach(function(p){
+    document.getElementById(p[0]).setAttribute('aria-pressed', String(p[1]===s)); });
+  document.getElementById('dot').style.background = s==='error' ? 'var(--red)' : 'var(--green)';
+  document.getElementById('stat').textContent = s==='error' ? '后端无应答 · 本地模型 · 权限 2 项'
+    : (s==='empty' ? '就绪 · 本地模型 · 权限 2 项 · 今日为空' : '就绪 · 本地模型 · 权限 2 项');
+}
+function noop(what){ document.getElementById('geo').textContent = '（样张）' + what + ' 弹层未铺 —— 静态原型只示形态'; }
+function focusInput(){ document.getElementById('input').focus(); }
+/* A32 行为闸：受理门永不关 · 任何态皆受理 · 不拒件（样张） */
+function classify(v){
+  if(/改成|改为|改令|换个|换掉|不要|别|重来|落回/.test(v)) return '改令';
+  if(/聊|天气|夸|随便说说|闲/.test(v)) return '闲聊';
+  if(/[?？]|吗|怎么|为什么|何时|多少|哪里/.test(v)) return '追问';
+  return '新任务';
+}
+function say(text){
+  var t=document.getElementById('input'), fromBox=!text;
+  var v=(text||t.value||'').trim();
+  if(!v) return;
+  if(document.body.dataset.state!=='ok') setState('ok');
+  setFace(1);
+  var tl=document.getElementById('thread');
+  var me=document.createElement('div'); me.className='msg me';
+  me.innerHTML='<div class="who">\u6211 \u00b7 \u73b0\u5728</div><div class="bub"></div>';
+  me.querySelector('.bub').textContent=v; tl.appendChild(me);
+  var kind=fromBox?classify(v):'\u5df2\u6301\u6709';
+  var n=++PA_N;
+  var pa=document.createElement('div'); pa.className='msg';
+  pa.innerHTML='<div class="who">PA \u00b7 \u73b0\u5728<span class="klass"></span></div><div class="bub"></div>';
+  pa.querySelector('.klass').textContent='\u5224\u5c42\uff08\u6837\u5f20\uff09\u5206\u7c7b\uff1a'+kind;
+  pa.querySelector('.bub').textContent = fromBox
+    ? '\uff08\u6837\u5f20\uff09\u5df2\u53d7\u7406 \u00b7 #PA-'+n+' \u00b7 \u72b6\u6001\uff1a\u53d7\u7406 \u00b7 \u5206\u7c7b\uff1a'+kind
+    : '\uff08\u6837\u5f20\u56de\u663e\uff09\u6536\u5230\uff1a\u300c'+v+'\u300d\u3002\u63a5\u4e0a\u540e\u7aef\u540e\u8fd9\u91cc\u4f1a\u662f\u6a21\u578b\u7684\u56de\u7b54\u3002';
+  tl.appendChild(pa);
+  if(fromBox) addTask('#PA-'+n, v.slice(0,20), 'accepted');
+  t.value=''; tl.scrollIntoView(false);
+}
+function stop(){ var r=document.getElementById('runState'); r.textContent='已停止'; r.style.color='var(--red)'; }
+/* 键位表：焦点落得上 ／ Tab 拘于框内 ／ 关闭还焦点 */
+var lastFocus=null;
+function toggleKeys(on){
+  var k=document.getElementById('keys'), box=document.getElementById('keysBox');
+  if(on){ lastFocus=document.activeElement; k.dataset.open='true'; box.focus(); }
+  else { k.dataset.open='false'; if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+}
+function trapTab(e){
+  var box=document.getElementById('keysBox');
+  var f=box.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+  var list=[box].concat(Array.prototype.slice.call(f));
+  if(!list.length) return;
+  var first=list[0], last=list[list.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+}
+document.addEventListener('keydown', function(e){
+  var keysOpen = document.getElementById('keys').dataset.open==='true';
+  if(keysOpen){
+    if(e.key==='Tab'){ trapTab(e); return; }
+    if(e.key==='Escape'){ e.preventDefault(); toggleKeys(false); return; }
+    return;
+  }
+  if(e.key==='Escape'){ stop(); }
+  else if(e.key==='F1'||(e.key==='?'&&e.shiftKey)){ e.preventDefault(); toggleKeys(true); }
+  else if(e.ctrlKey&&e.key==='Enter'){ e.preventDefault(); say(); }
+  else if(e.ctrlKey&&(e.key==='k'||e.key==='K')){ e.preventDefault(); focusInput(); }
+  else if(e.ctrlKey&&(e.key==='b'||e.key==='B')){ e.preventDefault(); toggleRail(); }
+  else if(e.ctrlKey&&['1','2','3','4','5','6','7','8'].indexOf(e.key)>=0){ e.preventDefault(); setFace(parseInt(e.key,10)-1); }
+  else if(e.altKey&&['1','2','3'].indexOf(e.key)>=0){ e.preventDefault(); setMode(parseInt(e.key,10)-1); }
+});
+/* A31 派生与并行可见（实例层 · 样张）：派生 ／ 独立窗口 ／ 用户干预 ⇒ 主面即变。⛔ 无网络调用。 */
+window.__paBoot=(window.__paBoot||0)+1;
+var SUBS=[
+ {id:'cw-build',nm:'cw-build',role:'拆单体',st:'run',stTxt:'运行中',item:'pa.html 拆件',act:'写 faces/chat.js',t:'00:12:31',cost:'￥0.42'},
+ {id:'cw-shot',nm:'cw-shot',role:'截图校对',st:'review',stTxt:'待验收',item:'样张 v3 三态',act:'shot 1280×720',t:'00:03:08',cost:'￥0.05'},
+ {id:'cw-recon',nm:'cw-recon',role:'面清单',st:'stopped',stTxt:'已停',item:'26 页现役判',act:'报告已交',t:'00:41:52',cost:'￥1.37'},
+ {id:'cw-audit',nm:'cw-audit',role:'开源核',st:'idle',stTxt:'空闲',item:'—',act:'待派',t:'00:00:00',cost:'￥0.00'}
+];
+function subById(id){for(var i=0;i<SUBS.length;i++)if(SUBS[i].id===id)return SUBS[i];return null;}
+function bootN(){var e=document.getElementById('bootN');if(e)e.textContent=String(window.__paBoot);}
+function toast(msg){
+  var t=document.getElementById('toast');if(!t)return;
+  t.textContent=msg;t.dataset.on='true';
+  clearTimeout(window.__toastT);window.__toastT=setTimeout(function(){t.dataset.on='false';},2800);
+}
+function renderSub(id){
+  var s=subById(id),row=document.getElementById('sub-'+id);if(!s||!row)return;
+  var st=row.querySelector('[data-role="st"]');
+  if(st){st.className='st '+s.st;st.textContent=s.stTxt;}
+  var ac=row.querySelector('[data-role="act"]');if(ac)ac.textContent=s.act;
+}
+function ivLog(id,act){
+  var box=document.getElementById('ivlog');if(!box)return;
+  var none=document.getElementById('ivNone');if(none)none.style.display='none';
+  var s=subById(id);
+  var d=document.createElement('div');d.className='iv';
+  var a=document.createElement('span');a.className='t';a.textContent='（样张）';
+  var b=document.createElement('span');b.textContent=(s?s.nm:id)+' · '+act+' ⇒ 主面该行已变';
+  d.appendChild(a);d.appendChild(b);box.insertBefore(d,box.firstChild);
+}
+function paIntervene(id,act){
+  var s=subById(id);if(!s)return;
+  if(act==='暂停'){s.st='idle';s.stTxt='空闲（已暂停）';s.act='暂停（用户干预）';}
+  else if(act==='中止'){s.st='stopped';s.stTxt='已停（用户中止）';s.act='中止（用户干预）';}
+  else if(act==='接管'){s.st='run';s.stTxt='运行中（已接管）';s.act='接管（用户干预）';}
+  else if(act==='插话'){s.act='插话已送（用户干预）';}
+  else if(act==='改令'){s.act='改令已送（用户干预）';}
+  renderSub(id);ivLog(id,act);toast('干预：'+act+' ⇒ '+s.nm+'（主面未刷新）');
+}
+function openSubagent(id){
+  var s=subById(id);if(!s)return;
+  var w=window.open('','pa-sub-'+id,'width=580,height=560,menubar=no,toolbar=no');
+  if(!w){toast('（样张）开窗被拦 —— 请允许本页开窗');return;}
+  var ops=['插话','改令','暂停','中止','接管'].map(function(a){
+    return '<button class="b" data-a="'+a+'">'+a+'</button>';}).join('');
+  var html='<!DOCTYPE html><html lang="zh-CN" style="color-scheme:dark"><head><meta charset="utf-8">'
+    +'<title>子 agent · '+s.nm+'（样张）</title><style>'
+    +'body{margin:0;background:#0d1117;color:#c9d1d9;font:13px/1.55 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;padding:12px}'
+    +'h1{font-size:14px;margin:0 0 2px}.sub{color:#8b949e;font-size:11px;margin-bottom:10px;display:block}'
+    +'.c{border:1px solid #30363d;border-radius:10px;background:#161b22;padding:9px 11px;margin-bottom:8px}'
+    +'.c .t{font-weight:600;margin-bottom:5px}'
+    +'.r{display:flex;gap:8px;font-size:12px;padding:2px 0}.k{color:#8b949e;min-width:62px;flex:0 0 auto}'
+    +'.ops{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}'
+    +'.b{background:#1c2129;border:1px solid #30363d;color:#c9d1d9;border-radius:7px;padding:4px 11px;cursor:pointer}'
+    +'.b:hover{border-color:#58a6ff;color:#58a6ff}'
+    +'.hint{color:#8b949e;font-size:11px;margin-top:6px}'
+    +'</style></head><body>'
+    +'<h1>'+s.nm+'</h1><span class="sub">'+s.role+' · 独立窗口（样张）· 主面不刷新</span>'
+    +'<div class="c"><div class="t">状态</div>'
+    +'<div class="r"><span class="k">状态</span><span id="st">'+s.stTxt+'</span></div>'
+    +'<div class="r"><span class="k">在办件</span><span>'+s.item+'</span></div>'
+    +'<div class="r"><span class="k">最近动作</span><span id="act">'+s.act+'</span></div>'
+    +'<div class="r"><span class="k">耗时／成本</span><span>'+s.t+' · '+s.cost+'（样张）</span></div></div>'
+    +'<div class="c"><div class="t">上下文</div>'
+    +'<div class="r"><span class="k">来源</span><span>本机全上下文（跨会话 · 跨席）· 只索引</span></div>'
+    +'<div class="r"><span class="k">裁剪</span><span>只带本件相关（样张）</span></div></div>'
+    +'<div class="c"><div class="t">轨迹</div>'
+    +'<div class="r"><span class="k">最近</span><span id="trail">'+s.act+' → 落件</span></div></div>'
+    +'<div class="c"><div class="t">产物</div>'
+    +'<div class="r"><span class="k">产出</span><span>（样张）web/pa/faces/*.js</span></div></div>'
+    +'<div class="c"><div class="t">用户干预</div><div class="ops">'+ops+'</div>'
+    +'<div class="hint">并行 ＝ 编排并行 · 推理排队（6 GB 单卡 · 并发 1）。干预后主面该行状态即变。</div></div>'
+    +'</body></html>';
+  try{w.document.write(html);w.document.close();}
+  catch(err){toast('（样张）写窗口失败：'+err.message);return;}
+  var cdoc=null;try{cdoc=w.document;}catch(e2){cdoc=null;}
+  if(cdoc){
+    Array.prototype.forEach.call(cdoc.querySelectorAll('button[data-a]'),function(btn){
+      btn.addEventListener('click',function(){
+        var a=btn.getAttribute('data-a');paIntervene(id,a);
+        var cs=cdoc.getElementById('st'),ca=cdoc.getElementById('act'),ct=cdoc.getElementById('trail');
+        if(cs){ if(a==='暂停')cs.textContent='空闲（已暂停）';
+                else if(a==='中止')cs.textContent='已停（用户中止）';
+                else if(a==='接管')cs.textContent='运行中（已接管）'; }
+        if(ca&&(a==='插话'||a==='改令'))ca.textContent=a+'已送（样张）';
+        if(ct)ct.textContent=a+' → 已入轨迹（样张）';
+      });
+    });
+  }
+  toast('已开独立窗口：'+s.nm+'（主面未刷新）');
+}
+window.addEventListener('message',function(e){
+  var d=e.data||{};
+  if(d&&d.pa==='intervene'&&d.id&&d.act)paIntervene(d.id,d.act);
+});
+bootN();
+/* A32 应用层：任务卡五态 ＋ 凭据 ＋ 可切入（改令／中止／接管）＋ 结果异步到达。样张值。 */
+var PA_N=11;
+var TASKS=[
+ {id:'#PA-3',ttl:'面清单现役判',st:'done',stTxt:'已完成',who:'cw-recon',act:'报告已交',t:'07:51',src:'回执 #R-03 · 07:51:12'},
+ {id:'#PA-4',ttl:'形态样张 v3',st:'review',stTxt:'待你裁',who:'PA',act:'产物已生成，等一句',t:'08:02',src:'产物卡 #A-04 · 08:02:41'},
+ {id:'#PA-5',ttl:'三态截图校对',st:'wait',stTxt:'等待外部结果',who:'cw-shot',act:'shot 已回，等校对',t:'08:21',src:'回执 #R-05 · 08:21:07'},
+ {id:'#PA-6',ttl:'拆 pa.html · faces/*',st:'doing',stTxt:'在办',who:'cw-build',act:'写 faces/chat.js',t:'08:14',src:'回执 #R-06 · 08:14:33'},
+ {id:'#PA-7',ttl:'A32 行为闸复验',st:'accepted',stTxt:'受理',who:'cw-recon',act:'排队中（单卡并发 1）',t:'08:26',src:'回执 #R-07 · 08:26:02'},
+ {id:'#PA-8',ttl:'外部接口探测',st:'unknown',stTxt:'未知',who:'—',act:'⛔ 无读数（不猜）',t:'—',src:'⛔ 无回执 ⇒ 未知（合法态 · ≠ 失败）'},
+ {id:'#PA-9',ttl:'旧版渲染回归',st:'failed',stTxt:'失败（exit 2）',who:'cw-build',act:'断言不过 · 已停',t:'08:09',src:'回执 #R-09 · 08:09:18'},
+ {id:'#PA-10',ttl:'平台页抓取',st:'timeout',stTxt:'超时（90 s）',who:'cw-recon',act:'无应答 · 已收',t:'08:03',src:'回执 #R-10 · 08:04:31'},
+ {id:'#PA-11',ttl:'画像补全（试验）',st:'degraded',stTxt:'降级（预算闸）',who:'PA',act:'影子：只记不采信',t:'08:24',src:'回执 #R-11 · 08:24:55'}
+];
+var ETA='生效时点：排队中 ⇒ 即时作废 ／ 已在跑 ⇒ 下一步边界生效';
+var STMAP={accepted:['受理','#4b3a6b','var(--purple)'],doing:['在办','#274563','var(--blue)'],
+ wait:['等待外部结果','#6a542b','var(--amber)'],review:['待你裁','#6a542b','var(--amber)'],
+ done:['已完成','#2b6a3a','var(--green)'],paused:['已暂停','#30363d','var(--sub)'],
+ aborted:['已中止','#6b2b2b','var(--red)'],unknown:['未知','#30363d','var(--sub)'],failed:['失败','#6b2b2b','var(--red)'],timeout:['超时','#6b2b2b','var(--red)'],degraded:['降级','#6a542b','var(--amber)'],shadow:['影子','#6a542b','var(--amber)']};
+function taskById(id){for(var i=0;i<TASKS.length;i++)if(TASKS[i].id===id)return TASKS[i];return null;}
+function stBadge(t){var m=STMAP[t.st]||['?','#30363d','var(--sub)'];return '<span class="st '+t.st+'">'+t.stTxt+'</span>';}
+function renderMini(){
+  var box=document.getElementById('tmini'); if(!box) return;
+  var order=['doing','accepted','wait','review','done','unknown','failed','timeout','degraded','paused','aborted'];
+  var cnt={}; for(var i=0;i<TASKS.length;i++){ cnt[TASKS[i].st]=(cnt[TASKS[i].st]||0)+1; }
+  var parts=[];
+  order.forEach(function(k){ if(cnt[k]) parts.push('<span class="m">'+STMAP[k][0]+' '+(cnt[k])+'</span>'); });
+  var act=TASKS.filter(function(t){return t.st==='doing'||t.st==='accepted';})[0];
+  box.innerHTML='<span>共 '+TASKS.length+' 件</span>'+parts.join('')
+    +(act?'<span>最近改动：<b>'+act.id+'</b> '+act.act+'</span>':'');
+}
+function renderTasks(){
+  var box=document.getElementById('tlist'); if(!box) return;
+  var h='';
+  for(var i=0;i<TASKS.length;i++){
+    var t=TASKS[i], inflight=(t.st==='doing'||t.st==='accepted'||t.st==='wait');
+    h+='<div class="tcard '+(t.st==='paused'?'paused':(t.st==='aborted'?'aborted':(t.st==='done'?'done':t.st)))+'" id="t-'+t.id.replace('#','')+'">'
+      +'<div class="t1"><span class="tid">'+t.id+'</span><span class="ttl">'+t.ttl+'</span>'+stBadge(t)+'</div>'
+      +'<div class="t2">谁在办 <b>'+t.who+'</b> · 最近 <span data-role="act">'+t.act+'</span> · '+t.t+'</div>'
+      +'<div class="tsrc">状态来源：<span class="mine">样张</span> '+t.src+'</div>'
+      +(inflight?('<div class="t3"><button onclick="taskOps(\''+t.id+'\',\'改令\')">改令</button>'
+        +'<button onclick="taskOps(\''+t.id+'\',\'中止\')">中止</button>'
+        +'<button onclick="taskOps(\''+t.id+'\',\'接管\')">接管</button>'
+        +'<span class="eta">'+ETA+'</span></div>'):'')
+      +'</div>';
+  }
+  box.innerHTML=h;
+  renderMini();
+}
+function addTask(id,ttl,st,src){
+  TASKS.push({id:id,ttl:ttl,st:st,stTxt:STMAP[st][0],who:'PA',act:'刚受理（样张）',t:'现在',
+    src:src||('回执 #R-'+id.replace('#PA-','')+' · 现在')});
+  renderTasks();
+}
+function taskOps(id,op){
+  var t=taskById(id); if(!t) return;
+  if(op==='改令'){
+    var n=++PA_N, nid='#PA-'+n;
+    t.act='已改道（下一步边界生效）';
+    addTask(nid,t.ttl+'（改令版）','accepted');
+    threadCard('✏️ 改令版 '+nid,'已受理 · 旧 '+id+' 按改令改道（下一步边界生效）');
+    toast('改令：'+id+' ⇒ '+nid+'（下一步边界生效）');
+  } else if(op==='中止'){
+    var queued=(t.st==='accepted');
+    t.st='aborted'; t.stTxt='已中止';
+    t.act=queued?'排队中 ⇒ 即时作废（用户中止）':'下一步边界生效（用户中止）';
+    renderTasks();
+    toast('中止：'+id+(queued?' ⇒ 即时作废':'（下一步边界生效）'));
+  } else if(op==='接管'){
+    t.act='用户已接管（下一步边界生效）';
+    renderTasks(); toast('接管：'+id+'（下一步边界生效）');
+  }
+}
+function threadCard(title,body){
+  var tl=document.getElementById('thread'); if(!tl) return;
+  var d=document.createElement('div'); d.className='msg';
+  d.innerHTML='<div class="who">PA · 现在</div><div class="bub"><b></b><div class="files-out"></div></div>';
+  d.querySelector('b').textContent=title; d.querySelector('.files-out').textContent=body;
+  tl.appendChild(d); tl.scrollIntoView(false);
+}
+function runDemo(){
+  if(window.__demo) { toast('（样张）演示已跑过一轮'); return; }
+  window.__demo=1;
+  var three=['今天天气如何？顺手夸我一句',
+             '把 #PA-6 改成先出 faces.json 再拆 chat.js',
+             '再补一份开源页的许可口径对照'];
+  var out=document.getElementById('demoOut');
+  var i=0;
+  (function step(){
+    if(i>=three.length){ if(out) out.textContent='判据成立：三条皆受理 · #PA-6 按改令改道 · 列表 ＋2 行 · 拒件／拒聊／假秒停 皆 0（样张）'; return; }
+    var v=three[i]; i++; var k=classify(v);
+    var tl=document.getElementById('thread');
+    var me=document.createElement('div'); me.className='msg me';
+    me.innerHTML='<div class="who">我 · 现在</div><div class="bub"></div>';
+    me.querySelector('.bub').textContent=v; tl.appendChild(me);
+    var n=++PA_N;
+    var pa=document.createElement('div'); pa.className='msg';
+    pa.innerHTML='<div class="who">PA · 现在<span class="klass"></span></div><div class="bub"></div>';
+    pa.querySelector('.klass').textContent='判层（样张）分类：'+k;
+    pa.querySelector('.bub').textContent=(k==='闲聊')
+      ? '（样张）闲聊归闲聊 —— 在办那件照跑，不耗误。'
+      : '（样张）已受理 · #PA-'+n+' · 状态：受理 · 分类：'+k;
+    tl.appendChild(pa); tl.scrollIntoView(false);
+    if(k==='改令') taskOps('#PA-6','改令');
+    else if(k==='新任务'){ addTask('#PA-'+n, v.slice(0,20), 'accepted'); }
+    if(out) out.textContent='已发 '+(k)+' · 在办者未停 · 列表现 '+TASKS.length+' 行（样张）';
+    setTimeout(step, 620);
+  })();
+  renderTasks();
+}
+renderTasks();
+window.addEventListener('resize', apply);
+setMode(0); setFace(0); present(); apply();
+</script>
+</body>
+</html>

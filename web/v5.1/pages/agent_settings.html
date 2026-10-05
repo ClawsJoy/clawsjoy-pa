@@ -421,7 +421,7 @@ def hello():
     
     <!-- 3D背景暂时禁用 -->
     <script>
-        const API_BASE = 'http://localhost:5002';
+        const API_BASE = window.location.origin;
         
         // ========== 可视化配置 ==========
         async function loadAgents() {

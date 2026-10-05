@@ -329,7 +329,22 @@ body { background:var(--bg); color:var(--text); font-family:Inter,-apple-system,
 // ========== 全局状态 ==========
 const API = '';
 let userId = localStorage.getItem('clawsjoy_user_id');
-if (!userId) { userId = 'web_' + Date.now(); localStorage.setItem('clawsjoy_user_id', userId); }
+if (!userId) { syncUserId(); }   /* PM-011 · N9-b：生成器唯一化 —— 本文件内只留 syncUserId 里那一处（web_ 前缀 ＋ Date.now()） */
+/* PM-011 · N9（CEO 裁 (a)）＋ N9-b（生成器唯一化）：身份**唯一源 = localStorage.clawsjoy_user_id**，三处恒等 ——
+   内存变量 userId / 模块共享 __APP_STATE.userId / 落盘 localStorage。
+   旧代码在 switchThread 里把 localStorage **无条件改写成老板 id** 且不同步内存 => 内存与落盘分叉
+   （实测：切换后落盘身份被写成老板 id，而 __APP_STATE.userId 仍是本机随机 id）。
+   本函数是**唯一「对齐」函数**、也是本文件内**唯一 `clawsjoy_user_id` 写点**；
+   身份生成器（web_ 前缀 ＋ Date.now()）亦**只在本函数内出现一处**（首访创建改调本函数 => 生成器唯一化，N9-b）。
+   它只对齐，不凭空换成别人。 */
+function syncUserId(){
+  let id = userId || localStorage.getItem('clawsjoy_user_id') || '';
+  if (!id) { id = 'web_' + Date.now(); }
+  userId = id;
+  try { localStorage.setItem('clawsjoy_user_id', userId); } catch (e) { }
+  try { if (window.__APP_STATE && window.__APP_STATE.set) window.__APP_STATE.set('userId', userId); } catch (e) { }
+  return userId;
+}
 
 let sessionId = localStorage.getItem('clawsjoy_session_id');
 if (!sessionId || sessionId === 'default') { sessionId = 'session_' + Date.now(); localStorage.setItem('clawsjoy_session_id', sessionId); }
@@ -764,7 +779,8 @@ function switchThread(id) {
   currentThread = id; sessionId = id;
   window.__APP_STATE.set('currentThread', currentThread); window.__APP_STATE.set('sessionId', sessionId);
   localStorage.setItem('clawsjoy_session_id', id);
-  localStorage.setItem('clawsjoy_user_id', 'web_1783219071801');
+  syncUserId();   /* PM-011 · N9：线程切换不改身份；只把 内存/__APP_STATE/落盘 三处对齐
+                     （旧行为：无条件改写为老板 id 且不同步内存 => 分叉） */
   saveThreads();
   messages = [];
   document.getElementById('agentTerminal').innerHTML = '<div style="color:#58a6ff;">🤖 切换到线程 ' + id.substring(0, 16) + '</div>';

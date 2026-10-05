@@ -21,10 +21,10 @@ body{background:#0a0a0a;color:#e0e0e0;font-family:monospace;height:100vh;display
 <div class="terminal">
 <div class="output" id="output">ClawsJoy Terminal Ready.<br>Type command → Enter, ↑↓ history, Tab complete<br>-----------------------------------</div>
 <div class="input-line"><span class="prompt">$</span><input type="text" id="cmdInput" autofocus><button onclick="execute()">Run</button></div>
-<div class="quick-cmds"><button onclick="run('pm2 list')">pm2 list</button><button onclick="run('ls -la')">ls</button><button onclick="run('curl localhost:5002/api/health')">health</button><button onclick="clearOutput()">Clear</button></div>
+<div class="quick-cmds"><button onclick="run('pm2 list')">pm2 list</button><button onclick="run('ls -la')">ls</button><button onclick="run('curl ' + window.location.origin + '/api/health')">health</button><button onclick="clearOutput()">Clear</button></div>
 </div>
 <script>
-const API='http://localhost:5002'; let history=[], idx=0;
+const API=window.location.origin; let history=[], idx=0;
 function addOutput(t,c){let d=document.getElementById('output');let l=document.createElement('div');l.style.color=c||'#e0e0e0';l.innerText=t;d.appendChild(l);l.scrollIntoView()}
 async function execute(){let inp=document.getElementById('cmdInput');let cmd=inp.value.trim();if(!cmd)return;addOutput(`$ ${cmd}`,'#00d4ff');if(cmd!==history[history.length-1])history.push(cmd);idx=history.length;inp.value='';try{let res=await fetch(`${API}/api/terminal/execute`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})});let data=await res.json();if(data.stdout)addOutput(data.stdout);if(data.stderr)addOutput(data.stderr,'#ff8888')}catch(e){addOutput(`Error: ${e.message}`,'#ff8888')}}
 function run(c){document.getElementById('cmdInput').value=c;execute()}

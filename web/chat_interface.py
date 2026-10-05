@@ -6,9 +6,16 @@ from datetime import datetime
 import requests
 import streamlit as st
 from pydub import AudioSegment
+import os
+import sys
+_root = os.path.dirname(os.path.abspath(__file__))
+while os.path.dirname(_root) != _root and not os.path.exists(os.path.join(_root, "gateway_endpoint.py")):
+    _root = os.path.dirname(_root)
+sys.path.append(_root)  # 向上找到含 cheap reader 的那层（出口层不 import core，深度无关）
+from gateway_endpoint import gateway_base_url
 
 # API配置
-GATEWAY_URL = "http://localhost:5002"
+GATEWAY_URL = gateway_base_url() + ""
 
 # 页面配置
 st.set_page_config(page_title="ClawsJoy Chat - 智能对话", page_icon="💬", layout="wide")

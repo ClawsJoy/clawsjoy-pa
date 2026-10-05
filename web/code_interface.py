@@ -10,6 +10,12 @@ from pathlib import Path
 
 import requests
 import streamlit as st
+import os
+_root = os.path.dirname(os.path.abspath(__file__))
+while os.path.dirname(_root) != _root and not os.path.exists(os.path.join(_root, "gateway_endpoint.py")):
+    _root = os.path.dirname(_root)
+sys.path.append(_root)  # 向上找到含 cheap reader 的那层（出口层不 import core，深度无关）
+from gateway_endpoint import gateway_base_url
 
 st.set_page_config(
     page_title="ClawsJoy Code - AI编程助手", page_icon="💻", layout="wide"
@@ -84,7 +90,7 @@ if st.session_state.get("review_code"):
     with st.spinner("审查中..."):
         try:
             resp = requests.post(
-                "http://localhost:5002/api/v5/code/review",
+                gateway_base_url() + "/api/v5/code/review",
                 json={"code": code, "language": language},
             )
             if resp.status_code == 200:
@@ -100,7 +106,7 @@ if st.session_state.get("optimize_code"):
     with st.spinner("优化中..."):
         try:
             resp = requests.post(
-                "http://localhost:5002/api/v5/code/optimize",
+                gateway_base_url() + "/api/v5/code/optimize",
                 json={"code": code, "language": language},
             )
             if resp.status_code == 200:

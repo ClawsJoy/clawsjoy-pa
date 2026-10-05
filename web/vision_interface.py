@@ -8,6 +8,13 @@ import json
 import requests
 import streamlit as st
 from PIL import Image
+import os
+import sys
+_root = os.path.dirname(os.path.abspath(__file__))
+while os.path.dirname(_root) != _root and not os.path.exists(os.path.join(_root, "gateway_endpoint.py")):
+    _root = os.path.dirname(_root)
+sys.path.append(_root)  # 向上找到含 cheap reader 的那层（出口层不 import core，深度无关）
+from gateway_endpoint import gateway_base_url
 
 st.set_page_config(
     page_title="ClawsJoy Vision - AI图像生成", page_icon="🎨", layout="wide"
@@ -82,7 +89,7 @@ with col2:
             with st.spinner("生成中..."):
                 try:
                     resp = requests.post(
-                        "http://localhost:5002/api/v5/vision/generate",
+                        gateway_base_url() + "/api/v5/vision/generate",
                         json={"prompt": prompt, "negative_prompt": negative},
                     )
                     if resp.status_code == 200:

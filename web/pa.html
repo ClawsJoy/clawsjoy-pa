@@ -3,2607 +3,330 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClawsJoy PA · 陪伴工作台</title>
-<style>
-:root{--bg:#0d1117;--card:#161b22;--card2:#1c2129;--border:#30363d;--text:#c9d1d9;--sub:#8b949e;
---blue:#58a6ff;--green:#3fb950;--red:#f85149;--purple:#bc8cff;--amber:#d2991d;--radius:10px}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-.topbar{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
-.brand{display:flex;align-items:center;gap:7px;font-weight:800;font-size:14px;white-space:nowrap}
-.brand .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
-.brand small{color:var(--sub);font-weight:500;font-size:10px;letter-spacing:1px}
-.modes{display:flex;gap:4px;overflow-x:auto;flex:1;padding:0 6px}
-.mode{display:flex;align-items:center;gap:5px;border:1px solid var(--border);background:transparent;color:var(--sub);font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
-.mode:hover{color:var(--text);border-color:#4b5563}
-.mode.active{background:var(--blue);color:#0d1117;border-color:var(--blue)}
-.mode.reserved{opacity:.45}
-.mode .ic{font-size:13px}
-.top-right{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--sub);white-space:nowrap}
-.chip{display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:3px 10px;cursor:pointer}
-.main{flex:1;display:flex;min-height:0}
-/* 左栏:线程+项目 */
-.left{width:200px;flex-shrink:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.left h4{font-size:10.5px;letter-spacing:1.4px;color:var(--sub);text-transform:uppercase;padding:12px 12px 6px;display:flex;align-items:center}
-.left h4 button{margin-left:auto;background:none;border:1px solid var(--border);color:var(--sub);border-radius:6px;font-size:10px;padding:1px 6px;cursor:pointer}
-.threads{overflow-y:auto;max-height:38%;padding-bottom:6px}
-.th{padding:7px 12px;font-size:12.5px;color:var(--sub);cursor:pointer;display:flex;gap:6px;align-items:center;border-left:2px solid transparent}
-.th:hover{background:rgba(255,255,255,.03)}
-.th.active{background:rgba(88,166,255,.08);color:var(--text);border-left-color:var(--blue)}
-.th .m{font-size:11px;opacity:.8}
-.files{flex:1;overflow-y:auto;padding:2px 6px 10px}
-.fsrc{padding:0 9px 5px;font-size:10.5px;color:var(--sub);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fitem{padding:4px 8px;font-size:12px;color:var(--sub);cursor:pointer;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fitem:hover{background:rgba(255,255,255,.04);color:var(--text)}
-/* 中:会话 */
-.chat-col{flex:1;display:flex;flex-direction:column;min-width:0}
-.mode-strip{padding:7px 16px 0;font-size:11.5px;color:var(--sub);display:flex;gap:12px;align-items:center;flex-shrink:0}
-.mode-strip b{color:var(--text);font-weight:600}
-.perm{background:rgba(210,153,29,.15);color:var(--amber);border-radius:5px;padding:1px 6px;font-size:10.5px}
-.thread-view{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;min-height:0}
-.msg{display:flex;gap:9px;max-width:90%}
-.msg.user{align-self:flex-end;flex-direction:row-reverse}
-.msg .av{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--card2);border:1px solid var(--border)}
-.msg.user .av{background:rgba(88,166,255,.15);border-color:var(--blue)}
-.msg .bubble{padding:8px 12px;border-radius:var(--radius);font-size:13.5px;line-height:1.6;background:var(--card);border:1px solid var(--border);white-space:pre-wrap;word-break:break-word}
-.msg.user .bubble{background:rgba(88,166,255,.09);border-color:rgba(88,166,255,.3)}
-.msg .meta{font-size:10px;color:var(--sub);margin-bottom:2px}
-.tool-log{font-size:11.5px;color:var(--sub);font-family:ui-monospace,Consolas,monospace;line-height:1.5;padding-left:4px}
-.tool-log .ok{color:var(--green)}.tool-log .err{color:var(--red)}.tool-log .warn{color:var(--amber)}
-.tool-log.stage{color:var(--blue);font-weight:700;font-size:12px;margin-top:5px;font-family:inherit}
-/* 批159 · P0-2：8 态运行状态（可见化 + 超时阈值） */
-.runstate{font-weight:600;border-radius:5px;padding:1px 7px;font-size:11px;background:rgba(139,148,158,.12);color:var(--sub)}
-.runstate.st-run{background:rgba(88,166,255,.16);color:var(--blue)}
-.runstate.st-wait{background:rgba(210,153,29,.16);color:var(--amber)}
-.runstate.st-appr{background:rgba(210,153,29,.22);color:var(--amber)}
-.runstate.st-ok{background:rgba(63,185,80,.16);color:var(--green)}
-.runstate.st-err{background:rgba(248,81,73,.16);color:var(--red)}
-/* M2-A · Step 3.1：阻断态（**新增键**，不改既有 9 键）—— 阻断=等待老板，不是错误，故与 st-err 分开 */
-.runstate.st-block{background:rgba(240,136,62,.18);color:#f0883e}
-/* 批171 · 入口可达性：当前通道**常显且醒目**（聊天=不出手 ／ 工作·开发=执行） */
-.chanbadge{font-weight:700;border-radius:5px;padding:1px 7px;font-size:11px;border:1px solid transparent}
-.chanbadge.pa{background:rgba(210,153,29,.22);color:var(--amber);border-color:rgba(210,153,29,.55)}
-.chanbadge.exec{background:rgba(63,185,80,.18);color:var(--green);border-color:rgba(63,185,80,.5)}
-.chanswitch{background:rgba(210,153,29,.18);color:var(--amber);border:1px solid rgba(210,153,29,.5);border-radius:6px;padding:2px 8px;font-size:10.5px;cursor:pointer;margin-left:8px}
-.chanswitch:hover{background:rgba(210,153,29,.32)}
-/* 批173 · 第2条拍板 ③：错误**默认折叠**、summary 带 stage+时刻、展开含 run_id 与一键复制 */
-.errfold{margin:6px 0;border:1px solid rgba(248,81,73,.45);border-radius:8px;background:rgba(248,81,73,.08)}
-.errfold>summary{cursor:pointer;padding:6px 10px;font-size:12px;color:var(--red);font-weight:600;list-style:none}
-.errfold>summary::-webkit-details-marker{display:none}
-.errfold>summary:before{content:'▸ '}
-.errfold[open]>summary:before{content:'▾ '}
-.errbody{padding:4px 10px 10px}
-.errbody pre{margin:0 0 6px;white-space:pre-wrap;word-break:break-all;font-size:11.5px;color:var(--sub);max-height:180px;overflow:auto}
-.errcopy{background:rgba(88,166,255,.18);color:var(--blue);border:1px solid rgba(88,166,255,.5);border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer}
-/* 批153 · R2：PA 页写确认卡（三选项：仅本次 / 一直允许 / 不允许） */
-.pa-write-card{margin:8px 12px;padding:12px;border:1px solid #d2991d;border-radius:8px;background:#1c2128}
-.pa-write-card .pwc-head{color:#d2991d;font-weight:600;margin-bottom:6px}
-.pa-write-card .pwc-reason{color:#d2991d;font-size:13px;line-height:1.5;word-break:break-all;margin-bottom:6px}
-.pa-write-card .pwc-cmd{color:#8b949e;font-family:ui-monospace,Consolas,monospace;font-size:12px;word-break:break-all;margin-bottom:8px}
-.pa-write-card .pwc-btns{display:flex;gap:8px}
-.pa-write-card .pwc-ttl,.pa-write-card .pwc-revoke{color:#8b949e;font-size:11.5px;margin-top:6px;word-break:break-all}
-.pa-write-card .pwc-revoke{color:#d2991d}
-.pa-write-card button{border:none;border-radius:6px;padding:7px 14px;cursor:pointer;font-weight:600;color:#fff}
-.pa-write-card button[data-act="approve"]{background:#238636}
-.pa-write-card button[data-act="always"]{background:#1f6feb}
-.pa-write-card button[data-act="reject"]{background:#da3633}
-/* M2-A · Step 2：统一卡片容器（三张卡共用出口；**不散挂 #thread** —— 批221：写 #thread 会被 renderThread 重画覆盖） */
-.pa-cards{flex-shrink:0;max-height:46vh;overflow-y:auto;padding:0 0 4px}
-.pa-cards:empty{display:none}
-.pa-card-hint{display:none;margin:0 14px 6px;font-size:10.5px;color:var(--sub);opacity:.85}
-.pa-card-hint.show{display:block}
-/* M2-A 卡片「不持久化」标注（老板 2026-09-18 拍：加标注，不加持久化） */
-.pa-card-note{margin-top:6px;color:var(--sub);font-size:10.5px;line-height:1.45;opacity:.9}
-/* W-08/W-09/W-10（老板 2026-09-18 拍：三件提级，各自版本内）：配额横幅 */
-.pa-quota-banner{display:none;margin:0 14px 6px;padding:8px 10px;border:1px solid #d2991d;border-radius:8px;background:#241f14;color:#d2991d;font-size:11.5px;line-height:1.5}
-.pa-quota-banner.show{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
-.pa-quota-banner button{flex-shrink:0;border:1px solid #d2991d;background:transparent;color:#d2991d;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer}
-/* M2-A · Step 3.1：阻断卡（**无动作按钮**：不许把「重试」当万能解） */
-.pa-block-card{margin:8px 12px;padding:12px;border:1px solid #f0883e;border-radius:8px;background:#1c2128}
-.pa-wps-card{margin:8px 12px}
-.pa-block-card .pbc-head{color:#f0883e;font-weight:600;margin-bottom:6px}
-.pa-block-card .pbc-why{color:#f0883e;font-size:13px;line-height:1.5;word-break:break-all;margin-bottom:6px}
-.pa-block-card .pbc-meta{color:#8b949e;font-size:11.5px;line-height:1.6;word-break:break-all}
-/* M2-A · Step 3.2：产物卡（默认态「未经核验」+ 来源标记「正文探测（非核验）」；
-   盒子样式沿用 .output-card —— 该 alias 仍挂在卡上，见 PA_CARD_DEF.artifact.alias） */
-.pa-artifact-card .oac-ver{font-size:10.5px;color:#d2991d;border:1px solid rgba(210,153,29,.35);border-radius:6px;padding:1px 7px;white-space:nowrap}
-.pa-artifact-card .oac-meta{font-size:11.5px;color:#8b949e;line-height:1.7;padding:7px 11px;word-break:break-all;border-top:1px solid var(--border)}
-.pa-artifact-card .oac-note{font-size:11px;color:#8b949e;margin-bottom:6px}
-.composer{flex-shrink:0;border-top:1px solid var(--border);padding:9px 16px 12px;background:var(--card)}
-.composer .box{display:flex;gap:7px;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:5px 5px 5px 12px;align-items:flex-end}
-.composer textarea{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13.5px;resize:none;height:38px;line-height:19px;font-family:inherit;padding-top:9px}
-.composer textarea::placeholder{color:#6e7681}
-.composer button{border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;background:var(--blue);color:#0d1117;height:38px}
-.composer button:disabled{opacity:.45;cursor:not-allowed}
-.composer button.stop{background:var(--red);color:#fff}
-.composer .row2{display:flex;justify-content:space-between;margin-top:6px;font-size:10.5px;color:#6e7681;padding:0 3px}
-/* 右:画像/待办/配置 */
-.side{width:320px;flex-shrink:0;border-left:1px solid var(--border);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
-.side h4{font-size:10.5px;letter-spacing:1.4px;color:var(--sub);text-transform:uppercase;padding:12px 14px 5px;display:flex;align-items:center}
-.side h4 button{margin-left:auto;background:none;border:none;color:var(--sub);cursor:pointer;font-size:11px}
-.card{margin:3px 11px 7px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:12.5px;line-height:1.55}
-.card .k{color:var(--blue);font-weight:700;font-size:11px;letter-spacing:.5px}
-.card.todo .k{color:var(--amber)}
-.card.emotion .k{color:var(--purple)}
-.todo-item{display:flex;gap:7px;align-items:flex-start;padding:3px 0;font-size:12.5px}
-.todo-item .cb{width:12px;height:12px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;margin-top:2px;cursor:pointer}
-.todo-item.done{color:var(--sub);text-decoration:line-through}
-.todo-item code{background:rgba(255,255,255,.06);border-radius:3px;padding:0 3px;font-size:11px}
-.cfg{margin:3px 11px 12px;font-size:12px;color:var(--sub);line-height:1.7}
-.cfg label{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
-.cfg select,.cfg input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:11.5px;padding:3px 6px;max-width:130px}
-.tabs{display:flex;gap:2px;padding:8px 11px 0}
-.tabs button{flex:1;background:transparent;border:1px solid var(--border);color:var(--sub);font-size:11.5px;padding:5px 0;cursor:pointer;border-radius:7px}
-.tabs button.active{background:rgba(88,166,255,.12);color:var(--text);border-color:var(--blue)}
-.pane{display:none}.pane.active{display:block}
-/* ---- 响应式: 抽屉侧栏 ---- */
-.drawer-btn{display:none}
-.drawer-mask{position:fixed;inset:50px 0 0 0;background:rgba(0,0,0,.45);z-index:88;display:none}
-.drawer-mask.show{display:block}
-/* <1000: 侧栏收成抽屉(左右都可开), 中间 chat flex 收缩独占 */
-@media(max-width:1000px){
-  .left,.side{display:none}
-  .left.drawer-open{display:flex;position:fixed;top:50px;bottom:0;left:0;z-index:90;width:200px;box-shadow:2px 0 14px rgba(0,0,0,.5)}
-  .side.drawer-open{display:flex;position:fixed;top:50px;bottom:0;right:0;z-index:90;width:320px;box-shadow:-2px 0 14px rgba(0,0,0,.5)}
-  #drawerLeftBtn,#drawerRightBtn{display:inline-flex}
-}
-/* ---- 批193 · 三栏显式折叠（老板提议）：按钮常显 + 任意宽度可收起 + 状态持久化 ----
-   口径 A：审批仍渲染在中栏 ⇒ 侧栏折叠**不会**挡住审批；审批/请示到达时自动滚动 + 高亮描边。
-   窄屏(<1000px) 仍走上面的浮层抽屉（原行为不动），本块只作用于宽屏，避免两套机制打架。 */
-.drawer-btn{display:inline-flex;cursor:pointer;user-select:none}
-.drawer-btn.off{opacity:.45}
-#topRestoreBtn{display:none;position:fixed;top:6px;left:10px;z-index:95}
-body.hide-top .topbar{display:none}
-body.hide-top #topRestoreBtn{display:inline-flex}
-body.hide-top .drawer-mask{inset:0 0 0 0}
-body.hide-top .left.drawer-open,body.hide-top .side.drawer-open{top:0}
-@media(min-width:1001px){
-  body.hide-left .left{display:none}
-  body.hide-right .side{display:none}
-}
-.pa-flash{box-shadow:0 0 0 2px #d2991d,0 0 22px rgba(210,153,29,.55) !important;transition:box-shadow .25s ease-in}
-/* ---- 时间轴 + 拍板 (①③) ---- */
-.timeline{display:none;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--card);padding:9px 16px 10px}
-.timeline.show{display:block}
-.tl-head{display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:8px}
-.tl-title{font-weight:800;color:var(--text);white-space:nowrap}
-.tl-task{color:var(--sub);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
-.tl-elapsed{color:var(--amber);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-.tl-nodes{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
-.tl-node{flex-shrink:0;min-width:100px;max-width:175px;border:1px solid var(--border);border-radius:9px;padding:7px 9px;background:var(--card2);cursor:pointer;transition:border-color .2s}
-.tl-node.future{opacity:.45;border-style:dashed}
-.tl-node.current{border-color:var(--blue);box-shadow:0 0 0 1px rgba(88,166,255,.25)}
-.tl-node.done{border-color:var(--green)}
-.tl-node.rolled{border-color:var(--amber)}
-.tl-node.unverified{border-color:var(--amber);border-style:dashed;background:rgba(210,153,34,.08)}
-.tl-node.unverified .tl-dot{background:var(--amber);color:#0d1117}
-.tl-node.unverified .tl-stage{color:var(--amber)}
-.tl-verify{font-size:9px;color:var(--amber);margin-top:2px}
-.tl-node .tl-top{display:flex;align-items:center;gap:5px}
-.tl-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
-.tl-node.future .tl-dot{border:1.5px solid var(--border);color:var(--sub)}
-.tl-node.current .tl-dot{background:var(--blue);color:#0d1117;animation:tlpulse 1.1s infinite}
-.tl-node.done .tl-dot{background:var(--green);color:#0d1117}
-.tl-node.rolled .tl-dot{background:var(--amber);color:#0d1117}
-@keyframes tlpulse{0%,100%{box-shadow:0 0 0 0 rgba(88,166,255,.55)}50%{box-shadow:0 0 0 6px rgba(88,166,255,0)}}
-.tl-stage{font-size:11px;font-weight:700;color:var(--blue)}
-.tl-node.done .tl-stage{color:var(--green)}
-.tl-node.rolled .tl-stage{color:var(--amber)}
-.tl-label{font-size:11px;color:var(--text);margin-top:2px;line-height:1.3}
-.tl-time{font-size:9.5px;color:var(--sub);margin-top:3px;font-variant-numeric:tabular-nums}
-.tl-actions{margin-top:5px;border-top:1px dashed var(--border);padding-top:4px;font-size:10px;color:var(--sub);font-family:ui-monospace,Consolas,monospace;line-height:1.5;max-height:52px;overflow:hidden}
-.tl-actions .ok{color:var(--green)}.tl-actions .err{color:var(--red)}
-.tl-dec{margin-top:3px;font-size:9.5px;color:var(--amber);font-weight:700}
-.tl-board{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px;padding:9px 11px;border:1px solid var(--amber);border-radius:10px;background:rgba(210,153,29,.07)}
-.tl-board .q{font-size:12px;color:var(--amber);font-weight:700;white-space:nowrap}
-.tl-board button{border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:7px;font-size:12px;padding:5px 11px;cursor:pointer;font-weight:600}
-.tl-board button:hover{border-color:var(--blue)}
-.tl-board button.adopt{border-color:var(--green);color:var(--green)}
-.tl-board button.hold{border-color:var(--sub);color:var(--sub)}
-.tl-note{display:flex;gap:6px;margin-top:7px;align-items:center}
-.tl-note input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:12px;padding:6px 9px;flex:1;min-width:120px}
-.tl-note button{border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:7px;font-size:12px;padding:6px 11px;cursor:pointer;font-weight:600}
-.tl-receipt{margin-top:7px;padding:7px 11px;border-radius:8px;font-size:12px;line-height:1.5}
-.tl-receipt.ok{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.35)}
-.tl-receipt.err{background:rgba(248,81,73,.14);color:var(--red);border:1px solid rgba(248,81,73,.5);font-weight:700}
-.tl-meta{font-size:9.5px;color:var(--sub);margin-top:3px;line-height:1.35;border-top:1px dashed var(--border);padding-top:3px}
-.tl-meta b{color:var(--text);font-weight:600}
-#thread.hide-logs .tool-log{display:none}
-.log-toggle{font-size:10px;color:var(--sub);border:1px solid var(--border);background:none;border-radius:6px;padding:1px 6px;cursor:pointer;margin:4px 0;font-family:inherit}
-.tl-receipt.rev{background:rgba(210,153,29,.12);color:var(--amber);border:1px solid rgba(210,153,29,.35)}
-/* ---- ② 产物预览: 嵌入式产物卡片 ---- */
-.output-card{margin:4px 0 6px 37px;border:1px solid var(--border);border-radius:9px;background:var(--card2);overflow:hidden;max-width:92%}
-.oc-head{display:flex;align-items:center;gap:7px;padding:7px 11px;font-size:12px;border-bottom:1px solid var(--border)}
-.oc-name{font-weight:700;color:var(--text)}
-.oc-path{color:var(--sub);font-size:10.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.oc-toggle{background:none;border:1px solid var(--border);color:var(--blue);border-radius:6px;font-size:10.5px;padding:2px 8px;cursor:pointer;white-space:nowrap}
-.oc-body{display:none;max-height:340px;overflow:auto;padding:9px 12px}
-.oc-body.open{display:block}
-.oc-body pre{font-family:inherit;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--text)}
-/* ---- ③ PPT 缩略图墙（C 块 2026-09-13）---- */
-.output-card.ppt-card{max-width:96%}
-.ppt-export-log{font-size:11px;color:var(--sub);padding:4px 11px;min-height:0}
-.ppt-export-log:empty{display:none}
-.ppt-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:8px;padding:9px 11px}
-.ppt-loading{color:var(--sub);font-size:12px;padding:8px 11px}
-.ppt-thumb{margin:0;border:1px solid var(--border);border-radius:8px;background:var(--card);overflow:hidden;display:flex;flex-direction:column}
-.ppt-thumb img{width:100%;display:block;aspect-ratio:16/9;object-fit:contain;background:#fff}
-.ppt-thumb.img-missing img{background:repeating-linear-gradient(45deg,#222,#222 6px,#2a2a2a 6px,#2a2a2a 12px)}
-.ppt-thumb figcaption{font-size:10.5px;line-height:1.35;padding:5px 7px;color:var(--text);border-top:1px solid var(--border);min-height:28px}
-.ppt-cmt-btn{margin:0 7px 6px;background:none;border:1px solid var(--border);color:var(--amber);border-radius:6px;font-size:10.5px;padding:2px 8px;cursor:pointer;font-family:inherit}
-.ppt-cmt-btn:hover{border-color:var(--amber)}
-.ppt-cmt-form{padding:0 7px 7px;display:flex;flex-direction:column;gap:4px}
-.ppt-cmt-form textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:11px;padding:4px 6px;font-family:inherit;resize:vertical}
-.ppt-cmt-ok{background:none;border:1px solid var(--blue);color:var(--blue);border-radius:6px;font-size:10.5px;padding:2px 8px;cursor:pointer;font-family:inherit}
-.ppt-cmt-list{padding:0 7px}
-.ppt-cmt-item{font-size:10.5px;line-height:1.4;color:var(--text);background:rgba(210,153,29,.10);border-left:2px solid var(--amber);border-radius:0 5px 5px 0;padding:3px 5px;margin-bottom:4px;word-break:break-word}
-.ppt-cmt-item .t{color:var(--sub);margin-right:4px}
-.ppt-cmt-panel{border-top:1px solid var(--border);padding:7px 11px}
-.ppt-cmt-head{font-size:11px;color:var(--sub);margin-bottom:4px}
-.ppt-cmt-row{font-size:10.5px;line-height:1.5;color:var(--text);word-break:break-word}
-.ppt-cmt-row .t{color:var(--sub);margin-left:5px}
-/* ---- 批176 · 副指标 A：知识库↔沙箱映射面板 + 消息胶囊 ---- */
-.kbpanel{margin:6px 0;border:1px solid #30363d;border-radius:8px;background:#0d1117}
-.kbpanel>summary{cursor:pointer;padding:6px 10px;font-size:12px;color:#c9d1d9}
-.kbmeta{padding:4px 10px;font-size:11px;color:#8b949e;border-top:1px solid #21262d}
-.kb-degraded{margin:4px 10px;padding:4px 8px;font-size:11px;color:#d29922;background:#2d2411;border-radius:6px}
-.kbscroll{max-height:320px;overflow:auto}   /* 批176：100 行展开后实测 4094px 高，必须限幅内滚，否则把聊天区挤出屏幕 */
-.kbtable{width:100%;border-collapse:collapse;font-size:11.5px}
-.kbtable th,.kbtable td{border-top:1px solid #21262d;padding:3px 8px;text-align:left;vertical-align:top}
-.kbtable th{color:#8b949e;font-weight:500}
-.kbpath{font-family:ui-monospace,Menlo,monospace;word-break:break-all}
-.kb-ok .kbstatus,.kbstatus.kb-ok{color:#3fb950}
-.kb-stale .kbstatus,.kbstatus.kb-stale{color:#d29922}
-.kb-miss .kbstatus,.kbstatus.kb-miss{color:#f85149}
-.kb-none .kbstatus,.kbstatus.kb-none{color:#8b949e}
-.kbcopy,.kbmirror,.kbrefresh{margin-left:4px;font-size:10.5px;padding:1px 6px;border-radius:5px;border:1px solid #30363d;background:#161b22;color:#c9d1d9;cursor:pointer}
-.kbmirror{color:#d29922}
-.kbcapsule{margin:4px 0;border:1px solid #30363d;border-radius:7px;background:#0d1117}
-.kbcapsule>summary{cursor:pointer;padding:4px 8px;font-size:11.5px;color:#c9d1d9}
-.kbbody{padding:4px 8px;font-size:11px;color:#8b949e;font-family:ui-monospace,Menlo,monospace;word-break:break-all}
-.kbraw{margin-top:4px}
-.kb-empty{padding:6px 10px;font-size:11px;color:#8b949e}
-/* ---- 批183 · C1：WPS 灵犀就绪引导卡片 ---- */
-.wpscard{border:1px solid #9e6a03;border-radius:8px;background:#2d2411;padding:8px 10px;margin:6px 0}
-.wpshead{font-size:12px;color:#d29922;margin-bottom:4px}
-.wpshint{font-size:11.5px;color:#c9d1d9;margin-bottom:6px}
-.wpssteps{margin:0 0 6px 18px;padding:0;font-size:11.5px;color:#c9d1d9}
-.wpssteps li{margin:2px 0}
-.wpsstate{font-size:10.5px;color:#8b949e;margin-bottom:4px}
-.wpsart{font-size:11px;color:#8b949e;font-family:ui-monospace,Menlo,monospace;margin-bottom:6px}
-.wpsnone{color:#d29922}
-.wpscopy{font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #9e6a03;background:#161b22;color:#d29922;cursor:pointer}
-
-/* 批187 · P1 第0步：MD 渲染样式（小白友好：表格可滚、代码可复制） */
-.bubble .mdtable{overflow-x:auto;margin:6px 0}
-.bubble table{border-collapse:collapse;font-size:12.5px}
-.bubble th,.bubble td{border:1px solid var(--border);padding:3px 8px;text-align:left;white-space:nowrap}
-.bubble th{background:rgba(255,255,255,.05)}
-.bubble .mdcode{border:1px solid var(--border);border-radius:6px;margin:6px 0;overflow:hidden}
-.bubble .mdcodebar{display:flex;justify-content:space-between;align-items:center;padding:2px 8px;background:rgba(255,255,255,.05);font-size:11px;color:var(--sub)}
-.bubble .mdcode pre{margin:0;padding:8px 10px;overflow-x:auto;font-size:12px;line-height:1.45}
-.bubble .mdcopy{background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--sub);font-size:11px;cursor:pointer}
-.bubble h1,.bubble h2,.bubble h3,.bubble h4{margin:8px 0 4px;line-height:1.3}
-.bubble h1{font-size:16px}.bubble h2{font-size:15px}.bubble h3{font-size:14px}.bubble h4{font-size:13px}
-.bubble blockquote{margin:6px 0;padding:2px 8px;border-left:3px solid var(--border);color:var(--sub)}
-.bubble ul,.bubble ol{margin:4px 0 4px 18px;padding:0}
-.bubble hr{border:0;border-top:1px solid var(--border);margin:8px 0}
-.bubble code{background:rgba(255,255,255,.07);border-radius:3px;padding:0 4px;font-size:12px}
-</style>
+<title>ClawsJoy PA · v3 工作台（3 主面 · 同源真页）</title>
+<link rel="stylesheet" href="pa/pa.css">
+<link rel="stylesheet" href="pa/pa_v3.css">
 </head>
 <body>
-<div class="topbar">
-  <span class="chip drawer-btn" id="drawerLeftBtn" onclick="toggleDrawer('left')">☰</span>
-  <div class="brand"><span class="dot"></span>ClawsJoy PA<small>PRIVATE AGENT</small></div>
-  <div class="modes" id="modes"></div>
+<!-- v3 · 精简（CW b2a5182 · 承 pm_996 ／ pm_997）：主面环 8 ⇒ 3；首屏收为三块（顶栏 ＋ 今日上下文 ＋ composer）。
+     ⛔ 丢功能：被折叠者皆在「更多 ▾」内一步可达（旧 DOM id 一字未删 · 收纳对表见投递件）。 -->
+<div class="topbar" id="paTop">
+  <div class="brand"><span class="dot"></span>ClawsJoy PA</div>
+  <!-- 首屏块 ① · 状态行（一行 · L76 三物：如实读数 ＋ 采样刻 ＋ 状态来源） -->
+  <div class="statusline" id="paStatusLine" title="状态行：本行每一读数皆标真源；后端无此读数 ⇒ 显「未知」">
+    <span class="runstate" id="runState" title="运行状态（键值见 PA_STATE_DEF）">○ 就绪</span>
+    <span class="runstate-src" id="runStateSrc" title="本状态的来源（真源标识：后端事件名 ／ 接口径；由 paRenderState 写 ⇒ ⛔ 前端猜）">状态来源：—</span>
+    <span class="uis" id="paUiStateRow" title="界面态快照（只读 · web/pa/ui_state.json；由技总器 --落 写；前端只显示 ⇒ ⛔ 自算）">如实读数 —（快照未载入）</span>
+  </div>
   <div class="top-right">
-    <span class="chip drawer-btn" id="topCollapseBtn" onclick="toggleTop()" title="收起顶栏（左上角 ⋯ 可再展开）">▴ 顶栏</span>
-<span class="chip drawer-btn" id="drawerRightBtn" onclick="toggleDrawer('right')">👤 画像</span>
+    <span class="chip" id="paMoreBtn" onclick="paMore(true)" title="更多：轨迹 ／ 产出 ／ 文件 ／ 模式 ／ 常驻 ／ 系统 ／ 设置 ／ 私面（各一步可达）">更多 ▾</span>
+    <span class="chip" id="drawerRightBtn" onclick="paSettings()" title="设置（老板 ／ 配置 ／ 建档）">⚙ 设置</span>
     <span class="chip" title="当前用户">👤 <span id="uidText">-</span></span>
   </div>
 </div>
 
 <div class="drawer-mask" id="drawerMask" onclick="closeDrawers()"></div>
-<span class="chip drawer-btn" id="topRestoreBtn" onclick="toggleTop()" title="展开顶栏">⋯</span>
+<span class="chip" id="topRestoreBtn" onclick="toggleTop()" title="展开顶栏">⋯ 展开顶栏</span>
+
+<!-- 更多 ▾（折叠收纳所 · 承 pm_997 §四；⛔ 主面环不占位） -->
+<div class="more" id="paMorePanel" hidden>
+  <div class="morebox">
+    <div class="morehead"><b>更多</b><span class="hint">折叠收纳所 · 各一步可达 · ⛔ 丢功能</span><span class="x" onclick="paMore(false)" title="关闭">✕</span></div>
+    <div class="morebody" id="paMoreBody">
+
+      <details class="mgrp" id="paMoreGrpDo"><summary>① 做 · 轨迹 ／ 产出 ／ 文件</summary>
+      <section class="msec" id="paMoreTrail"><h6>轨迹</h6>
+        <p class="mnote">真源：<code>GET /v9/pes/runs</code>（run 投影）＋ 会话内任务时间轴（<code>#timeline</code>）。</p>
+        <div class="timeline" id="timeline">
+          <div class="tl-head">
+            <span class="tl-title">📋 任务时间轴</span>
+            <span class="tl-task" id="tlTask"></span>
+            <span class="tl-elapsed" id="tlElapsed">已耗时 0:00</span>
+          </div>
+          <div class="tl-nodes" id="tlNodes"></div>
+          <div class="tl-board" id="tlBoard" style="display:none">
+            <span class="q">拍板点：<b id="tlBoardStage"></b></span>
+            <button class="adopt" onclick="paDecide('采纳')">✓ 采纳</button>
+            <button onclick="paDecide('小改')">✏️ 小改</button>
+            <button onclick="paDecide('大改')">🔁 大改</button>
+            <button onclick="paDecide('退回')">↩ 退回</button>
+            <button class="hold" onclick="paDecide('暂缓')">⏸ 暂缓</button>
+          </div>
+          <div class="tl-note" id="tlNote" style="display:none">
+            <input id="tlNoteInput" placeholder="改什么？">
+            <button onclick="paDecideConfirm()">确认</button>
+            <button onclick="paDecideCancel()">取消</button>
+          </div>
+          <div class="tl-receipt" id="tlReceipt" style="display:none"></div>
+        </div>
+        <div id="kbPanel" class="kbpanel"></div>
+      </section>
+
+      <section class="msec" id="paMoreDeliver"><h6>产出</h6>
+        <p class="mnote">真源：<code>GET /v9/plans/list</code>（计划资产）＋ 卡片出口 <code>#paCards</code>。</p>
+        <div id="paMorePlansSrc" class="msrc">读数中…</div>
+        <div class="lwrap">
+          <div class="lfind"><input id="paPlanQ" oninput="paPlanFilter()" placeholder="筛：种类 ／ 会话 ／ 文件名…"><select id="paPlanKind" onchange="paPlanFilter()"><option value="">全部种类</option></select><span class="lcnt" id="paPlanCnt">—</span></div>
+          <div id="paMorePlans" class="plist"></div>
+        </div>
+        <div id="paCards" class="pa-cards" aria-live="polite"></div>
+        <div id="paCardsHint" class="pa-card-hint">ⓘ 此处卡片不持久化：只反映本次页面会话收到的事实；刷新后清空，不凭历史消息重造（产物卡不在此列：它消息内联、F5 后按消息正文重建）。</div>
+      </section>
+
+      <section class="msec" id="paMoreFiles"><h6>文件</h6>
+        <p class="mnote">真源：<code>POST /v9/sandbox/list</code>（读义 POST）。</p>
+        <div class="fsrc" id="fileSrc" title=""></div>
+        <div class="lwrap">
+          <div class="lfind"><input id="paFileQ" oninput="paFileFilter()" placeholder="筛：文件名…"><span class="lcnt" id="paFileCnt">—</span></div>
+          <div class="files" id="fileList"><div class="fitem">…</div></div>
+        </div>
+      </section>
+
+      </details>
+      <details class="mgrp" id="paMoreGrpCtl"><summary>② 控 · 工具 ／ 模式 ／ 常驻 ／ 权限</summary>
+      <section class="msec" id="paMoreTools"><h6>工具</h6>
+        <p class="mnote">口径面板 <code>/v9/pa/caliber</code> ｜ 授权面板 <code>/v9/pa/proxy/gate</code> ／ <code>/v9/pa/permission</code>。</p>
+        <div id="caliberPanel" class="cbpanel"></div>
+        <div id="permPanel" class="cbpanel"></div>
+      </section>
+
+      <section class="msec" id="paMoreModes"><h6>模式（领域／场景条 · 折叠）</h6>
+        <p class="mnote">⛔ 常驻平铺（原 ≥ 5 项同屏）⇒ 折叠于此。</p>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_997 §四.1</div></details>
+        <details class="msub" id="paMoreModeList"><summary>模式（8 项 · 点开）</summary>
+          <div class="modes" id="modes"></div>
+        </details>
+        <div class="mode-strip">
+          <span id="modeTag">💬 聊天</span>
+          <span id="modeHint">就事论事 · 目标导向</span>
+          <span class="perm" id="modePerm">只读</span>
+          <span style="margin-left:auto" id="connDot">● 就绪</span>
+          <span class="chip" id="connStart" onclick="paStartLocalClient()" title="启动 Windows 桌面 agent_client（命令与参数由后端硬编码，页面改不了）" style="display:none;cursor:pointer">🚀 启动本地浏览器</span>
+        </div>
+        <div class="row2"><span id="modeHint2"></span><span><span id="modelText" class="chanbadge pa" title="当前通道：聊天=只商量不出手；工作/项目开发=真执行">⛔ 聊天（只商量 · 不出手）</span><button class="chanswitch" id="chanSwitch" onclick="setMode('work')" title="切到「工作」模式：PA 会真的动手执行任务">切到工作模式（可执行）→</button></span></div>
+      </section>
+
+      <section class="msec" id="paMoreDuty"><h6>常驻（F5 形态与口径）</h6>
+        <p class="mnote">真读数须后端方有 ⇒ 未接之项显式标「未接（M1）」· ⛔ 冒真读数。</p>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 L76</div></details>
+        <div class="duty" id="paDuty">
+          <div class="r"><span class="k">托盘</span><span>未接（M1） —— 常驻的是<b>壳与调度</b>，⛔ 模型</span></div>
+          <div class="r"><span class="k">自启</span><span>未接（M1） —— 默认开 ＋ 设置里一键关（首启问一次）</span></div>
+          <div class="r"><span class="k">关窗</span><span>未接（M1） —— 默认隐到托盘（≠退出）</span></div>
+          <div class="r"><span class="k">夜间整合</span><span>未接（M1） —— 轻量路径 · ⛔ 抢显卡（与出图互斥检测）</span></div>
+          <div class="r"><span class="k">退出</span><span>须显式（退出前提示「夜间整合将停止」）</span></div>
+          <div class="foot">纪律：任何载模型 ⇒ 过显存门 ＋ 用后即卸（⛔ keep_alive -1）；自启只查更新并提示（⛔ 静默安装）。</div>
+        </div>
+      </section>
+
+      <section class="msec" id="paMorePerm"><h6>权限（四层 · 如实）</h6>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_1001</div></details>
+        <p class="mnote">四层：<b>读（全局）／ 写（每次问）／ 外发（默认关）／ 凭据（只取布尔）</b>。⛔ 冒充真读数：后端无此读数者明标「口径 · 前端常量」。</p>
+        <div class="perm4" id="paPermLayers"><div class="r">读数中…</div></div>
+        <div class="phead">已读面 ／ 未接面（与左栏「来源面」同源）<span class="src" id="paPermFacesSrc">读数中…</span></div>
+        <div class="pfaces" id="paPermFaces">读数中…</div>
+        <details class="msub" id="paPermExcept"><summary>例外清单（⛔ 读值之三类 ＋ ⛔ 外发）</summary>
+          <div class="pexcept" id="paPermExceptBody">读数中…</div>
+        </details>
+      </section>
+
+      </details>
+      <details class="mgrp" id="paMoreGrpSet"><summary>③ 设 · 关于 ／ 系统 ／ 设置 ／ 私面</summary>
+      <section class="msec" id="paMoreAbout"><h6>关于 PA（自述 · 九问九答 · 逐条带源）</h6>
+        <p class="mnote">真源：面册 <code>GET /web/pa/faces.json</code> ｜ 工具流水 <code>GET /v9/metrics/tool_flow</code>
+          ｜ 画像 <code>GET /v9/pa/context</code> ｜ 权限 <code>GET /v9/pa/permission</code>
+          ｜ 快照 <code>web/pa/ui_state.json</code> ⇒ ⛔ 走 <code>/v9/pa/ask</code>
+          （该闸只看「知识库 ＋ 收件箱」⇒ 退化成知识库机器人）。<br>
+          ⚠ 身份类为「<b>口径 · 前端常量</b>」；读数类为<b>真源读数</b> ⇒ 逐条末行标源 · ⛔ 冒充。</p>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_1000 §一</div></details>
+        <div class="sysrow"><span class="chip" onclick="paAboutLoad(true)" title="重取本机真源并重排九问九答">↻ 重取自述</span>
+          <span class="src" id="paAboutWhen">—</span></div>
+        <div class="about" id="paAboutBody"><div class="t">展开「更多」时按需读取（⛔ 每次开都拉）。</div></div>
+      </section>
+
+      <section class="msec" id="paMoreSys"><h6>系统</h6>
+        <p class="mnote">构建指纹 ／ 配额横幅 ／ 栏位折叠（原顶栏诸 pill 皆并入状态行或折叠于此）。</p>
+        <div class="sysrow">构建指纹 <span id="paBuild" title="页面构建指纹（服务端对实际发出的 web/pa.html 现算 sha16）">构建 —</span> · 快照指纹 <span id="paTodayBuild">读数中…</span></div>
+        <div id="paQuotaBanner" class="pa-quota-banner" role="status" aria-live="polite">
+          <span id="paQuotaText"></span>
+          <button onclick="paExportArchive()" title="导出全部归档与会话为 JSON 文件（不删除任何数据）">导出归档 JSON</button>
+          <button onclick="paArchiveCleanup()" title="手动清理最早的归档（需二次确认；不会自动执行；建议先导出备份）">🧹 手动清理归档</button>
+        </div>
+        <div class="sysrow">
+          <span class="chip drawer-btn" id="drawerLeftBtn" onclick="togglePanel('left')" title="左栏（来源面）显示 ／ 隐藏">左栏</span>
+          <span class="chip drawer-btn" id="topCollapseBtn" onclick="toggleTop()" title="收起顶栏（左上有「展开顶栏」）">顶栏</span>
+        </div>
+      </section>
+
+      <section class="msec" id="paMoreSettings"><h6>设置（老板 ／ 配置 ／ 建档）</h6>
+        <p class="mnote">右栏三 tab ⇒ 归此一个入口。</p>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_997 §四.4</div></details>
+        <div class="side">
+          <div class="tabs">
+            <button class="active" onclick="switchTab(this,'pane-boss')">老板</button>
+            <button onclick="switchTab(this,'pane-cfg')">配置</button>
+            <button onclick="switchTab(this,'pane-collect')">建档</button>
+          </div>
+          <div class="pane active" id="pane-boss">
+            <h4>画像 <button onclick="loadSide()">↻</button></h4>
+            <div id="profileCards"><div class="card" style="color:var(--sub)">…</div></div>
+            <h4>待办 / 跟进 <button id="todoViewBtn" onclick="toggleTodoView()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--sub);border-radius:6px;font-size:10px;padding:1px 6px;cursor:pointer">看已完成</button></h4>
+            <div id="todoCards"><div class="card todo" style="color:var(--sub)">…</div></div>
+          </div>
+          <div class="pane" id="pane-cfg">
+            <h4>运行配置 <span style="margin-left:auto;font-size:10px;text-transform:none;letter-spacing:0">v0.2 骨架</span></h4>
+            <div class="cfg">
+              <label>通道 <select id="cfgChan"><option>自动(按模式)</option><option>PA 通道(不出手)</option><option>执行通道(工具)</option><option>MCP(专业工具)</option></select></label>
+              <label>模型 <select id="cfgModel"><option>deepseek-v4-flash</option><option>本地 7B(降级)</option></select></label>
+              <label>权限 <select id="cfgPerm"><option>只读</option><option>标准</option><option>高(需确认)</option></select></label>
+              <label>审批 <select id="cfgAppr"><option>写入需确认</option><option>自动放行</option></select></label>
+              <label>Obsidian 同步 <input type="checkbox" id="cfgVault" checked></label>
+              <div style="margin-top:8px;color:#6e7681;font-size:11px">预留模式需接 MCP Server（Blender 等）后启用；配置项将随阶段 A/B 接线逐项生效。</div>
+            </div>
+          </div>
+          <div class="pane" id="pane-collect">
+            <h4>画像收集 <span id="collectMsg" style="margin-left:auto;font-size:10px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--sub)"></span></h4>
+            <div class="cfg" id="collectForm"><div style="color:var(--sub)">载入中…</div></div>
+            <div style="margin:0 11px 10px">
+              <button onclick="saveFields()" style="width:100%;border:1px solid var(--border);background:rgba(88,166,255,.12);color:var(--text);border-radius:7px;font-size:12px;padding:6px 0;cursor:pointer;font-weight:600">保存到画像</button>
+            </div>
+            <div style="margin:0 11px 12px;color:#6e7681;font-size:11px;line-height:1.6">
+              字段来自后端字段表（<code>/v9/pa/profile/schema</code>）——改字段表即改表单，前端不硬编码。<br>
+              取值写进画像（<code>data/v9/pa/profile.json</code>），驱动「因人而异」的能力开关；<br>
+              聊天里说到的字段也会自动记（同一落库路径），会复述一句让你当场纠正。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="msec" id="paMorePrivate"><h6>私面（⛔ 入开源仓 · 客户端闸）</h6>
+        <p class="mnote">此三页 ⛔ 入开源仓；页内闸为<b>客户端闸</b>（⛔ 服务端闸 · 非 JS 取件仍见骨架）。</p>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_995 §四</div></details>
+        <div class="plinks">
+          <a href="admin.html">管理面板（admin）</a>
+          <a href="registry_dashboard.html">注册中心（registry）</a>
+          <a href="web_summary.html">交付总结（delivery）</a>
+        </div>
+      </section>
+
+      </details>
+    </div>
+  </div>
+</div>
+
 <div class="main">
   <div class="left">
-    <!-- 批194 · 清批189 残留：单线程化后「线程 ＋」按钮会真的新建线程（newThread() 里 state.threads.unshift）⇒ 与单线程口径相冲，移除。左栏只留「项目文件」。-->
-    <h4>项目文件 <button onclick="loadFiles()">↻</button></h4>
-    <!-- 批122 C：显示"在看哪个沙箱"（来源 source + 后端解析出的 path），整行省略+悬停看全 -->
-    <div class="fsrc" id="fileSrc" title=""></div>
-    <div class="files" id="fileList"><div class="fitem">…</div></div>
+    <h4>本机画像 · 1 个客户</h4>
+    <!-- 承 pm_997 §四.2：⛔ 平铺 7 行 ⇒ 收 1 行摘要，展开才见逐面 -->
+    <div class="srcsum" id="paSrcSummary" onclick="paSrcToggle()" title="本机全上下文＝素材库（只索引）；点开看逐面读数">素材 7 面 ⇒ <b id="paSrcSum">读数中…</b> <span class="caret" id="paSrcCaret">▾</span></div>
+    <div class="srclist" id="paSrcList" hidden>
+      <div class="it">💬 会话（含席）<span class="n" id="srcChat">读数中…</span></div>
+      <div class="it">📄 文件<span class="n na">⒜ 未接 · 待办（M1）｜为何未接：无源（范围未定 · 候 PM 裁）</span></div>
+      <div class="it">🧾 台账（机账）<span class="n na">读数中…（三本机账：dispatch/history ／ deliver/authz ／ lines）</span></div>
+      <div class="it">🌐 平台<span class="n na">⛔ 不接（红线：⛔ 代操作他方平台）</span></div>
+      <div class="it">🧰 作业<span class="n" id="srcRuns">读数中…</span></div>
+      <div class="it">🎨 出图<span class="n na">⒜ 未接 · 待办（M1）｜为何未接：无源（候 GPU 合取 · 与描互斥）</span></div>
+      <div class="it">🧠 记忆自身·二次提取<span class="n" id="srcCtx">读数中…</span></div>
+      <div class="foot">素材只索引；画像只存摘要条，每条可回指素材。⛔ 编数。</div>
+    </div>
   </div>
 
   <div class="chat-col">
-    <div class="mode-strip">
-      <span id="modeTag">💬 聊天</span>
-      <span id="modeHint">就事论事 · 目标导向</span>
-      <span class="perm" id="modePerm">只读</span>
-      <!-- 批159 · P0-2：运行状态。**真源 = 下方 PA_STATE_DEF**（注释不复述键数与清单 ⇒ 免漂移；批159 建 8 态，此后只增键） -->
-      <span class="runstate" id="runState" title="运行状态（键值见 PA_STATE_DEF）">○ 就绪</span>
-      <span style="margin-left:auto" id="connDot">● 就绪</span>
-      <span class="chip" id="connStart" onclick="paStartLocalClient()" title="启动 Windows 桌面 agent_client（命令与参数由后端硬编码，页面改不了）" style="display:none;margin-left:8px;cursor:pointer">🚀 启动本地浏览器</span>
+    <!-- 主面环 ⇒ 3（承 pm_997 §二）：今日上下文 ／ 会话 ／ 任务（含派活栏）。
+         ⚠ Alt+1…3（承 pm_995 §五照实格：Ctrl+1…n 被浏览器占 ⇒ ⛔ 假称可用）。 -->
+    <div class="mtabs" id="faceTabs" role="tablist" aria-label="主面（Alt+1…3）">
+      <button role="tab" aria-pressed="true" data-face="ctx" onclick="setFace(0)">今日上下文</button>
+      <button role="tab" aria-pressed="false" data-face="chat" onclick="setFace(1)">会话</button>
+      <button role="tab" aria-pressed="false" data-face="tasks" onclick="setFace(2)">任务</button>
     </div>
-    <!-- W-08/W-09/W-10（老板 2026-09-18 拍：三件提级，各自版本内）：配额横幅。
-         用**专用元素**，不写 #modeHint —— #modeHint 会被 setMode/saveState 重画覆盖（批221 同类事故：
-         提示被重画 ⇒ 用户看不到 ⇒ 等于静默）。按钮只做**导出**（paExportArchive 既有能力，只读、不删数据）。 -->
-    <div id="paQuotaBanner" class="pa-quota-banner" role="status" aria-live="polite">
-      <span id="paQuotaText"></span>
-      <button onclick="paExportArchive()" title="导出全部归档与会话为 JSON 文件（不删除任何数据）">导出归档 JSON</button>
-      <button onclick="paArchiveCleanup()" title="手动清理最早的归档（需二次确认；不会自动执行；建议先导出备份）">🧹 手动清理归档</button>
+    <div class="faces" id="faces">
+      <!-- 主面 ① · 今日上下文（首屏主体 · 三行） -->
+      <div class="facePane on" data-face="ctx" id="paFaceToday">
+        <div class="today" id="paToday">
+          <div class="h">🌤 今日上下文<span class="when" id="paTodayWhen">读数中…</span></div>
+          <div class="mline"><span class="ic">🧠</span><span class="k">画像</span><span class="v" id="paTodayProfile">读数中…</span>
+            <button class="x" onclick="paTodayToggle('profile')" aria-expanded="false" aria-controls="paTodayProfileBody" title="展开：真源 ＋ 画像摘要">▾</button></div>
+          <div class="xbody" id="paTodayProfileBody" hidden>
+            <div class="src" id="paTodayProfileSrc"></div>
+            <pre class="brief" id="paTodayProfileText"></pre>
+          </div>
+          <div class="mline"><span class="ic">📋</span><span class="k">待你裁</span><span class="v" id="paTodayPending">读数中…</span>
+            <button class="x" onclick="paTodayToggle('pending')" aria-expanded="false" aria-controls="paTodayPendingBody" title="展开：真源 ＋ 后端自报降级">▾</button></div>
+          <div class="xbody" id="paTodayPendingBody" hidden>
+            <div class="src" id="paTodayPendingSrc"></div>
+            <div id="paTodayDeg"></div>
+          </div>
+          <div class="mline"><span class="ic">🕒</span><span class="k">昨夜整合</span><span class="v" id="paTodayNight">—</span></div>
+        </div>
+      </div>
+
+      <!-- 主面 ② · 会话（原功能 · #thread ＋ composer 常驻） -->
+      <div class="facePane" data-face="chat" id="paFaceChat">
+        <div class="chathead"><span>会话</span><span class="src" id="paChatHistSrc">读数中…</span></div>
+        <div class="thread-view" id="thread"></div>
+      </div>
+
+      <!-- 主面 ③ · 任务（含派活栏 · A32 ／ A30 之形在此落 · 承 pm_997 §二） -->
+      <div class="facePane" data-face="tasks" id="paFaceTasks">
+        <div class="twocol">
+          <div class="col">
+            <div class="ch">任务 · 五态 ＋ 状态来源</div>
+            <div class="tstates" id="paTaskStates"></div>
+            <div class="ch">任务台账 <span class="src" id="paTaskLedgerSrc">读数中…</span></div>
+            <div class="tledger" id="paTaskLedger"></div>
+            <div class="ch">行为闸 · 干预</div>
+            <div class="gates" id="paTaskGates"></div>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">行为闸 · 承 pm_984 §二</div></details>
+          </div>
+          <div class="col">
+            <div class="ch">派活 <span class="src">A30 组织层</span></div>
+            <div class="seats" id="paSeatRows"></div>
+            <div class="ch">派活 · 提交 <span class="src">POST /v9/subtask/create</span></div>
+            <div class="subform">
+              <input id="paSubInput" placeholder="派活内容（有界并发池执行 · 深度预算 ≤ 3）">
+              <button id="paSubSend" onclick="paSubtaskSubmit()">派活</button>
+            </div>
+            <div class="out" id="paSubOut"></div>
+            <div class="ch">子任务池（A31 实例层）<span class="src" id="paSubSrc">读数中…</span></div>
+            <div class="subs" id="paSubtaskList"></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="timeline" id="timeline">
-      <div class="tl-head">
-        <span class="tl-title">📋 任务时间轴</span>
-        <span class="tl-task" id="tlTask"></span>
-        <span class="tl-elapsed" id="tlElapsed">已耗时 0:00</span>
-      </div>
-      <div class="tl-nodes" id="tlNodes"></div>
-      <div class="tl-board" id="tlBoard" style="display:none">
-        <span class="q">拍板点：<b id="tlBoardStage"></b></span>
-        <button class="adopt" onclick="paDecide('采纳')">✓ 采纳</button>
-        <button onclick="paDecide('小改')">✏️ 小改</button>
-        <button onclick="paDecide('大改')">🔁 大改</button>
-        <button onclick="paDecide('退回')">↩ 退回</button>
-        <button class="hold" onclick="paDecide('暂缓')">⏸ 暂缓</button>
-      </div>
-      <div class="tl-note" id="tlNote" style="display:none">
-        <input id="tlNoteInput" placeholder="改什么？">
-        <button onclick="paDecideConfirm()">确认</button>
-        <button onclick="paDecideCancel()">取消</button>
-      </div>
-      <div class="tl-receipt" id="tlReceipt" style="display:none"></div>
-    </div>
-    <!-- 批176 · 副指标 A：知识库 ↔ 沙箱映射（默认折叠；只读接口）-->
-    <div id="kbPanel" class="kbpanel"></div>
-    <div class="thread-view" id="thread"></div>
-    <!-- M2-A · Step 2：统一卡片出口（三张卡共用）——**不散挂 #thread**（批221：写 #thread 会被 renderThread 重画覆盖） -->
-    <div id="paCards" class="pa-cards" aria-live="polite"></div>
-    <div id="paCardsHint" class="pa-card-hint">ⓘ 此处卡片不持久化：只反映本次页面会话收到的事实；刷新后清空，不凭历史消息重造（产物卡不在此列：它消息内联、F5 后按消息正文重建）。</div>
+
+    <!-- 首屏块 ③ · 输入区（常驻 · 承 pm_984 行为闸：受理门永不关） -->
     <div class="composer">
       <div class="box">
         <textarea id="input" placeholder="和 PA 说点什么…（Enter 发送 / Shift+Enter 换行）"></textarea>
         <button id="sendBtn" onclick="paSend()">发送</button>
         <button class="stop" id="stopBtn" style="display:none" onclick="paStop()">■ 停止</button>
       </div>
-      <div class="row2"><span id="modeHint2"></span><span><span id="modelText" class="chanbadge pa" title="当前通道：聊天=只商量不出手；工作/项目开发=真执行">⛔ 聊天（只商量 · 不出手）</span><button class="chanswitch" id="chanSwitch" onclick="setMode('work')" title="切到「工作」模式：PA 会真的动手执行任务">切到工作模式（可执行）→</button></span></div>
-    </div>
-  </div>
-
-  <div class="side">
-    <div class="tabs">
-      <button class="active" onclick="switchTab(this,'pane-boss')">老板</button>
-      <button onclick="switchTab(this,'pane-cfg')">配置</button>
-      <button onclick="switchTab(this,'pane-collect')">建档</button>
-    </div>
-    <div class="pane active" id="pane-boss">
-      <h4>画像 <button onclick="loadSide()">↻</button></h4>
-      <div id="profileCards"><div class="card" style="color:var(--sub)">…</div></div>
-      <h4>待办 / 跟进 <button id="todoViewBtn" onclick="toggleTodoView()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--sub);border-radius:6px;font-size:10px;padding:1px 6px;cursor:pointer">看已完成</button></h4>
-      <div id="todoCards"><div class="card todo" style="color:var(--sub)">…</div></div>
-    </div>
-    <div class="pane" id="pane-cfg">
-      <h4>运行配置 <span style="margin-left:auto;font-size:10px;text-transform:none;letter-spacing:0">v0.2 骨架</span></h4>
-      <div class="cfg">
-        <label>通道 <select id="cfgChan"><option>自动(按模式)</option><option>PA 通道(不出手)</option><option>执行通道(工具)</option><option>MCP(专业工具)</option></select></label>
-        <label>模型 <select id="cfgModel"><option>deepseek-v4-flash</option><option>本地 7B(降级)</option></select></label>
-        <label>权限 <select id="cfgPerm"><option>只读</option><option>标准</option><option>高(需确认)</option></select></label>
-        <label>审批 <select id="cfgAppr"><option>写入需确认</option><option>自动放行</option></select></label>
-        <label>Obsidian 同步 <input type="checkbox" id="cfgVault" checked></label>
-        <div style="margin-top:8px;color:#6e7681;font-size:11px">预留模式需接 MCP Server（Blender 等）后启用；配置项将随阶段 A/B 接线逐项生效。</div>
-      </div>
-    </div>
-    <div class="pane" id="pane-collect">
-      <h4>画像收集 <span id="collectMsg" style="margin-left:auto;font-size:10px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--sub)"></span></h4>
-      <div class="cfg" id="collectForm"><div style="color:var(--sub)">载入中…</div></div>
-      <div style="margin:0 11px 10px">
-        <button onclick="saveFields()" style="width:100%;border:1px solid var(--border);background:rgba(88,166,255,.12);color:var(--text);border-radius:7px;font-size:12px;padding:6px 0;cursor:pointer;font-weight:600">保存到画像</button>
-      </div>
-      <div style="margin:0 11px 12px;color:#6e7681;font-size:11px;line-height:1.6">
-        字段来自后端字段表（<code>/v9/pa/profile/schema</code>）——改字段表即改表单，前端不硬编码。<br>
-        取值写进画像（<code>data/v9/pa/profile.json</code>），驱动「因人而异」的能力开关；<br>
-        聊天里说到的字段也会自动记（同一落库路径），会复述一句让你当场纠正。
-      </div>
     </div>
   </div>
 </div>
 
-<script>
-"use strict";
-/* ClawsJoy PA 前端 v0.2（2026-09-10）
-   模式（8）：聊天/工作/项目开发 = 已启用；电影/深度设计/3D/动画/游戏 = 预留(MCP/流水线接入后启用)
-   通道：聊天 → /v9/pa/dialog（PA 层，纯商量不出手）；工作/开发 → /v9/agent/chat（执行循环）
-   线程：每线程独立 sid + 模式，消息存 localStorage；项目文件：/v9/sandbox/list
-*/
-const API = window.location.origin;
-const MODES = {"chat":{"ic":"💬","label":"聊天","hint":"就事论事 · 目标导向 · 画像/审美/情感沉淀","on":true,"chan":"pa","perm":"只读"},"work":{"ic":"🛠️","label":"工作","hint":"办公类 computer use · 浏览器 · 轻度设计与图文 · 演示视频","on":true,"chan":"agent","perm":"标准"},"dev":{"ic":"⌨️","label":"项目开发","hint":"代码/工程 · 权限最高 · 沙箱与仓库","on":true,"chan":"agent","perm":"高"},"film":{"ic":"🎬","label":"电影制作","hint":"分镜/成片流水线","on":false,"chan":"agent","perm":"高"},"design":{"ic":"🎨","label":"专业深度设计","hint":"品牌/视觉系统/画册","on":false,"chan":"agent","perm":"高"},"model3d":{"ic":"🧊","label":"3D 建模","hint":"Blender MCP · 建模/材质","on":false,"chan":"mcp","perm":"高"},"anim":{"ic":"🌀","label":"动画渲染","hint":"绑定/动画/渲染农场","on":false,"chan":"mcp","perm":"高"},"game":{"ic":"🎮","label":"游戏制作","hint":"原型/关卡/资源","on":false,"chan":"agent","perm":"高"}};
-
-/* ---- 状态 ---- */
-let state = { mode:'chat', threads:[], activeThread:null };
-/* ---- X-11 层 1：归档正文落服务端（老板/DS 2026-09-18 拍 A：Windows 起本机网关 + 端口 5102）------
-   目的：**本地足迹与归档条数解耦** —— 归档正文搬到服务端 data/v9/pa/threads_<uid>.json，
-   本地每条只留 5 键索引（id/title/archived_at/msg_count/server）。
-   纪律（对应方案 §三；**每条都有测试判据**）：
-   1. **不静默**：只搬「有正文且未标 server」的条目；没有就说没有（不假装搬过）；
-   2. **先保底导出、再动数据**：迁移前**先落一份文件**当回滚锚点
-      —— 上次的教训：没有基线 ⇒ 无法判定到底丢没丢数据；
-   3. **服务端确认读回才改本地**：`ok && written >= n` 才替换；**否则本地一字不改**（不半途改）；
-      服务端回 `ok` 但 written 不够 ⇒ **照样当失败**（假成交防线）；
-   4. **只换正文、不删条目**：替换后 `state.archived` **条目数不变**（批221·A「不裁剪、不丢数据」）；
-   5. **可回滚**：`PA_ARCHIVE_SERVER=false` ⇒ 整个迁移不跑（回旧的本地正文分支）；
-   6. **不自动删除**：本区域**不得**出现 `.splice(`／`.pop(`／`.shift(`／`removeItem`／`setItem(`
-      —— 唯一落盘出口是 `saveState()`（它有失败上报）。
-   注：提示复用 `#paQuotaBanner`（页面唯一的可见横幅）——语义上是「存储相关提示」，**不影响 W-08 判据**。
-      本区整段插在配额守卫区**之前**，不落在 W-08/W-09 的测试抽取区间内；为免抽取按字面量定位出错，
-      这里**刻意不复述**那两个区块边界的原文（复述会把抽取起点提前到本注释，实测会让 6 条 W-08 判据变红）。 */
-const PA_ARCHIVE_SERVER = true;                 /* 回滚位：置 false ⇒ 不迁移（回本地正文分支） */
-const PA_ARCHIVE_API = '/v9/pa/archive';
-const PA_ARCHIVE_INDEX_KEYS = ['id', 'title', 'archived_at', 'msg_count', 'server'];
-
-function paArchiveHasBody(e){ return !!(e && Array.isArray(e.msgs) && e.msgs.length); }
-function paArchiveIndex(e){
-  /* 只出 5 键索引 —— **按 PA_ARCHIVE_INDEX_KEYS 构造**（键表本身是判据，不靠人手抄对）。
-     **未知即未知**：archived_at 取不到就留 null，不兜底成「现在」。 */
-  const src = {
-    id: (e && e.id != null) ? e.id : null,
-    title: (e && e.title != null) ? e.title : null,
-    archived_at: (e && e.archived_at != null) ? e.archived_at : null,
-    msg_count: (e && Array.isArray(e.msgs)) ? e.msgs.length : ((e && e.msg_count) || 0),
-    server: true
-  };
-  const out = {};
-  PA_ARCHIVE_INDEX_KEYS.forEach(function(k){ out[k] = src[k]; });
-  return out;
-}
-function paArchivePending(){
-  const ar = (state && Array.isArray(state.archived)) ? state.archived : [];
-  const pend = ar.filter(function(e){ return paArchiveHasBody(e) && !(e && e.server); });
-  return { items:pend, pending:pend.length, total:ar.length,
-           withBody:ar.filter(paArchiveHasBody).length };
-}
-function paArchiveBackupFile(){
-  /* 保底导出（回滚锚点）：**落成文件**——不写 localStorage（写本地正是要解决的问题）。 */
-  try{
-    const blob = new Blob([JSON.stringify(state, null, 1)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pa_state_premigrate_' + Date.now() + '.json';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-    return a.download;
-  }catch(e){ return null; }
-}
-function paArchiveMigrateFail(msg, backup){
-  const full = '⚠ ' + msg + '（**本地未改**，正文仍在本地）'
-    + (backup ? '；已先存回滚文件 ' + backup : '；**回滚文件未生成**，请先手动导出 pa_state');
-  try{ console.warn('[PA][ARCHIVE_SERVER] ' + full); }catch(_e1){}
-  try{ paQuotaNotice(full); }catch(_e2){}
-  try{ addMsg('sys', full); }catch(_e3){}
-  return full;
-}
-async function paMigrateArchiveToServer(){
-  if(!PA_ARCHIVE_SERVER) return { skipped:'switch_off' };
-  const p = paArchivePending();
-  if(!p.pending) return { pending:0, withBody:p.withBody, total:p.total, backup:null, migrated:0 };
-  const backup = paArchiveBackupFile();          /* **先**落回滚锚点 */
-  const items = p.items.map(function(e){
-    return { id:e.id, title:(e.title != null ? e.title : null),
-             archived_at:(e.archived_at != null ? e.archived_at : null),
-             msgs:e.msgs, plan:(e.plan === undefined ? null : e.plan) };
-  });
-  let r = null;
-  try{
-    const resp = await fetch(API + PA_ARCHIVE_API, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ user_id:curUser(), items:items })
-    });
-    r = await resp.json();
-    if(!resp.ok || !r || r.ok !== true) throw new Error((r && r.error) || ('HTTP ' + resp.status));
-  }catch(err){
-    const full = paArchiveMigrateFail('归档正文迁移失败：' + ((err && err.message) || err), backup);
-    return { error:full, migrated:0, pending:p.pending, backup:backup };
-  }
-  if(!(r.written >= items.length)){               /* 假成交：说 ok 但写的条数不够 */
-    const full = paArchiveMigrateFail('归档正文迁移未完成：服务端回执 written=' + r.written
-      + ' < 应写 ' + items.length, backup);
-    return { error:full, migrated:0, pending:p.pending, backup:backup };
-  }
-  const ids = {};
-  items.forEach(function(it){ ids[String(it.id)] = true; });
-  state.archived = (state.archived || []).map(function(e){
-    return (e && ids[String(e.id)]) ? paArchiveIndex(e) : e;   /* **只换内容，不增不减** */
-  });
-  saveState();
-  const done = '✅ 归档正文已迁移到服务端（本地只留索引）：' + items.length + ' 条'
-    + '；回滚文件 ' + (backup || '（未生成）');
-  try{ console.log('[PA][ARCHIVE_SERVER] ' + done); }catch(_e1){}
-  try{ addMsg('sys', done); }catch(_e2){}
-  return { migrated:items.length, pending:0, backup:backup, total:(state.archived || []).length };
-}
-/* ---- W-08 · 产品侧配额守卫（老板 2026-09-18 拍：W-08/W-09/W-10 三件提级、同批、各自版本内）------
-   现场实测根因：`pa_state` 撑到配额上限 ⇒ `setItem` 抛 `QuotaExceededError` ⇒ **写入被拒**
-   ⇒ 刷新后读不到 ⇒ 用户看到的是「消息日志消失」（不是渲染问题，是**存储写入失败**）。
-   三条纪律：
-   1. **阈值是常量**（`PA_QUOTA_GUARD_BYTES`，便于调）：不散落魔数；
-   2. **只提示、不自动删**：老板 批221·A 已拍「归档不设上限、不裁剪（不丢数据优先）」
-      ⇒ 裁剪规则**仍属老板判断**（W-09）⇒ 本函数**不删任何数据**，只做可见性 + 计数 + 指向既有导出出口；
-   3. **不静默、也不吵**：超限 / 写入已被拒 ⇒ 进 UI（W-10：原实现只有 console.warn，
-      写 `#modeHint` 又会被 setMode 重画覆盖 ⇒ 用户看不到）。
-   **不推断**：只报可从数据算出的数（字节、归档条数）；**不写「还能撑几天」**这类估算。 */
-const PA_QUOTA_GUARD_BYTES = 4 * 1024 * 1024;   /* 4 MiB：浏览器 ~5 MB 上限之前提前告警 */
-/* W-09 按条数提示阈值（唯一常量）。老板/DS 2026-09-18 拍：**维持 100**
-   （早提示更安全 / 零行为变化 / 已提为常量便于调）。
-   ⚠ 口径：**主判据是字节**（PA_QUOTA_GUARD_BYTES），条数与字节**不对应** ⇒ 本条只是**辅助**提示。 */
-const PA_ARCHIVE_HINT_COUNT = 100;              /* W-09 按条数提示：归档到这条线就在横幅里提醒（**只提示**，不裁剪） */
-let PA_LAST_SAVE_BYTES = null;                  /* 上次写盘的字节数（模块变量：**不进 state**，不给存档增重） */
-function paQuotaBytes(raw){
-  /* 口径＝**UTF-8 字节**（与测试侧/DSH 线口径对齐，便于对账）。
-     如实标注：浏览器 DOM storage 配额口径并不公开保证按 UTF-8 计 ⇒ 本值只作**提前告警的近似**，
-     真值以 setItem 是否抛 QuotaExceededError 为准。 */
-  try{ if(typeof TextEncoder !== 'undefined') return new TextEncoder().encode(raw).length; }catch(e){}
-  return raw.length * 2;   /* 退化口径（无 TextEncoder）：UTF-16 码元 → 字节 */
-}
-function paQuotaUsage(){
-  let raw = ''; try{ raw = localStorage.getItem('pa_state') || ''; }catch(e){ raw = ''; }
-  const bytes = paQuotaBytes(raw);
-  const archived = (state && Array.isArray(state.archived)) ? state.archived.length : 0;
-  return { bytes:bytes, threshold:PA_QUOTA_GUARD_BYTES, over:bytes >= PA_QUOTA_GUARD_BYTES,
-           archived:archived, saveError:(state && state._saveError) || null };
-}
-function paQuotaNotice(text){
-  /* 只写专用横幅；**不写 #modeHint**（会被 setMode 重画覆盖）。text 走 textContent ⇒ 不注入 HTML。 */
-  try{
-    const banner = document.getElementById('paQuotaBanner');
-    const span = document.getElementById('paQuotaText');
-    if(!banner || !span) return false;
-    span.textContent = text || '';
-    banner.classList.toggle('show', !!text);
-    return !!text;
-  }catch(e){ return false; }
-}
-function paQuotaWarnText(bytes){
-  const archived = (state && Array.isArray(state.archived)) ? state.archived.length : 0;
-  return '⚠ 存储接近上限（'+bytes+' 字节 / 阈值 '+PA_QUOTA_GUARD_BYTES+'）：新建会话/归档可能不生效。'
-       + '你可以：① 归档旧会话（先「导出归档 JSON」备份，导出不删数据）；② 清理历史。'
-       + '当前已归档 '+archived+' 条（最早的可清理；本版不会自动删除 —— 裁剪规则待老板拍）。';
-}
-function paArchiveHintText(n){
-  /* W-09 按条数提示：把「归档已经很多」变成**看得见**的一句（原实现只在 console + 线程消息里）。
-     只报能算出的数（条数、可清理量），**不推断**「还能撑多久」。 */
-  return '⚠ 本地归档已 '+n+' 条（提示阈值 '+PA_ARCHIVE_HINT_COUNT+' 条）：存储接近上限时新建会话/归档可能不生效。'
-       + '你可以：① 「导出归档 JSON」备份（只读、不删数据）；② 「手动清理归档」（需要你二次确认，本版不会自动删除）。';
-}
-function paQuotaGuard(){
-  /* 启动即测一次：**提前告警**，不等到写失败才发现（W-08）。 */
-  const u = paQuotaUsage();
-  try{ console.log('[PA][QUOTA] pa_state '+u.bytes+' 字节 / 阈值 '+u.threshold+'；archived '+u.archived+' 条'
-                   + (u.saveError ? '；上次写入失败：'+u.saveError : '')); }catch(e){}
-  if(u.saveError) return paQuotaNotice('⚠ 本地写入已被拒绝（'+u.saveError+'）。本次新内容刷新后可能不生效：'
-       + '请先「导出归档 JSON」备份，再清理历史（本版不自动删）。');
-  if(u.over) return paQuotaNotice(paQuotaWarnText(u.bytes));
-  if(u.archived >= PA_ARCHIVE_HINT_COUNT) return paQuotaNotice(paArchiveHintText(u.archived));
-  return paQuotaNotice('');
-}
-function saveState(){
-  /* 批219 修：**写入失败必须上报**（原来静默 ⇒ 用户以为存了）。不用 addMsg（可能回调 saveState ⇒ 递归）。 */
-  try{
-    const _j = JSON.stringify(state);
-    /* W-08 提前告警：**先廉价预筛再算字节**（saveState 在热路径上，每次 addMsg/工具行都会调）。
-       UTF-8 字节数 ≤ 3 × UTF-16 码元数 恒成立 ⇒ `3*len < 阈值` 时真字节数必然也小于阈值
-       （**不会漏报**），此时直接用码元数当保守下界，省掉一次全量编码。 */
-    PA_LAST_SAVE_BYTES = (_j.length * 3 >= PA_QUOTA_GUARD_BYTES) ? paQuotaBytes(_j) : _j.length;
-    localStorage.setItem('pa_state', _j); state._saveError=null;
-  }
-  catch(e){
-    state._saveError=String(e).slice(0,140);
-    try{ console.warn('[PA] 本地会话写入失败（刷新后可能丢失）:', e); }catch(_){}
-    try{ const el=document.getElementById('modeHint'); if(el){ el.textContent='⚠ 本地存储写入失败：本次会话刷新后可能丢失'; } }catch(_){}
-    /* W-10：失败提示**必须进 UI**（不只 Console）——专用横幅，不会被 setMode 重画覆盖。 */
-    try{ paQuotaNotice('⚠ 本地写入已被拒绝（'+state._saveError+'）。本次新内容刷新后可能不生效：'
-                       + '请先「导出归档 JSON」备份，再清理历史（本版不自动删除）。'); }catch(_){}
-  }
-  /* 接近阈值（但还没写失败）也要提前告警 */
-  try{
-    if(!state._saveError && PA_LAST_SAVE_BYTES != null && PA_LAST_SAVE_BYTES >= PA_QUOTA_GUARD_BYTES){
-      paQuotaNotice(paQuotaWarnText(PA_LAST_SAVE_BYTES));
-    }
-  }catch(_){}
-  syncThreads();
-}
-async function syncThreads(){ /* 批189 · #3：POST /v9/pa/threads 已关闭（单线程）⇒ 改为 no-op；状态落 localStorage（前端）+ 会话日志（后端权威） */ }
-/* 批221 · DS-206-4：**读取侧容错解析** —— 整文件 JSON.parse 失败时抢救**第一段完整 JSON**（括号配平）。
-   返回 {ok,data,salvaged,dropped,reason}；**失败不静默**（走降级分支）。 */
-function paExportArchive(){
-  /* 批221·A：导出**全部归档**为 JSON 文件（"不丢数据"的兜底交付物）。 */
-  try{
-    const blob = new Blob([JSON.stringify({exported_at:new Date().toISOString(), archived:state.archived||[], threads:state.threads||[]}, null, 1)], {type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download='pa_archive_'+Date.now()+'.json'; document.body.appendChild(a); a.click();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
-    return true;
-  }catch(e){ console.warn('[PA] 导出失败:', e); return false; }
-}
-
-/* ---- W-09 手动清理入口（老板 2026-09-18 拍：**不自动裁** + 手动清理 + 可导出回溯 ----
-   为什么放在守卫区域**之外**：守卫（W-08/W-10）是**只读提示**，有静态判据钉死「不得出现任何删除动作」；
-   删除只能走这里，且**唯一触发路径 = 老板点按钮**（无自动/定时/超限触发）。
-   三条纪律：
-   1. **先可回溯、再删**：确认框写明不可撤销 + 建议先「导出归档 JSON」；
-   2. **一次只清最早 N 条**（PA_ARCHIVE_CLEAN_BATCH），**不提供「全清」** —— 全清不是清理，是丢数据；
-   3. **删了什么要留痕**：被删项的 id / archived_at 记进消息日志（内容本身不可恢复，**不谎称可还原**）。 */
-const PA_ARCHIVE_CLEAN_BATCH = 100;   /* 一次手动清理「最早 N 条」 */
-function paArchiveStats(){
-  /* 只读：给确认框与日志用的计数（不碰数据）。 */
-  const total = (state && Array.isArray(state.archived)) ? state.archived.length : 0;
-  const n = Math.min(PA_ARCHIVE_CLEAN_BATCH, total);
-  return { total: total, remove: n, keep: total - n, batch: PA_ARCHIVE_CLEAN_BATCH };
-}
-function paArchiveCleanup(){
-  try{
-    const st = paArchiveStats();
-    if(!st.total){ addLog('🧹 没有可清理的归档（0 条）', 'warn', true); return false; }
-    const ok = window.confirm(
-      '手动清理归档（不可撤销）' + String.fromCharCode(10) + String.fromCharCode(10)
-      + '当前归档：' + st.total + ' 条' + String.fromCharCode(10)
-      + '本次删除：最早的 ' + st.remove + ' 条' + String.fromCharCode(10)
-      + '清理后保留：' + (st.keep ? ('最新 ' + st.keep + ' 条')
-                          : '0 条（即全部归档，本次会清空归档）')
-      + String.fromCharCode(10) + String.fromCharCode(10)
-      + '建议先点「导出归档 JSON」备份（只读、不删数据）。' + String.fromCharCode(10)
-      + '确认删除这 ' + st.remove + ' 条？'
-    );
-    if(!ok){ addLog('🧹 已取消手动清理（未删除任何数据）', 'warn', true); return false; }
-    const removed = state.archived.slice(0, st.remove).map(function(x){
-      return { id:(x && x.id) || null, archived_at:(x && x.archived_at) || null };
-    });
-    /* 只有老板在确认框里点了「确定」才会到这里 —— 这是全仓**唯一**的归档删除点。 */
-    state.archived = state.archived.slice(st.remove);
-    saveState();
-    console.log('[PA][ARCHIVE] 手动清理最早 ' + st.remove + ' 条（保留 ' + st.keep + ' 条）：' + JSON.stringify(removed));
-    addLog('🧹 已手动清理最早的 ' + st.remove + ' 条归档（保留 ' + st.keep + ' 条）。'
-         + '⚠ 被删内容不可恢复；本条日志留有被删项的 id / 时间戳', 'warn', true);
-    paQuotaGuard();   /* 清理后立刻复算并更新横幅 */
-    return true;
-  }catch(e){ console.warn('[PA][ARCHIVE] 手动清理失败:', e); return false; }
-}
-function paParseStateTolerant(raw){
-  if(!raw || raw==='null'){ return {ok:false, data:null, reason:'本地记录为空'}; }
-  try{ return {ok:true, data:JSON.parse(raw)}; }catch(e){}
-  try{
-    let depth=0, ins=false, esc=false, cut=-1;
-    for(let i=0;i<raw.length;i++){
-      const ch=raw[i];
-      if(ins){ if(esc){esc=false;} else if(ch===String.fromCharCode(92)){esc=true;} else if(ch==='"'){ins=false;} continue; }
-      if(ch==='"'){ ins=true; continue; }
-      if(ch==='{'){ depth++; }
-      else if(ch==='}'){ depth--; if(depth===0){ cut=i+1; break; } }
-    }
-    if(cut>0){ const d=JSON.parse(raw.slice(0,cut)); return {ok:true, data:d, salvaged:true, dropped:(raw.length-cut)}; }
-  }catch(e2){}
-  return {ok:false, data:null, reason:'本地记录解析失败（内容损坏）'};
-}
-
-async function loadThreads(){
-  /* 批199 · 缺陷修（批189 #3 的回归）：以前这里 `state = d` 用**后端副本整体覆盖本地**；而批189 #3 把
-     syncThreads() 改成 no-op（POST /v9/pa/threads 已 410）⇒ 后端副本**永远停在旧快照** ⇒ 刷新后「新消息丢、
-     旧消息还在」。**批219 契约迁移（老板 2026-09-16 拍板 A）**：该「同 id 比条数」写法已作废，见下方 A 口径实现。*/
-  let _remote=null, _local=null;
-  try{ const r=await fetch(API+'/v9/pa/threads?user_id='+encodeURIComponent(curUser()));
-       if(r.ok){ const d=await r.json(); if(d && Array.isArray(d.threads) && d.threads.length){ _remote=d; } } }catch(e){}
-  let _degraded=null;
-  try{
-    const _raw=localStorage.getItem('pa_state');
-    const _lp=paParseStateTolerant(_raw);
-    if(_lp.ok && _lp.data && Array.isArray(_lp.data.threads) && _lp.data.threads.length){ _local=_lp.data; if(_lp.salvaged){ console.warn('[PA] 本地记录已损坏，抢救出第一段（丢弃 '+_lp.dropped+' 字符）'); } }
-    else if(_raw && !_lp.ok){ _degraded=_lp.reason||'解析失败'; }
-  }catch(e){ _degraded='读取本地记录异常：'+String(e).slice(0,60); }
-  /* 批219 修：**本地优先、后端只补历史**（旧逻辑以后端旧快照为骨架 ⇒ 本地那份一旦缺失就整页回退旧快照）。 */
-  if(_degraded){
-    /* 批221 · DS-206-5/6：解析失败 ⇒ 降级：**清空 #thread**（防旧 DOM 残留造成"假正常 UI"）＋**可见提示**；
-       **绝不 fallback 后端老线程**。断言见 tools/pa_degraded_e2e.py（坏状态不得产生假正常 UI）。 */
-    /* 批221 修③（E2E 三次抓到）：#thread 与 #modeHint 都会被启动后续流程重画/改写
-       ⇒ 走**正规渲染路径**：造一个**只含警示消息**的降级线程，让 renderThread 自己画（无旧内容 ⇒ 无"假正常"）。 */
-    state = { threads: [{ id:'pa_degraded', title:'⚠ 降级模式', mode:(state&&state.mode)||undefined,
-                          msgs:[{ role:'sys', content:'⚠ 本地会话记录损坏，已进入降级模式：未加载任何历史（避免显示假正常内容）。原因：'+_degraded+'；建议导出 pa_state 后清理。' }] }],
-              activeThread:'pa_degraded', mode:(state&&state.mode)||undefined, _degraded:_degraded };
-    /* 批221 修（反例 E2E 抓到）：降级时 activeThread=null ⇒ addMsg 会抛错并被吞掉 ⇒ **静默降级**。
-       ⇒ 降级提示**直接写 DOM**（不依赖 addMsg / 不依赖任何线程存在）。 */
-    /* 批221 修②（E2E 二次抓到）：写 #thread 会被启动后续的 renderThread 重画覆盖
-       ⇒ 提示改写到**不会被重画的持久元素 #modeHint**（外加 console）。 */
-    try{
-      const hint=document.getElementById('modeHint');
-      if(hint){ hint.textContent='⚠ 本地会话记录损坏：已进入降级模式（未加载任何历史）。原因：'+_degraded+'；建议导出 pa_state 后清理。'; }
-      const el=document.getElementById('thread');
-      if(el){ el.setAttribute('data-degraded', '1'); }
-    }catch(_e){}
-    console.warn('[PA][DEGRADED] 会话读取降级：'+_degraded);
-    return;
-  }
-  if(_local){
-    state = _local;
-    if(_remote){
-      const _add=(_remote.threads||[]).filter(function(rt){ return !(state.threads||[]).some(function(x){ return x.id===rt.id; }); });
-      if(_add.length){ state.threads=(state.threads||[]).concat(_add); state._remoteFilled=_add.length; }
-    }
-    if(!(state.threads||[]).some(function(x){ return x.id===state.activeThread; })){
-      const _old=state.activeThread; state.activeThread=(state.threads[0]||{}).id;
-      try{ addMsg('sys','⚠ 上次的活动线程（'+_old+'）不在本地记录中，已切回最近线程；旧内容可在后端历史查看。'); }catch(_){}
-    }
-  } else if(_remote){
-    state=_remote;
-    if(!(state.threads||[]).some(function(x){ return x.id===state.activeThread; })){ state.activeThread=(state.threads[0]||{}).id; }
-    try{ addMsg('sys','⚠ 本地会话记录为空（未落盘或被清理），已载入后端历史快照（只读）。'); }catch(_){}
-  }
-}
-function curUser(){ try{ return (window.__APP_STATE&&window.__APP_STATE.userId) || localStorage.getItem('clawsjoy_user_id') || 'web_1783219071801'; }catch(e){ return 'web_1783219071801'; } }
-/* 批122 A：pa 页自己就是会话所有者 —— 面板与聊天必须看同一个沙箱。
-   聊天用 activeThread().id 发 /v9/agent/chat；这里把同一个值同步进 __APP_STATE.sessionId，
-   curSession() 优先读它 ⇒ 面板 sid === 聊天 sid。
-   **刻意不再回落 localStorage.clawsjoy_session_id**：那个键是 workbench 页写进同源 localStorage 的，
-   正是"pa 面板显示的是 workbench 沙箱"的污染源（批121 实测）。*/
-function syncPaSession(){ try{ window.__APP_STATE = window.__APP_STATE || {}; window.__APP_STATE.sessionId = activeThread().id; }catch(e){} return curSession(); }
-function curSession(){ try{ return (window.__APP_STATE&&window.__APP_STATE.sessionId) || (state&&state.activeThread) || 'default'; }catch(e){ return 'default'; } }
-function esc(s){ const d=document.createElement('div'); d.textContent=String(s==null?'':s); return d.innerHTML; }
-/* ===== 批183 · C3/C1：WPS 灵犀未就绪的降级与引导（纯函数块 BEGIN；node 单测按标记抽取，勿依赖 DOM）===== */
-const PA_WPS_STEPS = ['打开 WPS（文字/演示任一）', '点右下角「灵犀」面板', '在面板里开启 MCP（桥）', '回到这里点「重试」'];
-function paIsPreviewPending(step){ return !!(step && step.reason==='preview_pending'); }
-function paWpsReadyCardHtml(hint, artifact, state){
-  const _h = String(hint || 'WPS 灵犀面板（TaskPane）未开或未登录 —— PA 无法自动开启（WPS 插件硬边界）');
-  const _steps = PA_WPS_STEPS.map(function(s,i){ return '<li>'+(i+1)+'. '+esc(s)+'</li>'; }).join('');
-  const _copy = 'WPS 灵犀就绪操作：' + PA_WPS_STEPS.map(function(s,i){ return (i+1)+'. '+s; }).join('；');
-  const _art = artifact ? ('<div class="wpsart">产物：'+esc(String(artifact))+'</div>') : '<div class="wpsart wpsnone">本次未取到产物路径（不假报「已生成」；产物也可能在 WPS 侧）</div>';
-  return '<div class="wpscard"><div class="wpshead">⏳ 预览待 WPS 就绪 —— 这不是任务失败</div>'
-    + '<div class="wpshint">'+esc(_h)+'</div>'
-    + '<div class="wpsstate">'+esc(paWpsStateLine(state))+'</div>'
-    + '<ul class="wpssteps">'+_steps+'</ul>'+_art
-    + '<button class="wpscopy" data-act="copy" data-copy="'+esc(_copy)+'">⧉ 复制操作步骤</button>'
-    + '</div>';
-}
-function paPreviewPendingVisual(step){
-  const _st = step || {};
-  // 批183（修正版）· 五字段语义分层：artifact 现为 {exists, path}
-  const _a = (_st.artifact && typeof _st.artifact === 'object') ? _st.artifact : {exists: false, path: null};
-  const _art = (_a.exists && _a.path) ? String(_a.path) : '';
-  const _task = String(_st.task_status || (_art ? 'PARTIAL' : 'BLOCKED'));
-  const _prev = String((_st.preview && _st.preview.status) || 'PENDING');
-  const _comp = String((_st.completion && _st.completion.status) || 'NOT_COMPLETE');
-  return {
-    degraded: true, icon: '⏳', cls: 'warn', artifact: _art, showCard: true,
-    task_status: _task, preview_status: _prev, completion_status: _comp,
-    text: _art ? ('产物已生成 · 预览待 WPS 就绪（' + _art + '）') : '本次未取到产物路径 · 等 WPS 灵犀就绪后重试',
-  };
-}
-function paWpsStateLine(state){
-  const _s = state || {};
-  return '任务：' + String(_s.task_status || 'BLOCKED') + ' · 预览：' + String(_s.preview_status || 'PENDING')
-    + ' · 完成：' + String(_s.completion_status || 'NOT_COMPLETE');
-}
-/* ===== 批183 · 纯函数块 END ===== */
-/* ===== 批187 · P1 第0步：Markdown 智能渲染（纯函数块 BEGIN；node 单测按标记抽取，勿依赖 DOM）
-   安全契约（不可破）：
-     ① 先 esc() 整段（保住既有 XSS 线），再做**白名单标记替换** —— 永不把原文直接注入；
-     ② 围栏代码块内容**永不解析**（只高亮/转义）；
-     ③ 链接协议白名单 http/https/mailto（javascript:/data: 一律降级为纯文本）；
-     ④ 输出只含白名单标签：h1-h4/p/ul/ol/li/strong/em/code/pre/blockquote/hr/table/thead/tbody/tr/th/td/a/br。
-   小白友好：表格可横向滚动、代码块可复制、标题有层级、长文超限降级为纯文本（防卡顿）。
-   ===== */
-const PA_MD_MAX = 40000;
-function paMdEsc(s){ return esc(String(s==null?'':s)); }
-function paMdInline(t){
-  let x = String(t==null?'':t);
-  x = x.replace(/\x60([^\x60]+)\x60/g, function(_, c){ return '<code>'+c+'</code>'; });
-  x = x.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  x = x.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
-  x = x.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)/g,
-                '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-  x = x.replace(/\[([^\]]+)\]\(([^)]*)\)/g, '$1');   /* 非白名单协议 ⇒ 只留文字 */
-  return x;
-}
-function paMdTable(rows){
-  const head = rows[0], body = rows.slice(1);
-  let h = '<div class="mdtable"><table><thead><tr>';
-  head.forEach(function(c){ h += '<th>'+paMdInline(c)+'</th>'; });
-  h += '</tr></thead><tbody>';
-  body.forEach(function(r){
-    h += '<tr>';
-    for (let i=0;i<head.length;i++){ h += '<td>'+paMdInline(r[i]===undefined?'':r[i])+'</td>'; }
-    h += '</tr>';
-  });
-  return h + '</tbody></table></div>';
-}
-function paMdToHtml(text){
-  const raw = String(text==null?'':text);
-  if (!raw.trim()) return '';
-  if (raw.length > PA_MD_MAX) return '<p>'+paMdEsc(raw)+'</p>';   /* 超长 ⇒ 纯文本降级 */
-  const src = paMdEsc(raw).replace(/\r\n/g, '\n');
-  const lines = src.split('\n');
-  const out = [];
-  let i = 0, list = null, para = [];
-  const flushPara = function(){ if (para.length){ out.push('<p>'+paMdInline(para.join('<br>'))+'</p>'); para = []; } };
-  const closeList = function(){ if (list){ out.push(list==='ul' ? '</ul>' : '</ol>'); list = null; } };
-  while (i < lines.length){
-    const ln = lines[i];
-    if (/^\s*```/.test(ln)){                                    /* 围栏代码块：内容不解析 */
-      flushPara(); closeList();
-      const lang = ln.replace(/^\s*```/, '').trim();
-      const buf = [];
-      i++;
-      while (i < lines.length && !/^\s*```/.test(lines[i])){ buf.push(lines[i]); i++; }
-      i++;
-      out.push('<div class="mdcode"><div class="mdcodebar"><span>'+paMdEsc(lang||'code')+'</span><button class="mdcopy" type="button">⧉ 复制</button></div><pre>'+buf.join('\n')+'</pre></div>');
-      continue;
-    }
-    const h = ln.match(/^(#{1,4})\s+(.*)$/);
-    if (h){ flushPara(); closeList(); out.push('<h'+h[1].length+'>'+paMdInline(h[2])+'</h'+h[1].length+'>'); i++; continue; }
-    if (/^\s*(---+|\*\*\*+)\s*$/.test(ln)){ flushPara(); closeList(); out.push('<hr>'); i++; continue; }
-    if (/^\s*(?:>|&gt;)\s?/.test(ln)){ flushPara(); closeList(); out.push('<blockquote>'+paMdInline(ln.replace(/^\s*(?:>|&gt;)\s?/, ''))+'</blockquote>'); i++; continue; }
-    if (/^\s*\|.*\|\s*$/.test(ln) && i+1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i+1])){
-      flushPara(); closeList();
-      const rows = [];
-      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])){
-        const cells = lines[i].trim().replace(/^\||\|$/g, '').split('|').map(function(c){ return c.trim(); });
-        if (!/^[\s:|-]+$/.test(lines[i].trim().replace(/^\||\|$/g,''))) rows.push(cells);
-        i++;
-      }
-      if (rows.length) out.push(paMdTable(rows));
-      continue;
-    }
-    const ul = ln.match(/^\s*[-*+]\s+(.*)$/);
-    const ol = ln.match(/^\s*\d+[.)]\s+(.*)$/);
-    if (ul || ol){
-      flushPara();
-      const kind = ul ? 'ul' : 'ol';
-      if (list !== kind){ closeList(); out.push(kind==='ul' ? '<ul>' : '<ol>'); list = kind; }
-      out.push('<li>'+paMdInline((ul||ol)[1])+'</li>');
-      i++; continue;
-    }
-    if (!ln.trim()){ flushPara(); closeList(); i++; continue; }
-    para.push(ln);
-    i++;
-  }
-  flushPara(); closeList();
-  return out.join('');
-}
-/* ===== 批187 · MD 渲染纯函数块 END ===== */
-/* ---- 批183 · C3/C1 接线（依赖 DOM；纯函数在上一块）---- */
-/* M2-A · M2A-07 ②-1（DS 2026-09-18 拍「并入统一出口」）：
-   就绪卡**不再自建 DOM、不再散挂 #thread**（批221 同族事故：写 #thread 会被 renderThread 重画清掉）
-   ⇒ 改走唯一出口 paRenderCard('wps_ready', …)：宿主固定容器 #paCards、字段走白名单、
-   同 key 复用（key='tool'：同名工具同时只该有一张）、「不持久化」标注由出口追加。
-   本函数只做**载荷整形**（后端 step ⇒ 受控字段），**不产 DOM、不产文案**（文案仍由批183 纯函数出）。 */
-function paWpsReadyCardRender(tool, hint, artifact, state){
-  const _s=state||{};
-  return paRenderCard('wps_ready', {
-    tool:(tool==null?'':String(tool)),
-    hint:(hint==null?null:String(hint)),
-    artifact_path:(artifact==null?'':String(artifact)),
-    task_status:(_s.task_status==null?null:String(_s.task_status)),
-    preview_status:(_s.preview_status==null?null:String(_s.preview_status)),
-    completion_status:(_s.completion_status==null?null:String(_s.completion_status))
-  });
-}
-/* 桥就绪（ready===true）⇒ 引导卡自动消失（**语义不变**，DS 拍）；移除**一律**走 paDismissCard（连带同步提示行）。
-   注意：去重键是 `tool` ⇒ 同时**可能有多张**就绪卡（多个工具各一张）⇒ 必须**全清**；
-   只清第一张会留残卡，那就不是「自动消失」了。 */
-function paWpsReadyCardClear(){
-  const host=document.getElementById('paCards'); if(!host) return;
-  host.querySelectorAll('[data-card-kind="wps_ready"]').forEach(function(card){ paDismissCard(card); });
-}
-/* ===== 批176 · 知识库↔沙箱映射纯函数块 BEGIN（node 单测按标记抽取；本块内**不得**依赖 DOM）===== */
-const PA_KB_STATUSES = ['已镜像','过期','缺失','未镜像'];
-function paKbStatusClass(st){ return st==='已镜像' ? 'kb-ok' : (st==='过期' ? 'kb-stale' : (st==='缺失' ? 'kb-miss' : 'kb-none')); }
-function paKbNeedsMirror(st){ return st!=='已镜像'; }
-function paKbShort(p, n){ const s=String(p==null?'':p); const k=(n||34); return s.length<=k ? s : ('…'+s.slice(-k)); }
-function paKbCopyBtn(text){
-  return '<button class="kbcopy" data-copy="'+esc(text)+'" title="复制路径：'+esc(text)+'" onclick="paKbCopy(this)">⧉</button>';
-}
-function paKbMirrorBtn(kbPath){
-  return '<button class="kbmirror" data-kb="'+esc(kbPath)+'" title="生成「请把该素材镜像到沙箱」的请求（只填进输入框，不自动执行）" onclick="paKbRequestMirror(this)">请求镜像</button>';
-}
-function paKbRowsHtml(rows){
-  if(!rows || !rows.length) return '<div class="kb-empty">（无映射数据：知识库范围为空或不可读）</div>';
-  let h='<table class="kbtable"><thead><tr><th>知识库（主语）</th><th>沙箱映射</th><th>状态</th></tr></thead><tbody>';
-  rows.forEach(function(r){
-    const st=r.status||'未镜像';
-    const kbPath=r.kb_path||''; const sbPath=r.sandbox_path||'';
-    h+='<tr class="kbrow '+paKbStatusClass(st)+'">'
-      + '<td class="kbpath">'+esc(paKbShort(kbPath,42))+paKbCopyBtn(r.kb_abs||kbPath)+'</td>'
-      + '<td class="kbpath">'+(sbPath?esc(paKbShort(sbPath,42))+paKbCopyBtn(sbPath):'—')+'</td>'
-      + '<td class="kbstatus" title="'+esc(r.reason||'')+'"><span class="kbstate">'+esc(st)+'</span>'
-      + (paKbNeedsMirror(st)?(' '+paKbMirrorBtn(kbPath)):'')+'</td></tr>';   // 批176：按钮并入「状态」列，表保持任务书要求的三列
-  });
-  return '<div class="kbscroll">'+h+'</tbody></table></div>';
-}
-function paKbCountsHtml(counts, total, truncated){
-  const c=counts||{}; const parts=[];
-  PA_KB_STATUSES.forEach(function(st){ if(c[st]) parts.push(st+' '+c[st]); });
-  return (parts.length?parts.join(' · '):'暂无数据') + (truncated?' · 已截断':'') + '（共 '+(total==null?'?':total)+' 项）';
-}
-function paKbPanelHtml(doc, opts){
-  const o=opts||{}; const d=doc||{};
-  const rows=d.rows||[]; const deg=d.degraded||'';
-  let h='<details class="kbpanel"'+(o.open?' open':'')+'><summary>📚 知识库映射 · '+esc(paKbCountsHtml(d.counts,d.total,d.truncated))+'</summary>';
-  h+='<div class="kbmeta">范围 '+esc(d.scope||'')+' · 知识库 '+esc(d.kb_root||'—')+' · 沙箱 '+esc(d.sandbox_root||'—')
-    +' · <span class="kb-ro">只读</span> <button class="kbrefresh" onclick="paKbLoad(true)">刷新</button></div>';
-  if(deg) h+='<div class="kb-degraded">⚠ '+esc(deg)+'</div>';
-  h+=paKbRowsHtml(rows)+'</details>';
-  return h;
-}
-function paKbExtractPaths(text){
-  const s=String(text==null?'':text); const out=[]; const seen={};
-  const re=/(?:\/mnt\/d\/Obsidian\/ClawsJoy\/ClawsJoy\/[^\s"'<>()，。；]+)|(?:收件箱\/[^\s"'<>()，。；]+\.md)/g;
-  let m; while((m=re.exec(s))!==null){ const v=m[0]; if(!seen[v]){ seen[v]=1; out.push(v); } }
-  return out;
-}
-function paKbStatusFor(kbPath, rows){
-  const t=String(kbPath==null?'':kbPath); const list=rows||[];
-  for(let i=0;i<list.length;i++){ const r=list[i]||{};
-    const rp=String(r.kb_path||''); const ra=String(r.kb_abs||''); const rn=String(r.name||'');
-    if(t===rp || (ra&&t===ra) || (rp&&t.endsWith('/'+rp)) || (rn&&t.endsWith('/'+rn))){
-      return {status:r.status||'未知', sandbox:r.sandbox_path||'', reason:r.reason||''};
-    }
-  }
-  return null;
-}
-function paKbCapsuleHtml(text, rows){
-  const paths=paKbExtractPaths(text);
-  if(!paths.length) return esc(text);
-  let h='';
-  paths.forEach(function(p){
-    const hit=paKbStatusFor(p, rows);
-    const st=hit?hit.status:'未知'; const sb=hit?hit.sandbox:'';
-    h+='<details class="kbcapsule"><summary>📚 '+esc(paKbShort(p,40))+' → 📁 '+(sb?esc(paKbShort(sb,40)):'（沙箱路径未知）')
-      +' <span class="kbstatus '+paKbStatusClass(st)+'">'+esc(st)+'</span></summary>'
-      +'<div class="kbbody">知识库：'+esc(p)+paKbCopyBtn(p)
-      +'<br>沙箱：'+esc(sb||'—')+(sb?paKbCopyBtn(sb):'')
-      +(hit&&hit.reason?('<br>判据：'+esc(hit.reason)):'')
-      +(paKbNeedsMirror(st)?('<br>'+paKbMirrorBtn(p)):'')
-      +'</div></details>';
-  });
-  return h+'<div class="kbraw">'+esc(text)+'</div>';
-}
-/* ===== 批176 纯函数块 END ===== */
-/* ---- 批176 · A2′ 面板接线（依赖 DOM；纯函数在上一块）---- */
-let paKbCache=null;
-function paKbApiUrl(){
-  return API+'/v9/pa/kb_mapping?user_id='+encodeURIComponent(curUser())
-    +'&session_id='+encodeURIComponent(curSession())+'&scope='+encodeURIComponent('收件箱')+'&limit=100';
-}
-async function paKbLoad(force){
-  const host=document.getElementById('kbPanel'); if(!host) return;
-  if(paKbCache && !force) return;
-  try{
-    const r=await fetch(paKbApiUrl()); const d=await r.json();
-    paKbCache = (d && d.ok) ? d : {rows:[],counts:{},degraded:'映射接口不可用：'+((d&&d.error)||r.status)};
-  }catch(e){ paKbCache={rows:[],counts:{},degraded:'映射接口请求失败：'+e.message}; }
-  renderKbPanel();
-}
-function renderKbPanel(){
-  const host=document.getElementById('kbPanel'); if(!host) return;
-  const open = host.getAttribute('data-open')==='1';
-  host.innerHTML = paKbPanelHtml(paKbCache||{rows:[],counts:{},degraded:'尚未加载（展开时按只读接口拉取，不刷新页面）'}, {open:open});
-  const det = host.querySelector('details');
-  if(det){ det.addEventListener('toggle', function(){ host.setAttribute('data-open', det.open?'1':'0'); if(det.open) paKbLoad(false); }); }
-}
-function paKbCopy(btn){ const t=btn.getAttribute('data-copy')||''; try{ if(navigator.clipboard) navigator.clipboard.writeText(t); }catch(e){} receipt('已复制路径：'+String(t).slice(0,60),'ok'); }
-function paKbRequestMirror(btn){
-  const kb=btn.getAttribute('data-kb')||''; const inp=document.getElementById('input');
-  if(inp){ inp.value='请把知识库素材镜像到沙箱：'+kb; inp.focus(); }
-  receipt('已生成镜像请求（未执行，需你确认）：'+String(kb).slice(0,60),'warn');
-}
-function $(id){ return document.getElementById(id); }
-function activeThread(){
-  if(!state.threads.length) newThread(true);
-  let t = state.threads.find(t=>t.id===state.activeThread);
-  if(!t){ t = state.threads[0]; state.activeThread = t.id; }
-  return t;
-}
-function newThread(silent){
-  /* 批219·A（老板 2026-09-16 拍板：**保持 PA 单线程口径**）——同步到 live（真源）。
-     旧实现 state.threads.unshift(t) 会并存第 2 条线程，随后 paCollapseToSingleThread() 又把它裁掉
-     （内存+写盘同时裁 ⇒ 旧会话直接丢）。新口径：同时只保留 1 个会话；「新建会话」= 当前会话**移交本地归档**（不删）。 */
-  const id = 'pa_' + Date.now().toString(36);
-  const cur = (state.threads||[]).find(function(x){ return x.id===state.activeThread; });
-  if(cur && (cur.msgs||[]).length){   /* 批223 修：**只归档有消息的会话** —— 空线程无内容可丢；
-        旧「总是归档」会让 E2E 每跑一次多一条空归档 ⇒ archived 膨胀到 837 条 ⇒ localStorage 撑爆 ⇒ newThread/saveState 失效 */
-    state.archived = (state.archived||[]).concat([Object.assign({}, cur, {archived_at:new Date().toISOString()})]);
-    /* 批219 修（我上一版引入的丢失点）：**不得静默裁剪归档** —— 上限调高到 50，且**裁剪必须可见**（console + 页面提示）。
-       真到写不进时，由 saveState() 的失败上报负责（不静默）。 */
-        /* 批221·A（老板拍板）：**归档不设上限、不裁剪** —— "不丢数据"优先。
-       溢出（>PA_ARCHIVE_HINT_COUNT 条）改为：①可见提示（写入活动线程 msgs，随渲染存活）②提供导出函数。
-       若 localStorage 真的写不进，由 saveState() 的失败上报兜底（不静默）。 */
-    if((state.archived||[]).length > PA_ARCHIVE_HINT_COUNT){
-      try{ console.warn('[PA] 归档已 '+state.archived.length+' 条，建议导出（paExportArchive()）'); }catch(_e){}
-      try{
-        const _at=(state.threads||[]).find(function(x){ return x.id===state.activeThread; });
-        const _mark='归档已超过 '+PA_ARCHIVE_HINT_COUNT+' 条';
-        /* W-09：提示不再指「去控制台跑函数」（用户看不见控制台），改指**横幅上的两个按钮**。 */
-        if(_at && !(_at.msgs||[]).some(function(m){ return (m.content||'').indexOf(_mark)>=0; })){
-          _at.msgs=(_at.msgs||[]).concat([{role:'sys', content:'⚠ 本地归档已超过 '+PA_ARCHIVE_HINT_COUNT+' 条（'+state.archived.length+'）。为保证不丢，请点横幅上的「导出归档 JSON」备份；如需腾空间，可点「手动清理归档」（需你二次确认，不会自动删除）。'}]);
-        }
-      }catch(_e2){}
-    }
-  }
-  const t = { id, title:'新线程', mode:state.mode, msgs:[] };
-  state.threads = [t]; state.activeThread = id; saveState(); syncPaSession();
-  if(!silent){ renderThreads(); renderThread(); addMsg('sys','新线程已建立（'+MODES[state.mode].label+'）'); loadFiles(); }  /* 批122 A：新线程=新沙箱，面板立刻跟随 */
-  return t;
-}
-
-/* ---- 模式栏 ---- */
-function renderModes(){
-  $('modes').innerHTML = Object.entries(MODES).map(([k,m])=>{
-    const act = k===state.mode ? ' active' : '';
-    const res = m.on ? '' : ' reserved';
-    return '<button class="mode'+act+res+'" data-mode="'+k+'" title="'+esc(m.hint)+'">'+
-      '<span class="ic">'+m.ic+'</span>'+esc(m.label)+(m.on?'':' ·预留')+'</button>';
-  }).join('');
-  $('modes').querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
-}
-function setMode(m){
-  const cfg = MODES[m];
-  if(!cfg.on){ addMsg('sys', cfg.ic+' '+cfg.label+'：预留模式 —— 需接入 MCP Server / 流水线后启用（Blender、渲染农场等）。'); return; }
-  state.mode = m; const t = activeThread(); t.mode = m; saveState();
-  renderModes(); renderThread();
-  $('modeTag').textContent = cfg.ic+' '+cfg.label;
-  $('modeHint').textContent = cfg.hint;
-  $('modePerm').textContent = '权限: '+cfg.perm;
-  // 批171：通道**常显且醒目**（聊天=不出手／工作·开发=执行），并在聊天模式给出「一键切工作模式」
-  const _mt = $('modelText');
-  if(_mt){
-    const _isPA = cfg.chan==='pa';
-    _mt.textContent = _isPA ? '⛔ '+cfg.label+'（只商量 · 不出手）' : '✅ '+cfg.label+'（真执行 · '+cfg.perm+'）';
-    _mt.className = 'chanbadge ' + (_isPA ? 'pa' : 'exec');
-  }
-  const _cs = $('chanSwitch');
-  if(_cs){ _cs.style.display = (cfg.chan==='pa') ? 'inline-block' : 'none'; }
-  const ph = { chat:'就事论事：目标 / 决策 / 口径 / 审美 / 在意的点…', work:'要办的活：文档、表格、浏览器、图文、演示…', dev:'要开发/修改/验证的代码或工程…' };
-  $('input').placeholder = ph[m] || '描述你的目标…';
-  if(cfg.chan==='pa'){ $('timeline').classList.remove('show'); stopPlanTimer(); }
-}
-
-/* ---- 线程 ---- */
-function renderThreads(){
-  /* 批192 · 缺陷修（批189 #1 的回归）：单线程化已删除 #threadList 元素，而本函数仍在往它写 innerHTML
-     ⇒ 这里抛 TypeError，且因为发生在 **async 启动 IIFE** 里 = 未处理的 promise rejection
-     ⇒ 页内 window error 监听**看不到**（这点让批191 的我误判成「插桩噪声」），
-     而它**静默中断了整个启动**：其后的 setMode() 不执行（中栏空白，点模式按钮才渲染）、
-     loadSide()/loadFiles() 不执行（左右栏停在静态占位，要手动点 ↻ 才出来）。
-     修法：元素不存在即 return（单线程 = 无线程列表）；函数名保留，防别处调用报错。 */
-  const _tl = $('threadList');
-  if(!_tl) return;
-  _tl.innerHTML = state.threads.map(t=>{
-    const act = t.id===state.activeThread ? ' active' : '';
-    return '<div class="th'+act+'" data-id="'+t.id+'"><span class="m">'+(MODES[t.mode]||MODES.chat).ic+'</span>'+
-      '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.title)+'</span></div>';
-  }).join('') || '<div class="fitem">（无线程）</div>';
-  _tl.querySelectorAll('.th').forEach(el=>el.addEventListener('click',()=>{
-    /* 批122 A：切线程后面板要跟着切沙箱（否则面板停在旧线程的沙箱，直到手动点 ↻）*/
-    state.activeThread = el.dataset.id; saveState(); syncPaSession(); renderThreads(); renderThread(); setMode(activeThread().mode); renderTimeline(); loadFiles();
-    /* 批187 · 缺陷4：切到别的线程时明示「谁在跑」，并保留停止按钮可用 */
-    if (paRun.busy && paRun.threadId && paRun.threadId !== activeThread().id){
-      const _rt=(state.threads.find(function(x){return x.id===paRun.threadId;})||{}).title||paRun.threadId;
-      addMsg('sys','⏳ 线程「'+esc(_rt)+'」仍在执行（进度只显示在它自己的线程里）—— 可切回查看，或点「停止」取消它');
-      setBusy(true);
-    }
-  }));
-}
-function renderThread(){
-  const t = activeThread(); $('thread').innerHTML='';
-  (t.msgs||[]).forEach(m=>{
-    if(m.role==='tool'){ addLog(m.content, m.cls); }
-    else addMsg(m.role==='user'?'user':'assistant', m.content, true, m.html);   // 批173：折叠块随历史重渲染
-  });
-  /* 批201 · F5 修复：交付卡片（.output-card / pptx 墙）此前**只插 DOM、不入 msgs** ⇒ 刷新后丢。
-     这里从**已持久化的助手正文**重新探测产物路径并重渲染（正文本身就是持久化的事实来源，无需新字段）。
-     renderOutputCard 内部做了去重（同 path 只留一张），因此重复调用 renderThread 不会堆积。*/
-  try{
-    (t.msgs||[]).forEach(function(m){
-      if(m.role!=='tool' && m.role!=='user' && m.content){ detectOutputs(m.content).forEach(renderOutputCard); }
-    });
-  }catch(e){}
-  $('thread').scrollTop = $('thread').scrollHeight;
-}
-
-/* ---- 消息 ---- */
-/* 批173 · 第2条拍板 ③：错误折叠块（纯函数，便于 node 单测） */
-function paErrBlockHtml(meta, errText){
-  const m=String(meta==null?'':meta), e=String(errText==null?'未知错误':errText);
-  const rid=(m.match(/run_id=([^\s·）]+)/)||[])[1]||'';
-  return '<details class="errfold"><summary>⛔ 执行中断'+esc(m)+'</summary><div class="errbody">'
-    +'<pre>'+esc(e)+'</pre>'
-    +(rid?('<button class="errcopy" onclick="paCopyText(\''+rid+'\')">复制 run_id</button>'):'<span style="font-size:11px;color:#8b949e">（本次错误未带 run_id）</span>')
-    +'</div></details>';
-}
-function paCopyText(t){ try{ if(navigator.clipboard) navigator.clipboard.writeText(String(t)); }catch(e){} }
-function addMsg(role, content, skipStore, html, tid){
-  const t = $('thread');
-  if (tid && tid !== activeThread().id){
-    const _th = state.threads.find(function(x){return x.id===tid;});
-    if (_th){ (_th.msgs = _th.msgs || []).push(html ? {role:role, content:content, html:html} : {role:role, content:content}); saveState(); }
-    return null;   /* 非当前线程：只写它自己的历史，不污染当前视图 */
-  }
-  const div=document.createElement('div');
-  if(role==='sys'){
-    div.style.cssText='align-self:center;max-width:96%';
-    div.innerHTML='<div class="bubble" style="font-size:11.5px;color:var(--sub);text-align:center;border-color:transparent;background:transparent">'+esc(content)+'</div>';
-  } else {
-    div.className='msg '+(role==='user'?'user':'');
-    // 批173：带 html 的消息（错误折叠块）直接注入；否则按文本转义
-    // 批176 · A1'：assistant 消息里出现知识库素材路径时渲染为可折叠胶囊（纯函数；无路径时行为不变）
-    const _kbPaths = (role==='assistant' && !html) ? paKbExtractPaths(content) : [];
-    if(_kbPaths.length && !paKbCache) paKbLoad(false);
-    const _body = html ? html : (_kbPaths.length ? paKbCapsuleHtml(content, (paKbCache||{}).rows) : (role==='assistant' ? paMdToHtml(content) : esc(content)));  /* 批187 · assistant 走 MD 渲染；用户消息保持纯文本 */
-    div.innerHTML='<div class="av">'+(role==='user'?'👤':'🤖')+'</div><div><div class="meta">'+
-      (role==='user'?'你':'PA · '+(MODES[state.mode]||MODES.chat).label)+'</div><div class="bubble">'+_body+'</div></div>';
-  }
-  div.querySelectorAll('.mdcopy').forEach(function(b){ b.addEventListener('click', function(){ const pre=b.parentElement.nextElementSibling; const txt=pre?pre.textContent:''; try{ navigator.clipboard.writeText(txt); b.textContent='✅ 已复制'; setTimeout(function(){b.textContent='⧉ 复制';},1200);}catch(e){} }); });
-  t.appendChild(div); t.scrollTop=t.scrollHeight;
-  if(!skipStore && role!=='sys'){ const th=(tid ? (state.threads.find(function(x){return x.id===tid;}) || activeThread()) : activeThread()); th.msgs=th.msgs||[]; th.msgs.push(html ? {role, content, html} : {role, content});
-    if(role==='user' && th.title==='新线程'){ th.title=String(content).slice(0,18); renderThreads(); }
-    saveState(); }
-  return div;
-}
-/* 语义阶段映射: 工具名 → 老板能懂的阶段(①语义步骤流) */
-const STAGE_MAP={
-  obsidian_knowledge:'调研',web_search:'调研',fetch_web:'调研',browse_web:'调研',query_index:'调研',table_extract:'调研',
-  read_file:'读资料',list_dir:'读资料',search_files:'读资料',
-  write_file:'写稿',wps_office:'出稿',
-  pa_audit:'评审',
-  lingxi:'出图/排版',
-  execute_command:'执行',
-  browser_local:'浏览器操作',playwright_browser:'浏览器操作',browser_hybrid:'浏览器操作'
-};
-function stageOf(tool){ return STAGE_MAP[tool]||'执行'; }
-/* 子级动作语义映射(2026-09-11): 工具名→语义短语, 老板能懂(裸命令放 title hover 可查) */
-const ACTION_SEMANTIC={
-  obsidian_knowledge:'查询知识库', web_search:'搜索网络', fetch_web:'抓取网页', browse_web:'浏览网页', query_index:'查询索引', table_extract:'提取表格',
-  read_file:'读取文件', list_dir:'查看目录', search_files:'搜索文件',
-  write_file:'写入文件', wps_office:'处理文档',
-  pa_audit:'评审校验',
-  lingxi:'灵犀排版',
-  execute_command:'执行操作',
-  browser_local:'操作浏览器', playwright_browser:'操作浏览器', browser_hybrid:'操作浏览器',
-  // 2026-09-13 补：未映射的工具会直接显示**裸工具名**（老板看到的就是裸命令感）
-  lingxi_local_api:'灵犀接口', ds_chat:'向参谋求证', cu_learning:'学习操作',
-  wpp_render_full_deck:'渲染演示文稿', wpp_export_slide_as_image:'导出页面图片',
-  wpp_slide_count:'核对页数', code_entity_extractor:'解析代码',
-  run_command:'执行操作', shell:'执行操作', edit_file:'修改文件', write_large:'写入文件'
-};
-function semanticArg(tool, arg){
-  const a=String(arg||'').toLowerCase();
-  if(tool==='execute_command'){
-    if(a.includes('awk')||a.includes('cat ')||a.includes('head ')||a.includes('tail ')||a.includes('grep')) return '读取文件内容';
-    if(a.includes('ls ')||a.includes('wc ')||a.includes('find ')||a.includes('du ')) return '检查文件';
-    if(a.includes('cp ')||a.includes('mv ')||a.includes('rm ')||a.includes('mkdir')) return '整理文件';
-    if(a.includes('python')||a.includes('node ')) return '运行脚本';
-    if(a.includes('cd ')) return '切换目录';
-    // 2026-09-13 补：实测出现过的命令族，避免落到通用兜底
-    if(a.includes('sed ')||a.includes('tee ')||a.includes('tr ')) return '编辑文本';
-    if(a.includes('curl ')||a.includes('wget ')) return '取回数据';
-    if(a.includes('jq ')||a.includes('sort ')||a.includes('uniq ')) return '整理数据';
-    if(a.includes('git ')) return '版本操作';
-    if(a.includes('pytest')||a.includes('compileall')) return '运行测试';
-  }
-  return null;
-}
-
-/* ===== 批78 选项a：带上下文的语义阶段（纯函数，可脱离浏览器验）=====
-   ctx 四源中本批用前三源：工具入参 arg / 计划步骤 / 会话已知产物。
-   铁律：**取不到上下文一律 return null**，由调用点的原有三级兜底回落固定短语 —— 绝不返回空串或抛错。 */
-function semanticStage(tool, arg, ctx){
-  try{
-    ctx = ctx || {};
-    const a = String(arg||'');
-    const short = function(x, n){ x = String(x||''); return x.length > (n||24) ? x.slice(0, (n||24)) + '…' : x; };
-    const step = (ctx.stepIndex && ctx.stepTotal) ? ('第 ' + ctx.stepIndex + '/' + ctx.stepTotal + ' 步') : (ctx.stepIndex ? ('第 ' + ctx.stepIndex + ' 步') : '');
-    const join = function(core){ return step ? (step + '：' + core) : core; };
-
-    // ① 稿件渲染/导出类：带页码 + 页标题（会话产物源）
-    const pageNo = (function(){ const m = /(?:^|\D)(\d{1,3})(?:\D|$)/.exec(a.replace(/\.(pptx|png|jpg)/gi,'')); return m ? m[1] : ''; })();
-    const title = ctx.pageTitle ? short(ctx.pageTitle, 16) : '';
-    const pageStr = pageNo ? ('第 ' + pageNo + ' 页' + (title ? ('：' + title) : '')) : (title || '');
-    if(/render|export|thumb|slide/i.test(tool)){
-      const verb = /delete/i.test(tool) ? '删除' : (/export|thumb/i.test(tool) ? '导出' : '渲染');
-      if(pageStr) return join(verb + pageStr);
-      if(ctx.deck) return join(verb + ' ' + short(ctx.deck, 20));
-      return null;
-    }
-    // ② 文件类：带文件名
-    if(/read_file|write_file|edit_file|list_dir|search_files/.test(tool)){
-      const m = /([^\/\s]+\.(md|txt|json|py|html|js|pptx|png|yaml|yml))/.exec(a);
-      const f = m ? short(m[1], 28) : '';
-      const verb = /write_file|edit_file/.test(tool) ? '写入' : (/list_dir/.test(tool) ? '查看目录' : (/search_files/.test(tool) ? '搜索' : '读取'));
-      if(f) return join(verb + ' ' + f);
-      // 批85 断点②修：目录类 arg（无扩展名，如 list_dir 的 data/reports）此前必然回落。
-      // 补一条分支：arg 里没有可识别文件名时，退而用「路径原文」做语义（不写死路径，直接引用 arg）。
-      const _p = /([^\s"'<>|;]{2,80})/.exec(a);
-      if(_p){ const _pp = short(_p[1], 28); if(_pp) return join(verb + ' ' + _pp); }
-      return null;
-    }
-    // ③ 网络/检索类：带关键词
-    if(/web_search|fetch_web|browse_web/.test(tool)){
-      const m = /["']([^"']{2,40})["']/.exec(a);
-      const kw = m ? short(m[1], 20) : '';
-      if(kw) return join('搜索「' + kw + '」');
-      return null;
-    }
-    // ④ 命令类：沿用既有命令族分流，只额外叠加「第几步」
-    if(tool === 'execute_command'){
-      const base = semanticArg(tool, arg);
-      return base ? join(base) : null;
-    }
-    // ⑤ 其余工具：能拿到步数就带步数，否则回落
-    if(step) return step + '：' + (ACTION_SEMANTIC[tool] || '执行操作');
-    return null;
-  }catch(e){ return null; }   // 纯函数：任何异常都回落，不抛
-}
-
-/* ctx 采集：任何一项取不到就留空（不抛错、不阻塞） */
-function semanticCtx(tool, arg){
-  const c = {};
-  try{ if(typeof _planStepIndex !== 'undefined' && _planStepIndex){ c.stepIndex = _planStepIndex; } }catch(e){}
-  try{ if(typeof _planStepTotal !== 'undefined' && _planStepTotal){ c.stepTotal = _planStepTotal; } }catch(e){}
-  try{ if(typeof PPT_DECK !== 'undefined' && PPT_DECK){ c.deck = PPT_DECK; } }catch(e){}
-  try{
-    const m = _pptManifestCache && Object.keys(_pptManifestCache)[0];
-    if(m){ const man = _pptManifestCache[m]; if(man && man.deck){ c.deck = c.deck || man.deck; }
-      /* 批80：按工具入参里的 page_index 去 manifest.pages[] 查 title（缺失/无匹配一律降级，不抛）*/
-      if(man && Array.isArray(man.pages)){
-        const _mm = /"page_index"\s*:\s*(\d{1,3})/.exec(String(arg||'')) || /\bpage\D{0,4}(\d{1,3})\b/.exec(String(arg||''));
-        const _pn = _mm ? parseInt(_mm[1],10) : 0;
-        if(_pn){ const _hit = man.pages.find(function(x){ return Number(x.page_index) === _pn; });
-          if(_hit && _hit.title){ c.pageTitle = String(_hit.title); } }
-      }
-    }
-  }catch(e){}
-  return c;
-}
-
-/* ---- ①③ 时间轴 + 拍板 ---- */
-const BUCKET_MAP = {
-  obsidian_knowledge:'调研',web_search:'调研',fetch_web:'调研',browse_web:'调研',query_index:'调研',table_extract:'调研',
-  read_file:'调研',list_dir:'调研',search_files:'调研',
-  write_file:'写稿',wps_office:'写稿',
-  pa_audit:'评审',
-  lingxi:'出图/排版',
-  execute_command:'执行',
-  browser_local:'执行',playwright_browser:'执行',browser_hybrid:'执行'
-};
-function bucketOf(tool){ return BUCKET_MAP[tool]||'执行'; }
-
-let planTimer = null, boardTarget = null, pendingDecision = null;
-function planOf(t){ if(!t.plan) t.plan = {task:'', steps:[], startedAt:null}; return t.plan; }
-function boardNode(){ const pl=planOf(activeThread()); return pl.steps.find(s=>s.id===boardTarget)||null; }
-function fmtElapsed(ms){ const s=Math.max(0,Math.floor((ms||0)/1000)); const m=Math.floor(s/60); return m+':'+String(s%60).padStart(2,'0'); }
-/* 2026-09-13「回执即判据」：节点 done 必须有回执，不是跑过就算完成。
-   实测事故：3 个节点永远 future、而**根本没做**的「交付」却打了勾（0:00）。
-   判据：① 有 produces 的节点 —— 必须出现写类工具的成功回执，否则标「未核验」(琥珀)，不打勾；
-        ② 无 produces 的节点 —— 有任一成功动作回执即可打勾；
-        ③ 一条回执都没有 —— 一律「未核验」，绝不打勾。
-   注：真正的产物存在性核验必须由后端 verifier 算（见 Codex 移植 P0 表）；前端这一版只负责**不再说谎**。 */
-const WRITE_TOOLS = new Set(['write_file','write_large','edit_file','execute_command','obsidian_knowledge']);
-function finalizeNode(s){
-  if(s.status==='done'||s.status==='unverified') return;
-  const ev=(s.evidence||[]);
-  const okEv=ev.filter(e=>e.ok);
-  s.status = (okEv.length && (!s.produces || okEv.some(e=>e.writes))) ? 'done' : 'unverified';
-  if(s.startedAt){ s.elapsed=(s.elapsed||0)+(Date.now()-s.startedAt); s.startedAt=null; }
-}
-function nodeEvidenceLine(s){
-  if(s.status!=='unverified') return '';
-  const why = !(s.evidence||[]).length ? '无执行回执'
-            : (s.produces ? '无产物回执（产出 '+s.produces+' 未见写入）' : '无可信回执');
-  return '<div class="tl-verify">⚠ 未核验：'+esc(why)+'</div>';
-}
-
-async function startPlan(task){
-  const t=activeThread();
-  let steps=[];
-  try{
-    const r=await fetch(API+'/v9/pa/plan',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:curUser(),session_id:t.id,task:task,mode:state.mode})});
-    if(r.ok){ const d=await r.json(); if(d.ok&&Array.isArray(d.steps)&&d.steps.length){
-      const _seen=new Set(); const raw=d.steps.filter(s=>{ if(_seen.has(s.stage)) return false; _seen.add(s.stage); return true; });
-      // 2026-09-13: 接后端 plan 的 produces/verify/owner（decision.py 五元组）
-      // —— 此前只用 stage/label，老板看不到「谁干、产出什么、怎么算完成」。
-      steps=raw.map((s,i)=>({id:'n'+i,stage:s.stage,label:s.label,
-        produces:s.produces||'', verify:s.verify||'', owner:s.owner||'',
-        status:'future',actions:[],startedAt:null,elapsed:0,decision:null})); } }
-  }catch(e){}
-  if(!steps.length){ steps=['调研','写稿','出图/排版','评审','交付'].map((s,i)=>({id:'n'+i,stage:s,label:s,status:'future',actions:[],startedAt:null,elapsed:0,decision:null})); }
-  if(steps.length && steps[steps.length-1].stage!=='交付'){ steps.push({id:'n'+steps.length,stage:'交付',label:'交付产物',status:'future',actions:[],startedAt:null,elapsed:0,decision:null}); }
-  const pl=planOf(t); pl.task=task; pl.steps=steps; pl.startedAt=Date.now();
-  saveState(); renderTimeline(); startPlanTimer();
-  return steps;
-}
-
-function renderTimeline(){
-  const tl=$('timeline'); if(!tl) return;
-  const t=activeThread(); const pl=planOf(t);
-  if(!pl.steps||!pl.steps.length||(MODES[state.mode]||MODES.chat).chan!=='agent'){ tl.classList.remove('show'); return; }
-  tl.classList.add('show');
-  if(pl.startedAt) $('tlElapsed').textContent='已耗时 '+fmtElapsed(Date.now()-pl.startedAt);
-  $('tlTask').textContent=pl.task||'';
-  $('tlNodes').innerHTML=pl.steps.map(s=>{
-    const dot=s.rolled?'↩':(s.status==='done'?'✓':(s.status==='unverified'?'!':(s.status==='current'?'●':'○')));
-    const cls=s.rolled?'rolled':s.status;
-    const acts=(s.actions||[]).slice(-3).map(a=>'<div class="'+(a.ok?'ok':'err')+'">'+(a.ok?'✓':'✗')+' '+esc(a.tool)+' '+esc(String(a.arg||'').slice(0,26))+'</div>').join('');
-    const dec=s.decision?'<div class="tl-dec">已拍板:'+esc(s.decision)+'</div>':'';
-    return '<div class="tl-node '+cls+'" data-id="'+s.id+'">'+
-      '<div class="tl-top"><span class="tl-dot">'+dot+'</span><span class="tl-stage">'+esc(s.stage)+'</span></div>'+
-      '<div class="tl-label">'+esc(s.label)+'</div>'+
-      '<div class="tl-time">'+fmtElapsed(s.elapsed||0)+(s.status==='current'?' ·进行中':'')+'</div>'+
-      _metaLine(s)+nodeEvidenceLine(s)+
-      (acts?'<div class="tl-actions">'+acts+'</div>':'')+dec+'</div>';
-  }).join('');
-  $('tlNodes').querySelectorAll('.tl-node').forEach(el=>el.addEventListener('click',()=>openBoard(el.dataset.id)));
-}
-
-function _metaLine(s){
-  const bits=[];
-  if(s.produces) bits.push('<b>产出</b> '+esc(s.produces));
-  if(s.verify) bits.push('<b>验收</b> '+esc(s.verify));
-  if(s.owner) bits.push('<b>承接</b> '+esc(s.owner));
-  return bits.length?'<div class="tl-meta">'+bits.join('<br>')+'</div>':'';
-}
-function startPlanTimer(){ stopPlanTimer(); planTimer=setInterval(()=>{ const pl=planOf(activeThread()); if(pl.startedAt){ const e=$('tlElapsed'); if(e) e.textContent='已耗时 '+fmtElapsed(Date.now()-pl.startedAt); } },1000); }
-function stopPlanTimer(){ if(planTimer){ clearInterval(planTimer); planTimer=null; } }
-
-function tickPlan(tool,arg,ok){
-  const t=activeThread(); const pl=planOf(t);
-  if(!pl.steps||!pl.steps.length) return;
-  const bucket=bucketOf(tool);
-  try{ _planStepTotal = pl.steps.length; }catch(e){}
-  let node=pl.steps.find(s=>s.stage===bucket);
-  if(!node){ node=pl.steps.find(s=>s.stage==='未分类'); if(!node){ node={id:'n'+pl.steps.length, stage:'未分类', label:'其他动作', status:'future', actions:[], startedAt:null, elapsed:0, decision:null}; const li=pl.steps.length-1; if(li>=0 && pl.steps[li].stage==='交付'){ pl.steps.splice(li,0,node); } else { pl.steps.push(node); } } }
-  try{ const _ix = pl.steps.indexOf(node); if(_ix >= 0){ _planStepIndex = _ix + 1; } }catch(e){}
-  pl.steps.forEach(s=>{ if(s.status==='current'&&s!==node) finalizeNode(s); });
-  if(node.status==='future'||node.rolled){ node.status='current'; node.rolled=false; if(!node.startedAt) node.startedAt=Date.now(); }
-  (node.actions=node.actions||[]).push({tool:tool,arg:arg,ok:ok});
-  (node.evidence=node.evidence||[]).push({tool:tool,arg:arg,ok:ok,writes:WRITE_TOOLS.has(tool)});
-  if(ok && WRITE_TOOLS.has(tool)) pl.has_write=true;      // 任务级：是否出现过写类回执
-  renderTimeline();
-}
-
-function _renderVerifyLine(){
-  if(!lastVerify) return;
-  const v=lastVerify.verdict;
-  const map={PASS:['✅ 核验通过','ok'], FAIL:['⚠ 核验未通过','err'],
-             NOT_APPLICABLE:['◻ 本次无需核验（纯问答/只读/免闸类型）','stage']};
-  const hit=map[v]||['◻ 核验未执行','warn'];
-  const extra=(v==='FAIL'&&lastVerify.failures&&lastVerify.failures.length)?('：'+lastVerify.failures[0]):'';
-  addLog(hit[0]+extra, hit[1], true, 'verify_verdict='+v);
-  receipt(hit[0], v==='FAIL'?'err':'ok');
-}
-function onTaskDone(){
-  const t=activeThread(); const pl=planOf(t);
-  if(pl.steps&&pl.steps.length){
-    pl.steps.forEach(s=>{ if(s.status==='current'||s.status==='future') finalizeNode(s); });
-    renderTimeline();
-    // 交付节点：只有本任务真的出现过写类回执才打勾；否则如实标「未核验」并给一句人话
-    const last=pl.steps[pl.steps.length-1];
-    // verify_verdict 可视化 + 交付节点与核验结论对齐（FAIL 一律不打勾）
-    _renderVerifyLine();
-    if(lastVerify && lastVerify.verdict==='FAIL' && last) last.status='unverified';
-    if(last && last.status==='unverified'){
-      receipt(pl.has_write
-        ? '交付未经核验：有写入动作，但没有产物核验证据（后端 verifier 待接）'
-        : '本次执行没有检测到任何写类产物 —— 交付未经核验', 'err');
-    } else if(pl.has_write){
-      receipt('交付动作已完成（产物核验由后端 verifier 判定）', 'ok');
-    }
-  }
-  stopPlanTimer();
-  const lastDone=pl.steps.slice().reverse().find(s=>s.status==='done');
-  if(lastDone) openBoard(lastDone.id);
-}
-
-function openBoard(nodeId){
-  const pl=planOf(activeThread()); const node=pl.steps.find(s=>s.id===nodeId); if(!node) return;
-  boardTarget=nodeId;
-  $('tlBoardStage').textContent=node.stage+' · '+node.label;
-  $('tlBoard').style.display='flex';
-}
-
-function paDecide(decision){
-  const node=boardNode(); if(!node) return;
-  pendingDecision=decision;
-  const noteBox=$('tlNote');
-  if(decision==='小改'){ $('tlNoteInput').value=''; $('tlNoteInput').placeholder='改什么？(小改必填)'; noteBox.style.display='flex'; }
-  else if(decision==='退回'){ $('tlNoteInput').value=''; $('tlNoteInput').placeholder='退回：重做本步 / 换思路重做（选一个或写原因）'; noteBox.style.display='flex'; }
-  else if(decision==='大改'){ $('tlNoteInput').value=''; $('tlNoteInput').placeholder='大改方向（可选）'; noteBox.style.display='flex'; }
-  else { noteBox.style.display='none'; confirmDecision(decision,''); }
-}
-function paDecideConfirm(){
-  const note=$('tlNoteInput').value.trim();
-  if(pendingDecision==='小改'&&!note){ receipt('⚠ 小改必须填「改什么」，不填不提交。','rev'); return; }
-  $('tlNote').style.display='none';
-  confirmDecision(pendingDecision,note);
-}
-function paDecideCancel(){ $('tlNote').style.display='none'; pendingDecision=null; }
-
-async function confirmDecision(decision,note){
-  const t=activeThread(); const pl=planOf(t); const node=boardNode(); if(!node) return;
-  try{
-    await fetch(API+'/v9/pa/decision',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:curUser(),session_id:t.id,node:node.id,stage:node.stage,decision:decision,note:note,task:pl.task})});
-  }catch(e){}
-  node.decision=decision;
-  if(decision==='采纳'){ node.status='done'; finalizeNode(node); receipt('✅ 已采纳「'+node.stage+' · '+node.label+'」—— 已记录 decision_log，交付。','ok'); }
-  else if(decision==='暂缓'){ receipt('⏸ 已暂缓「'+node.stage+'」—— 已挂起，等老板后续指示。','rev'); }
-  else {
-    node.status='current'; node.rolled=true;
-    const ni=pl.steps.indexOf(node);
-    pl.steps.forEach((s,si)=>{ if(si>ni){ s.status='future'; s.decision=null; } });
-    receipt('↩ 已'+decision+'「'+node.stage+(note?'：'+note:'')+'」—— 已通知 PA 修改。','rev');
-    sendReviseToPA(decision,note,node);
-  }
-  pendingDecision=null;
-  renderTimeline();
-  $('tlBoard').style.display='none';
-}
-
-function sendReviseToPA(decision,note,node){
-  const t=activeThread();
-  const act={小改:'老板拍板小改，只改指定点，其余不动。',大改:'老板拍板大改，较大范围调整后重新执行。',退回:'老板拍板退回，本步重新执行。'}[decision]||'老板要求修改。';
-  const text='老板拍板：'+act+(note?(' 老板原话：'+note):'')+' —— 针对步骤「'+node.stage+'·'+node.label+'」。请修改后重新交付。';
-  addMsg('user','[修改指令] '+text);
-  setBusy(true);
-  sendAgent(t).finally(()=>setBusy(false));
-}
-
-/* ---- ② 产物预览: 从助手消息检测输出文件 → 嵌入式卡片 ---- */
-function detectOutputs(text){
-  const paths=[]; const re=/(data\/(?:reports|tmp)\/[^\s`"'，。]+?\.(?:md|txt|json|pptx))/g; let m;
-  while((m=re.exec(text))){ if(!paths.includes(m[1])) paths.push(m[1]); }
-  return paths.slice(0,5);
-}
-const _outputContent={};
-/* M2-A · Step 3.2：产物卡 DOM 走**统一出口** paRenderCard('artifact', …)。
-   三条与 Step 2 一致的纪律（不靠自觉）：
-   1. **宿主显式传入 #thread**：产物卡按设计是**消息内联**的交付预览 —— 批201 起它随
-      「**已持久化的助手正文**」重建（F5 语义），所以**不能**搬进不持久化的 #paCards；
-      这也是 paRenderCard 唯一允许的显式宿主（见函数注释与 tests/pes/test_m2a_artifact_card.py）。
-   2. **来源必须显式**：路径是**正文正则探测**得来 ⇒ 只传 `reported_source:'text_probe'`，
-      卡上如实标「来源：正文探测（非核验）」——**不把探测当事实**（防「假成交」）。
-   3. **核验字段一律不代填**：exists/sha256/bytes/verified_by/done_when_status 全部**不传**
-      （未取到就不是事实）⇒ 卡上显示「未核验 / 未经验证者签署 / 没有契约，无法裁决完成」。
-   读不到正文 ⇒ **不渲染空壳**（今天的行为原样保留）。 */
-async function renderOutputCard(path){
-  // 产物卡片分流：.pptx 不是文本产物，渲染成"缩略图墙"（灵犀导出的 14 页 PNG）
-  // Step 3.2 归一说明：pptx 墙是**另一类卡**（缩略图 + 批注 + 重新导出），本步**未迁**（见笔记 §未迁）。
-  if(/\.pptx$/i.test(String(path))){ return renderPptWall(path); }
-  const t=activeThread(); let content=null;
-  try{
-    const r=await fetch(API+'/v9/sandbox/read',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:curUser(),session_id:t.id,path:path})});
-    if(r.ok){ const d=await r.json(); if(d&&d.success) content=d.content||''; }
-  }catch(e){}
-  if(content===null) return;
-  _outputContent[path]=content;   /* 正文缓存：卡上的「展开全文/下载」用它；不是 payload 字段，白名单不被污染 */
-  // 批201 的去重已并入出口：paRenderCard 按（kind, 第一个必填字段）复用同卡，同一 path 只留一张
-  const card=paRenderCard('artifact', {path:String(path), reported_source:'text_probe'}, $('thread'));
-  const th=$('thread'); if(card&&th) th.scrollTop=th.scrollHeight;
-  return card;
-}
-function downloadOutput(btn){
-  const card=btn.closest('.output-card'); if(!card) return;
-  const path=card.dataset.path; const content=_outputContent[path]||'';
-  const blob=new Blob([content],{type:'text/markdown;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=String(path).split('/').pop();
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-
-/* ---- ③ PPT 缩略图墙（C 块 2026-09-13）------------------------------------
-   产物卡片识别 .pptx → 14 张缩略图 → 每页「这页的问题」批注。
-   缩略图: 灵犀 wpp_export_slide_as_image 导出，清单见 web/ppt_thumbs/manifest.json。
-   批注本轮只在前端生效（localStorage），落库留给后端批注接口。
-   通道: 一律走 PA 的 /v9/pa/proxy（endpoint_guard 按 MCP 工具名分级），不直连 3890。 */
-const PPT_THUMB_BASE='ppt_thumbs/';
-const PPT_COMMENT_KEY='pa_ppt_comments_v1';
-const _pptManifestCache={};
-/* 批79 ctx 生产端：semanticCtx() 采集用的键（此前无人写入 → 运行时 ctx 恒空）*/
-var _planStepIndex=0, _planStepTotal=0, PPT_DECK='';
-
-function pptCommentsAll(){
-  try{ return JSON.parse(localStorage.getItem(PPT_COMMENT_KEY)||'{}'); }catch(e){ return {}; }
-}
-function pptCommentsOf(deck){ const a=pptCommentsAll(); return a[deck]||[]; }
-function addPptComment(deck,pageIndex,text){
-  const rec={page_index:Number(pageIndex), comment:String(text||'').trim(), timestamp:new Date().toISOString()};
-  if(!rec.comment) return null;
-  const a=pptCommentsAll(); (a[deck]=a[deck]||[]).push(rec);
-  try{ localStorage.setItem(PPT_COMMENT_KEY,JSON.stringify(a)); }catch(e){}
-  /* 批69 C3 双写：后端为准 + localStorage 离线兜底（本地已写，POST 失败不影响本次交互）*/
-  try{
-    fetch(API+'/v9/pa/ppt/comments',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({deck:deck,page_index:rec.page_index,comment:rec.comment})})
-      .then(function(r){ return r.ok?r.json():null; })
-      .then(function(d){ if(d&&d.ok){ rec.backendAt=(d.comment||{}).at; } else if(d===null){ console.warn('批注后端写入未成功（已存本地兜底）'); } })
-      .catch(function(e){ console.warn('批注后端不可达（已存本地兜底）',e); });
-  }catch(e){}
-  return rec;
-}
-
-/* 批69 C3：从后端拉批注并合并进本地（**后端为准**；不可达则静默保留 localStorage 兜底）*/
-async function pptCommentsSyncFromBackend(deck,card){
-  try{
-    const r=await fetch(API+'/v9/pa/ppt/comments?deck='+encodeURIComponent(deck));
-    if(!r.ok) return 0;
-    const d=await r.json();
-    if(!d||!d.ok||!Array.isArray(d.comments)||!d.comments.length) return 0;
-    const a=pptCommentsAll(); const arr=Array.isArray(a[deck])?a[deck]:[];
-    let n=0;
-    d.comments.forEach(function(bc){
-      const dup=arr.some(function(x){ return Number(x.page_index)===Number(bc.page_index) && String(x.comment)===String(bc.comment); });
-      if(!dup){ arr.push({page_index:bc.page_index,comment:bc.comment,timestamp:bc.at,from:'backend'}); n++; }
-    });
-    if(n){ a[deck]=arr; try{ localStorage.setItem(PPT_COMMENT_KEY,JSON.stringify(a)); }catch(e){} if(card) renderPptComments(card); }
-    return n;
-  }catch(e){ return 0; }
-}
-
-/* PA 通道调灵犀 MCP：唯一入口 /v9/pa/proxy（不直连 3890） */
-async function paMcp(name,args,timeout){
-  const r=await fetch(API+'/v9/pa/proxy',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({user_id:curUser(),method:'POST',path:'/mcp/call',timeout:timeout||60,
-      body:{name:name,args:args||{}}})});
-  const d=await r.json().catch(function(){ return {}; });
-  if(!r.ok||!d.ok) throw new Error((d&&(d.error||d.blocked_by))||('HTTP '+r.status));
-  return d.data||{};
-}
-
-async function renderPptWall(path){
-  const name=String(path).split('/').pop();
-  const th=$('thread');
-  const card=document.createElement('div');
-  card.className='output-card ppt-card'; card.dataset.path=path; card.dataset.deck=name;
-  card.innerHTML='<div class="oc-head"><span>📊</span><span class="oc-name">'+esc(name)+'</span>'+
-    '<span class="oc-path">'+esc(path)+'</span>'+
-    '<button class="oc-toggle oc-reexport" onclick="exportDeckThumbs(this)">重新导出（灵犀）</button></div>'+
-    '<div class="ppt-export-log"></div><div class="ppt-wall"></div><div class="ppt-cmt-panel"></div>';
-  th.appendChild(card); th.scrollTop=th.scrollHeight;
-  await loadPptWall(card);
-  return card;
-}
-
-async function loadPptWall(card){
-  const deck=card.dataset.deck, wall=card.querySelector('.ppt-wall');
-  wall.innerHTML='<div class="ppt-loading">缩略图加载中…</div>';
-  let man=_pptManifestCache[deck];
-  if(!man){
-    try{
-      const r=await fetch(PPT_THUMB_BASE+'manifest.json',{cache:'no-store'});
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      man=await r.json(); _pptManifestCache[deck]=man; PPT_DECK=deck;
-    }catch(e){
-      wall.innerHTML='<div class="ppt-loading">缩略图清单加载失败：'+esc(e.message)+'</div>';
-      return;
-    }
-  }
-  wall.innerHTML='';
-  wall.dataset.deckManifest=String((man.pages||[]).length);
-  wall.dataset.manifestDeck=String(man.deck||'');
-  // 不说谎：清单目前只覆盖 V6 这一份 deck，卡片若指向别的 pptx 必须显式说明
-  if(man.deck && String(man.deck)!==String(deck)){
-    const warn=document.createElement('div'); warn.className='ppt-loading';
-    warn.textContent='注：本卡片指向 '+deck+'，但缩略图清单当前只有「'+man.deck+'」（C 块探针范围）。';
-    wall.appendChild(warn);
-  }
-  (man.pages||[]).forEach(function(p){ wall.appendChild(buildPptThumb(card,deck,p)); });
-  renderPptComments(card);
-  wall.dataset.thumbCount=String(wall.querySelectorAll('.ppt-thumb').length);
-  pptCommentsSyncFromBackend(deck,card);   /* 批69 C3：后端批注合并（渲染后异步拉取，失败静默兜底）*/
-
-
-/* 用后端返回的 url_base 重写墙上图片地址（唯一允许的图片地址来源） */
-function applyThumbUrlBase(card, urlBase){
-  if(!urlBase) return 0;
-  let n=0;
-  card.querySelectorAll('.ppt-thumb img').forEach(function(img){
-    const m=/([^/]+)$/.exec(img.getAttribute('src')||'');
-    if(m && m[1]){ img.src = urlBase + m[1]; n++; }
-  });
-  return n;
-}
-}
-
-/* 批73 C1：把缩略图**字节**交给后端落盘，落哪儿由后端定；前端只用返回值拼 URL。
- 本函数不出现任何文件系统路径（C: / UNC / /mnt/ / 绝对路径）——有静态防线守着。 */
-async function uploadDeckThumbs(deck, files){
-const r = await fetch(API+'/v9/pa/artifact/thumbs',{method:'POST',
-  headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({user_id:curUser(), deck:deck, files:files||[]})});
-const d = await r.json().catch(function(){ return {}; });
-if(!r.ok || !d.ok) throw new Error((d&&d.error)||('HTTP '+r.status));
-return d;                       /* {ok,count,url_base,manifest_url,pages} */
-}
-
-function buildPptThumb(card,deck,p){
-  const fig=document.createElement('figure');
-  fig.className='ppt-thumb'; fig.dataset.page=String(p.page_index); fig.dataset.title=p.title||'';
-  const img=document.createElement('img');
-  const _rel=String(p.png||'').replace(/^ppt_thumbs\//,'');
-  img.src=PPT_THUMB_BASE+_rel; img.alt='P'+p.page_index+' '+(p.title||''); img.loading='lazy';
-  img.onerror=function(){ fig.classList.add('img-missing'); };
-  fig.appendChild(img);
-  const cap=document.createElement('figcaption');
-  cap.textContent='P'+String(p.page_index).padStart(2,'0')+' · '+(p.title||'');
-  if(p.voiceover) cap.title=p.voiceover;
-  fig.appendChild(cap);
-  const btn=document.createElement('button');
-  btn.className='ppt-cmt-btn'; btn.textContent='这页的问题';
-  btn.onclick=function(){ togglePptCommentForm(fig,p); };
-  fig.appendChild(btn);
-  const list=document.createElement('div'); list.className='ppt-cmt-list';
-  fig.appendChild(list);
-  return fig;
-}
-
-function togglePptCommentForm(fig,p){
-  const old=fig.querySelector('.ppt-cmt-form');
-  if(old){ old.remove(); return; }
-  const form=document.createElement('div'); form.className='ppt-cmt-form';
-  const ta=document.createElement('textarea'); ta.rows=2;
-  ta.placeholder='P'+p.page_index+' 有什么问题？'; ta.className='ppt-cmt-input';
-  form.appendChild(ta);
-  const ok=document.createElement('button'); ok.className='ppt-cmt-ok'; ok.textContent='提交批注';
-  ok.onclick=function(){
-    const card=fig.closest('.output-card');
-    const rec=addPptComment(card.dataset.deck,p.page_index,ta.value);
-    if(!rec){ ta.focus(); return; }
-    form.remove();
-    renderPptComments(card);
-    card.querySelector('.ppt-cmt-panel').dataset.lastComment=JSON.stringify(rec);
-    addLog('📝 P'+rec.page_index+' 批注：'+rec.comment,'ok',true);
-  };
-  form.appendChild(ok);
-  fig.appendChild(form); ta.focus();
-}
-
-function renderPptComments(card){
-  const deck=card.dataset.deck, items=pptCommentsOf(deck);
-  card.querySelectorAll('.ppt-thumb').forEach(function(fig){
-    const n=parseInt(fig.dataset.page,10);
-    const list=fig.querySelector('.ppt-cmt-list');
-    if(!list) return;
-    list.innerHTML=items.filter(function(c){ return c.page_index===n; }).map(function(c){
-      return '<div class="ppt-cmt-item"><span class="t">'+esc(String(c.timestamp).slice(11,19))+'</span>'+esc(c.comment)+'</div>';
-    }).join('');
-  });
-  const panel=card.querySelector('.ppt-cmt-panel');
-  if(!panel) return;
-  panel.innerHTML='<div class="ppt-cmt-head">批注 <b class="ppt-cmt-n">'+items.length+'</b> 条'+
-    (items.length?'':'（点每页「这页的问题」加一条）')+'</div>'+
-    '<div class="ppt-cmt-all">'+items.map(function(c){
-      return '<div class="ppt-cmt-row"><code>P'+String(c.page_index).padStart(2,'0')+'</code> '+esc(c.comment)+
-             ' <span class="t">'+esc(c.timestamp)+'</span></div>';
-    }).join('')+'</div>';
-  card.dataset.commentCount=String(items.length);
-}
-
-/* C4 接线：识别 .pptx → 调灵犀导出（经 PA 通道）→ 缩略图墙刷新 */
-async function exportDeckThumbs(btn){
-  const card=btn.closest('.output-card');
-  if(!card) return;
-  const out=card.querySelector('.ppt-export-log');
-  const base='C:/Users/flybo/Desktop/wpsai_v2_render/cblock_v6/';
-  out.textContent='读取演示文稿信息…';
-  let n=0, ok=0, fail=[];
-  try{
-    const info=await paMcp('wpp_get_presentation_info',{},30);
-    const v=info.value||{};
-    n=parseInt(v.slideCount,10)||0;
-    out.textContent='演示文稿「'+(v.name||'?')+'」共 '+n+' 页，开始导出…';
-    for(let i=1;i<=n;i++){
-      const nn=String(i).padStart(2,'0');
-      try{
-        const r=await paMcp('wpp_export_slide_as_image',
-          {slide:i,fileName:base+'v6_p'+nn+'.png',filterName:'PNG',width:1280,height:720},90);
-        if(r.ok) ok++; else fail.push(i);
-      }catch(e){ fail.push(i); }
-      out.textContent='导出中 '+i+'/'+n+' … 成功 '+ok+'，失败 '+fail.length;
-    }
-    out.dataset.exportResult=ok+'/'+n;
-    out.textContent='导出完成：成功 '+ok+'/'+n+(fail.length?('，失败页 '+fail.join(',')):'')+' → '+base;
-    card.querySelectorAll('.ppt-thumb img').forEach(function(im){
-      const s=im.getAttribute('src').split('?')[0];
-      im.setAttribute('src',s+'?t='+Date.now());
-    });
-    addLog('🖼 灵犀导出缩略图：成功 '+ok+'/'+n,'ok',true);
-  }catch(e){
-    out.dataset.exportResult='error';
-    out.textContent='导出失败：'+e.message;
-    addLog('🖼 灵犀导出失败：'+e.message,'warn',true);
-  }
-}
-
-function receipt(text,cls){
-  const r=$('tlReceipt'); if(!r) return;
-  r.className='tl-receipt '+(cls||'ok'); r.style.display='block'; r.textContent=text;
-  addLog('📋 '+text, cls==='ok'?'ok':'warn', true);
-}
-function _ensureLogToggle(){
-  const t=$('thread'); if(!t||t.querySelector('.log-toggle')) return;
-  const b=document.createElement('button'); b.className='log-toggle';
-  const hid=t.classList.contains('hide-logs');
-  b.textContent=hid?'▸ 执行过程（点击展开）':'▾ 执行过程（点击折叠）';
-  b.onclick=()=>{ const h=t.classList.toggle('hide-logs'); b.textContent=h?'▸ 执行过程（点击展开）':'▾ 执行过程（点击折叠）'; };
-  t.insertBefore(b, t.firstChild);
-}
-function paRunTid(){ return (paRun && paRun.threadId) || null; }
-/* 批187 · 缺陷4：运行事件只写「发起线程」 */
-function paRunLog(line, cls, store, title){ return addLog(line, cls, store, title, paRunTid()); }
-function addLog(line, cls, store, title, tid){
-  const t=$('thread');
-  const th = tid ? (state.threads.find(function(x){return x.id===tid;}) || activeThread()) : activeThread();
-  th.msgs=th.msgs||[];
-  if (tid && th.id !== activeThread().id){ th.msgs.push({role:'tool', content:line, cls:cls||''}); saveState(); return; }
-  _ensureLogToggle();
-  // 2026-09-13: 同内容日志折叠成一条 + ×N（**不要求连续**）。
-  // 实测一次讲义任务 38 条日志里绝大多数是「▶ 正在调研… / ✅ 查询知识库」**交替**重复 ——
-  // 只折叠连续重复没用（相邻两行从来不相同），必须按内容归并。
-  window.__logEls = window.__logEls || {};
-  const _k = 'log:' + line + '|' + (cls || '');
-  const _ent = window.__logEls[_k];
-  if(_ent && _ent.el && t.contains(_ent.el)){
-    _ent.n += 1; _ent.el.dataset.n = String(_ent.n);
-    _ent.el.textContent = line + '   ×' + _ent.n;
-    t.appendChild(_ent.el);                      // 移到末尾：保持"最近发生"在下
-    if(store){
-      const lm = th.msgs.slice().reverse().find(m => m.role === 'tool' && m.__raw === line);
-      if(lm){ lm.content = line + '   ×' + _ent.n; saveState(); }
-    }
-    t.scrollTop = t.scrollHeight; return;
-  }
-  const div=document.createElement('div'); div.className='tool-log '+(cls||''); div.textContent=line;
-  div.dataset.raw=line; div.dataset.cls=cls||''; div.dataset.n='1';
-  if(title) div.title=title;
-  t.appendChild(div); t.scrollTop=t.scrollHeight;
-  window.__logEls[_k] = {el: div, n: 1};
-  if(store){ th.msgs.push({role:'tool', content:line, cls:cls||'', __raw:line}); saveState(); }
-}
-/* ---- 批159 · P0-2：8 态可见化 + 超时阈值（后端已有 SSE heartbeat / progress / write_pending / cancel） ----
-   判据（体检项 114 的检测清单思路）：状态由**后端事件**驱动，不由前端猜；
-   「无事件时长」超过阈值必须变成可见提示（30s 提醒 / 90s 疑似卡住），避免「发了没反应」（HSR）。 */
-const PA_STATE_DEF = {
-  idle:      {ic:'○',  label:'就绪',     cls:'st-idle'},
-  running:   {ic:'▶',  label:'正在执行', cls:'st-run'},
-  model:     {ic:'⏳', label:'等待模型', cls:'st-wait'},
-  tool:      {ic:'🔧', label:'等待工具', cls:'st-wait'},
-  approval:  {ic:'✋', label:'等待审批', cls:'st-appr'},
-  verifying: {ic:'🔍', label:'验证中',   cls:'st-run'},
-  done:      {ic:'✅', label:'已完成',   cls:'st-ok'},
-  failed:    {ic:'❌', label:'已失败',   cls:'st-err'},
-  stopped:   {ic:'⏹', label:'已停止',   cls:'st-err'},
-  /* M2-A · Step 3.1：**只增键** —— 阻断不再借 tool 态显示（既有 9 键一字未改） */
-  blocked:   {ic:'⛔', label:'已阻断',   cls:'st-block'}
-};
-// 终态不再计时：已失败/已停止/已完成/就绪若继续累加「Ns」会误导成"还在跑"（自检发现：failed 态秒数一直跳）
-const PA_TERMINAL = {idle:1, done:1, failed:1, stopped:1};
-const PA_T_WARN_S = 30;    // 30s 无任何后端事件 ⇒ 显式提示
-const PA_T_STALE_S = 90;   // 90s ⇒ 疑似卡住（提示可点停止）
-let paRun = {state:'idle', t0:Date.now(), lastEvent:Date.now(), timer:null, note:'', threadId:null, busy:false};
-function paSetState(k, note){
-  if(!PA_STATE_DEF[k]) k='idle';
-  const now=Date.now();
-  if(k!==paRun.state) paRun.t0=now;
-  paRun.state=k; paRun.lastEvent=now; paRun.note=note||'';
-  if(!paRun.timer) paRun.timer=setInterval(paRenderState, 1000);
-  paRenderState();
-}
-function paBeat(note){ paRun.lastEvent=Date.now(); if(note) paRun.note=note; paRenderState(); }
-function paRenderState(){
-  const el=document.getElementById('runState'); if(!el) return;
-  const d=PA_STATE_DEF[paRun.state]||PA_STATE_DEF.idle;
-  let txt=d.ic+' '+d.label;
-  // 批175：等待审批/请示要把「在等什么」显示在药丸上 ——
-  // 此前 note 只进 title（鼠标悬停才看得到），老板从药丸上看不出「等的是确认」。
-  // 只对 approval 生效（其余状态 note 仍只进 title，避免药丸变长）。
-  if(paRun.state==='approval' && paRun.note){ txt += ' · ' + String(paRun.note).slice(0,28); }
-  if(!PA_TERMINAL[paRun.state]){   // 批159：仅"进行中"的态才显示已耗时/无进展
-    const secs=Math.round((Date.now()-paRun.t0)/1000);
-    const quiet=Math.round((Date.now()-paRun.lastEvent)/1000);
-    txt+=' '+secs+'s';
-    if(quiet>=PA_T_STALE_S) txt+=' · ⚠ 疑似卡住'+quiet+'s（可点停止）';
-    else if(quiet>=PA_T_WARN_S) txt+=' · 已 '+quiet+'s 无进展';
-  }
-  el.textContent=txt;
-  el.className='runstate '+(d.cls||'');
-  el.title='运行状态：'+d.label+(paRun.note?('（'+paRun.note+'）'):'');
-}
-function setBusy(on){ $('sendBtn').disabled=on; $('stopBtn').style.display=on?'inline-block':'none'; if(on){ $('connDot').textContent='● 处理中…'; } else { probeConn(); } }
-/* 批196 · 本地浏览器：富状态 + 一键启动（老板：不能让老板自己去 PowerShell 起客户端）
-   状态走 /v9/pa/local_client/status（含 client 类型与已连接秒数）；启动走 /v9/pa/local_client/start，
-   命令由后端硬编码（页面只发 user_id）⇒ 页面无法把它指向别的账号/端口/程序。 */
-async function probeConn(){
-  const el=$('connDot'), btn=$('connStart');
-  try{
-    const r=await fetch(API+'/v9/pa/local_client/status?user_id='+encodeURIComponent(curUser()));
-    const d=await r.json();
-    if(d && d.connected){
-      const _age=(typeof d.age_s==='number')?Math.round(d.age_s):null;
-      el.textContent='● 本地浏览器已连（'+(d.client||'client')+(_age!==null?('，'+_age+'s'):'')+'）';
-      el.style.color='var(--green)';
-      if(btn) btn.style.display='none';
-      return true;
-    }
-    el.textContent='● 本地浏览器未连';
-    el.style.color='var(--amber)';
-    if(btn) btn.style.display=(d && d.launchable===false)?'none':'inline-block';
-    return false;
-  }catch(e){
-    el.textContent='● 连接未知';
-    el.style.color='var(--sub)';
-    if(btn) btn.style.display='none';
-    return false;
-  }
-}
-async function paStartLocalClient(){
-  const btn=$('connStart');
-  if(btn){ btn.style.display='none'; }
-  addLog('🚀 正在请求启动本地浏览器客户端…','stage',true,'批196');
-  try{
-    const r=await fetch(API+'/v9/pa/local_client/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:curUser()})});
-    const d=await r.json().catch(function(){ return {}; });
-    if(d && d.started){ addLog('🚀 已启动（Windows 侧 agent_client）—— 等它连上，状态会自动更新','ok',true,'批196'); }
-    else if(d && d.already){ addLog('✅ 客户端已在连接中，无需重复启动','ok',true,'批196'); }
-    else if(d && d.cooldown){ addLog('⏳ 刚启动过（'+d.cooldown+'s 后可再试），先等它连上','warn',true,'批196'); }
-    else { addLog('⚠ 未能启动：'+((d&&d.error)||'未知原因')+'；可手动运行桌面 agent_client','warn',true,'批196'); }
-  }catch(e){
-    addLog('⚠ 启动请求失败：'+e.message,'err',true,'批196');
-  }
-  for(let i=0;i<10;i++){
-    await new Promise(function(res){ setTimeout(res,2000); });
-    const _c=await probeConn();
-    if(_c){ addLog('✅ 本地浏览器已连接','ok',true,'批196'); return; }
-  }
-  addLog('⚠ 20 秒内仍未连上：看 Windows 侧是否弹出客户端窗口或它的控制台报错','warn',true,'批196');
-  await probeConn();
-}
-
-/* ---- 发送 ---- */
-let abortCtrl=null;
-let lastVerify=null;      // verify_verdict 可视化（2026-09-13）：后端把核验结论挂在 SSE done payload 上
-async function paSend(){
-  const text=$('input').value.trim(); if(!text) return;
-  addMsg('user', text); $('input').value=''; autoGrow(); setBusy(true);
-  paSetState('running');                       // 批159：进执行态
-  const cfg = MODES[state.mode], t = activeThread();
-  /* 批187 · 缺陷4：单活动 run —— 别的线程在跑时不允许再发，避免多写者/取消错对象 */
-  if (paRun.busy && paRun.threadId && paRun.threadId !== t.id){
-    const _rt=(state.threads.find(function(x){return x.id===paRun.threadId;})||{}).title||paRun.threadId;
-    addMsg('sys','⏳ 线程「'+esc(_rt)+'」正在执行 —— 请先点「停止」取消它，或等它结束后再发新任务');
-    return;
-  }
-  paRun.threadId = t.id; paRun.busy = true;   /* 缺陷4：绑定发起线程 */
-  try{
-    if(cfg.chan==='pa') await sendPA(text, t);
-    else { await startPlan(text); await sendAgent(t); }
-  } finally {
-    setBusy(false); paRun.busy = false; paRun.threadId = null;
-    /* 批189 · #4：每轮落盘（前端 localStorage + 后端会话日志权威）*/
-    try{ saveState(); addLog('💾 本轮已落盘（本地状态 + 会话日志）','ok',true,'batch189 #4'); }catch(e){}
-    // 收尾：仍停在「进行中」的态 ⇒ 视为完成；失败/停止已由各自分支置位（不覆盖）
-    if(['running','model','tool','verifying'].indexOf(paRun.state)>=0) paSetState('done');
-  }
-}
-/* 聊天模式：PA 通道（不出手，纯商量） */
-async function sendPA(text, t){
-  try{
-    paSetState('model', '等待 PA 模型回复');   // 批159：请求发出到响应之间 = 等待模型
-    const r = await fetch(API+'/v9/pa/dialog', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({user_id:curUser(), session_id:t.id, text:text, topic:null})});
-    if(r.status===404){ addMsg('assistant','（PA 通道暂不可用：/v9/pa/dialog 未挂载）\n已记录：'+text); paSetState('failed','PA 通道未挂载(404)'); return; }
-    const d = await r.json();
-    addMsg('assistant', d.reply || '（无回复）');
-    paSetState('done');
-  }catch(e){ addMsg('assistant','PA 通道请求失败：'+e.message); paSetState('failed','PA 通道请求失败'); }
-  loadSide();
-}
-/* 工作/开发：执行通道（复用现有 /v9/agent/chat 循环） */
-async function sendAgent(t){
-  const cfg = MODES[state.mode];
-  let sys = { chat:'你是老板的 PA。', work:'你是老板的 PA，工作模式：办公类 computer use（文档/表格/浏览器/图文/演示），工具用完汇报产物与待核实项。', dev:'你是老板的 PA，项目开发模式（权限最高）：处理代码与工程任务，明确每步做了什么与边界。' }[state.mode] || '你是老板的 PA。';
-  sys += '\n[身份协议] 你(PA)和 DSH 共用同一个 @DS Chat 线程(6054f376-...)当参谋。当你【自主】决定咨询 @DS Chat 时：①消息开头必须标注【V9 PA】标明你的身份；②只做工具性咨询(识图/检索/求证/第二意见)，不做系统迭代决策、不替 DSH 或老板拍板、不自称 DSH；③若消息内容是 DSH 转达给你的，保持 DSH 原文(含【DSH】标记)，不得改标成【V9 PA】。';
-  sys += '\n[外部协作等待] 当你需要 @DS Chat(DeepSeek 网页聊天)的回复时：发消息(click 发送键)后【必须】用 browser_local 的 wait_for_reply 动作(selector=.ds-markdown, timeout=90)等完整回复，不要用 evaluate 直接读(那样会读到未生成完的半截/旧回复)。wait_for_reply 返回 success 才采信；返回 timeout 或连续 3 次没等到 → 标记「外部求助未果」并上报老板，不要自己闷头硬试。';
-  const pl0 = planOf(t);
-  if(pl0.steps && pl0.steps.length){ sys += '\n[任务计划] 按此顺序执行：'+pl0.steps.map((s,i)=>(i+1)+'.'+s.stage+':'+s.label).join(' ')+'。每步完成即汇报，交付前自查，不要跳过步骤。'; }
-  const hist = (t.msgs||[]).filter(m=>m.role==='user'||m.role==='assistant').slice(-30).map(m=>({role:m.role, content:m.content}));
-  const msgs = [{role:'system', content:sys}].concat(hist);
-  abortCtrl = new AbortController();
-  try{
-    paSetState('model', '已提交，等待模型返回');   // 批159：请求发出 → 首个事件之前 = 等待模型
-    const resp = await fetch(API+'/v9/agent/chat', {method:'POST', headers:{'Content-Type':'application/json'}, signal:abortCtrl.signal,
-      body: JSON.stringify({user_id:curUser(), session_id:t.id, model:'deepseek-v4-flash', messages:msgs, stream:true})});
-    let d; const ct = resp.headers.get('content-type')||'';
-    if(ct.includes('text/event-stream')) d = await readSSE(resp); else d = await resp.json();
-    /* 批189 · #6：后端单活动 run ⇒ busy 要有中性文案（不是「失败」）*/
-    if(d.status==='busy'){ addMsg('assistant','⏳ '+(d.reason||'已有任务正在执行（PA 单线程）')+'\n\n'+(d.hint||'')); paSetState('idle','已有任务在跑'); return; }
-    if(!d.success){ addMsg('assistant','😵 '+(d.error||'服务暂不可用')); paSetState('failed', String(d.error||'服务暂不可用').slice(0,60)); return; }
-    const msg = (((d.data||{}).choices||[])[0]||{}).message||{};
-    if(msg.content){ addMsg('assistant', msg.content, false, null, paRunTid()); detectOutputs(msg.content).forEach(renderOutputCard); }
-  }catch(e){ if(e.name!=='AbortError'){ addMsg('assistant','请求失败：'+e.message); paSetState('failed','网络/请求异常：'+e.message); } }
-}
-async function readSSE(resp){
-  const reader=resp.body.getReader(); const dec=new TextDecoder(); let buf=''; let payload={success:true};
-  const seen=new Set(); let sawDone=false; let _sawError=null; let _errShown=false; let _errMeta='';   // 批172：错误定位信息
-  let _sawAsk=false;   // 批175：区分「ask 请示收尾」（正常）与「流被中断」——只有后者该落 failed
-  while(true){
-    const {done,value}=await reader.read(); if(done)break;
-    buf+=dec.decode(value,{stream:true}); let i;
-    while((i=buf.indexOf('\n'))>=0){
-      const line=buf.slice(0,i).trim(); buf=buf.slice(i+1);
-      if(!line.startsWith('data: '))continue;
-      const raw=line.slice(6); if(raw==='[DONE]')return payload;
-      let evt; try{evt=JSON.parse(raw);}catch(e){continue;}
-      // 2026-09-13 修: 后端 type=error 此前被静默丢弃 —— 老板看到的是「进度刷一屏后什么都不发生」。
-      // 实测事故: _v9_bridge_loop 抛 UnboundLocalError(长输出被 max_tokens 截断时触发) → 前端零提示、无交付。
-      // 批159 · P0-2：心跳=「后端还活着」的证据 —— 重置无事件计时（此前 pa.html 完全忽略 heartbeat）
-      if(evt.type==='heartbeat'){ paBeat(); continue; }
-      if(evt.type==='error'){
-        _sawError=String(evt.error||'未知错误');
-        // 批172：错误必须**可定位** —— 带上 run_id / stage / 时刻（此前只有一句 Python 原文，
-        // 报告给 DSH 也无法归因；后端本批已把 run_id/stage 放进 error 事件）。
-        _errMeta=(evt.run_id? '（run_id='+evt.run_id+(evt.stage?(' · '+evt.stage):'')+'）' : '')
-                 + '［'+new Date().toLocaleTimeString('zh-CN',{hour12:false})+'］';
-        paSetState('failed', _sawError.slice(0,60));   // 批159：后端报错 ⇒ 8 态里的「已失败」
-        paRunLog('⛔ 后端执行中断'+_errMeta+'：'+_sawError, 'err', true, 'SSE type=error');
-        // 必须**当场**渲染：流尾常是 [DONE]，而 [DONE] 会让本函数提前 return，
-        // 任何放在循环之后的收尾代码都不会执行(2026-09-13 浏览器实测发现)。
-        if(!_errShown){
-          _errShown=true;
-          receipt('任务中断'+_errMeta+'：'+_sawError, 'err');
-          // 批173 · 第2条拍板 ③：错误**默认折叠**（summary 带 stage+时刻；展开含完整文本 + run_id + 一键复制）
-          addMsg('assistant', '⚠️ 任务中断（后端报错，不是没反应）'+_errMeta+'：'+_sawError, false,
-            paErrBlockHtml(_errMeta, _sawError)+'<div style="margin-top:6px;color:#8b949e">可「再试一次」；若要我定位，展开上面折叠块并把 run_id 一起发我。</div>');
-        }
-        continue;
-      }
-      // 批153 · R2：PA 页写确认入口 —— 后端 write_pending 事件（无 type 字段，只有 status）
-      // 此前 pa.html 没有消费者 ⇒ 从 PA 页发的带写任务会「停住但界面不说」。
-      if(evt.status==='write_pending' && evt.pending_write){
-        paSetState('approval', evt.reason_detail||evt.reason||'');   // 批159：等待审批
-        renderPaWriteCard(evt.pending_write, evt.reason_detail||evt.reason||'');
-        continue;
-      }
-      /* 批175 · 假失败修复（前端侧）：ask = 后端「请示收尾」，是**正常结束**，不是失败。
-         后端 response_guard.py 的 ask 分支把 {status:'ask', ask:{question,options}} 放进终态载荷，
-         bridge_call 再以 type=done 下发（工作台 chat.js 早已消费同一字段，PA 页此前完全没认 ⇒ 请示被显示成「❌ 已失败」）。
-         状态键用既有的 approval（8 态契约锁定，不私自扩键）。 */
-      if(evt.status==='ask'){
-        _sawAsk=true;
-        const _askQ=String((evt.ask&&(evt.ask.question||evt.ask.text))||evt.reason_detail||'').slice(0,80);
-        paSetState('approval', '等待确认：'+_askQ);
-        paRunLog('⏳ 等待老板确认（请示收尾）：'+_askQ, 'warn', true, 'SSE status=ask');
-        paFlashApproval($("thread") && $("thread").lastElementChild);   /* 批193：请示到达也高亮最后一条 */
-        if(evt.type!=='done') continue;   // 纯 ask 事件：等 done 载荷来时再走原有收尾
-      }
-      if(evt.type==='progress'||evt.type==='done'){
-        // 批159：progress ⇒ 正在执行（有后端事件 = 没卡住）
-        if(evt.type==='progress'){ paSetState('running'); }
-        if(evt.type==='done'){ payload=evt; sawDone=true;
-          /* 批189 · #5：压缩可见（后端在 done 载荷回传 compact）*/
-          /* 批191 · #5 补完：压缩可见（后端在 _compress_messages 单源上报 ⇒ done 载荷带 compact）。
-           反例硬化（老板新规则：关键改动必须跑反例样本）：dropped 必须是**数字**且在 (0, ∞) ——
-           此前 `dropped > 0` 对 true / "3" 这类脏值也成立 ⇒ 会渲染「已压缩 true 条」。 */
-        try{ const _ck=evt.compact; if(_ck && typeof _ck.dropped==='number' && isFinite(_ck.dropped) && _ck.dropped > 0){ addLog('🗜 已压缩 '+_ck.dropped+' 条上下文（保留 '+_ck.kept+' 条）','ok',true,'batch191 #5补完'); } }catch(e){}
-          if(evt.status==='ask'){ /* 批175：请示收尾保持「等待确认」，不进入交付核验 */ }
-          else if(evt.verify_verdict!==undefined){ paSetState('verifying'); }   // 批159：有核验结论 ⇒ 验证中
-          // 核验结论（后端在 done payload 里给）：让「完成」不再黑盒
-          if(evt.verify_verdict!==undefined){
-            lastVerify={verdict:evt.verify_verdict, checked:evt.verify_checked,
-                        failures:evt.verify_failures||[]}; } }
-        let _stage=null;
-        (evt.tool_steps||[]).forEach(s=>{ const k=s.round+':'+s.tool; if(seen.has(k))return; seen.add(k);
-          const _sg=stageOf(s.tool);
-          if(_sg!==_stage){ _stage=_sg; paRunLog('▶ 正在'+_sg+'…', 'stage', true); }
-          // 2026-09-13：兜底从 s.tool（裸工具名）改为通用语义短语 ——
-          // 老板看到「执行操作」远好于看到「browser_local」「wpp_render_full_deck」。
-          const _sem=semanticStage(s.tool,s.arg,semanticCtx(s.tool,s.arg))||semanticArg(s.tool,s.arg)||ACTION_SEMANTIC[s.tool]||'执行操作';
-          const _raw=s.tool+' '+String(s.arg||'').slice(0,60);
-          const _res=(s.result&&typeof s.result==='object')?s.result:null;
-          if(_res&&_res.blocked){
-            /* M2-A · Step 3.1（语义修正）：阻断**不再借 `tool` 态**显示（设计稿 §2.3 三个不许之①）。
-               事实来源 = 该次工具结果的 `reason` / `suggestion`（guard 原文，非前端编造）；
-               `blocked_at` 传 null（后端未给 ⇒ 不显示本地时间，禁止前端造时刻）。 */
-            paSetState('blocked', '已拦截外发（'+_sem+'）');
-            paRunLog('⛔ 已拦截外发：'+(s.result.reason||'L4 隐私禁止'), 'err', true, _raw);
-            addLog('💡 '+(s.result.suggestion||'脱敏后重试'), 'warn', true, _raw);
-            paRenderCard('block', {block_id:'toolstep:'+_raw, blocked_at:null, layer:'Guard',
-              reason:(s.result.reason||'L4 隐私禁止'), blocked_action:_sem, evidence_ref:null,
-              unblock_hint:((s.result.suggestion&&String(s.result.suggestion).trim())?String(s.result.suggestion):null),
-              state_map_key:'blocked'});
-          }
-          else if(_res&&_res.pending){ paSetState('approval', '等待授权：'+_sem); paRunLog('⏳ 等待授权：'+(s.result.reason||'需老板确认'), 'warn', true, _raw); }
-          else if(_res&&paIsPreviewPending(_res)){
-            // 批183 · C3：桥未就绪 = 可区分的**降级状态**（不是失败）⇒ 中性文案 + 就绪引导卡片；**不显示 ❌**
-            const _vis=paPreviewPendingVisual(_res);
-            paSetState('tool', '预览待 WPS 就绪（'+_sem+'）');
-            paRunLog(_vis.icon+' '+_vis.text+'（'+_sem+'）', _vis.cls, true, _raw);
-            paWpsReadyCardRender(s.tool, _res.hint, _vis.artifact, _vis);
-          }
-          // 批183 · C3：桥就绪（ready===true）⇒ 引导卡片自动消失
-          else { paSetState('tool', '正在跑工具：'+_sem); paRunLog((s.success?'  ✅ ':'  ❌ ')+_sem, s.success?'ok':'err', true, _raw); if(_res&&_res.ready===true) paWpsReadyCardClear(); }
-          tickPlan(s.tool, s.arg, s.success); });
-        if(evt.type==='done' && evt.status!=='ask') onTaskDone();   // 批175：请示不是交付 —— 跑交付核验会报「交付未经核验」= 新的假警报
-      }
-    }
-  }
-  if(!sawDone && !_sawAsk) onTaskDone();   // 批175：请示收尾不跑交付核验（同上）
-  // 兜底：流被直接关断(没等到 [DONE]、也没有 done 事件)时也要说清楚，不能静默
-  if(_sawError && !_errShown){
-    _errShown=true;
-    receipt('任务中断'+_errMeta+'：'+_sawError, 'err');
-    addMsg('assistant', '⚠️ 任务中断（后端报错，不是没反应）'+_errMeta+'：'+_sawError, false,
-      paErrBlockHtml(_errMeta, _sawError));
-  } else if(!sawDone && _sawAsk){
-    // 批175：ask 收尾 = 正常请示（后端同 run 已留 turn_end reason=ask）⇒ 不得落 failed
-    receipt('本次是「请示收尾」：等老板确认后继续（不是失败）', 'warn');
-  } else if(!sawDone){
-    receipt('本次执行结束但没有交付结果（流被中断）', 'err');
-    paSetState('failed', '流被中断（无 done 事件）');   // 批159
-  }
-  return payload;
-}
-/* 批153 · R2：写确认卡（PA 页）—— 三选项与工作台卡片统一：仅本次 / 一直允许 / 不允许。
-   判据(体检项 114 检测清单 C1-C4)：结论必须由 HTTP 状态码 + 后端回执 + 产物共同支撑，
-   前端文案只作待验证信号。always = 照做并写 grants.yaml（下次同场景免问）。 */
-/* ---- M2-A · Step 2：统一展示出口 paRenderCard（三张卡共用）----------------------------
-   设计稿 codex/2026-09-17-v9pes-m2a-visibility-closure-design.md §2.4 / §6 Step 2。
-   三条纪律（不靠自觉，靠判据）：
-   1. **只认白名单**：kind ∈ {approval, artifact, block}，每类只认自己的字段白名单。
-      未知 kind ⇒ 不渲染；未知字段 ⇒ **丢弃 + console.warn**（不静默、不塞进 DOM）。
-   2. **挂固定容器 #paCards**：**不散挂 #thread** —— 批221 现场：写 #thread 会被 renderThread 重画覆盖
-      （同类事故见体检库 #8：降级提示被 setMode/renderThread 覆盖 ⇒ 静默降级）。
-      **唯一例外（Step 3.2）**：**产物卡**是**消息内联**的交付预览（自批201 起随「持久化的助手正文」
-      重建，F5 后仍在）⇒ 由调用方显式传宿主 #thread；搬进不持久化的 #paCards 会丢掉该语义。
-      例外**只对 renderOutputCard 生效**；卡片模块自身仍不得触碰 #thread（静态判据钉死）。
-   3. **不代填**：只做字符串化与「未记录 / 未核验」文案；**卡片字段一律不参与时间计算**
-      —— 倒计时/耗时只能由后端给（设计稿 §2.1 revoke_window 纪律）。
-      本模块**禁止 Date.now()/new Date()/setInterval()**，有静态反例测试钉死
-      （tests/pes/test_m2a_frontend_outlet.py）。
-   **卡片不持久化**（老板 2026-09-18 拍板：不持久化但必须标注）：本容器只反映本次页面会话
-   收到的事实，刷新即清空；**不凭历史消息重造卡片**（防「假成交」：把旧正文重渲染成新证据）。 */
-const PA_CARD_DEF = {
-  approval: {cls:'pa-write-card',    required:['id'],       fields:['id','tool','target','reason','is_batch','items','expires_in_s','decisions','revoke_window']},
-  artifact: {cls:'pa-artifact-card', alias:'output-card', required:['path'],     fields:['path','exists','sha256','bytes','verified_by','done_when_status','verdict','reported_source']},
-  block:    {cls:'pa-block-card',    required:['block_id'], fields:['block_id','blocked_at','layer','reason','blocked_action','evidence_ref','unblock_hint','state_map_key']},
-  wps_ready:{cls:'pa-wps-card',     required:['tool'],       fields:['tool','hint','artifact_path','task_status','preview_status','completion_status']}
-};
-/* 纯函数（node 可直接跑）：白名单过滤 + 未知字段清单 + 必填校验。**无 DOM、无时间。** */
-function paCardFilter(kind, payload){
-  const def = PA_CARD_DEF[kind];
-  if(!def) return {ok:false, reason:'未知卡片类型 '+kind, data:null, unknown:[]};
-  const src = (payload && typeof payload==='object') ? payload : {};
-  const data={}, unknown=[];
-  Object.keys(src).forEach(function(k){ if(def.fields.indexOf(k)>=0){ data[k]=src[k]; } else { unknown.push(k); } });
-  for(let i=0;i<def.required.length;i++){
-    const rk=def.required[i];
-    if(data[rk]===undefined || data[rk]===null || data[rk]===''){
-      return {ok:false, reason:'缺必填字段 '+rk, data:null, unknown:unknown};
-    }
-  }
-  return {ok:true, reason:'', data:data, unknown:unknown};
-}
-/* 决策按钮文案 = **常量**（不由后端文本拼）；未知决策串一律不渲染 */
-const PA_CARD_ACTS={approve:'✅ 仅本次', always:'♾️ 一直允许', reject:'❌ 不允许'};
-const PA_CARD_BODY={
-  approval:function(d){
-    const cmd=(d.target==null)?'':String(d.target);
-    const why=(d.reason==null||String(d.reason).trim()==='')?('等待老板确认：'+cmd.slice(0,80)):String(d.reason).trim();
-    const acts=(Array.isArray(d.decisions)?d.decisions:Object.keys(PA_CARD_ACTS)).filter(function(a){ return !!PA_CARD_ACTS[a]; });
-    /* M2-A · Step 3.3（方案 A）：`expires_in_s` / `revoke_window` 现在是**后端快照透传** ——
-       ① 后端没给（null/undefined）⇒ 该行**不出现**（连「暂无」都不写，避免暗示它存在）；
-       ② **仍禁止本地估算/递减**：本函数只把后端数字转成文本，不引入任何时间调用
-          （`Date.now()`/`new Date()`/`setInterval()`/`getTime()` 已被静态反例钉死）；
-       ③ 撤销窗口只在 `show===true` 且秒数可读时渲染 —— 写审批今天**未接 hold** ⇒ 恒不出现；
-       is_batch / items 仍留后续步（批量卡是 M2-A 扩展，老板拍「不上本批」）。 */
-    const ttl=(d.expires_in_s==null)?'':('<div class="pwc-ttl">⏱ 剩余 '+esc(String(d.expires_in_s))+' 秒（后端快照，不本地递减）</div>');
-    const rw=d.revoke_window;
-    const rwHtml=((rw&&rw.show===true&&rw.seconds_left!=null)
-      ?('<div class="pwc-revoke">↩ 撤销窗口：剩余 '+esc(String(rw.seconds_left))+' 秒（后端快照）</div>') : '');
-    return '<div class="pwc-head">⏳ Agent 请求写入（需确认）</div>'+
-      '<div class="pwc-reason" id="paWriteReason">⚠️ '+esc(why)+'</div>'+
-      (cmd?'<div class="pwc-cmd">'+esc(cmd.slice(0,220))+'</div>':'')+
-      ttl+rwHtml+
-      '<div class="pwc-btns">'+acts.map(function(a){ return '<button data-act="'+esc(a)+'">'+PA_CARD_ACTS[a]+'</button>'; }).join('')+'</div>';
-  },
-  /* M2-A · Step 3.2：产物卡。四条不许（设计稿 §2.2 / §4.1）——
-     ① 默认态**未经核验**：读不到核验 ⇒ 写「未核验」，**不得**写「存在」；
-     ② 来源必须显式：探测来的路径 ⇒ 「来源：正文探测（非核验）」，受控词表，未知不猜；
-     ③ 不得升级 `claimed`：原样渲染成「agent 自报，未验证（claimed）」；
-     ④ 不得出现「✅ 产物已生成」这类完成断言 —— 完成只有后端 verdict 能给。 */
-  artifact:function(d){
-    const path=String(d.path==null?'':d.path);
-    const name=path.split('/').pop()||path;
-    /* 受控词表：只认已知来源；未知/缺失 ⇒ 按「未记录（按未经核验处理）」——不猜、不美化 */
-    const SRC={text_probe:'正文探测（非核验）'};
-    const src=SRC[String(d.reported_source==null?'':d.reported_source)]||'未记录（按未经核验处理）';
-    const by=(d.verified_by==null)?'':String(d.verified_by).trim();
-    const DWS={unset:'未声明（unset）', claimed:'agent 自报，未验证（claimed）', verified:'已核验（verified）'};
-    const dws=(d.done_when_status==null)?'未记录':(DWS[String(d.done_when_status)]||('未知取值 '+String(d.done_when_status)));
-    /* 磁盘实况：**未知 ≠ 不存在**（P1 未知即未知） */
-    const ex=(d.exists===true)?'存在（后端 record_artifact 判定）':((d.exists===false)?'不存在':'未核验');
-    const vd=(d.verdict&&typeof d.verdict==='object')?d.verdict:null;
-    const verified=(!!by || String(d.done_when_status)==='verified' || !!vd&&vd.state==='done');
-    const rows=['路径：'+esc(path),'来源：'+esc(src),'磁盘实况：'+esc(ex),
-                '验证者：'+esc(by?('已由 '+by+' 签署'):'未经验证者签署'),
-                '完成判据：'+esc(dws),
-                '完成裁决：'+esc(vd?((vd.state==null?'未记录':String(vd.state))+(vd.reason?('（'+String(vd.reason)+'）'):''))
-                                  :'没有契约，无法裁决完成')];
-    if(vd&&vd.next_action) rows.push('下一步：'+esc(String(vd.next_action)));
-    /* 设计稿 §2.2：sha256/bytes **空 ⇒ 不显示该行**（不是显示「未知」） */
-    if(d.sha256||d.bytes!=null){
-      rows.splice(3,0,'内容指纹／大小：'+esc((d.sha256?(String(d.sha256).slice(0,12)+'…'):'未核验')
-                                          +'／'+(d.bytes!=null?(String(d.bytes)+' 字节'):'未核验')));
-    }
-    return '<div class="oc-head"><span>📄</span><span class="oc-name">'+esc(name)+'</span>'
-      +'<span class="oac-ver">'+(verified?'已核验':'未经核验')+'</span><span class="oc-path">'+esc(path)+'</span>'
-      +'<button class="oc-toggle" data-act="download">下载</button>'
-      +'<button class="oc-toggle" data-act="toggle">展开全文</button></div>'
-      +'<div class="oac-meta">'+rows.map(function(x){ return '<div>'+x+'</div>'; }).join('')+'</div>'
-      +'<div class="oc-body"><div class="oac-note">正文预览：由前端读取（/v9/sandbox/read），'
-      +'只证明「读得到」，不是交付证据。</div><pre data-oac-body="1"></pre></div>';
-  },
-  /* M2-A · Step 3.1：阻断卡。三个不许（设计稿 §2.3）——
-     ① 不许把阻断渲染成 tool（语义修正在 SSE 分支：paSetState('blocked', …)）；
-     ② 不许给「重试」当万能解 ⇒ **本卡不带任何动作按钮**（阻断分「可重试」与「需老板改授权」）；
-     ③ 不许隐藏 unblock_hint 缺失 ⇒ 没替代路径就**明说**（防「假拒绝」）。 */
-  block:function(d){
-    const reason=(d.reason==null||String(d.reason).trim()==='')?'原因未记录':String(d.reason);
-    const hint=(d.unblock_hint==null||String(d.unblock_hint).trim()==='')?'':String(d.unblock_hint);
-    const rows=['阻断编号：'+esc(String(d.block_id))];
-    if(d.blocked_action!=null) rows.push('被拦动作：'+esc(String(d.blocked_action)));
-    rows.push('层：'+esc(d.layer==null?'未知层':String(d.layer)));
-    rows.push(hint?('替代路径：'+esc(hint)):'无替代路径（未记录）');
-    if(d.evidence_ref!=null) rows.push('证据：'+esc(String(d.evidence_ref)));
-    if(d.blocked_at!=null) rows.push('阻断时刻（后端）：'+esc(String(d.blocked_at)));
-    return '<div class="pbc-head">⛔ 已阻断（等待老板处理，不是错误）</div>'+
-      '<div class="pbc-why">原因：'+esc(reason)+'</div>'+
-      '<div class="pbc-meta">'+rows.map(function(x){ return '<div>'+x+'</div>'; }).join('')+'</div>';
-  },
-  /* M2A-07 ②-1（并入统一出口）：模板仍由批183 的**纯函数**出（不复制第二份文案），
-     出口负责本类别的四条纪律：字段白名单、同 key 复用、宿主、标注；本函数**纯同步、无时间**。 */
-  wps_ready:function(d){
-    return paWpsReadyCardHtml(d.hint, d.artifact_path,
-      {task_status:d.task_status, preview_status:d.preview_status, completion_status:d.completion_status});
-  }
-};
-/* 每个 kind 的按钮绑定（DOM 侧；与 body 分开，便于纯函数单测） */
-const PA_CARD_BIND={
-  approval:function(card,d){
-    card.querySelectorAll('button').forEach(function(b){
-      b.addEventListener('click',function(){ paWriteDecide(d.id,b.getAttribute('data-act'),card); });
-    });
-  },
-  /* 产物卡绑定（DOM 侧，非纯函数）：内容从 **_outputContent** 取（前端读取缓存），
-     不是 payload 字段 ⇒ 白名单不被污染；缓存没有 ⇒ **明说未取到**（不等于文件不存在）。 */
-  artifact:function(card,d){
-    const path=String(d.path==null?'':d.path);
-    card.setAttribute('data-path',path);   /* 兼容层：downloadOutput / 既有选择器仍按 .output-card[data-path] 工作 */
-    const body=card.querySelector('.oc-body');
-    const pre=body?body.querySelector('pre[data-oac-body]'):null;
-    if(pre){
-      const c=_outputContent[path];
-      pre.textContent=(typeof c==='string')?c:'（正文未取到：/v9/sandbox/read 未返回内容 —— 这不代表文件不存在）';
-    }
-    card.querySelectorAll('button[data-act]').forEach(function(b){
-      const a=b.getAttribute('data-act');
-      if(a==='download'){ b.addEventListener('click',function(){ downloadOutput(b); }); }
-      else if(a==='toggle'&&body){ b.addEventListener('click',function(){ body.classList.toggle('open'); }); }
-    });
-  },
-  block:function(){},
-  /* 就绪卡绑定（DOM 侧）：复制按钮走 data-act（**不内联 onclick**，与审批/产物卡同源）。 */
-  wps_ready:function(card,d){
-    card.querySelectorAll('button[data-act]').forEach(function(b){
-      const a=b.getAttribute('data-act');
-      if(a==='copy'){ b.addEventListener('click',function(){ paCopyText(b.getAttribute('data-copy')); }); }
-    });
-  }
-};
-/* M2-A · Step 3.2 续 / 老板 2026-09-18 拍板：卡片**加「不持久化」标注，不加持久化**。
-   **文案逐类如实**（不逐类如实就是「假标注」）：
-   - 宿主 `#paCards` 的卡（审批/阻断）：刷新即清空 ⇒ 用老板给定原文；
-   - 产物卡宿主是 `#thread`（消息内联，批201 起 F5 后按**消息正文**重建）⇒ 写「刷新后消失」是**反的**；
-     但正文本身存在 localStorage，**配额写失败时同样会消失** ⇒ 两句都写清。
-   标注由出口 `paRenderCard` 以 `textContent` 追加（不拼 HTML）；**不得**塞进 PA_CARD_BODY
-   （那是「事实行」区域，产物卡 body 有「不得出现完成断言」的判据）。 */
-const PA_CARD_PERSIST_NOTE = {
-  approval: 'ⓘ 本卡片不持久化，刷新后消失；记录见消息日志。',
-  block:    'ⓘ 本卡片不持久化，刷新后消失；记录见消息日志。',
-  artifact: 'ⓘ 本卡片本身不持久化：刷新后按该条消息正文重建；若本地写入失败（存储配额），会与消息一起消失。',
-  wps_ready: 'ⓘ 本卡片不持久化，刷新后消失；记录见消息日志。'
-};
-function paSyncCardsHint(){
-  try{
-    const host=document.getElementById('paCards'), hint=document.getElementById('paCardsHint');
-    if(hint) hint.classList.toggle('show', !!(host && host.children.length));
-  }catch(e){}
-}
-function paDismissCard(card){
-  try{ if(card&&card.parentNode) card.parentNode.removeChild(card); }catch(e){}
-  paSyncCardsHint();
-}
-/* 唯一渲染出口：卡片只经这里进 DOM（三张卡共用）。返回卡片元素；被拒时返回 null 并 warn。
-   host（可选，**Step 3.2 新增**）：显式宿主元素；省略 ⇒ 默认容器 #paCards。
-   **只允许产物卡传 #thread**（消息内联 + 批201 F5 重建语义，见 renderOutputCard 注释）；
-   其它卡传显式宿主属于越界，会连同「卡片模块不得触碰 #thread」的静态判据一起红。 */
-function paRenderCard(kind, payload, host){
-  const r=paCardFilter(kind,payload);
-  if(!r.ok){ console.warn('[PA][CARD] 拒绝渲染 kind='+kind+'：'+r.reason); return null; }
-  if(r.unknown.length) console.warn('[PA][CARD] kind='+kind+' 丢弃未知字段：'+r.unknown.join(', '));
-  if(!(host && host.appendChild)) host=document.getElementById('paCards');
-  if(!host){ console.warn('[PA][CARD] 缺容器 #paCards ⇒ 卡片未渲染（不回落 #thread：会被 renderThread 覆盖）'); return null; }
-  const def=PA_CARD_DEF[kind];
-  const key=String(r.data[def.required[0]]);
-  let card=null;
-  for(let i=0;i<host.children.length;i++){
-    const ch=host.children[i];
-    if(ch.getAttribute('data-card-kind')===kind && ch.getAttribute('data-card-key')===key){ card=ch; break; }
-  }
-  if(!card){
-    card=document.createElement('div');
-    card.className=def.cls+(def.alias?(' '+def.alias):'');   /* alias 兼容层：产物卡仍挂 .output-card（CSS / 既有选择器） */
-    card.setAttribute('data-card-kind',kind); card.setAttribute('data-card-key',key);
-    if(kind==='approval') card.id='paWriteCard_'+key;   /* 兼容旧 id（批153 起沿用） */
-    host.appendChild(card);
-  }
-  card.innerHTML=PA_CARD_BODY[kind](r.data);
-  PA_CARD_BIND[kind](card,r.data);
-  /* 「不持久化」标注（老板 2026-09-18 拍）：innerHTML 每次重画 ⇒ 标注随之重建（无需去重）。
-     textContent 写入 ⇒ 文案不进 HTML 解析路径。 */
-  const _note=PA_CARD_PERSIST_NOTE[kind];
-  if(_note){
-    const _n=document.createElement('div');
-    _n.className='pa-card-note'; _n.setAttribute('data-card-note','persist'); _n.textContent=_note;
-    card.appendChild(_n);
-  }
-  if(host.id==='paCards') paSyncCardsHint();   /* 提示行只描述 #paCards 的内容（产物卡在 #thread） */
-  try{ if(card.scrollIntoView) card.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){}
-  return card;
-}
-
-/* M2-A · Step 3.1：阻断卡接**只读投影**接口（Step 1：GET /v9/pes/runs）。
-   三条纪律：
-   1. **只读**：本函数只 GET，不写任何状态；
-   2. **取不到不当「全绿」**：接口不可用 / success=false / 有 degradations ⇒ **只 warn，不渲染假卡**；
-      `runs` 为空 ⇒ 不渲染卡片，也**不显示任何「正常」标记**（空 ≠ 全绿，见未闭 M2A-02）；
-   3. **字段不代填**：投影已按冻结表给白名单字段，本函数**只搬运**（多余字段由 paRenderCard warn 出来）。 */
-async function paLoadPesBlocks(){
-  try{
-    const r=await fetch(API+'/v9/pes/runs?user_id='+encodeURIComponent(curUser())+'&limit=50');
-    if(!r.ok){ console.warn('[PA][PES] 投影接口不可用：HTTP '+r.status+' ⇒ 不渲染任何阻断卡（不用「取不到」冒充「无阻断」）'); return; }
-    const d=await r.json();
-    if(!d||!d.success){ console.warn('[PA][PES] 投影 success=false：'+((d&&d.error)||'未知')+' ⇒ 不渲染任何阻断卡'); return; }
-    const deg=d.degradations||[];
-    deg.forEach(function(g){ console.warn('[PA][PES] 降级信号 '+(g&&g.code)+'：'+((g&&g.message)||'')); });
-    let n=0, first=null;
-    (d.runs||[]).forEach(function(run){
-      const b=run&&run.blocked; if(!b) return;
-      const card=paRenderCard('block', b);
-      if(card){ n++; if(!first) first=b; }
-    });
-    if(first){   /* 状态药丸也跟着进阻断态（键来自后端 state_map_key；未知键不猜，只 warn） */
-      const k=String(first.state_map_key||'blocked');
-      if(PA_STATE_DEF[k]) paSetState(k, first.reason||'');
-      else console.warn('[PA][PES] state_map_key 未知：'+k+'（不猜，保持原状态）');
-    }
-    if(!(d.runs||[]).length) console.log('[PA][PES] 投影 runs 为空（无 run 记录）—— 不渲染卡片，也不视为「全绿」');
-    console.log('[PA][PES] 阻断卡渲染 '+n+' 张（投影 runs='+(d.runs||[]).length+'，降级信号 '+deg.length+' 条）');
-  }catch(e){ console.warn('[PA][PES] 投影请求异常：'+(e&&e.message)); }
-}
-function renderPaWriteCard(pw, note){
-  if(!pw) return null;
-  const _cmd=String(pw.command||pw.path||'');
-  const _why=(note&&String(note).trim())?String(note).trim():('等待老板确认：'+_cmd.slice(0,80));
-  /* M2-A · Step 2：DOM 迁到统一出口 paRenderCard('approval', ...)，只传白名单字段。
-     M2-A · Step 3.3（方案 A）：expires_in_s / revoke_window 改**透传后端快照**；
-     后端没给（undefined）⇒ **显式 null**（未知即未知；禁止本地估算倒计时 —— 时间调用被静态反例钉死）。 */
-  const _payload={ id:pw.id, tool:pw.tool, target:_cmd, reason:_why,
-                   expires_in_s:(pw.expires_in_s===undefined?null:pw.expires_in_s),
-                   revoke_window:(pw.revoke_window===undefined?null:pw.revoke_window),
-                   decisions:['approve','always','reject'] };
-  if(pw.batch!==undefined) _payload.is_batch=pw.batch;
-  if(pw.items!==undefined) _payload.items=pw.items;
-  const card=paRenderCard('approval', _payload);
-  if(!card) return null;
-  paFlashApproval(card);   /* 批193：自动滚到卡片 + 高亮描边（口径 A：审批在中栏）*/
-  receipt('⏳ 有写入等待你拍板','warn');
-  return card;
-}
-async function paWriteDecide(id, action, card){
-  if(card) card.querySelectorAll('button').forEach(function(b){ b.disabled=true; });
-  addLog(action==='reject'?'👤 已拒绝写入':(action==='always'?'👤 已确认写入（一直允许本场景）':'👤 已确认写入（仅本次）'),
-         action==='reject'?'warn':'ok', true);
-  try{
-    const r=await fetch(API+'/v9/agent/chat',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:curUser(),session_id:activeThread().id,model:'deepseek-v4-flash',
-        approve_write:{id:id,action:action},messages:window.__paSendMessages||[]})});
-    const d=await r.json().catch(function(){ return {}; });
-    if(d.status==='write_confirmed'){
-      const ok=!!(d.tool_result&&d.tool_result.success);
-      const _err=(d.tool_result&&d.tool_result.error)?('：'+d.tool_result.error):'';
-      addLog((ok?'✅ ':'❌ ')+'写入'+(ok?'已执行':'失败'+_err), ok?'ok':'err', true);
-      receipt(ok?'✅ 写入已执行':'❌ 写入失败', ok?'ok':'err');
-      paDismissCard(card);
-      if(action==='always') addLog('♾️ 已记住该场景（grants.yaml），下次免问','ok',true);
-      if(d.continue_messages&&d.continue_messages.length){
-        window.__paSendMessages=d.continue_messages; await sendAgent(activeThread());
-      }
-    } else if(d.status==='write_rejected'){
-      addLog('↩ 已拒绝，Agent 将调整方案','warn',true); receipt('已拒绝该写入','rev');
-      paDismissCard(card);
-    } else {
-      addLog('⚠️ 确认未生效：'+(d.message||d.error||'未知响应'),'err',true);
-      receipt('确认未生效（后端未确认）','err');
-    }
-  }catch(e){ addLog('确认请求失败：'+e.message,'err',true); }
-}
-function paStop(){
-  // 2026-09-13 修 bug #7（中断语义统一）：此前只 abort 前端 fetch —— 后端桥接循环**继续跑**
-  // （实测浏览器关闭后仍跑了 35s），即「能停只停前端」。
-  // 现在同时置后端取消标志（POST /v9/cancel/<session_id>），桥接循环在下一个检查点退出。
-  /* 批187 · 缺陷4：取消「发起线程」，不是当前选中线程 */
-  const _t = { id: paRun.threadId || activeThread().id };
-  const _tn = (state.threads.find(function(x){return x.id===_t.id;})||{}).title || _t.id;
-  try{ fetch(API+'/v9/cancel/'+encodeURIComponent(_t.id),{method:'POST'}).catch(()=>{}); }catch(e){}
-  if(abortCtrl) abortCtrl.abort();
-  paRunLog('⏹ 已停止：已通知后端取消线程「'+esc(_tn)+'」','warn',true); setBusy(false);
-  paSetState('stopped', '老板手动停止（已通知取消：'+_tn+'）');   // 批159 · 批187 缺陷4 写明线程
-}
-
-/* ---- 右栏 ---- */
-function switchTab(btn, id){
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active')); $(id).classList.add('active');
-  if(id==='pane-collect') loadFieldsForm();
-}
-async function loadSide(){
-  $('uidText').textContent = curUser();
-  try{
-    const r = await fetch(API+'/v9/pa/context?user_id='+encodeURIComponent(curUser()));
-    if(r.ok){ const d=await r.json(); if(d.ok){ renderSide(d); return; } }
-  }catch(e){}
-  $('profileCards').innerHTML='<div class="card" style="color:var(--sub)">画像未加载（/v9/pa/context 无响应）。</div>';
-  $('todoCards').innerHTML='<div class="card todo" style="color:var(--sub)">账本未加载（/v9/pa/context 无响应）。</div>';
-}
-const DOM_LABEL={decision:'决策',aesthetic:'审美',emotion:'情感',style:'风格',lesson:'教训',fact:'事实',product:'产品',channel:'通道'};
-function renderSide(d){
-  const pc=$('profileCards'); pc.innerHTML='';
-  const order={decision:0,emotion:1,aesthetic:2,style:3,lesson:4,fact:5,product:6,channel:7};
-  (d.profile||[]).slice().sort((a,b)=>(order[a.domain]??9)-(order[b.domain]??9)).forEach(e=>{
-    const div=document.createElement('div');
-    div.className='card'+(e.domain==='emotion'?' emotion':(e.domain==='aesthetic'?'':''));
-    div.innerHTML='<div class="k">'+esc(DOM_LABEL[e.domain]||e.domain)+'</div>'+esc(e.value||'')+
-      '<div style="color:#6e7681;font-size:10.5px;margin-top:3px">['+esc(e.confidence||'')+'] '+esc(e.date||'')+'</div>';
-    pc.appendChild(div); });
-  const tc=$('todoCards'); tc.innerHTML='';
-  (d.ledger||[]).forEach(i=>{ const div=document.createElement('div'); div.className='todo-item';
-    div.innerHTML='<span class="cb" onclick="doneTodo(\''+i.id+'\')"></span><span>'+esc(i.title||'')+(i.due?' <code>'+esc(i.due)+'</code>':'')+'</span>';
-    div.style.margin='4px 11px'; tc.appendChild(div); });
-}
-async function doneTodo(id){
-  try{ await fetch(API+'/v9/pa/ledger/done',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}); loadSide(); }catch(e){}
-}
-let todoView='open';
-function toggleTodoView(){ todoView = todoView==='open' ? 'done' : 'open'; $('todoViewBtn').textContent = todoView==='open' ? '看已完成' : '看待办'; todoView==='open' ? loadSide() : loadDoneTodos(); }
-async function loadDoneTodos(){ const tc=$('todoCards'); tc.innerHTML=''; try{ const r=await fetch(API+'/v9/pa/ledger?user_id='+encodeURIComponent(curUser())); if(!r.ok) throw 0; const d=await r.json(); const items=(d.items||[]).filter(i=>i.status==='done'); if(!items.length){ tc.innerHTML='<div class="card todo" style="color:var(--sub)">暂无已完成项</div>'; return; } items.forEach(i=>{ const div=document.createElement('div'); div.className='todo-item done'; div.innerHTML='<span>'+esc(i.title||'')+(i.due?' <code>'+esc(i.due)+'</code>':'')+'</span>'; div.style.margin='4px 11px'; tc.appendChild(div); }); }catch(e){ tc.innerHTML='<div class="card todo" style="color:var(--sub)">账本加载失败</div>'; } }
-
-/* ---- 项目文件（沙箱） ---- */
-/* 批122 C：把"在看哪个沙箱"显示出来 —— source + path 都来自响应（前端不拼路径，守 C1 契约）*/
-function renderFileSource(d){
-  const el=$('fileSrc'); if(!el) return;
-  const src = (d && d.source) ? String(d.source) : '';
-  const p = (d && d.path) ? String(d.path) : '';
-  el.textContent = (src ? ('来源 '+src) : '来源未知') + (p ? (' · '+p) : '');
-  el.title = (src ? ('source='+src+'\n') : '') + (p || '');
-}
-async function loadFiles(){
-  const box=$('fileList'); box.innerHTML='<div class="fitem">…</div>';
-  try{
-    /* 批122 A：与聊天同一个 sid（curSession() === __APP_STATE.sessionId === activeThread().id）*/
-    const r = await fetch(API+'/v9/sandbox/list', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({user_id:curUser(), session_id:curSession(), path:'.', skip_quota:true})});
-    const d = await r.json();
-    renderFileSource(d);
-    /* 批122 B：后端把 files / dirs 分成两个字段返回，面板此前只取 files ⇒ 目录永远不显示 */
-    const nameOf = x => (typeof x==='string' ? x : ((x && (x.name||x.path)) || '?'));
-    const dirs = Array.isArray(d.dirs) ? d.dirs.map(x=>({n:nameOf(x), isDir:true})) : [];
-    const files = Array.isArray(d.files) ? d.files.map(x=>({n:nameOf(x), isDir:false})) : [];
-    const items = (dirs.length||files.length) ? dirs.concat(files)
-      : (d.items || d.entries || d.data || []).map(x=>({n:nameOf(x), isDir:(typeof x==='object' && !!(x.is_dir||x.type==='dir'))}));
-    if(!items.length){ box.innerHTML='<div class="fitem">（空或需在沙箱会话中）</div>'; return; }
-    box.innerHTML = items.slice(0,60).map(x=>
-      '<div class="fitem" title="'+esc(String(x.n))+'">'+(x.isDir?'📁 ':'📄 ')+esc(String(x.n).split('/').pop())+'</div>'
-    ).join('');
-  }catch(e){ box.innerHTML='<div class="fitem">文件面板待接线（/v9/sandbox/list）</div>'; }
-}
-
-/* ---- 输入 ---- */
-const ta=$('input');
-ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); paSend(); } });
-function autoGrow(){ ta.style.height='38px'; ta.style.height=Math.min(120,Math.max(38,ta.scrollHeight))+'px'; }
-ta.addEventListener('input',autoGrow);
-
-/* ---- 运行配置 ---- */
-function loadCfg(){ const c=JSON.parse(localStorage.getItem('pa_cfg')||'{}'); const set=(id,v)=>{const el=$(id); if(el&&v) el.value=v;}; set('cfgChan',c.chan); set('cfgModel',c.model); set('cfgPerm',c.perm); set('cfgAppr',c.appr); const cv=$('cfgVault'); if(cv&&typeof c.vault==='boolean') cv.checked=c.vault; fetch(API+'/v9/pa/permission?user_id='+encodeURIComponent(curUser())).then(r=>r.json()).then(d=>{ if(d&&d.level&&$('cfgPerm')) $('cfgPerm').value=d.level; }).catch(()=>{}); }
-function saveCfg(){ const cfg={chan:$('cfgChan').value,model:$('cfgModel').value,perm:$('cfgPerm').value,appr:$('cfgAppr').value,vault:$('cfgVault').checked}; localStorage.setItem('pa_cfg',JSON.stringify(cfg)); fetch(API+'/v9/pa/permission',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:curUser(),level:cfg.perm})}).then(r=>r.json()).then(d=>{ if(d&&!d.ok) console.warn('permission 后端写入失败',d); }).catch(e=>console.warn('permission 后端不可达',e)); }
-
-/* ---- 建档表单（字段驱动：后端字段表 /v9/pa/profile/schema；前端不硬编码字段）---- */
-let FIELD_SPEC = {}, FIELD_ORDER = [];
-async function loadFieldsForm(){
-  const box = $('collectForm'); if(!box) return;
-  try{
-    const r = await fetch(API+'/v9/pa/profile/schema?user_id='+encodeURIComponent(curUser()));
-    const d = await r.json();
-    if(!d || !d.ok || !d.fields) throw 0;
-    FIELD_SPEC = d.fields;
-    FIELD_ORDER = d.order || Object.keys(d.fields);
-    renderFieldsForm(d.values||{});
-    const sw = d.switches||{};
-    setCollectMsg('当前：汇报'+esc(sw.detail||'中')+(sw.auto_write?' · 可自动写':' · 写需确认')+(sw.auto_exec?' · 可自动执行':' · 执行需确认'));
-  }catch(e){ box.innerHTML='<div style="color:var(--sub)">字段表未加载（/v9/pa/profile/schema 无响应）。</div>'; }
-}
-function renderFieldsForm(values){
-  const box=$('collectForm'); box.innerHTML='';
-  (FIELD_ORDER.length?FIELD_ORDER:Object.keys(FIELD_SPEC)).forEach(k=>{
-    const f=FIELD_SPEC[k]; if(!f) return;
-    const cur=values[k], wrap=document.createElement('label');
-    wrap.setAttribute('data-key',k);
-    if(f.type==='multi'){
-      const g=document.createElement('span');
-      g.style.cssText='display:inline-flex;flex-wrap:wrap;gap:6px;max-width:150px;justify-content:flex-end';
-      (f.options||[]).forEach(o=>{
-        const lb=document.createElement('span'); lb.style.whiteSpace='nowrap';
-        const on = Array.isArray(cur) && cur.indexOf(o)>=0;
-        lb.innerHTML='<input type="checkbox" data-field="'+esc(k)+'" value="'+esc(o)+'"'+(on?' checked':'')+'> '+esc(o);
-        g.appendChild(lb);
-      });
-      wrap.appendChild(document.createTextNode(f.label));
-      wrap.appendChild(g);
-    } else {
-      wrap.appendChild(document.createTextNode(f.label));
-      const sel=document.createElement('select'); sel.id='cf_'+k; sel.setAttribute('data-field',k);
-      sel.innerHTML='<option value="">未设置</option>'+(f.options||[]).map(o=>
-        '<option value="'+esc(o)+'"'+(cur===o?' selected':'')+'>'+esc(o)+'</option>').join('');
-      wrap.appendChild(sel);
-    }
-    box.appendChild(wrap);
-  });
-}
-function collectValues(){
-  const v={};
-  Object.keys(FIELD_SPEC).forEach(k=>{
-    const f=FIELD_SPEC[k];
-    if(f.type==='multi'){
-      const sel=Array.prototype.slice.call(document.querySelectorAll('input[data-field="'+k+'"]:checked')).map(x=>x.value);
-      if(sel.length) v[k]=sel;
-    } else {
-      const el=$('cf_'+k), val=el?el.value:'';
-      if(val) v[k]=val;
-    }
-  });
-  return v;
-}
-async function saveFields(){
-  const v=collectValues();
-  if(!Object.keys(v).length){ setCollectMsg('没有填写任何字段'); return; }
-  setCollectMsg('保存中…');
-  try{
-    const r=await fetch(API+'/v9/pa/profile',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:curUser(), source:'form', values:v})});
-    const d=await r.json();
-    if(!d || !d.ok){ setCollectMsg('写入失败：'+((d&&d.error)||'')); return; }
-    const w=(d.written||[]).length, un=(d.unchanged||[]).length, rj=(d.rejected||[]);
-    const sw=d.switches||{};
-    setCollectMsg('已写入 '+w+' 项'+(un?('，'+un+' 项未变'):'')+(rj.length?('；被拒：'+rj.map(x=>esc(x.reason)).join(' / ')):'')
-      +' · 汇报'+esc(sw.detail||'中')+(sw.auto_write?' · 可自动写':' · 写需确认'));
-    if(w) console.log('[PA建档] 落库', d.fields, sw);
-    loadSide();
-  }catch(e){ setCollectMsg('后端不可达'); }
-}
-function setCollectMsg(t){ const el=$('collectMsg'); if(el) el.textContent=t||''; }
-['cfgChan','cfgModel','cfgPerm','cfgAppr'].forEach(id=>$(id).addEventListener('change',saveCfg)); $('cfgVault').addEventListener('change',saveCfg);
-
-/* ---- 抽屉 ---- */
-/* ---- 批193 · 三栏显式折叠（老板提议）：默认显示、按钮常显、状态持久化 ----
-   宽屏：行内收起/展开（中栏 .chat-col flex:1 自动占满）；窄屏(<1000px)：仍走浮层抽屉（原行为不动）。*/
-function paPanels(){ try{ return JSON.parse(localStorage.getItem('pa_panels')||'{}')||{}; }catch(e){ return {}; } }
-function paApplyPanels(){
-  var p=paPanels();
-  document.body.classList.toggle('hide-left', p.left===false);
-  document.body.classList.toggle('hide-right', p.right===false);
-  document.body.classList.toggle('hide-top', p.top===false);
-  var lb=$('drawerLeftBtn'), rb=$('drawerRightBtn');
-  if(lb) lb.classList.toggle('off', p.left===false);
-  if(rb) rb.classList.toggle('off', p.right===false);
-}
-function paSetPanel(which, on){
-  var p=paPanels(); p[which]=!!on;
-  try{ localStorage.setItem('pa_panels', JSON.stringify(p)); }catch(e){}
-  paApplyPanels();
-}
-function togglePanel(which){ var p=paPanels(); paSetPanel(which, p[which]===false); }
-function toggleTop(){ togglePanel('top'); }
-function toggleDrawer(which){
-  if(window.innerWidth<=1000){   /* 窄屏：浮层抽屉（原行为）*/
-    var el=which==='left'?document.querySelector('.left'):document.querySelector('.side');
-    el.classList.toggle('drawer-open');
-    $('drawerMask').classList.toggle('show', !!document.querySelector('.left.drawer-open,.side.drawer-open'));
-    return;
-  }
-  togglePanel(which==='left'?'left':'right');
-}
-function closeDrawers(){ document.querySelectorAll('.left,.side').forEach(el=>el.classList.remove('drawer-open')); $('drawerMask').classList.remove('show'); }
-/* 批193 · 口径 A：审批/请示到达 ⇒ 自动滚动到卡片 + 高亮描边（侧栏折叠不会挡住中栏卡片）*/
-function paFlashApproval(el){
-  try{
-    if(!el) return;
-    el.classList.add('pa-flash');
-    if(el.scrollIntoView) el.scrollIntoView({block:'center',behavior:'smooth'});
-    setTimeout(function(){ el.classList.remove('pa-flash'); }, 2800);
-  }catch(e){}
-}
-
-/* ---- 启动 ---- */
-(async function(){
-  // 批171 · 入口可达性：**恢复上次模式**（此前 pa_state 只写不读 ⇒ 「记住选择」实际不生效，
-  // 每次刷新都回到「聊天=不出手」⇒ 用户以为"没有能执行任务的入口"）。线程自己的 mode 优先（切换线程时会再 setMode）。
-  try{
-    const _saved = JSON.parse(localStorage.getItem('pa_state')||'{}');
-    if(_saved && MODES[_saved.mode] && MODES[_saved.mode].on){ state.mode = _saved.mode; }
-  }catch(e){}
-  await loadThreads();
-/* 批189 · #2：PA 单线程 ⇒ 启动时收敛为**唯一会话**（保留最近活跃那条，其余留在后端作只读历史） */
-function paCollapseToSingleThread(){
-  try{
-    if(!state.threads || !state.threads.length) return;
-    if(state.threads.length > 1){
-      const keep = state.threads.find(function(x){ return x.id===state.activeThread; }) || state.threads[0];
-      /* 批219·A 修（老板报「刷新后旧会话没了」的真凶）：旧代码 state.threads=[keep] 是**内存+写盘同时硬裁**
-         ⇒ 被裁会话**直接丢失**。单线程口径**不等于**要丢数据 ⇒ 一律**先归档再收敛**。 */
-      const _drop = state.threads.filter(function(x){ return x.id!==keep.id; });
-      state.archived = (state.archived||[]).concat(_drop.map(function(x){ return Object.assign({}, x, {archived_at:new Date().toISOString()}); }));
-      state.threads = [keep]; state.activeThread = keep.id; saveState();
-      console.log('[PA_SINGLE_THREAD] 会话数收敛为 1（保留 ' + keep.id + '，归档 ' + _drop.length + ' 条不删除）');
-    }
-  }catch(e){}
-}
-  paCollapseToSingleThread();
-  /* W-08：收敛之后再测一次（读的是收敛后的实际体积）；走 _boot ⇒ 失败也 fail-loud（批192 口径）。 */
-  _boot("paQuotaGuard", paQuotaGuard);
-  _boot("paMigrateArchiveToServer", paMigrateArchiveToServer);   /* X-11 层 1：有正文才动作；先保底导出；服务端确认读回才改本地 */
-  /* 批192 · 缺陷修：启动步骤**逐步 fail-loud** —— 一个 null 写入（如 #threadList）曾静默中断整段启动，
-     且因是 promise rejection 而页内无感。现在每步独立捕获并显式报告（控制台 + 页面内 sys 消息）。 */
-  function _bootErr(step, e){
-    try{ console.error("[PA_BOOT] " + step + " 失败：" + ((e && e.message) || e)); }catch(_e0){}
-    try{ addMsg("sys", "⚠ 启动步骤「" + step + "」失败：" + ((e && e.message) || e)); }catch(_e1){}
-  }
-  function _boot(step, fn){
-    let r = null;
-    try{ r = fn(); }catch(e){ _bootErr(step, e); return; }
-    if(r && typeof r.catch === "function"){ r.catch(function(e){ _bootErr(step, e); }); }
-  }
-  _boot("panels", paApplyPanels);   /* 批193：先应用折叠状态，避免加载后跳一下 */
-  _boot("renderModes", renderModes);
-  _boot("renderThreads", renderThreads);
-  _boot("setMode", function(){ setMode(state.mode); });
-  _boot("syncPaSession", syncPaSession);
-  if(!(activeThread().msgs||[]).length){ addMsg('sys','PA v0.2 —— 聊天=就事论事（画像/审美/情感沉淀，不出手）｜工作=办公类 computer use｜项目开发=代码（高权限）。线程与项目文件已可用。'); }
-  _boot("loadSide", loadSide);
-  _boot("loadFiles", loadFiles);
-  _boot("loadCfg", loadCfg);
-  _boot("renderKbPanel", renderKbPanel);
-  _boot("probeConn", probeConn);
-  _boot("paLoadPesBlocks", paLoadPesBlocks);   /* M2-A Step 3.1：阻断卡接只读投影（空库时静默，不渲染假卡） */
-  setInterval(probeConn, 15000);
-})();
-</script>
+<script src="pa/core.js"></script>
+<script src="pa/faces/archive.js"></script>
+<script src="pa/faces/session.js"></script>
+<script src="pa/faces/shell.js"></script>
+<script src="pa/faces/caliber.js"></script>
+<script src="pa/faces/authz.js"></script>
+<script src="pa/faces/chat.js"></script>
+<script src="pa/faces/products.js"></script>
+<script src="pa/faces/status.js"></script>
+<script src="pa/faces/send.js"></script>
+<script src="pa/faces/cards.js"></script>
+<script src="pa/faces/profile.js"></script>
+<script src="pa/faces/files.js"></script>
+<script src="pa/faces/input.js"></script>
+<script src="pa/faces/config.js"></script>
+<script src="pa/faces/collect.js"></script>
+<script src="pa/faces/drawer.js"></script>
+<script src="pa/faces/today.js"></script>
+<script src="pa/faces/tasks.js"></script>
+<script src="pa/faces/more.js"></script>
+<script src="pa/faces/selfdesc.js"></script>
+<script src="pa/faces/sources.js"></script>
+<script src="pa/boot.js"></script>
 </body>
 </html>

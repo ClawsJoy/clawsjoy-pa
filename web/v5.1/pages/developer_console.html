@@ -531,7 +531,7 @@
                     <div style="margin-top: 20px;">
                         <h4 style="color:#aaa; margin-bottom: 10px;">📡 API调用示例</h4>
                         <pre style="background:#0a0a1a; padding: 15px; border-radius: 12px; overflow-x: auto; font-size: 12px;">
-curl -X POST http://localhost:5002/api/hot_reload/execute \
+curl -X POST "$V9_URL/api/hot_reload/execute" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ck_dev_xxxxxxxxxxxxxx" \
   -d '{"tenant_id": "default", "skill_id": "weather", "params": {"city": "北京"}}'

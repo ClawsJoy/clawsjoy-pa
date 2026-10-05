@@ -3,10 +3,17 @@
 
 import requests
 import streamlit as st
+import os
+import sys
+_root = os.path.dirname(os.path.abspath(__file__))
+while os.path.dirname(_root) != _root and not os.path.exists(os.path.join(_root, "gateway_endpoint.py")):
+    _root = os.path.dirname(_root)
+sys.path.append(_root)  # 向上找到含 cheap reader 的那层（出口层不 import core，深度无关）
+from gateway_endpoint import gateway_base_url
 
 # 检查后端服务
 try:
-    resp = requests.get("http://localhost:5002/api/v5/health", timeout=2)
+    resp = requests.get(gateway_base_url() + "/api/v5/health", timeout=2)
     BACKEND_AVAILABLE = resp.status_code == 200
 except Exception as e:
     BACKEND_AVAILABLE = False
@@ -38,10 +45,10 @@ st.sidebar.info(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("[🔧 Workbench V8](http://localhost:5002/workbench)")
+st.sidebar.markdown("[🔧 Workbench V8](" + gateway_base_url() + "/workbench)")
 st.sidebar.markdown("[🎭 数字人](http://localhost:7860)")
-st.sidebar.markdown("[🐾 v5.1 门户](http://localhost:5002/v5.1)")
-st.sidebar.markdown("[📖 工具箱](http://localhost:5002/web/clawsjoy_story.html)")
+st.sidebar.markdown("[🐾 v5.1 门户](" + gateway_base_url() + "/v5.1)")
+st.sidebar.markdown("[📖 工具箱](" + gateway_base_url() + "/web/clawsjoy_story.html)")
 # 加载页面
 if page == "💬 Chat Agent":
     exec(open("web/chat_interface.py", encoding="utf-8").read())

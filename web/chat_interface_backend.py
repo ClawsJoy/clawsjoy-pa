@@ -8,11 +8,18 @@ from pathlib import Path
 
 import requests
 import streamlit as st
+import os
+import sys
+_root = os.path.dirname(os.path.abspath(__file__))
+while os.path.dirname(_root) != _root and not os.path.exists(os.path.join(_root, "gateway_endpoint.py")):
+    _root = os.path.dirname(_root)
+sys.path.append(_root)  # 向上找到含 cheap reader 的那层（出口层不 import core，深度无关）
+from gateway_endpoint import gateway_base_url
 
 st.set_page_config(page_title="ClawsJoy Chat - 智能对话", page_icon="💬", layout="wide")
 
 # API配置
-API_BASE = "http://localhost:5002/api/v5"
+API_BASE = gateway_base_url() + "/api/v5"
 
 # 初始化
 if "messages" not in st.session_state:
@@ -139,7 +146,7 @@ if user_input:
                 if use_voice and response:
                     try:
                         tts_resp = requests.post(
-                            "http://localhost:5002/v5/tts",
+                            gateway_base_url() + "/v5/tts",
                             json={"text": response}
                         )
                         if tts_resp.status_code == 200:
