@@ -24,6 +24,20 @@ def tmp_vault(tmp_path, monkeypatch):
     import core.gateway.precision_inject as _pi
 
     monkeypatch.setattr(_pi, "_vault_path", lambda: str(tmp_path))
+    # 2026-09-28: 本 fixture 自造 `Pitfalls/避坑清单.md` ⇒ **配置也要钉住**。
+    #   只钉 `_vault_path` 时，避坑清单的**目录**仍读本机 execution_policy.yaml 的
+    #   `pitfalls_dir`（该值随 vault 布局变）⇒ 测试变成「本机配置内容依赖型」，
+    #   本机把真件指回活区后当场现形。这里显式声明本 fixture 自己的布局。
+    monkeypatch.setattr(
+        _pi,
+        "_obsidian_cfg",
+        lambda: {
+            "enabled": True,
+            "sops_dir": "SOPs",
+            "pitfalls_dir": "Pitfalls",
+            "pitfalls_file": "避坑清单.md",
+        },
+    )
     return tmp_path
 
 

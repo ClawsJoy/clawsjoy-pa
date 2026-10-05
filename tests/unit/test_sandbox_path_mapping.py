@@ -70,3 +70,34 @@ def test_handlers_have_fallback_and_source():
     # 写路径不回退: sandbox_write 无 _resolve_project_root_read
     sw = open("core/gateway/sandbox_write.py", encoding="utf-8").read()
     assert "_resolve_project_root_read" not in sw, "写路径不得回退(只进沙箱)"
+
+
+def test_helpers_unique_hit_fallback_is_pinned(monkeypatch, tmp_path):
+    """钉住现状（⛔ 不改行为）：`_get_sandbox_base` 的「唯一命中即采用」回退（批187）。
+
+    三个分支（与本函数实现逐条对应）：
+      A) 原路径存在                 => 原样返回（回退不触发）
+      B) 原路径不存在 ∧ 唯一他人命中 => 采用【他人】的沙箱根（跨主体采用）
+      C) 原路径不存在 ∧ 多命中       => 返回原路径（不存在，不猜）
+    ⚠ 本门只【钉现状】：B 是一条真在生效、此前无门的行为。
+      要不要改（只在本主体名下反查 / 命中即报错）另议 —— 改则本门必红，这正是它的用处。
+    """
+    from pathlib import Path
+
+    from core.lib.gateway_helpers import _get_sandbox_base
+
+    monkeypatch.chdir(tmp_path)
+    proj = tmp_path / "data" / "projects"
+    (proj / "u_self" / "s_a" / "clawsjoy_dev").mkdir(parents=True)
+    (proj / "u_real" / "s_b" / "clawsjoy_dev").mkdir(parents=True)
+    (proj / "u_x" / "s_c" / "clawsjoy_dev").mkdir(parents=True)
+    (proj / "u_y" / "s_c" / "clawsjoy_dev").mkdir(parents=True)
+
+    a = _get_sandbox_base("u_self", "s_a")
+    assert a == Path("data/projects/u_self/s_a/clawsjoy_dev"), str(a)
+
+    b = _get_sandbox_base("u_ghost", "s_b")
+    assert b == Path("data/projects/u_real/s_b/clawsjoy_dev"), str(b)
+
+    c = _get_sandbox_base("u_ghost", "s_c")
+    assert c == Path("data/projects/u_ghost/s_c/clawsjoy_dev"), str(c)

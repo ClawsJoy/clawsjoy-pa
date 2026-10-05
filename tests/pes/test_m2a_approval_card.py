@@ -31,7 +31,11 @@ from core.gateway.v9_bridge.tool_runner import _pending_card_view
 from core.gateway.write_gate import _PENDING_TTL
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# ⭐ 拆件（承 pm 18:08 §三 · 惟改径）：原 `web/pa.html` 单体已拆 ⇒
+#   卡片模块之新家 ＝ `web/pa/faces/cards.js`；`esc()` 之新家 ＝ `web/pa/faces/session.js`。
+#   —— 惟改「径」：⏔ 改断言 ／ ⏔ 改被测件以就测。
+PA = (ROOT / "web" / "pa" / "faces" / "cards.js",
+      ROOT / "web" / "pa" / "faces" / "session.js")
 TOOL_RUNNER = ROOT / "core" / "gateway" / "v9_bridge" / "tool_runner.py"
 
 _MOD_START = "const PA_CARD_DEF = {"
@@ -39,7 +43,7 @@ _MOD_END = "async function paWriteDecide("
 
 
 def _src() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _card_module() -> str:

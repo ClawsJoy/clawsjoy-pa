@@ -10,6 +10,14 @@ import urllib.request
 
 sys.path.insert(0, ".")
 
+import pytest  # noqa: E402
+
+# 「移出默认可跑集」（2026-09-21 · DS 裁②）：本件是**三态**（不就绪⇒skip ／ 就绪且无反爬⇒pass
+# ⇒ 撞门禁 miss_skip 红 ／ 反爬⇒skip ／ 真缺陷⇒fail），**件侧无解** ⇒ 默认集不收它。
+# 显式入口： python -m pytest -m e2e -v   或   python tools/run_e2e.py
+# ⛔ 不许删本块或改回默认集 —— 除非门侧「条件态」落地（那须老板拍，见 codex\方案_v9门条件态_v2）。
+pytestmark = pytest.mark.e2e
+
 
 def _net_ok():
     try:
@@ -20,17 +28,37 @@ def _net_ok():
         return False
 
 
+def _env_ready():
+    """**环境就绪判据**（2026-09-20 · DS 831 裁①「环境类失败统一归 skip；真断言只在环境就绪时跑」）：
+
+    ① **网络可达** baidu.com；② **浏览器实例可用**（真能开页并 enumerate 成功）。
+    **不就绪 ⇒ skip（不是 fail）**；**就绪 ⇒ 真断言必跑**（不许「永远 skip」——环境就绪却 skip 即假绿）。
+    返回 (ready, reason, probe)：probe **复用**为被测枚举结果，避免重复开页。
+
+    为什么改：旧口径只在 **抛异常** 时 skip，handle **返回 success=False**（负载/环境退化）时
+    直接落到 assert ⇒ **真红**（实测三次全量跑：失败 / 失败 / 跳过 ⇒ 与「环境类/真缺陷」不可分）。
+    """
+    if not _net_ok():
+        return False, "网络不可达(baidu.com)", None
+    from core.tools.browser_hybrid_impl import handle
+    try:
+        probe = handle({"action": "enumerate", "url": "https://www.baidu.com", "page_id": "p_e2e"})
+    except Exception as exc:  # 浏览器/环境问题 → 跳过而非失败
+        return False, "浏览器环境不可用: %s" % exc, None
+    if not probe.get("success"):
+        return False, "浏览器/页面探测失败（环境类）: %s" % probe.get("error"), None
+    return True, "", probe
+
+
 def test_baidu_hybrid_e2e():
     import pytest
-    if not _net_ok():
-        pytest.skip("网络不可达(baidu.com)")
+    _ready, _reason, r = _env_ready()
+    if not _ready:
+        pytest.skip(_reason)
     from core.tools.browser_hybrid_impl import handle
     query = "ClawsJoy混合方案POC验证"
-    try:
-        r = handle({"action": "enumerate", "url": "https://www.baidu.com", "page_id": "p_e2e"})
-    except Exception as exc:  # 浏览器/环境问题 → 跳过而非失败
-        pytest.skip("浏览器环境不可用: %s" % exc)
-    assert r.get("success") and r.get("count", 0) >= 20, r.get("error") or r.get("count")
+    # 环境已就绪 ⇒ 以下**全是真断言**（不许再 skip 掉枚举/映射/回读三关）
+    assert r.get("count", 0) >= 20, r.get("error") or r.get("count")
     items = r["items"]
     btns = [x for x in items if x["role"] == "button" and "百度一下" in x["label"]]
     edits = [x for x in items if x["role"] in ("input", "textarea", "textbox")]

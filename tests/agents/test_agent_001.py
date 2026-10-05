@@ -9,6 +9,7 @@ from typing import Dict, Optional
 from core.agents.base.smart_agent import SmartAgent
 from core.lib.smart_adapter import smart_adapter
 from core.lib.workspace_manager import workspace_manager
+from core.lib.port_config import gateway_base_url
 
 
 class TestAgent001(SmartAgent):
@@ -81,7 +82,7 @@ class TestAgent001(SmartAgent):
                     start_time = datetime.now()
 
                     resp = requests.post(
-                        f"http://localhost:5002/api/agent/{target}/message",
+                        f"{gateway_base_url()}/api/agent/{target}/message",
                         json={"message": user_input, "user_id": self.user_id},
                         timeout=5,
                     )

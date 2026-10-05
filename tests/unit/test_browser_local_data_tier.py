@@ -47,7 +47,7 @@ def test_classify_l4_publish():
 
 def test_classify_local_not_tiered():
     """本机(localhost)不出机器, 不分级。"""
-    lvl, _ = _classify_outbound("fill", {"text": "请打 13800138000", "url": "http://localhost:5002/x"})
+    lvl, _ = _classify_outbound("fill", {"text": "请打 13800138000", "url": "http://127.0.0.1/x"})
     assert lvl is None
 
 

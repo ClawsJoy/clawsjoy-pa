@@ -27,6 +27,16 @@ BANNED = [
 TARGETS = ["web/pa.html"]
 
 
+def _unescape_js(line):
+    """JS 源码里的路径常写成**转义形态**（分隔符前带反斜杠）—— 先还原再匹配。
+
+    为什么必须还原（2026-09-28 实测）：把 `/mnt/d/...` 写成 反斜杠加斜杠 的形态时，
+    `/mnt/[a-z]/` **匹配不到**（分隔符前有反斜杠）⇒ 门报绿、而路径其实**写死在前端**。
+    ⛔ 不还原 ⇒ 本门对「JS 转义形态」恒盲（判据在场、却不生效）。
+    """
+    return line.replace(chr(92) + "/", "/").replace(chr(92) * 2, chr(92))
+
+
 def _scan(path):
     """返回 [(行号, 名称, 该行)]；**跳过整行注释**（注释里说明「不要写路径」是合法的）。"""
     hits = []
@@ -35,8 +45,9 @@ def _scan(path):
             s = line.strip()
             if s.startswith("//") or s.startswith("*") or s.startswith("/*") or s.startswith("<!--"):
                 continue
+            _un = _unescape_js(line)
             for name, rx in BANNED:
-                if re.search(rx, line):
+                if re.search(rx, line) or re.search(rx, _un):
                     hits.append((i, name, s[:110]))
     return hits
 
@@ -61,3 +72,15 @@ def test_scanner_has_teeth(tmp_path):
     good = tmp_path / "good.html"
     good.write_text("img.src=URL_BASE+name;\n", encoding="utf-8")
     assert not _scan(str(good)), "干净样本被误报"
+
+def test_scanner_sees_js_escaped_paths(tmp_path):
+    """⛔ 盲区回归：JS **转义形态**的写死路径必须被检出（否则门假绿）。
+
+    一手事故（2026-09-28）：web/pa.html 曾以「转义形态」写死 vault 路径，而当时的门**报绿**
+    —— 因为 `/mnt/[a-z]/` 撞不上「分隔符前带反斜杠」的写法。
+    """
+    esc = tmp_path / "esc.html"
+    sample = "  const re=/" + chr(92) + "/mnt" + chr(92) + "/d/x.md/g;" + chr(10)
+    esc.write_text(sample, encoding="utf-8")
+    hits = _scan(str(esc))
+    assert hits, "JS 转义形态的写死路径未被检出（门有盲区）"
