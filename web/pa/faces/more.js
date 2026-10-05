@@ -89,7 +89,7 @@ function paRenderPlans(){
     box.innerHTML = '<div>' + hint + '</div>';
   } else {
     box.innerHTML = shown.map(function(a){
-      const ts = (typeof a.ts === 'number') ? new Date(a.ts * 1000).toLocaleString('zh-CN', {hour12:false}) : '—';
+      const ts = (a.ts == null || a.ts === '') ? '—' : (PA_STAMP.fmt(a.ts) || '—');
       return '<div class="p"><span class="k">' + paEsc(a.kind || '—') + '</span><span class="t">'
         + paEsc(a.session_id || '—') + '</span><span class="s">' + paEsc(a.file || '') + ' · ' + ts + '</span></div>';
     }).join('');
