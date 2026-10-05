@@ -18,7 +18,15 @@ import re
 import pytest
 
 BANNED = [
-    ("UNC", r"\\\\[A-Za-z0-9_.-]+\\"),
+    # 2026-10-06（承 pm 1336 §二.3 · 正判据 · 一改一底）：UNC 须锚「值首 ∨ 行首」。
+    # 形：值首之二反斜杠 ＋ 名 ＋ 反斜杠；⛔ 「径中任一处之二反斜杠」。
+    # 病（一手 · 扩面首逮）：JS 转义形态之相对径（实为 data\v9\pa\x 者）经 _unescape_js
+    # 得单反斜杠，而**原文**仍含「双反斜杠＋名＋反斜杠」⇒ 旧判据（裸形）误判为 UNC
+    # （today.js:209/218/219/220 ／ selfdesc.js:1488/3106 ＝ 本批四假红）。
+    # 正：二反斜杠之前须为「值之起」（行首 ∨ 引号 ∨ 反引号 ∨ = , ( [ ∨ 空白）。
+    #   ⚠ ⛔ 含「：」—— D:\\…（盘符 ＋ 转义之二反斜杠）亦以「：」入门 ⇒ 假红（本刻一手）；
+    #   而「：」之真例（key: \\srv）皆带空白 ⇒ \s 已覆盖 ⇒ 删「：」（无损失）。
+    ("UNC", r'''(?:^|[\s\x22'\x60=,(\[])\\\\[A-Za-z0-9_.-]+\\'''),
     ("Windows 盘符", r"\b[A-Za-z]:\\"),
     ("WSL 挂载", r"/mnt/[a-z]/"),
     ("本机绝对路径", r"/home/flybo/"),
@@ -103,6 +111,14 @@ def test_scanner_has_teeth(tmp_path):
     good = tmp_path / "good.html"
     good.write_text("img.src=URL_BASE+name;\n", encoding="utf-8")
     assert not _scan(str(good)), "干净样本被误报"
+    # 2026-10-06（承 pm 1336 §二.3 · 正判据之对控 · 承「器之效须有实证」）：
+    # 正后之 UNC 判据仍须逮「值首之二反斜杠」—— ⛔ 削其的（防「削的以就己」）。
+    unc = tmp_path / "unc.html"
+    unc.write_text(
+        "<img src=" + chr(34) + chr(92) * 2 + "srv" + chr(92) + "share" + chr(92) + "a.png" + chr(34) + ">" + chr(10),
+        encoding="utf-8",
+    )
+    assert _scan(str(unc)), "真 UNC（值首之二反斜杠）未被检出（UNC 判据被削）"
 
 def test_scanner_sees_js_escaped_paths(tmp_path):
     """⛔ 盲区回归：JS **转义形态**的写死路径必须被检出（否则门假绿）。
