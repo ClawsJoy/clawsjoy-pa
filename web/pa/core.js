@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function(){ try{ PA_FACES.hide(); 
      运行期由 `today.js` 之 `paSrcWrite` **认领覆盖**（双保险 · ⛔ 二说 · 承 pm 18:00 §一）。 */
 window.PA_GAP = {
   todo: function(why){ return '⒜ 未接 · 待办（M1）' + (why ? ('｜为何未接：' + why) : ''); },
-  off:  function(why){ return '⛔ 不接（红线' + (why ? ('：' + why) : '') + '）'; },
+  off:  function(why, kind){ return '⛔ 不接（' + (kind || '红线') + (why ? ('：' + why) : '') + '）'; },
   down: function(why){ return '不可达' + (why ? ('（' + why + '）') : ''); },
   /* ④ **回退支**（后端应答在 · **键不在**）—— 不可达之**特形** ⇒ 其文**须与「无此面」分形**
      （⛔ 同形 ⇒ 读方必误：PM-90 之假阳即此病之实证 · 承 pm 18:08 §二）｜`key` ⛔ 省 ⇒ **附键名**（一名一义）。 */

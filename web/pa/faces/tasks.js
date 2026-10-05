@@ -411,7 +411,7 @@ async function paLoadTasks(){
      （⛔ 以 `0` 充「未接」）；本页计数照实另书（本页口径 · ⛔ 后端）。 */
   if(stEl) stEl.innerHTML =
     paRow('受理', PA_GAP.todo() + ' · 本页已接 ' + paLocalTasks.length + ' 件',
-      '源：' + PA_GAP.todo('无读源') + ' —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为**写路**（⛔ 读源）⇒ 后端无「受理态」读面｜本页计数 ＝ 本页已接（⛔ 后端口径 · ⛔ 以 0 充未接）')
+      '源：' + PA_GAP.todo('后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）') + '｜本页计数 ＝ 本页已接（本页口径 · ⛔ 后端口径 · ⛔ 以 0 充未接）')
   + paRow('在办', inFlightVal, paEsc(srcPlain))
   + paRow('等待外部结果', (dhWaitN !== null)
         ? (dhWaitN === 0 ? '0 件（后端真判据下无待回执之件 · 空态 · 非故障）'
@@ -475,11 +475,11 @@ async function paLoadTasks(){
   const g = document.getElementById('paTaskGates');
   if(g) g.innerHTML =
     '<div class="g"><b>受理门永不关</b>：任何时刻之输入皆受理（⛔ 置灰输入 ／ ⛔ 拒件 · ⛔「稍等一下」类文案）。'
-    + '<br>输入分类（新任务 ／ 改令 ／ 追问 ／ 闲聊）' + PA_GAP.todo('无端点（按真实意图分，⛔ 不按「忙」分）') + '。</div>'
+    + '<br>输入分类（新任务 ／ 改令 ／ 追问 ／ 闲聊）' + PA_GAP.todo('后端无端点（须开读面 ⇒ 承批四）· 按真实意图分（⛔ 按「忙」分）') + '。</div>'
     + '<div class="g"><b>打断 · 生效时点照实</b>：排队中 ⇒ 即时作废；已在跑 ⇒ <b>下一步边界生效</b>（后端置取消标志 · ⛔ 硬杀）。'
-    + '<div class="gr"><button onclick="paIntervene(\'改令\')" disabled title="' + PA_GAP.todo('无改令端点') + '">✏️ 改令 · ' + PA_GAP.todo() + '</button>'
-    + '<button onclick="paIntervene(\'中止\')" title="POST /v9/cancel/&lt;session_id&gt;（routes/session.py:37 · 会话级协作取消 ·置位取消标志 ⇒ bridge_loop 下轮检查点退出 · ⛔ 硬杀）">⏹ 中止本线程（会话级 · 下一步边界生效）</button>'
-    + '<button onclick="paIntervene(\'接管\')" disabled title="' + PA_GAP.todo('无接管端点') + '">🤝 接管 · ' + PA_GAP.todo() + '</button></div></div>'
+    + '<div class="gr"><button onclick="paIntervene(\'改令\')" title="POST /v9/pa/steer（通道已在 ＝ shared_state.add_steer ／ drain_steer · 承 PM 1254）⇒ ⭐ 面不可达时明标「不可达」· ⛔ 静默">✏️ 改令</button>'
+    + '<button onclick="paIntervene(\'中止\')" title="POST /v9/cancel/&lt;session_id&gt;（routes/session.py · 会话级协作取消 · 置位取消标志 ⇒ bridge_loop 下轮检查点退出 · ⛔ 硬杀）">⏹ 中止本线程（会话级 · 下一步边界生效）</button>'
+    + '<button onclick="paIntervene(\'接管\')" disabled title="无此端点 —— 后端无「接管」之概念（gateway_routes.py 逐路名 0 命中）· ⭐ 待立项（须先定义：接谁的管 ／ 界在何 ／ 可否逆 ／ 是否触他方平台）">🤝 接管 · 待立项（须先定义）</button></div></div>'
     + '<div class="g"><b>交互不锁 · 执行排队</b>：并行 ＝ <b>编排并行 · 推理排队</b>（6 GB 单卡 · 并发 1）⇒ ⛔ 让用户以为「多模型并行」。</div>'
     + '<div class="g"><b>本页任务（后端事件改写 · ⛔ 前端猜）</b><div id="paLocalList"></div></div>';
   paRenderLocalTasks();
@@ -516,8 +516,8 @@ async function paLoadTasks(){
      ∧ 源槽 ＝ 源行全文（⛔ 截 · 悬停可回）。⚠ 只赋属性 ⇒ 零 CSS ／ 零控件 ／ ⛔ 动 `paRow` 之形（其 ⛔ 支持属性）。 */
   paAttachRowTitle(stEl, '在办', inFlightTitle, srcPlain);
   /* ⭐ 刀11p：新改之两行亦被 nowrap ＋ ellipsis 截 ⇒ 补 title（⛔ 截 · 悬停可回 · 零 CSS）。 */
-  paAttachRowTitle(stEl, '受理', PA_GAP.todo('无读源') + ' —— 本页已接 ' + paLocalTasks.length + ' 件（本页口径）',
-    '源：' + PA_GAP.todo('无读源') + ' —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）⇒ 后端无「受理态」读面｜本页计数 ＝ 本页已接（⛔ 后端口径 · ⛔ 以 0 充未接）');
+  paAttachRowTitle(stEl, '受理', PA_GAP.todo() + ' · 本页已接 ' + paLocalTasks.length + ' 件',
+    '源：' + PA_GAP.todo('后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）') + '｜本页计数 ＝ 本页已接（本页口径 · ⛔ 后端口径 · ⛔ 以 0 充未接）');
   paAttachRowTitle(stEl, '等待外部结果',
     ((dhWaitN === null) ? '未知（后端未应答）' : (dhWaitN + ' 件（席位轴 to_seat 之件 · 待外部回执）')),
     dhSrcLine);
@@ -589,11 +589,44 @@ function paRenderLocalTasks(){
     : '<div>本页未发起任务</div>';
 }
 
-/* —— 干预（中止 ＝ 真端点；改令 ／ 接管 ＝ 未接）—— */
+/* —— 干预（中止 ＝ 真端点；改令 ＝ 准接（POST /v9/pa/steer）；接管 ＝ 待立项（须先定义））—— */
+/* ⭐ 丙-3／丙-6：改令 ＝ 准接（POST /v9/pa/steer · 承 PM 1254 ／ TD 1082 §二）。
+   ⚠ ⛔ 用 paGetJson（today.js 非 2xx ⇒ null ⇒ 与「不可达」同形 —— 空 ⛔ 混 缺）⇒ 本节自取 body（承 PM 1254 §二.⒉）。
+   信封从蓝图（ok）· 键从族（missing ／ kind ／ route）：承 PM 1253 §二 裁一。
+   queued:true ＝ 「已入队」（⛔ 「已生效」）⇒ 承 PM 1254 §二.⒊；⛔ 报 queued_count（通道唯 drain ⇒ 得数必先消费）。 */
+async function paSteerPost(sid, text, kind){
+  try{
+    const r = await fetch(API + '/v9/pa/steer', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({session_id: sid, text: text, kind: kind, user_id: curUser()})});
+    let d = null;
+    try{ d = await r.json(); }catch(e){ d = null; }
+    if(r.ok && d && d.ok === true){ return {ok:true, d:d}; }
+    /* 400 之三支须可辨（⛔ 以「提交失败」一辞盖之）—— 承 PM 1254 §二.⒉ */
+    if(d && d.kind === 'missing_param'){ return {ok:false, why:'缺参（' + (((d.missing || []).join(' ／ ')) || '?') + '）'}; }
+    if(d && d.kind === 'over_limit'){ return {ok:false, why:'超限（text ' + (d.text_len == null ? '?' : d.text_len) + ' ＞ ' + (d.allowed_max == null ? '?' : d.allowed_max) + ' 字）'}; }
+    if(d && d.kind === 'bad_value'){ return {ok:false, why:'值非法（kind ＝ ' + kind + ' · 后端仅受 ' + JSON.stringify(d.allowed || []) + '）'}; }
+    if(r.ok){ return {ok:false, why: PA_GAP.down('HTTP ' + r.status + ' · 回执无 ok ⇒ 信封不合（承 PM 1253 §二）')}; }
+    return {ok:false, why: PA_GAP.down('HTTP ' + r.status + (d ? '' : ' · ⛔ 未取得回执体'))};
+  }catch(e){
+    return {ok:false, why: PA_GAP.down('请求未送达：' + String((e && e.message) || e) + ' · ⛔ 不等于已入队')};
+  }
+}
 async function paIntervene(kind){
-  if(kind === '改令' || kind === '接管'){ return; }
   const sid = curSession();
   const out = document.getElementById('paSubOut');
+  /* 接管 ＝ 待立项（须先定义）⇒ 钮 disabled（⛔ 静默 · 其由在 title · 承 PM 1254 §三） */
+  if(kind === '接管'){ if(out) out.textContent = '接管：无此端点（后端无「接管」之概念）⇒ 待立项（须先定义）· ⛔ 未发送'; return; }
+  if(kind === '改令'){
+    if(!out) return;
+    const text = String((window.prompt('改令 · 下一步指导（≤500 字 · POST /v9/pa/steer）') || '')).trim();
+    if(!text){ out.textContent = '改令：内容为空 ⇒ ⛔ 未发送（⛔ 开空件）'; return; }
+    out.textContent = '改令：提交中…（POST /v9/pa/steer）';
+    const res = await paSteerPost(sid, text, '改令');
+    if(!res.ok){ out.textContent = '改令：' + res.why; return; }
+    out.textContent = '改令：已入队 · 下一轮生效（通道 consumer ＝ 每轮 drain 即清 · ' + String(res.d.inject_point || '?') + '）'
+      + '｜后端 ' + String(res.d.at || '?') + ' · 印 ' + String(res.d['印'] || '?');
+    return;
+  }
   try{
     const r = await fetch(API + '/v9/cancel/' + encodeURIComponent(sid), {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
     const d = await r.json().catch(function(){ return null; });

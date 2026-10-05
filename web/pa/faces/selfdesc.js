@@ -1279,7 +1279,7 @@ async function paSelfCompose(key, pre){
     U.push('· 画像素材面（左栏「来源面」· ⛔ 检索面）' + PA_GAP.todo() + '：' + (sf.miss.length ? sf.miss.join(' ／ ') : '（无）'));
     U.push('· ⭐ ⒝⛔不接（**红线** ⇒ ⛔ 待办 · 不会有）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
     U.push('· ⚠ 不可达（后端此刻不在 ⇒ ⛔ ≠ 未接）：' + (sf.unreach.length ? sf.unreach.join(' ／ ') : '（无）'));
-    U.push('· 操作：改令 ／ 接管（无接口 ⇒ 置灰）｜真实平台面｜夜间整合');
+    U.push('· 操作：改令（准接 · POST /v9/pa/steer）｜接管（待立项 · 须先定义）｜真实平台面（⛔ 不接 · 红线）｜夜间整合（无后端面）');
     U.push('障碍：');
     U.push('· 检索面（逐面件数 · 源 /v9/pa/ask 之 scope ／ faces ／ searched · ⛔ 画像素材面）：'
       + (paSelfFaceText(paSelfAskStat.lastScope, paSelfAskStat.lastFaces) || '本页尚未检索')

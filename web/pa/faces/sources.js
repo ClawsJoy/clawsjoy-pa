@@ -24,7 +24,7 @@ const PA_SRC_DECL = [
   {k:'local', seq:'ⓝ', n:'本机素材', avail:'部分可用',
    by:null,     /* ⭐ pm_1039 §三：本行改由 paSourceLocalBy() **动态取真源** ⇒ ⛔ 硬编目录名 */
    src:'/v9/pa/ask（grounded ／ evidence ／ searched ／ threshold ／ read_at）',
-   note:'⚠ 逐面件数取真源（/v9/pa/ask 之 scope ／ faces ／ searched）：收件箱 ／ 知识库 ／ 文件 ／ 台账 ／ 台账·信通（后三面本批新接）；未接：平台 ／ 出图 ／ 记忆（M1 · 明标未接）⇒ ⛔ 装成可用；未命中 ⇒ 回落模型'},
+   note:'⚠ 逐面件数取真源（/v9/pa/ask 之 scope ／ faces ／ searched）：收件箱 ／ 知识库 ／ 文件 ／ 台账 ／ 台账·信通；⭐ 本批新接：出图（检索面名 ＝ 文件·产出）／ 记忆（检索面名 ＝ 梦中月水中花）；⛔ 不接：平台（红线 · ⛔ 代操作他方平台）⇒ ⛔ 装成可用；未命中 ⇒ 回落模型'},
   {k:'model', seq:'ⓞ', n:'模型', avail:'按快照',
    by:'对话答（未命中 ／ 域外之答 ⇒ 标「模型生成 · ⛔ 非本机素材」）',
    src:'/v9/pa/dialog（chan:pa）／ /v9/agent/chat（chan:agent）；可用性源 ＝ pa/ui_state.json 之「本地在」「远端态」「远端因」',
@@ -32,7 +32,7 @@ const PA_SRC_DECL = [
   {k:'tool', seq:'ⓟ', n:'工具', avail:'部分可用',
    by:'执行循环（工作 ／ 开发模式之工具调用）＋ 精确计算（POST /api/tools/calc · 判据主源）',
    src:'/v9/agent/chat ／ /v9/pa/turn（落盘回执）',
-   note:'⚠ 已通：精确计算（POST /api/tools/calc ⇒ 算术以工具值为准）；未接：技能面（13 技能 · 已转产品线）⇒ ⛔ 装成可用'}
+   note:'⚠ 已通：精确计算（POST /api/tools/calc ⇒ 算术以工具值为准）；' + PA_GAP.off('', '已转产品线') + '：技能面（13 技能）⇒ ⛔ 装成可用'}
 ];
 function paSourceDecl(){ return PA_SRC_DECL.slice(); }
 /* ⭐ pm_1047 §一 F-c（真 bug · 承 L76 如实面 ｜ L83 单源）：快照之键为 **「本地在」**（一手读九键：
