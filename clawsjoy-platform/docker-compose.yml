@@ -31,7 +31,9 @@ services:
     container_name: clawsjoy-redis
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      # host:container -- 2026-10-03 修正: 代码 5 处默认 + Redis 惯例均取 6379;
+      # 6380 系主机侧错映射. 明标: 它不是 10-03 停摆之因 -- compose 从未起过.
+      - "6379:6379"
     volumes:
       - redisdata:/data
     healthcheck:

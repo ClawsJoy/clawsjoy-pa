@@ -13,6 +13,7 @@ import yaml
 from dotenv import load_dotenv
 
 from core.gateway.archive import _archive_asset, _archive_user_message  # v9_agent_chat 归档依赖
+from core.gateway.budget import CTX_COMPRESS_RATIO  # ⚠ 窗口侧压缩阈值(语义 = 模型上下文窗口预算 · ≠ 单任务预算 WARN_RATIO)
 from core.gateway.execute_agent_task import _execute_agent_task, _update_world_model
 from core.gateway.message_assembler import _compress_messages
 from core.gateway.registry import _init_registries
@@ -1035,7 +1036,7 @@ def _v9_bridge_loop(
             # 两者在模块级 line 284 已 import，这里不再重复导入。
             from core.gateway.message_assembler import _compress_messages
 
-            if _tg_estimate(messages, tools) > _calc_token_budget(model, tools) * 0.8:
+            if _tg_estimate(messages, tools) > _calc_token_budget(model, tools) * CTX_COMPRESS_RATIO:
                 messages = _compress_messages(messages, user_id, session_id, keep=8)
                 messages = _finalize_messages(messages)
         except Exception:

@@ -1,0 +1,19 @@
+# Win-PA gateway runtime requirements (verified 2026-09-28)
+# extracted verbatim from requirements.txt section '运行依赖（必需）'
+# NOTE: on this machine these are ALREADY present in the system interpreter;
+#       only fastapi is missing - and the gateway does NOT use fastapi (it uses flask).
+# install:  pip install -r requirements-runtime.txt
+
+flask>=3.1.2
+flask-cors>=4.0.0
+requests>=2.32.5
+pyyaml>=6.0.2
+numpy>=2.3.3
+Pillow>=11.3.0
+ffmpeg-python>=0.2.0
+pyjwt
+redis>=5.0.0
+watchdog>=4.0.0
+flasgger>=0.9.7
+python-dotenv>=1.0.0
+prometheus_client>=0.20.0

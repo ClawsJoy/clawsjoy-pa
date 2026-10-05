@@ -93,10 +93,11 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short --strict-markers -p no:launch_testing -p no:launch_ros"
+addopts = "-v --tb=short --strict-markers -p no:launch_testing -p no:launch_ros -m \"not e2e\""
 markers = [
     "unit: 单元测试",
     "integration: 集成测试",
     "slow: 慢速测试",
     "engine: 引擎测试",
+    "e2e: 需外网+真实浏览器（默认不跑；显式 python -m pytest -m e2e）",
 ]

@@ -12,11 +12,12 @@ load_dotenv("config/.env")
 
 # ========== 配置 ==========
 DISCORD_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
-CLAWSJOY_URL = "http://localhost:5002/v5/execute"
+CLAWSJOY_URL = gateway_base_url() + "/v5/execute"
 API_BASE = "https://discord.com/api/v10"
 
 # PID 锁：同一 Token 禁止多开
 import hashlib
+from core.lib.port_config import gateway_base_url
 PID_FILE = runtime_tmp_path("clawsjoy_bot_%s.pid" % hashlib.md5(DISCORD_TOKEN.encode()).hexdigest()[:8])
 if os.path.exists(PID_FILE):
     with open(PID_FILE, encoding="utf-8") as f:

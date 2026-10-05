@@ -7,6 +7,12 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from engine.lib.logger import engine_logger
+import sys
+_root = os.path.dirname(os.path.abspath(__file__))
+while os.path.dirname(_root) != _root and not os.path.exists(os.path.join(_root, "gateway_endpoint.py")):
+    _root = os.path.dirname(_root)
+sys.path.append(_root)  # 向上找到含 cheap reader 的那层（出口层不 import core，深度无关）
+from gateway_endpoint import gateway_base_url
 
 
 class YouTubeAuth:
@@ -56,7 +62,7 @@ class YouTubeAuth:
         if not client_id:
             client_id = os.environ.get("YOUTUBE_CLIENT_ID")
 
-        redirect_uri = "http://localhost:5002/youtube/oauth2callback"
+        redirect_uri = gateway_base_url() + "/youtube/oauth2callback"
 
         return f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=https://www.googleapis.com/auth/youtube.upload"
 

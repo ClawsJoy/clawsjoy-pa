@@ -10,6 +10,7 @@ from typing import Dict, Optional, Tuple
 from core.agents.business.business_agent import BusinessAgent
 from core.lib.notify import notify as _notify
 from core.lib.paths import runtime_tmp_path
+from core.lib.port_config import gateway_base_url
 
 _sketch_lock = threading.Lock()
 
@@ -355,7 +356,7 @@ class VisionAgentV4(BusinessAgent):
                         import requests as _r
 
                         _r.post(
-                            "http://localhost:5002/v8/discord/notify",
+                            gateway_base_url() + "/v8/discord/notify",
                             json={"channel_id": channel_id, "message": f"🎨 草图已生成: {path}", "username": "草图"},
                             timeout=10,
                         )
