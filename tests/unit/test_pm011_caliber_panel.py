@@ -29,7 +29,11 @@ import pytest
 from flask import Flask
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读；§二.1「出处之判须以『其物在何处』为据 ⇒ 页面 ＝ 壳 ＋ 支」）：
+#   壳（容器 `<div id="caliberPanel">` ⇒ web/pa.html）＋ 块家（接线块 ⇒ faces/caliber.js）＋ 启线（`_boot` ⇒ boot.js）。
+PA = (ROOT / "web" / "pa.html",
+      ROOT / "web" / "pa" / "faces" / "caliber.js",
+      ROOT / "web" / "pa" / "boot.js")
 SCRATCH = ROOT / "data" / "tmp" / "_pm011_caliber"
 
 # 接线块自己的起止标记（⛔ 不是测试这边另加的锚）；用转义写死，免得任何一层的编码把标记改掉
@@ -38,7 +42,8 @@ END = "/* ---- PM-011 \u00b7 N1 \u63a5\u7ebf END ---- */"
 
 
 def _pa() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    """面集联文（径见 `PA` · 一处成）：壳 ＋ 支 并读 ⇒ ⛔ 唯读块家。"""
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _region(src: str) -> str:
@@ -235,7 +240,7 @@ def test_j5d_check_empty_text_does_not_invent_pages():
 def test_static_panel_is_reachable_from_page():
     src = _pa()
     assert '<div id="caliberPanel" class="cbpanel"></div>' in src, "面板容器没进页面"
-    assert '_boot("renderCaliberPanel", renderCaliberPanel);' in src, "启动没接线（面板永不渲染）"
+    assert '_boot("renderCaliberPanel", PA_FACES.guard("caliber", renderCaliberPanel));' in src, "启动没接线（面板永不渲染）"
     for frag in ('onclick="paCaliberLoad(true)"', 'onclick="paCaliberSubmit()"', 'onclick="paCaliberCheck()"'):
         assert frag in src, "有函数但没 onclick ⇒ 用户够不着：%s" % frag
 
