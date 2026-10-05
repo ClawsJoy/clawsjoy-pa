@@ -1168,6 +1168,8 @@ async function paLoadRcptFace(){
   var lEl = document.getElementById('paRcptList');
   var lsEl= document.getElementById('paRcptListSrc');
   if(sEl) sEl.textContent = '面：GET /v9/pa/dispatch/receipt · 后端自报刻 ' + ((j && j.at) ? String(j.at) : '未知') + ' · 前端取刻 ' + at0;
+  /* ⭐ pm 1346 §二.2（枚举同族）：本面之取数刻（`j.at`）已上屏（上行）⇒ 同族 ⇒ 须标（⛔ 只补「#paUiStateRow」一处）。 */
+  if(window.PA_STALE){ PA_STALE.mark(sEl, (j && j.at) ? j.at : null, '收口面（GET /v9/pa/dispatch/receipt）'); PA_STALE.tick(); }
   if(!j){
     paXUnreached('paRcptBoard', '收口面', 'GET /v9/pa/dispatch/receipt');
     if(lEl) lEl.innerHTML = '';
