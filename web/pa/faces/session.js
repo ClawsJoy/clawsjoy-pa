@@ -375,7 +375,7 @@ async function paKbPrime(){
 function renderKbPanel(){
   const host=document.getElementById('kbPanel'); if(!host) return;
   const open = host.getAttribute('data-open')==='1';
-  host.innerHTML = paKbPanelHtml(paKbCache||{rows:[],counts:{}, _fail:'尚未取（展开本面板即取 · ⛔ ≠ 不可达 ／ ⛔ ≠ 空）', degraded:'尚未加载（展开时按只读接口拉取，不刷新页面）'}, {open:open});
+  host.innerHTML = paKbPanelHtml(paKbCache||{rows:[],counts:{}, _fail:'尚未取（展开本面板即取）', degraded:'尚未加载（展开时按只读接口拉取，不刷新页面）'}, {open:open});
   const det = host.querySelector('details');
   if(det){ det.addEventListener('toggle', function(){ host.setAttribute('data-open', det.open?'1':'0'); if(det.open) paKbLoad(false); }); }
 }
