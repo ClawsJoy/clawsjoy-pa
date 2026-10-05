@@ -23,7 +23,12 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读）：页面 ＝ 壳 ＋ 支
+#   壳（横幅容器）＝ web/pa.html ／ 启动序 ＝ web/pa/boot.js ／ W-08 ／ W-09 区 ＝ web/pa/faces/archive.js ／ newThread ＝ web/pa/faces/session.js
+PA = (ROOT / "web" / "pa.html",
+      ROOT / "web" / "pa" / "boot.js",
+      ROOT / "web" / "pa" / "faces" / "archive.js",
+      ROOT / "web" / "pa" / "faces" / "session.js")
 
 _START = "/* ---- W-09 手动清理入口"
 _END = "function paParseStateTolerant(raw){"
@@ -32,7 +37,7 @@ _GUARD_END = "function saveState(){"
 
 
 def _src() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _clean_region() -> str:
