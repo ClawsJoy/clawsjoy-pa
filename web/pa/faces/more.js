@@ -554,7 +554,7 @@ async function paVendorScan(){
       if(srcEl) srcEl.textContent = '源：GET /v9/pa/providers · ' + arr.length + ' 项 · 默认 ' + defTxt + ' · 扫于 ' + at;
       if(rowsEl) rowsEl.innerHTML = (arr.length
         ? arr.map(function(x){ return paProvRowHtml(x); }).join('')
-        : '<div class="r"><span class="k">0 项</span><span>后端 providers: [] ⇒ 照实报 0（⛔ 与「未接」同词）</span></div>')
+        : '<div class="r"><span class="k">0 项</span><span title="⛔ 与「未接」同词（辨义 · ⛔ 上屏 · 承 pm 1272 §三 · 承 pm 1310 §二.1）">后端 providers: [] ⇒ 照实报 0</span></div>')
         + '<div class="foot">逐行探法：`GET /v9/pa/providers`（后端读注册表 · 本页唯显示）｜密钥：唯布尔（⛔ 值入屏）｜本段 ⛔ 切换（候 P1）</div>';
     }
   }
