@@ -148,6 +148,8 @@ def step_wake(name, tid, dry=False):
     o = receipt_of(name)
     if o is not None:
         return 8, u"醒：⛔ 已投（凭据在 · rc 0 · 刻 %s）⇒ ⛔ 复投" % o.get(u"凭据登入刻", u"?")
+    if dry and not os.path.isfile(os.path.join(XT, name)):
+        return 0, u"醒（演·跳）：件未在箱 ⇒ ⛔ 得验（真办 --go 先落箱 ⇒ 方有验）"
     cmd = [sys.executable, "-X", "utf8", "-B", WAKE, "--to", tid, "--file", os.path.join(XT, name)]
     if not dry:
         cmd.append("--send")
