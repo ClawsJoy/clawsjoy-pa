@@ -12,11 +12,12 @@ import sys
 
 import pytest
 
-PA = "web/pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径）：语义三函数之家 ＝ web/pa/faces/chat.js。
+PA = "web/pa/faces/chat.js"
 
 
 def _extract_js():
-    """从真实的 web/pa.html 里抽出三个定义（move 而非 retype）。"""
+    """从真实的 web/pa/faces/chat.js 里抽出三个定义（move 而非 retype）。"""
     s = open(PA, encoding="utf-8").read()
     out = {}
 
