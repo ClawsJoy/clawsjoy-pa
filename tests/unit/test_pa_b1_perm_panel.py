@@ -34,7 +34,11 @@ import pytest
 from flask import Flask
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读；§二.1「出处之判须以『其物在何处』为据 ⇒ 页面 ＝ 壳 ＋ 支」）：
+#   壳（容器 `<div id="permPanel">` ⇒ web/pa.html）＋ 块家（接线块 ⇒ faces/authz.js）＋ 启线（`_boot` ⇒ boot.js）。
+PA = (ROOT / "web" / "pa.html",
+      ROOT / "web" / "pa" / "faces" / "authz.js",
+      ROOT / "web" / "pa" / "boot.js")
 SCRATCH = ROOT / "data" / "tmp" / "_pa_b1_perm"
 
 # 接线块自己的起止标记（⛔ 不是测试这边另加的锚）
@@ -43,7 +47,8 @@ END = "/* ---- PA-B1 \u00b7 \u6388\u6743\u9762\u677f \u63a5\u7ebf END ---- */"
 
 
 def _pa() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    """面集联文（径见 `PA` · 一处成）：壳 ＋ 支 并读 ⇒ ⛔ 唯读块家。"""
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _region(src: str) -> str:
@@ -238,7 +243,7 @@ def test_j9b_set_level_rejection_reads_back_and_does_not_leave_a_fake_value():
 def test_j10_static_panel_is_reachable_from_page():
     src = _pa()
     assert '<div id="permPanel" class="cbpanel"></div>' in src, "面板容器没进页面"
-    assert '_boot("renderPermPanel", renderPermPanel);' in src, "启动没接线（面板永不渲染）"
+    assert '_boot("renderPermPanel", PA_FACES.guard("authz", renderPermPanel));' in src, "启动没接线（面板永不渲染）"
     for frag in ('onclick="paPermLoad(true)"', 'onclick="paPermGrant()"',
                  'onclick="paPermRevoke()"', 'onclick="paPermSetLevel()"'):
         assert frag in src, "有函数但没 onclick ⇒ 用户够不着：%s" % frag
@@ -250,7 +255,7 @@ def test_j10b_permission_has_a_single_source_and_no_silent_write():
     assert "set('cfgPerm',c.perm)" not in src, "还从 `pa_cfg` 回填权限档 ⇒ 第二真源没消"
     assert "console.warn('permission 后端写入失败'" not in src, "改档失败还是静默（console.warn）"
     assert "console.warn('permission 后端不可达'" not in src, "改档不可达还是静默（console.warn）"
-    assert "addMsg('sys','⚠ 权限档" in src, "改档失败没有可见通道"
+    assert "paPermEl('ppLevelMsg')" in src and "按后端真值回读（⛔ 界面不留假值）" in src, "改档失败没有可见通道（⛔ 静默）"
 
 
 # ============================ 反例门（齿） ============================
