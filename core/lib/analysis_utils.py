@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ⛔ 已封（死件 · 缺 core/lib/memory_simple.py · 据 core/lib/_SEALED.md §B3 · 补之门 ／ 解封之门 见该册 · ⛔ 复研）
 """Analysis Utils - Analysis Utils 模块
 
 @version: 5.0.0
