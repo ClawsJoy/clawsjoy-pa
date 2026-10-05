@@ -25,7 +25,13 @@ import pytest
 from flask import Flask
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径 ＋ 并读）：
+#   徽标之家 ＝ faces/shell.js（`paPermBadge` ／ `fetchPaGrant` 之体）
+#   ＋ 接线点 ＝ faces/config.js（`loadCfg` 末之 `fetchPaGrant();`）
+#   ＋ 中止分流 ＝ faces/send.js（`e.name === AbortError` ／ `paSetState('stopped')`）。
+PA = (ROOT / "web" / "pa" / "faces" / "shell.js",
+      ROOT / "web" / "pa" / "faces" / "config.js",
+      ROOT / "web" / "pa" / "faces" / "send.js")
 SCRATCH = ROOT / "data" / "tmp" / "_pm011_badge"
 UNDEF = "__UNDEF__"        # JSON 表达不出 undefined ⇒ 具名哨兵
 
@@ -51,7 +57,8 @@ def _j3_ok(unread: str, a: str, b: str) -> bool:
 
 
 def _pa() -> str:
-    return io.open(PA, encoding="utf-8").read()
+    """面集联文（径见 `PA` · 一处成）：徽标 ＋ 接线点 ＋ 中止分流 并读。"""
+    return "\n".join(io.open(f, encoding="utf-8").read() for f in PA)
 
 
 def _fn(src: str, name: str) -> str:
