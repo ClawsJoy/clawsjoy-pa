@@ -670,7 +670,7 @@ function paSelfModeDiagHtml(){
   return '<div class="s">⭐ 场合拨杆（诊断 · 本会话）：' + paSelfEsc(d.modeLabel || d.mode || '—')
     + '（会话 ' + paSelfEsc(d.sessionId || '—') + ' · ' + (d.threadStored ? '会话自存' : '继承上次') + '）'
     + ' ｜ 回执 mode：' + paSelfEsc(d.receiptModeLabel || d.receiptMode || '—') + ' ' + sameTxt
-    + '（刻 ' + paSelfEsc(d.at || '刻未记') + '）</div>'
+    + '（刻 ' + paSelfEsc(PA_STAMP.fmt(d.at || '刻未记')) + '）</div>'
     + '<div class="s">模板标签（诊断 · 本轮 · 逐列 · 承 L186）：' + paSelfEsc(per) + '</div>'
     + '<div class="s">模板标签（诊断 · 本页累计 · 已收 ' + paSelfEsc(String(d.rounds == null ? 0 : d.rounds)) + ' 轮 · 逐列）：' + paSelfEsc(acc)
     + '　（真源：/v9/pa/dialog 回执 route.label_hits ⇒ ⛔ 常驻用户面）</div>';
@@ -1574,7 +1574,7 @@ function paSelfJudgeOf(g){
 function paSelfJudgeText(g){
   const j = paSelfJudgeOf(g);
   let t = '判据 ' + (j.thr == null ? '（本次不适用）' : j.thr) + ' ／ 面册 ' + (j.ver || '版本未给')
-    + ' · 采于 ' + ((j.snap || j.at) || '刻未给');
+    + ' · 采于 ' + PA_STAMP.fmt((j.snap || j.at) || '刻未给');
   if(j.cnt != null) t += '（面 ' + j.cnt + ' 枚 · 件 ' + (j.tot == null ? '—' : j.tot) + '）';
   return t + '｜源 /v9/pa/ask 之 judge';
 }
@@ -2442,7 +2442,7 @@ function paSelfFailText(s){
      `context_meta` 四值（session_id ／ read_at ／ picked_by ／ reason）上屏（值取后端 · ⛔ 硬编）。 */
   function render(m){
     const cm = (m && m.ctx && typeof m.ctx === 'object') ? m.ctx : {};
-    const at = (m && m.at) ? String(m.at) : '';
+    const at = (m && m.at) ? PA_STAMP.fmt(m.at) : '';
     const sid = cm.session_id ? String(cm.session_id) : '';
     const pick = cm.picked_by ? String(cm.picked_by) : '';
     const ans = String((m && m.answer) == null ? '' : m.answer);
