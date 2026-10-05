@@ -4,7 +4,8 @@ import subprocess
 
 
 def _extract():
-    s = open("web/pa.html", encoding="utf-8").read()
+    # 拆面（承 pm 1334 §三.1 · 惟改径）：语义三函数（ACTION_SEMANTIC ／ semanticArg ／ semanticStage ／ semanticCtx）之家 ＝ web/pa/faces/chat.js。
+    s = open("web/pa/faces/chat.js", encoding="utf-8").read()
     i = s.find("const ACTION_SEMANTIC={")
     j = s.find("\n};", i)
     table = s[i : j + 3].replace("const ACTION_SEMANTIC=", "var ACTION_SEMANTIC=", 1)
