@@ -19,7 +19,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PA = ROOT / "web" / "pa.html"
+# 拆面（承 pm 1334 §三.1 · 惟改径）：分型函数（paRespReason / paRespKind）与 PM-011 判据块之家 ＝ web/pa/faces/send.js
+PA = ROOT / "web" / "pa" / "faces" / "send.js"
 SCRATCH = ROOT / "data" / "tmp" / "_pm011_threestate"
 
 START = "/* PM-011-BLOCK-START */"
