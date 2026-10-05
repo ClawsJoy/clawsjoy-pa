@@ -25,6 +25,11 @@ from core.pa import gateway_routes as gr
 from routes.static import bp as static_bp   # ⭐ 真源（agent_gateway_enhanced.py:385/392）
 
 PAGE = os.path.join("web", "pa.html")
+# 拆面（承 pm 1334 §二.1 · 页面 ＝ 壳 ＋ 支）：T3 之判须并读三面
+#   容器 ＝ 壳（web/pa.html）／ fetchPaBuild 之体 ＝ web/pa/faces/shell.js ／ 调用点 ＝ web/pa/faces/config.js
+PAGE_FACES = (PAGE,
+              os.path.join("web", "pa", "faces", "shell.js"),
+              os.path.join("web", "pa", "faces", "config.js"))
 MAIN = "agent_gateway_enhanced.py"
 
 
@@ -78,7 +83,7 @@ def test_t2_反例门_换字节则指纹必变(monkeypatch, tmp_path):
 
 
 def test_t3_page_reports_it():
-    t = open(PAGE, encoding="utf-8").read()
+    t = "\n".join(open(f, encoding="utf-8").read() for f in PAGE_FACES)
     assert 'id="paBuild"' in t, "缺徽标容器"
     assert "fetchPaBuild" in t and "fetchPaBuild()" in t, "缺取指纹的函数或 boot 调用"
     assert "data-pa-build" in t, "缺 data-pa-build（探针/脚本读这个）"
