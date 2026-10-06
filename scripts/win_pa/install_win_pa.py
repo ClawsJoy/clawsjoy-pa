@@ -43,6 +43,9 @@ VERSION = 1
 
 #: ⭐ 唯**立目录**（⛔ 写文件）—— 皆相对 ROOT；幂等之的
 DIRS = ("data", "data/tmp", "data/v9/pa", "logs")
+#: ⭐ 内置知识库之根（pm_1442 §二.2「库根新立」）—— 即 `core.lib.paths._builtin_kb()`
+#: 之 `get_data_root()/kb`（同本器 DIRS 之默认形 · `get_data_root()` 默认 ＝ `data`）。
+KB_REL = "data/kb"
 #: 计划任务（与卸载器同一物 · 二器共一真源字面）
 TASK_BOOT = BS + "ClawsJoy_PA_Boot"
 TASK_ONCE = BS + "ClawsJoy_PA_Start_Once"
@@ -53,6 +56,19 @@ DEPS = ("flask", "yaml")
 PY_MIN = (3, 10)
 VRAM_MIN_MIB = 4096          # 硬闸（低于 ⇒ ⛔ 本机模型路不可用）
 VRAM_RECOMMEND_MIB = 8192    # 荐（承 pm_1382 §二.5：荐 >= 8 GB；唯 6 GB ⇒ 用小模型）
+
+
+def kb_subdirs():
+    u"""六约定子目录之**名** —— **一处定形**：`core.lib.note_kernel.SUBDIRS`
+    （⛔ 本器另写一份字面 · 供暗漂）⇒ `(names, None)` ∨ `((), 因)`（**显因** · 承「缺则显因」）。
+    """
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    try:
+        from core.lib.note_kernel import SUBDIRS as _S
+        return tuple(_S), None
+    except Exception as e:
+        return (), u"%s: %s" % (type(e).__name__, str(e)[:120])
 
 
 _PF_ERR = None       # ⛔ ⛔ 静默：导入败之因须留（承「缺则显因」）
@@ -193,6 +209,15 @@ def preflight_gates(offline=False, wheel_dir=None):
                                  else u"全（%d 依）" % len(_ds)),
                       "note": (u"修之门：在有网之机跑 python -X utf8 scripts" + BS
                                + u"win_pa" + BS + u"make_client_bundle.py --go") if _miss else u""})
+    # ⭐ pm_1442 §二.2（库根新立）：骨架之名 ← note 内核（**一处定形**）；⛔ 得 ⇒ 闸败（显因 ⇒ rc 2）
+    _subs, _serr = kb_subdirs()
+    if _serr is None:
+        g.append({"name": u"知识库骨架", "ok": True,
+                  "reason": u"六约定之名得自 note_kernel.SUBDIRS（%s）" % u"、".join(_subs), "note": u""})
+    else:
+        g.append({"name": u"知识库骨架", "ok": False,
+                  "reason": u"note_kernel.SUBDIRS ⛔ 得（%s）" % _serr,
+                  "note": u"修之门：查 core/lib/note_kernel.py 是否在"})
     # ⚠ 自测专用之钩（⛔ 常规用）：env PA_INSTALL_FORCE_FAIL=<闸名之子串> ⇒ 置该闸败 ⇒ 验「⛔ 足 ⇒ ⛔ 装」
     _f = os.environ.get("PA_INSTALL_FORCE_FAIL")
     if _f:
@@ -215,8 +240,18 @@ def _is_registered(task):
 
 
 def dir_items():
-    return [{"item": "dir", "path": rel, "abs": os.path.join(ROOT, rel.replace("/", os.sep)),
-             "exists": os.path.isdir(os.path.join(ROOT, rel.replace("/", os.sep)))} for rel in DIRS]
+    u"""立目录之逐项（含内置知识库之骨架 · 名自 note 内核 · pm_1442 §二.2）。"""
+    subs, _err = kb_subdirs()
+    rels = list(DIRS) + ([] if _err else ([KB_REL] + [KB_REL + "/" + n for n in subs]))
+    out = []
+    for rel in rels:
+        _abs = os.path.join(ROOT, rel.replace("/", os.sep))
+        it = {"item": "dir", "path": rel, "abs": _abs, "exists": os.path.isdir(_abs)}
+        if rel == KB_REL:
+            it["note"] = (u"内置知识库之骨架（note 内核之六约定 · pm_1442 §二.2）"
+                          if not _err else (u"⛔ 子目录之名 ⛔ 得：%s" % _err))
+        out.append(it)
+    return out
 
 
 def task_items():
@@ -249,7 +284,9 @@ def render_and_maybe_apply(p, dry, register_tasks=False):
     todo = [d for d in p.get("dirs", []) if not d["exists"]]
     lines.append(u"[install] 将动：立目录 %d 件（已在 %d ⇒ no-op）" % (len(todo), len(p.get("dirs", [])) - len(todo)))
     for d in p.get("dirs", []):
-        lines.append(u"  %-22s %s" % (d["path"], u"在（no-op）" if d["exists"] else u"缺（将立）"))
+        lines.append(u"  %-22s %s%s" % (
+            d["path"], u"在（no-op）" if d["exists"] else u"缺（将立）",
+            (u"  ｜ " + d["note"]) if d.get("note") else u""))
     lines.append(u"[install] ⛔ 不动：data/** 之**文件**（唯立目录）· ⛔ 改 ／ ⛔ 删任何产品档 · ⛔ 起停")
     if register_tasks and p.get("tasks"):
         for t in p["tasks"]:

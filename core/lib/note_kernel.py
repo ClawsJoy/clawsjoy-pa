@@ -38,7 +38,9 @@ NOTE_VERSION = "2026-10-06.1"
 ROOT_ENV = "PA_VAULT_DIR"
 LEGACY_ENV = "PA_VAULT_LEGACY"
 
-#: 目录约定（**一处定形**）—— 内置库 `<data_root>/kb` 之子目录与安装器同源自此。
+#: 目录约定（**一处定形**）—— 内置库 `<data_root>/kb` 之子目录
+#: 与安装器同源自此：`scripts/win_pa/install_win_pa.py::kb_subdirs()` 即引本名（⛔ 二份字面）；
+#: 并以测钉之（test_win_pa_install ／ test_note_kernel）。
 SUBDIRS = ("notes", "sop", "reviews", "inbox", "drafts", "assets")
 #: 最小 frontmatter 之键（序即出之序；余键按名附后）
 FM_KEYS = ("title", "created", "updated", "tags")

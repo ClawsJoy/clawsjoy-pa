@@ -112,3 +112,38 @@ def test_bat_is_thin_shell():
     assert pys and len(pys) == 1, pys
     assert "install_win_pa.py" in pys[0], pys
 
+
+
+def test_kb_skeleton_dirs_single_source():
+    u"""⭐ pm_1442 §二.2（库根新立）：内置知识库之骨架（`data/kb` ＋六约定）须**在立目录之列**，
+    且六名**一处定形** ≡ `core.lib.note_kernel.SUBDIRS`（⛔ 二份字面 · 反控：本器 ⛔ 自带其名）。"""
+    import importlib
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    nk = importlib.import_module("core.lib.note_kernel")
+    d = _plan()
+    paths = [i["path"] for i in d["plan"]["dirs"]]
+    assert "data/kb" in paths, paths
+    for n in nk.SUBDIRS:
+        assert ("data/kb/" + n) in paths, (n, paths)
+    kb = [i for i in d["plan"]["dirs"] if i["path"] == "data/kb"]
+    assert kb and kb[0].get("note"), kb
+    src = io.open(str(EXE), encoding="utf-8").read()
+    for n in nk.SUBDIRS:
+        assert (chr(34) + n + chr(34)) not in src, (u"本器自带子目录字面（应唯引内核）", n)
+    assert "note_kernel" in src
+
+
+def test_kb_skeleton_gate_reverse_control():
+    u"""⭐ 反控：`note_kernel.SUBDIRS` ⛔ 得 ⇒ 闸**败**（显因）∧ 立目录之列 ⛔ 含 kb（⛔ 静默半立）。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_iwp_probe", str(EXE))
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    m.kb_subdirs = lambda: ((), u"ImportError: demo")
+    g = m.preflight_gates()
+    kb = [i for i in g if i["name"] == u"知识库骨架"]
+    assert kb and kb[0]["ok"] is False and "demo" in kb[0]["reason"], kb
+    d = m.dir_items()
+    assert "data/kb" not in [i["path"] for i in d], d
+    assert [i["path"] for i in d] == list(m.DIRS), d
