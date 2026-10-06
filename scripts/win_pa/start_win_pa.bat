@@ -1,7 +1,7 @@
-@echo off
+﻿@echo off
 REM ============================================================
 REM  Win-PA gateway launcher  (thin shell)   (CW line / CodexWindows)
-REM  STAR 收口 (pm_1369 Sec-2 裁): this file MUST NOT start the
+REM  STAR closure (pm_1369 Sec-2 ruling): this file MUST NOT start the
 REM  gateway itself -- it only forwards to the SINGLE entry:
 REM      scripts\win_pa\pa_nowindow.py start
 REM  Why: two entries have DIFFERENT gates (here: port only;

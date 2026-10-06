@@ -1,8 +1,8 @@
-@echo off
+﻿@echo off
 REM ============================================================
 REM  Win-PA gateway stopper           (CW line / CodexWindows)
 REM  Kills EXACTLY the PID that holds the configured port.
-REM  By convention (see paseo-pm\_端口归属登记_v1.md rule 1):
+REM  By convention (see the paseo-pm port-ownership ledger v1, rule 1):
 REM    the FIRST starter keeps the port; log every start/stop.
 REM ============================================================
 setlocal
@@ -19,5 +19,5 @@ if "%PID%"=="" ( echo [--] nothing listening on %GPORT%, nothing to stop & exit 
 
 echo [INFO] stopping PID %PID% on port %GPORT%
 taskkill /PID %PID% /F
-echo [DONE] remember to log this stop in paseo-pm\_端口归属登记_v1.md
+echo [DONE] remember to log this stop in the paseo-pm port-ownership ledger.
 endlocal
