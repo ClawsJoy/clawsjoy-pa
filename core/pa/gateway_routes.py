@@ -128,7 +128,9 @@ def llm_brain(system_prompt=None, model=None, max_tokens=None):
                     _mt = default_max_tokens()
                 except Exception:
                     _mt = 1600
-            out = _c.generate(prompt, max_tokens=_mt)
+            # ⭐ pm_1447 §二.3②（P2 最小缝）：`model=` 之链（`llm_brain` ⇒ `generate` · **唯加一参** · ⛔ 改 `_call` 骨架）
+            #   ⚠ 缺省 `None` ⇒ `generate` 之默认路（行为 ⛔ 变）。
+            out = _c.generate(prompt, model=model, max_tokens=_mt)
             try:
                 _brain.last_route = _c.get_last_route()
             except Exception:
