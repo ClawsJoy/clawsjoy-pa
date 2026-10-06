@@ -308,6 +308,11 @@ def face_list(root=None, sub=None, limit=MAX_LIST):
 def face_state_code(root=None):
     u"""态之**机器码**（一处定形 · 承 pm_1503 §一）：``no_root`` ／ ``empty`` ／ ``ok``。
 
+    ⚠⚠ **轴之别（pm_1517 §一 之裁 · 照实）**：本器按**内核约定六面**（`SUBDIRS`）计 ⇒ **⏔ 即「PA 检索面」**
+      （`PA_KB_ASK_SCOPES` ／ `PA_FACES` · 如 `收件箱` ⏔ 在 `SUBDIRS`）。⚠ `PA_VAULT_DIR` 之「态」自 `pm_1517`
+      **⏔ 再问本器**（其判唯自 `core/pa/gateway_routes.py::pa_vault_state_code()` ⇒ 一处定形）；
+      本器今**无产线读者**（唯测钉其映射）—— 留名以存内核六面之轴（⏔ 一名蔽二事）。
+
     ⚠ 唯自 `face_list()` 之 `state` 映射（⛔ 另立判据 · ⛔ 二处各判）：
       `STATE_NO_ROOT` ／ `STATE_MISSING`（根 ⛔ 得 ∨ 根 ⛔ 在 ⇒ 亦「不可用」）⇒ ``no_root``；
       `STATE_EMPTY` ⇒ ``empty``；余（``STATE_OK``）⇒ ``ok``。

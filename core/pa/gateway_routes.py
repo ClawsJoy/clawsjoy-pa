@@ -979,10 +979,78 @@ def _src_face_readout():
 
 
 
+# ⭐⭐ pm_1517 §一（裁：取拟一 ⇒ 改 `态` 之判据 ⇒ 以「PA 检索面」为准）：
+#   病（我 1515 §三 之逮 · 一手）：旧判唯问 `note_kernel.face_state_code()`（＝**内核约定六面**
+#     `notes/sop/reviews/inbox/drafts/assets` 之件数）⇒ 本机之组织库（`收件箱` 有物 ·
+#     活端 `searched ＝ 540`）反报 `empty` ⇒ 前端据此渲「检索面为空」⇒ **屏上书不实**
+#     （承「⛔ 屏上不实」之族）。
+#   正解（pm_1517 §一 · **一处定形**）：其判**唯自 PA 检索面**出 —— `PA_KB_ASK_SCOPES`
+#     （库根相对）＋ `PA_FACES` 中**以本库根为基**者之件数。
+#   ⚠ **⛔ 纳他根之面**（如 `文件`＝工作区根 ／ `死件账`＝`data/` 面）—— 由：⒈、`态` 乃
+#     **该键之根**之态（一名一义）⒉、`PA_FACES` 于净机（门关）唯 `死件账`（`data/` 面 ·
+#     ⛔ 在本库根之下）⇒ 若纳之 ⇒ 净机亦报 `ok` ⇒ **反控 ⛔ 立**（pm_1517 §一.3）。
+def _is_under_path(base, p):
+    u"""`p` ⛔ 在 `base` 之下（皆绝对化 ＋ 大小写归一；⛔ 前缀误配 `kb` ⟷ `kb2`）。"""
+    try:
+        _b = os.path.normcase(os.path.abspath(str(base)))
+        _p = os.path.normcase(os.path.abspath(str(p)))
+    except Exception:
+        return False
+    if _p == _b:
+        return True
+    return _p.startswith(_b + os.sep)
+
+
+def pa_vault_face_files(root):
+    u"""本库根之 **PA 检索面**：⇒ `(件数, 命中面名…)`（判「态」用 · **一处定形** · pm_1517 §一）。
+
+    ＝ `PA_KB_ASK_SCOPES`（库根相对 · `*.md`）＋ `PA_FACES` 中**根在本库根之下**者（各用其通配）。
+    ⚠ 只读列举（`_face_files` ⇒ 剪树剔 `PA_FACES_SKIP`）；⚠ **⛔ 他根之面**（见上注）。
+    """
+    _r = Path(root)
+    _n = 0
+    _names = []
+    for _rel in PA_KB_ASK_SCOPES:
+        _c = len(_face_files(_r / _rel, ("*.md",)))
+        _n += _c
+        if _c:
+            _names.append(_rel)
+    for _name, _roots, _globs in PA_FACES:
+        _c = 0
+        for _spec in _roots:
+            _rp = _face_root(_r, _spec)
+            if not _is_under_path(_r, _rp):
+                continue
+            _c += len(_face_files(_rp, _globs))
+        _n += _c
+        if _c:
+            _names.append(_name)
+    return _n, tuple(_names)
+
+
+def pa_vault_state_code(root=None):
+    u"""库根之「**态**」机器码（**一处定形** · pm_1517 §一 之裁 ⇒ 取拟一）。
+
+    值域（一名一义 · 承 `pm_1503 §一`）：
+      ``no_root`` —— 库根 ⛔ 得（四序皆无）
+      ``empty``   —— 库根在 ∧ **本库根之 PA 检索面诸面皆无件**
+      ``ok``      —— 有件
+    ⚠ 其源**唯** `pa_vault_face_files()`（⛔ 另立判据 · ⛔ 内核约定六面 —— 二物别 · 报其读者）。
+    ⚠ 传 ``root=None``（∨ 空）⇒ 自 `vault_root()`（四序 · 一处定形）。
+    """
+    from core.lib.note_kernel import (STATE_CODE_EMPTY, STATE_CODE_NO_ROOT,
+                                      STATE_CODE_OK)
+    _r = Path(root) if str(root or "").strip() else vault_root()
+    if _r is None:
+        return STATE_CODE_NO_ROOT, 0, ()
+    _n, _names = pa_vault_face_files(_r)
+    return (STATE_CODE_OK if _n else STATE_CODE_EMPTY), _n, _names
 # ============================== ⭐ 首启引导（承 pm_1384 §三.3）==============================
-PA_FIRST_RUN_VERSION = "2026-10-06.4"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
-#  ⭐ .4：「面之源」逐键增「态」（**机器码** `no_root` ／ `empty` ／ `ok` · pm_1503 §一）——
-#           一处定形（唯问 `core/lib/note_kernel.py::face_state_code()`）⇒ 前端唯渲、⛔ 比字面哨符。
+PA_FIRST_RUN_VERSION = "2026-10-06.5"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+#  ⭐ .5：「态」之判据 ⇒ 改依**本库根之 PA 检索面**（pm_1517 §一 之裁 · 取拟一）——
+#           旧依「内核约定六面」⇒ 本机（`收件箱` 有物 · `searched＝540`）反报 `empty`
+#           ⇒ 屏上不实；一处定形（唯问 `pa_vault_state_code()`）⇒ 前端唯渲、⛔ 比字面哨符。
+#  ⭐ .4：「面之源」逐键增「态」（**机器码** `no_root` ／ `empty` ／ `ok` · pm_1503 §一）。
 #  ⭐ .2：「面之源」三键（pm_1417 §三.3 · 面之数由三键定 ⇒ 用户须能知）
 #  ⭐ .3：「本机配置」显形（pm_1453 §一 之裁 · 本席一手逮得）——
 #           `config/.env` ／ `config/secrets.yaml` 在**包内必无** ⇒ 「缺」＝**常形**
@@ -1161,17 +1229,19 @@ def _first_run_readout():
         _wssrc = _P.ws_root_src()[1]
         _vsrc = _P.vault_root_src()[1]
         # ⭐ pm_1503 §一：「态」＝**机器码**（一处定形 · ⛔ 另立判据）
-        #   唯问 `note_kernel.face_state_code()`（内即 `face_list().state` 之一处）。
-        from core.lib.note_kernel import face_state_code as _fsc
-        _vcode = _fsc(root=(str(_vr) if _vr else None))
+        # ⭐⭐ pm_1517 §一（裁：取拟一）：其**判据改依「PA 检索面」**（⛔ 内核约定六面）——
+        #   唯问本模块之 `pa_vault_state_code()`（一处定形 · 其内即 `PA_KB_ASK_SCOPES` ＋ `PA_FACES`）。
+        _vcode, _vn, _vfaces = pa_vault_state_code(root=(str(_vr) if _vr else None))
     except Exception as _e:
         out["缺"].append({"项": u"面之源（三键）", "因": u"%s: %s" % (type(_e).__name__, str(_e)[:120])})
     # ⭐ pm_1502 §一.3 ／ §一.4：每键增「源」（env ／ 配置 ／ 内置空库）⇒ 今 ／ 义 二形须合。
     out["面之源"] = {
         "口径": u"「面之数」由三键定 —— 缺则面减（照实 · ⛔ 静默）· 每键附「源」（今之值所自出）"
                 u"＋「态」（**机器码** · 前端唯渲 · ⛔ 比字面哨符）",
-        "态域": u"no_root（该键之根 ⛔ 得 ∨ ⛔ 在 ⇒ 「未接」）／ empty（根在而**约定六面**无件"
-                 u" ⇒ 空库之貌 · **⛔ 病**）／ ok（根在而约定六面有件）；逐键之现域见各「态」",
+        "态域": u"no_root（该键之根 ⛔ 得 ∨ ⛔ 在 ⇒ 「未接」）／ empty（根在而**检索面**无件"
+                 u" ⇒ 空库之貌 · **⛔ 病**）／ ok（有件）；⚠ PA_VAULT_DIR 之空／有按"
+                 u"**本库根之 PA 检索面**（`PA_KB_ASK_SCOPES` ＋ `PA_FACES` 中根在本库根之下者）之件数"
+                 u"计（⛔ 内核约定六面 —— 承 pm_1517 §一）；逐键之现域见各「态」",
         "键": [
             {"键": "PA_ORG_FACES",
              "义": u"组织版开关（功能级 · 默认关）—— 开 ⇒ 并入组织面；关 ⇒ 唯产品面「死件账」",
@@ -1188,9 +1258,10 @@ def _first_run_readout():
                    u"<data_root>/kb）—— 唯四序皆无 ⇒ 显「未接（选目录）」；内置空库在 ⇒"
                    u"「今」为其径 ∧ 「源」明书其自内置空库（⛔ 混同「未接」）；"
                    u"「态」＝ no_root ／ empty ／ ok（**今随态**：no_root ⇒ 今 ＝「未接」）；"
-                   u"empty ／ ok 按**内核约定六面**（notes ／ sop ／ reviews ／ inbox ／ "
-                   u"drafts ／ assets）之件数计（⛔ 与 PA 检索面「收件箱 ／ 知识库」同约 —— "
-                   u"二者之别见报）",
+                   u"empty ／ ok 按**本库根之 PA 检索面**（`PA_KB_ASK_SCOPES`：收件箱 ／ 知识库"
+                   u" ＋ `PA_FACES` 中**根在本库根之下**者）之件数计 —— ⛔ 内核约定六面"
+                   u"（notes ／ sop ／ reviews ／ inbox ／ drafts ／ assets ⇒ 另轴 · 二物别）"
+                   u"（承 pm_1517 §一 之裁）",
              "今": (str(_vr) if (_vr and _vcode != u"no_root") else u"未接"),
              "源": _vsrc,
              "态": _vcode},

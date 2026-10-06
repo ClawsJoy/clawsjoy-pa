@@ -11,8 +11,12 @@ u"""pm_1502 §一：库根之「源」—— 一处定形 ＋ 今／义二形须
   ⒟ 今／义二形合（首启之「面之源」）：内置空库在 ⇒ 源 ＝ 「内置空库（本机默认 · 空）」
      ∧ 义含「内置空库」；皆无 ⇒ 今 ＝ 「未接」∧ 源含「未接（选目录）」。
   ⒠ 反控：同机唯易 `PA_VAULT_DIR` ⇒ 值变（⛔ 假绿）。
-  ⒡ pm_1503 §一：面之源**逐键「态」**＝机器码（`no_root` ／ `empty` ／ `ok`）·
-     一处定形（唯问 `note_kernel.face_state_code()`）· **今随态**（no_root ⇒ 今 ＝「未接」）。
+  ⒡ pm_1503 §一：面之源**逐键「态」**＝机器码（`no_root` ／ `empty` ／ `ok`）· **今随态**
+     （no_root ⇒ 今 ＝「未接」）。
+  ⒢ pm_1517 §一（裁：取拟一）：其**判据改依「PA 检索面」**（`PA_KB_ASK_SCOPES` ＋ `PA_FACES`
+     中根在本库根之下者之件数）—— 一处定形（唯问 `gateway_routes.pa_vault_state_code()`）·
+     **⛔ 内核约定六面**（反控：`notes/` 有件 ⇒ 仍 `empty`）。
+  ⒣ 净机之预演：自带 `data/kb` 唯六约定子目录 ⇒ `empty`（⛔ `ok`）。
 """
 from __future__ import annotations
 
@@ -154,23 +158,49 @@ def test_态码_空库_empty_反控非_no_root(no_orders, monkeypatch, tmp_path)
 def test_态码_有物_ok(no_orders, monkeypatch, tmp_path):
     u"""⒡ 库根在 ∧ 有件 ⇒ 态 ＝ ``ok`` ∧ 今 ＝ 径。"""
     d = tmp_path / u"kb"
-    (d / u"notes").mkdir(parents=True)
-    (d / u"notes" / u"a.md").write_text(u"# t\n", encoding="utf-8")
+    (d / u"收件箱").mkdir(parents=True)
+    (d / u"收件箱" / u"a.md").write_text(u"# t\n", encoding="utf-8")
     monkeypatch.setattr(P, "_builtin_kb", lambda: str(d))
     vk = _vkey(GR._first_run_readout())
     assert vk[u"态"] == u"ok", vk
     assert vk[u"今"] == str(d), vk
 
 
-def test_态码_一处定形(no_orders, monkeypatch, tmp_path):
-    u"""⒡ 态码 ≡ `note_kernel.face_state_code()` 之映射（⛔ 另立判据 · ⛔ 二处各判）。"""
+def test_态码_判据_检索面_反控内核六面(no_orders, monkeypatch, tmp_path):
+    u"""⒢ pm_1517 §一：态码唯依 **PA 检索面** —— 反控：`notes/` 有件（内核六面有物）⇒ 仍 `empty`。"""
     from core.lib import note_kernel as NK
-    d = tmp_path / u"kb"; d.mkdir()
+    d = tmp_path / u"kb"
+    (d / u"notes").mkdir(parents=True)
+    (d / u"notes" / u"a.md").write_text(u"# t\n", encoding="utf-8")
     monkeypatch.setattr(P, "_builtin_kb", lambda: str(d))
-    assert NK.face_state_code(root=str(d)) == NK.STATE_CODE_EMPTY
-    assert _vkey(GR._first_run_readout())[u"态"] == NK.STATE_CODE_EMPTY, u"二处各判 ⇒ 漂"
-    assert NK.face_state_code(root=None) in (NK.STATE_CODE_NO_ROOT, NK.STATE_CODE_EMPTY,
-                                            NK.STATE_CODE_OK)
+    assert NK.face_state_code(root=str(d)) == NK.STATE_CODE_OK, u"内核六面：有物"
+    vk = _vkey(GR._first_run_readout())
+    assert vk[u"态"] == u"empty", (u"态须依检索面（⛔ 内核六面）", vk)
+    assert vk[u"态"] != NK.STATE_CODE_OK, (u"⛔ 与内核六面同轴", vk)
+
+
+def test_态码_净机预演_唯六面_empty(no_orders, monkeypatch, tmp_path):
+    u"""⒣ 净机之预演：自带 `data/kb`（唯内核约定六面之子目录 · ⛔ `收件箱`／`知识库`）⇒ `empty`。"""
+    from core.lib.note_kernel import SUBDIRS
+    d = tmp_path / u"kb"
+    for _s in SUBDIRS:
+        (d / _s).mkdir(parents=True, exist_ok=True)
+    (d / u"notes" / u"a.md").write_text(u"# t\n", encoding="utf-8")
+    monkeypatch.setattr(P, "_builtin_kb", lambda: str(d))
+    _vk = _vkey(GR._first_run_readout())
+    assert _vk[u"态"] == u"empty", _vk
+    assert _vk[u"态"] != u"ok", (u"净机预演须为空库", _vk)
+
+
+def test_态码_一处定形_唯问后端器(no_orders, monkeypatch, tmp_path):
+    u"""⒢ 一处定形：`态` 唯自 `pa_vault_state_code()`（⛔ 另立判据 ⇒ 二源）。"""
+    d = tmp_path / u"kb"
+    (d / u"收件箱").mkdir(parents=True)
+    (d / u"收件箱" / u"a.md").write_text(u"# t\n", encoding="utf-8")
+    monkeypatch.setattr(P, "_builtin_kb", lambda: str(d))
+    _c, _n, _faces = GR.pa_vault_state_code(root=str(d))
+    assert _c == GR._first_run_readout()[u"面之源"][u"键"][2][u"态"], u"二处各判 ⇒ 漂"
+    assert _n == 1 and _faces == (u"收件箱",), (_n, _faces)
 
 
 def test_态码_逐键皆在且值域内(no_orders, monkeypatch, tmp_path):
