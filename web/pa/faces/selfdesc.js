@@ -3297,7 +3297,18 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   /* ---------- 7.2 人话回执合成器（由既有出口合成 · ⛔ 另造子系统 · 承 pm_1115 §一.1）---------- */
   function lastLogs(n){
     try{ var els = document.querySelectorAll('#thread .tool-log'); var out = [];
-      for(var i = Math.max(0, els.length - (n || 12)); i < els.length; i++){ out.push(String(els[i].textContent || '').replace(/\s+/g, ' ').trim()); }
+      for(var i = Math.max(0, els.length - (n || 12)); i < els.length; i++){
+        var src = els[i]; var t = '';
+        try{  /* ⭐ pm_1551 §二.2（守一 ／ 守二）：取「用户面之字」—— clone ⇒ 去 `details.eng`（工程注记之节）⇒ 取 textContent。
+                 ⛔ 取裸 `textContent`：其含 summary（「工程注记」）＋ `.engbody`（折内）⇒ 经 `rcLines()` 之「· 做了什么：」入 `#paHumanReceipt` ⇒ 真上屏（pm 一手核 · 我 `1547 §三.4` 逮）。*/
+          var c = src.cloneNode(true);
+          var engs = c.querySelectorAll('details.eng');
+          for(var k = 0; k < engs.length; k++){ if(engs[k].parentNode){ engs[k].parentNode.removeChild(engs[k]); } }
+          t = String(c.textContent || '');
+        }catch(e){ t = ''; }
+        if(!t.replace(/\s+/g, '')) t = String(src.textContent || '');   /* 守三：去节后若为空 ⇒ 回退原 textContent（⛔ 生空行 ／ ⛔ 丢行） */
+        out.push(t.replace(/\s+/g, ' ').trim());
+      }
       return out; }catch(e){ return []; }
   }
   function pickLog(re){ var a = lastLogs(14); for(var i = a.length - 1; i >= 0; i--){ if(re.test(a[i])) return a[i]; } return ''; }
