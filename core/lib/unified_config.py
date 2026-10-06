@@ -8,6 +8,7 @@
 
 
 import os
+import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -258,7 +259,25 @@ class UnifiedConfig:
             bak.write_text(raw, encoding="utf-8")
         tmp = target.with_name(target.name + ".tmp%d" % os.getpid())
         tmp.write_text(new, encoding="utf-8")
-        os.replace(str(tmp), str(target))
+        # ⭐ 原子替换须抗 Windows 之**过性占用**（杀软 ／ 索引器 ／ 他句柄暂握 ⇒ WinError 5 ／ 32 ／ 33）
+        #   ⇒ **有界重试**（⛔ 无限）；尽而仍败 ⇒ ⛔ **原样抛**（承「⛔ 静默」）—— 他错（如径 ⛔ 可写）即抛。
+        _last_err = None
+        for _ in range(8):
+            try:
+                os.replace(str(tmp), str(target))
+                _last_err = None
+                break
+            except OSError as _e:
+                if not (isinstance(_e, PermissionError) or getattr(_e, "winerror", None) in (5, 32, 33)):
+                    raise
+                _last_err = _e
+                time.sleep(0.05)
+        if _last_err is not None:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+            raise _last_err
         self._deep_set(path, value)
         return {"ok": True, "changed": True, "file": str(target), "key": path,
                 "backup": str(bak), "form": form}
