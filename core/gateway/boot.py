@@ -190,5 +190,14 @@ def run_gateway_startup(app):
     except Exception as _e_trb:
         print(f"[TURN_REGISTRY] 启动失败(不阻断): {_e_trb}")
 
+    # 界面态快照（pm_1558 §二 裁 ⒜）：**服务自落** web/pa/ui_state.json（唯一写者 ＝ 服务）
+    #   —— 有界等待（⛔ 长阻启动）· 写失败 ⇒ fail-loud 显形（守二）
+    try:
+        from core.gateway import ui_state as _ui_state
+
+        _ui_state.write_once_bounded(timeout=6.0)
+    except Exception as _ui_exc:
+        print(f"[UI_STATE] ⛔ 快照之落 ⛔ 起（{type(_ui_exc).__name__}: {_ui_exc}）")
+
     print(f"🚀 ClawsJoy Gateway v6.0 启动在端口 {port}")
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
