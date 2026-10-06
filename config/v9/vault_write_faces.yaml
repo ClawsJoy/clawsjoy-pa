@@ -12,6 +12,11 @@
 #   ⇒ 必须在 writers[] 或 exceptions[] 登记；未登记 ⇒ 报红（新增写者必须登记）。
 #   ⚠ 本规则**逮不到的**写者已显式列在 writers[] 里（coverage_gap: true），⛔ 不以「表看着全」充数。
 
+# ⚠ 2026-10-06（pm_1427 §二.2.⒜ · 器取 scripts/dev/scan_line_refs.py）：本表 `tmp_scripts` ／
+#   `deviations` 之 `evidence` 皆引 `data/tmp/cw_*.py` —— 该面 **gitignored**（`.gitignore` 之 `data/`）
+#   ∧ 今已清 ⇒ **仓内 ∨ 盘上皆 ⛔ 可寻** ⇒ 属**过程之痕**（⛔ 可核之证）⇒ 唯记其史。
+#   逐条已统一附「（过程之痕 · 今 ⛔ 可寻）」；⛔ 删其引（保其史迹）· ⛔ 改其 module ／ 条数。
+
 version: 1
 updated: "2026-09-28"
 provenance: "CW 一手扫（data/tmp/cw_wf_probe.py）⇒ 6 候选"
@@ -167,61 +172,61 @@ tmp_emit_only_count: 17
 tmp_scripts:
   - module: data/tmp/cw_brain_seed_manifest.py
     bare_target: "仓内 data/tmp/cw_brain_seed_rows_20260928.json（⛔ 非 vault）"
-    evidence: ["data/tmp/cw_brain_seed_manifest.py:26"]
+    evidence: ["data/tmp/cw_brain_seed_manifest.py:26（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_d_backup.py
     bare_target: "仓内 .rollback_codex（⛔ 非 vault）"
-    evidence: ["data/tmp/cw_d_backup.py:46"]
+    evidence: ["data/tmp/cw_d_backup.py:46（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_d_fix1.py
     bare_target: "⛔ 非执行写：命中的是落件正文里引的 markdown 串（Path.write_text 字样）"
-    evidence: ["data/tmp/cw_d_fix1.py:19"]
+    evidence: ["data/tmp/cw_d_fix1.py:19（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_e_fix10.py
     bare_target: "⛔ 非执行写：落件正文里的 markdown 串（同族）"
-    evidence: ["data/tmp/cw_e_fix10.py:12"]
+    evidence: ["data/tmp/cw_e_fix10.py:12（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_e_v4.py
     bare_target: "仓内 .rollback_codex（⛔ 非 vault）"
-    evidence: ["data/tmp/cw_e_v4.py:17"]
+    evidence: ["data/tmp/cw_e_v4.py:17（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_e_v5.py
     bare_target: "⚠ vault：BAK = P + 「.before_e_v5_」 + ts"
-    evidence: ["data/tmp/cw_e_v5.py:10"]
+    evidence: ["data/tmp/cw_e_v5.py:10（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_e_v6.py
     bare_target: "仓内 .rollback_codex（join 构造 ⇒ 目标非 vault）"
-    evidence: ["data/tmp/cw_e_v6.py:14"]
+    evidence: ["data/tmp/cw_e_v6.py:14（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_mk_g.py
     bare_target: "⛔ 非执行写：落件正文里的 markdown 串（含本表覆盖规则原文）"
-    evidence: ["data/tmp/cw_mk_g.py:85"]
+    evidence: ["data/tmp/cw_mk_g.py:85（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_mk_h2.py
     bare_target: "仓内 data/tmp/cdp/_cw_post309.mjs（⛔ 非 vault）"
-    evidence: ["data/tmp/cw_mk_h2.py:61"]
+    evidence: ["data/tmp/cw_mk_h2.py:61（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_mk_plan.py
     bare_target: "仓内 data/tmp/_cw_plan_out.txt（⛔ 非 vault）"
-    evidence: ["data/tmp/cw_mk_plan.py:20"]
+    evidence: ["data/tmp/cw_mk_plan.py:20（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_mk_selfcheck.py
     bare_target: "⛔ 非执行写：落件正文里的 markdown 串（4 处）"
-    evidence: ["data/tmp/cw_mk_selfcheck.py:49", "data/tmp/cw_mk_selfcheck.py:53", "data/tmp/cw_mk_selfcheck.py:66", "data/tmp/cw_mk_selfcheck.py:67"]
+    evidence: ["data/tmp/cw_mk_selfcheck.py:49（过程之痕 · 今 ⛔ 可寻）", "data/tmp/cw_mk_selfcheck.py:53（过程之痕 · 今 ⛔ 可寻）", "data/tmp/cw_mk_selfcheck.py:66（过程之痕 · 今 ⛔ 可寻）", "data/tmp/cw_mk_selfcheck.py:67（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_pathsrc_fix.py
     bare_target: "仓内（join(ROOT=仓根, rel) ⇒ 非 vault）"
-    evidence: ["data/tmp/cw_pathsrc_fix.py:24"]
+    evidence: ["data/tmp/cw_pathsrc_fix.py:24（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_selfcheck_v2.py
     bare_target: "⚠ vault：BAK = P + 「.before_selfcheck_v2_」 + ts（另 :59 为正文串）"
-    evidence: ["data/tmp/cw_selfcheck_v2.py:13", "data/tmp/cw_selfcheck_v2.py:59"]
+    evidence: ["data/tmp/cw_selfcheck_v2.py:13（过程之痕 · 今 ⛔ 可寻）", "data/tmp/cw_selfcheck_v2.py:59（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_ceo_165.py
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(P2 + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
-    evidence: ["data/tmp/cw_ceo_165.py:110"]
+    evidence: ["data/tmp/cw_ceo_165.py:110（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_ceo_166.py
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(P + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
-    evidence: ["data/tmp/cw_ceo_166.py:94"]
+    evidence: ["data/tmp/cw_ceo_166.py:94（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_ceo_167.py
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(PB + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
-    evidence: ["data/tmp/cw_ceo_167.py:152"]
+    evidence: ["data/tmp/cw_ceo_167.py:152（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_ceo_168.py
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(PATH + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
-    evidence: ["data/tmp/cw_ceo_168.py:94"]
+    evidence: ["data/tmp/cw_ceo_168.py:94（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_pm_reply169to171.py
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(p + 「.sha256」, 「w」) ⇒ 绕开 emit_text"
-    evidence: ["data/tmp/cw_pm_reply169to171.py:11"]
+    evidence: ["data/tmp/cw_pm_reply169to171.py:11（过程之痕 · 今 ⛔ 可寻）"]
   - module: data/tmp/cw_t6_amend.py
     bare_target: "⛔ 非 vault 写：命中 shutil.copyfile(DST, BAK) 的**读方向**（DST = codex/ 真件 · BAK = .rollback_codex）⇒ 写目标非 vault（启发式边界 · 与 cw_d_fix1.py 同类）"
-    evidence: ["data/tmp/cw_t6_amend.py:9"]
+    evidence: ["data/tmp/cw_t6_amend.py:9（过程之痕 · 今 ⛔ 可寻）"]
 tmp_scripts_count: 19
 
 # 已知偏差（R2 命中）：data/tmp 侧脚本**裸写落 vault** ⇒ 绕开唯一出口 emit_text。
@@ -229,40 +234,40 @@ tmp_scripts_count: 19
 #   而承「每稿存底」纪律，存底应落 .rollback_codex（与源件分离）⇒ 落 vault 面即偏差。
 deviations:
   - module: data/tmp/cw_e_v5.py
-    evidence: ["data/tmp/cw_e_v5.py:10"]
+    evidence: ["data/tmp/cw_e_v5.py:10（过程之痕 · 今 ⛔ 可寻）"]
     bare_target: "vault 变量 BAK（= P + 「.before_e_v5_」 + ts）⇒ 落 codex/ 面"
     artifacts:
       - "codex/2026-09-28-codex-回_CEO五件裁与真源根两口径与沙箱镜像实测_v1.md.before_e_v5_20260928_0655（78e5e1c2b5b5ee64 · 27,643 B · 06:55:53）"
       - "codex/…同上….before_e_v5_20260928_0656（同 sha · 同字节 ⇒ 与 0655 重复落）"
     status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定；本侧 ⛔ 不擅自删 vault 内件）"
   - module: data/tmp/cw_selfcheck_v2.py
-    evidence: ["data/tmp/cw_selfcheck_v2.py:13"]
+    evidence: ["data/tmp/cw_selfcheck_v2.py:13（过程之痕 · 今 ⛔ 可寻）"]
     bare_target: "vault 变量 BAK（= P + 「.before_selfcheck_v2_」 + ts）⇒ 落 codex/ 面"
     artifacts:
       - "codex/2026-09-28-codex-自查_Win侧vault写面与存底面与L2对账读数_v1.md.before_selfcheck_v2_20260928_0641（fba08c66f6953bac · 12,182 B · 06:41:28）"
     status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（同上）"
   - module: data/tmp/cw_ceo_165.py
-    evidence: ["data/tmp/cw_ceo_165.py:110"]
+    evidence: ["data/tmp/cw_ceo_165.py:110（过程之痕 · 今 ⛔ 可寻）"]
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(P2 + 「.sha256」, 「w」)"
     status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
   - module: data/tmp/cw_ceo_166.py
-    evidence: ["data/tmp/cw_ceo_166.py:94"]
+    evidence: ["data/tmp/cw_ceo_166.py:94（过程之痕 · 今 ⛔ 可寻）"]
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(P + 「.sha256」, 「w」)"
     status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
   - module: data/tmp/cw_ceo_167.py
-    evidence: ["data/tmp/cw_ceo_167.py:152"]
+    evidence: ["data/tmp/cw_ceo_167.py:152（过程之痕 · 今 ⛔ 可寻）"]
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(PB + 「.sha256」, 「w」)"
     status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
   - module: data/tmp/cw_ceo_168.py
-    evidence: ["data/tmp/cw_ceo_168.py:94"]
+    evidence: ["data/tmp/cw_ceo_168.py:94（过程之痕 · 今 ⛔ 可寻）"]
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(PATH + 「.sha256」, 「w」)"
     status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
   - module: data/tmp/cw_pm_reply169to171.py
-    evidence: ["data/tmp/cw_pm_reply169to171.py:11"]
+    evidence: ["data/tmp/cw_pm_reply169to171.py:11（过程之痕 · 今 ⛔ 可寻）"]
     bare_target: "信通 面伴生 .sha256（与正文同面 · ⛔ 非正文件）：open(p + 「.sha256」, 「w」)"
     status: "⚠ 已知偏差 · ⛔ 未删 · 待处置（归 CEO/DS 定：伴生 sha256 是否并入唯一出口）"
   - module: data/tmp/cw_t6_amend.py
-    evidence: ["data/tmp/cw_t6_amend.py:9"]
+    evidence: ["data/tmp/cw_t6_amend.py:9（过程之痕 · 今 ⛔ 可寻）"]
     bare_target: "⛔ 非 vault 写：命中 shutil.copyfile(DST, BAK) 的读方向（DST = vault 真件 · BAK = .rollback_codex）"
     status: "⚠ 启发式假阳（写目标非 vault）· 已登记以免静默 · ⛔ 非真偏差"
 deviations_count: 8
