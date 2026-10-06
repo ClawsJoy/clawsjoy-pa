@@ -369,6 +369,17 @@ PA_KB_ASK_SCOPES = ("收件箱", "知识库")
 PA_ASK_REFUSAL = "本机无据 ⇒ 我不答此问。"
 # ⭐ 旧辞（失实 · ⛔ 勿再入 answer）：留名以**识别旧痕**（前端词形闸之旁证 · 承 PM 22:34 §三）
 PA_ASK_REFUSAL_STALE = "查不到（知识库里没有相关内容）"
+# ⭐⭐ pm_1500 §二：库根未接 ⇒ **早返**（⛔ `Path("")` ⇒ **误扫 CWD** · 潜在假有据）
+#   病（本刻一手）：以**空串**充「未接」（`kb = os.getenv(...) or (str(_vr) if _vr is not None else "")`）
+#     ⇒ `pa_kb_search(q, "")` 之 `Path("") / "收件箱"` ＝ **`收件箱`（CWD 相对）**
+#     ⇒ 若 CWD 恰有同名子目录 ⇒ **误扫**（`gateway_routes.py:431` ／ `:484` 所警之族）。
+#   ⚠ 二路之别：`PA_FACES` 路**有守**（`_rel_under` 缺基 ⇒ `None` ⇒ 该面 ⛔ 入表）；
+#     `PA_KB_ASK_SCOPES`（收件箱 ／ 知识库）一路**无守**（其路取 `Path(kb_root)`）⇒ 本修补之。
+#   守：「未接」之判**唯此一处**（`_kb_root_str()`）⇒ ⛔ 二处各判「空」（承「一处定形」）。
+#   判词（一处定形）：其因须名「待选目录」 ⇒ **可分**于「扫了而无」（承「空 ≠ 缺」）。
+PA_KB_UNSET_VERDICT = (u"未接（选目录）：库根 ⛔ 得 ⇒ 本轮 ⛔ 扫描"
+                       u"（⛔ 以空径充 ⇒ 误扫 CWD ⇒ 假有据）"
+                       u"⇒ 拒答与否皆不成立（待选目录）")
 PA_ASK_MIN_SCORE = 0.42  # ⭐ 2026-10-04：0.34 → 0.42（扩面后弱命中 0.375 之假有据之修）
 
 # ⭐⭐ pm_1486 §一（裁：取拟一）：**「闸之实」⇒ 回执之结构化判据**（**一处定形**）。
@@ -1386,6 +1397,17 @@ def _ask_deadfile(question):
             "verdict": "死件账有据（本机账 %s 条 · 逐字照录 ⛔ 模型生成）" % len(_rows)}
 
 
+def _kb_root_str():
+    u"""库根（**字符串** · 未接 ⇒ ``""``）—— ⭐ pm_1500 §二：**唯一判点**（⛔ 二处各判「空」）。
+
+    ⨀ 其源＝`core.lib.paths.vault_root()`（四序：`PA_VAULT_DIR` ⇒ 配置 `paths.vault_root`
+      ⇒ 内置 `<data_root>/kb` ⇒ 末选 `PA_VAULT_LEGACY`）—— 本处 **⛔ 另判**（一处定形）。
+    ⚠ 未接之「空」⛔ 同「扫了而无」（承「空 ≠ 缺」）⇒ 由 `no_kb_root` 分标。
+    """
+    _vr = vault_root()
+    return str(_vr) if _vr is not None else ""
+
+
 def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
     """PA 知识库检索（BUG-2 的「有据面」）。
 
@@ -1393,6 +1415,13 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
     返回 hits（file/line/score/text）＋ searched（真搜了几件）＋ ⭐ faces（**每面各报件数**）。
     ⭐ 2026-10-04（PM 授权 · 老板批）：除 (收件箱/知识库) 外，增扫 PA_FACES 之面（文件 ／ 台账）。
     """
+    # ⭐⭐ pm_1500 §二：库根未接 ⇒ **早返**（⛔ 触 `Path("")` ⇒ 误扫 CWD · 假有据）。
+    if not str(kb_root or "").strip():
+        return {"hits": [], "archive_hits": [], "searched": 0, "scope": [],
+                "threshold": min_score, "faces": {}, "no_kb_root": True,
+                "faces_missing": list(PA_KB_ASK_SCOPES) + [f[0] for f in PA_FACES],
+                "faces_skipped": {}, "faces_version": PA_FACES_VERSION,
+                "face_snapshot_at": None}
     qg = _bigrams(question)
     # ⭐ PM 2026-10-05（承 技总 973 §三 · `v3` ⒜）：剔**语料名**之 bigram（判别力 ≈ 0 ⇒ 结构性压低 cov）
     for _nm in PA_CORPUS_NAME_BIGRAMS:
@@ -2202,8 +2231,7 @@ def register_pa_routes(app, brain=None):
         q = (p.get("question") or "").strip()
         if not q:
             return err("ask 需要 question")
-        _vr = vault_root()   # ⚠ 可 None（未接 · 承 pm_1387 §二.2）⇒ ⛔ str(None) 之假径
-        kb = os.getenv("PA_VAULT_DIR") or (str(_vr) if _vr is not None else "")
+        kb = _kb_root_str()   # ⭐ pm_1500 §二：**唯此一处**判「库根未接」（⛔ 各判「空」 · ⛔ `None` 之假径）
         _at = _pa_read_at()   # ⭐ pm_1478 §二：一处定形（⛔ 二处各打时戳）
         _fact_family = bool(p.get("fact_family"))   # ⭐ pm_1493 §三：前端之**结构判**（本机事实族 · ⛔ 辞）⇒ 转交
         _tk0 = time.perf_counter()   # ⭐ 058：本轮检索之起点（器取）
@@ -2252,6 +2280,22 @@ def register_pa_routes(app, brain=None):
             return ok({"grounded": False, "refused": True, "answer_source": "context_missing",
                        "answer": "本会话无可读之上句（元问 · 本机无「上一句」可引）⇒ 如实不答（⛔ 不编）", "context_prev": "",
                        "verdict": "上下文缺（本会话无可读上一句 ⇒ 如实不答）", **_bb})
+        # ⭐⭐ pm_1500 §二：库根未接 ⇒ **早返**（⛔ 入 `pa_kb_search(q, "")` ⇒ `Path("")` ⇒ 误扫 CWD）。
+        #   ⚠ 其态**可分**于「扫了而无」（`kb_state=unset` ＋ 判词）—— 承「空 ≠ 缺」。
+        if not kb:
+            _j = {"threshold": None, "faces_version": PA_FACES_VERSION, "faces_count": 0,
+                  "faces_files_total": 0, "face_snapshot_at": None, "judge_at": _at}
+            _bb = {"question": q, "read_at": _at, "kb_root": "", "kb_state": "unset",
+                   "searched": 0, "scanned": 0, "scope": list(PA_KB_ASK_SCOPES),
+                   "threshold": None, "faces": {},
+                   "faces_missing": list(PA_KB_ASK_SCOPES), "faces_skipped": {},
+                   "evidence": [], "archive_hits": [], "judge": _j,
+                   "refusal_canon": PA_ASK_REFUSAL, "refusal_stale": PA_ASK_REFUSAL_STALE}
+            return ok({"grounded": False, "refused": False, "answer": "",
+                       "answer_source": "not_applicable", "ask_domain": "retrieve",
+                       "verdict": PA_KB_UNSET_VERDICT,
+                       "gate": pa_gate_view(decision="not_applicable", fact_family=_fact_family),
+                       **_bb})
         # ⭐ 058 §一.3（裁）：复问缓存 —— 同问（同 kb ／ 同 limit）二次 ⇒ 复用首扫之果。
         _limit = int(p.get("limit") or 5)
         _ck = (q, str(kb), _limit)
@@ -2269,6 +2313,7 @@ def register_pa_routes(app, brain=None):
         _faces = res.get("faces", {})
         _arch = res.get("archive_hits", [])
         base = {"question": q, "read_at": _at, "kb_root": str(kb), "searched": res["searched"],
+                "kb_state": "set",
                 "from_cache": _from_cache,
                 # ⭐ PM 2026-10-05 22:34 §四⒝-1：**canonical 之引用面** —— 前端取此二键
                 #   （⛔ 二处各写 ⇒ 免「漂移之床」；「查不到」之旧辞作**词形闸**之旁证）
