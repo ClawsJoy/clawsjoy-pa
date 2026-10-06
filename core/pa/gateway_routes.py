@@ -139,7 +139,7 @@ def llm_brain(system_prompt=None, model=None, max_tokens=None):
                 _s for _s in ("\u7ed3\u8bba\uff1a", "\u9ed8\u8ba4\u9879\uff1a", "\u53ef\u9009\u9879\uff1a")
                 if _s in (out or "")]
             # ⭐ 057 §一⒞：本轮 tokens（器取）。每轮新建 `LLMClient` ⇒ `_stats` 即**本轮**之累计
-            #   （本机径写 `eval_count` ／ 远端径写 `usage.total_tokens` —— 见 llm_client.py:424/658）。
+            #   （本机径写 `eval_count` ／ 远端径写 `usage.total_tokens` —— 见 core/lib/llm_client.py 之 eval_count 之读处（今 :437 / :446 / :547）／ usage.total_tokens 之读处（今 :671 / :680））。
             #   ⛔ 编：取不到 ⇒ `None`（回执如实写「无」）。
             try:
                 _brain.last_route["tokens"] = int(_c.get_stats().get("total_tokens") or 0)

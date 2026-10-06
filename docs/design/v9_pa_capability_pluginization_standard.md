@@ -295,7 +295,7 @@
 
 | 面 | 实物 | 谁在用（本遍实核 · sha 见 §十二） |
 |---|---|---|
-| **声明面**（本件裁定的那一个） | `core\pa\roster.py` | 四条路由（`core\pa\gateway_routes.py:504-543`：`/v9/pa/roster` · `/roster/find` · `/roster/<agent_id>` · `/roster/upsert`）⇒ **四条都经 `load()`**（`:509` 直调；`:518` `by_capability` / `:524` `get` / `:534` `upsert` 各自内部调 `load()` ⇒ `roster.py:212/222/242/258`） |
+| **声明面**（本件裁定的那一个） | `core\pa\roster.py` | 四条路由（`core\pa\gateway_routes.py:504-543`：`/v9/pa/roster` · `/roster/find` · `/roster/<agent_id>` · `/roster/upsert`）⇒ **四条都经 `load()`**（`:509` 直调；`:518` `by_capability` / `:524` `get` / `:534` `upsert` 各自内部调 `load()` ⇒ `core\pa\roster.py` 之 `load()` 之调用处（今 :220 / :230 / :275 / :302 / :345）） |
 | **生产在跑的第二个 roster** | `core\lib\v8\roster_engine.py` | **14 个生产模块**命中（本遍实测）：`core\agents\cortex.py:519/910` · `core\gateway\v9_chat\recovery.py:75` · `core\gateway\chat_stream.py:99/157` · `core\gateway\execute_agent_task.py:36` · `core\gateway\os_monitor.py:17` · `core\gateway\sandbox_ops.py:664` · `core\gateway\v5_execute.py:201` · `core\lib\v8\routes\roster.py:7` · `core\lib\v8\routes\billing.py:8` · `core\lib\v8\agent_discussion.py:15` · `core\lib\v8\billing_hook.py:11` · `core\lib\v8\task_engine.py:166` · `core\lib\v8\task_orchestrator.py:22/1158` · `agent_gateway_enhanced.py:404`（不含 `tests\`） |
 - **判据（可复算 · 入册方亲手跑）**：① 扫描面 = 全仓 `*.py`（排除 `__pycache__` / `data\tmp` / `b5_work` / `node_modules`）搜 `roster_engine` ⇒ **期望**：生产模块 ≥ 8 命中（本遍实测 14）；② 声明面**是否被初始化过** ⇒ 检索 `roster.json` + 读 `PA_DATA_DIR` ⇒ **期望**：盘上**没有**该文件（本遍实测：全仓 0 命中 · **User/Machine/Process 三级全空**（v1.11 更正：原写「两级」漏了 Process —— DSH 初审 v1.10 实测三级）· `data\v9\pa\` 目录存在但无 `roster.json`）。
 - **该红的那一格**：把「声明面已经在跑」当既成事实 ⇒ 造一张**只改 `roster_engine.py` 侧**的卡 ⇒ 声明面读数**不变**、生产行为**已变** ⇒ 这一格**必须判红**（两张表各自成功 ⇒ **静默分叉**）。

@@ -410,7 +410,7 @@ def inject_context_and_flags(
                     _fallback_task = ""
                 # B 块(2026-09-13) 兜底链扩容 —— no_context 触发条件收窄到「真的一个源都没有」。
                 # 历史事故(第三次同型): 预算耗尽轮在 agent_gateway_enhanced.py:479-481 被
-                # _budget_limit_guard 早退 → 跳过 memory.py:173 / response_builder.py:250 两个
+                # _budget_limit_guard 早退 → 跳过 core/gateway/memory.py 之 persist_session_learning_state() / response_builder.py:250 两个
                 # 唯一的 last_task 写入点 → 该文件里只剩 goal 字段; BRIEF.md 又只在
                 # execute_agent_task.py:415 生成(PA 走 /v9/agent/chat, 从不调用它) →
                 # 老板回「继续」时两个源全空 → 当场报 no_context, 任务链断。

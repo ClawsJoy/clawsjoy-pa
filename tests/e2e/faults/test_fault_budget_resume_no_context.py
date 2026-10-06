@@ -167,7 +167,7 @@ def test_FAULT_budget_exhausted_turn_must_persist_resume_context(sess):
     """① 先能失败：预算耗尽轮结束时，.agent_state.json 必须有 last_task、BRIEF.md 必须存在。
 
     修复前：_budget_limit_guard 在 agent_gateway_enhanced.py:479-481 早退，
-    跳过 memory.py:173 / response_builder.py:250 两个唯一写入点 → 现场只剩 goal 字段。
+    跳过 core/gateway/memory.py 之 persist_session_learning_state() / response_builder.py:250 两个唯一写入点 → 现场只剩 goal 字段。
     """
     out = _run_bridge(
         sess, [{"role": "system", "content": "SYS"}, {"role": "user", "content": TASK}], _BudgetBustAdapter()
@@ -266,7 +266,7 @@ def test_PASS_budget_exhaust_then_continue_reaches_model_with_task(sess):
 
 
 def test_PASS_new_task_does_not_clobber_last_task(sess):
-    """不回归：纯「继续」不得把 last_task 冲成"继续"（memory.py:168-171 只挡了一半情况）。"""
+    """不回归：纯「继续」不得把 last_task 冲成"继续"（core/gateway/memory.py 之 persist_session_learning_state() 之保护段 · 今 :173-181 —— 只挡了一半情况）。"""
     from core.gateway.resume_context import ensure_resumable_context
 
     ensure_resumable_context(user_id=UID, session_id=sess, messages=[{"role": "user", "content": TASK}])
