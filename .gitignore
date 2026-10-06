@@ -51,6 +51,12 @@ data/v8/user_messages/
 data/v8/audit/
 data/vector_kb/
 data/dependency_graph.json
+# ⭐ pm_1453 §三.3（本席一手速得 · 机器生成）：`core/lib/dependency_graph.json`
+#   由 `code_entity_extractor.update_dependency_graph`（write_file 后）就地改写
+#   ⇒ 跟踪在仓则 `git status` 恒脏。其读者 `core/gateway/registry.py:188`
+#   以 `.exists()` 护 · 绝对径 · 非 import（缺 ⇒ 跳读 · ⛔ 崩）⇒ 入 ignore 即可。
+#   重建：`python tools/backfill_dependency_graph.py`。
+core/lib/dependency_graph.json
 
 # --- 运行期状态（2026-09-13 批62）：每次运行都会被覆盖写，不进版本库 ---
 goals/
