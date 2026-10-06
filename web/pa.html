@@ -337,6 +337,9 @@
      ⒡ 选笔记目录之步（pm_1518 §一 · 契约 TD_1515 §六.1）：径 POST /v9/pa/vault/set ／ 体 {path} ／
         回 {ok,vault_root,vault_root_src,state,at,changed} ／ 错 = 后端之 error 逐字（⛔ 自编）／
         态唯比机器码（no_root ／ empty ⇒ 步现；ok ⇒ ⛔ 强现）。
+     ⒢ 回执之 note（pm_1521 §一 · 契约之补 TD_1519 §四.2）：其回增 env_override ／ note ⇒ 本盒渲 note
+        （其字唯取后端 · ⛔ 自造辞 ∨ ⛔ 自拟判）⇒ env_override 真 ⇒ 所选须清 PA_VAULT_DIR 方生效
+        （四序：env 最高 ⇒ 写端 ⛔ 生效）；存 `paVaultNote` ⇒ 重渲后仍在（免「以为选了即生效」）。
      ⛔ 行内证：本段 ⛔ 载绝对径 ／ ⛔ 起停 ／ ⛔ 上传。 -->
 <script>
 (function(){
@@ -349,6 +352,7 @@
   //: 态之判唯「面之源．键[].态」之机器码（no_root ／ empty ／ ok）—— ⛔ 比字面哨符 · ⛔ 前端自造辞
   //  （上屏之字面唯自后端之「今」／「义」出 · 承 pm_1499 §一.3 ＋ pm_1503 §一 ＋ pm_1504 §一）
   //: 选笔记目录之步（pm_1518 §一 · 契约 TD_1515 §六.1）—— 径 ／ 体 ／ 错之字面唯取契约 · ⛔ 自拟
+  var paVaultNote='';   /* 回执之 note（唯后端之字面）⇒ 重渲后仍在（⛔ 使人以为「选了即生效」） */
   function vset(path,cb){
     fetch(B+'/v9/pa/vault/set',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
       body:JSON.stringify({path:String(path==null?'':path)})}).then(function(r){
@@ -376,6 +380,7 @@
       }
       b.appendChild(el('div','margin-top:2px;opacity:.62','［'+esc(fs['口径']||'')+'］'));
     }
+    if(paVaultNote){ b.appendChild(el('div','margin-top:4px;color:#fbbf24',esc(paVaultNote))); }
     var _vs=String((_vk||{})['态']||'');var _vm=(!_vk)||_vs==='no_root'||_vs==='empty';
     if(_vk&&_vm){
       var _vsr=(_vs==='no_root')?'':String(_vk['源']||'');
@@ -398,6 +403,8 @@
       var _vapply=function(j){
         if(!j){_vout.innerHTML='［没读成］';return;}
         _vout.innerHTML = j['ok'] ? ('［'+esc(j['vault_root_src']||'')+'］') : ('［'+esc(j['error']||'')+'］');
+        paVaultNote = String(j['note']||'');
+        if(paVaultNote){ _vout.innerHTML += ' ' + esc(paVaultNote); }
         if(j['ok']){
           fetch(B+'/v9/pa/first_run',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d2){
             if(d2&&d2.ok){ b.setAttribute('style',(b.getAttribute('style')||'')+';display:none'); box(d2); }

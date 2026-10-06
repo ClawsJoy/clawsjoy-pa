@@ -157,3 +157,38 @@ def test_banner_非屏_之戒():
     assert "removeChild(" not in b
     assert "paDismissCard(" not in b
     assert "/v9/pa/vault/set" in b
+
+
+NOTE = u"本机之库根由环境变量 PA_VAULT_DIR 指定 ⇒ 你所选须清该变量方生效"
+
+
+def test_note_env_override真_须现(tmp_path):
+    u'''pm_1521 ⒈：回载 `env_override:true` ＋ `note` ⇒ 其字**唯取后端** ⇒ 须上屏（⛔ 自造辞）。'''
+    o = _run(tmp_path, u"未接", u"no_root",
+             setres={"ok": True, "vault_root": u"D:/my_notes", "vault_root_src": u"env:PA_VAULT_DIR",
+                     "state": u"no_root", "at": u"x", "changed": False,
+                     "env_override": True, "note": NOTE},
+             action="set", inputval=u"D:/my_notes")
+    assert NOTE in o["text"], o["text"]
+    assert u"env:PA_VAULT_DIR" in o["text"], o["text"]
+
+
+def test_note_缺_反控_不现(tmp_path):
+    u'''pm_1521 反控：回**无** `note` ⇒ 屏上 ⛔ 得现其字（⛔ 以固定辞充后端之值）。'''
+    o = _run(tmp_path, u"未接", u"no_root",
+             setres={"ok": True, "vault_root": u"D:/my_notes", "vault_root_src": u"配置:paths.vault_root",
+                     "state": u"empty", "at": u"x", "changed": True, "env_override": False},
+             action="set", inputval=u"D:/my_notes")
+    assert NOTE not in o["text"], o["text"]
+
+
+def test_note_唯后端之字面_非硬编(tmp_path):
+    u'''pm_1521 一处定形：`note` 之字唯自后端之回（⛔ 前端硬编其辞）—— 换一字 ⇒ 屏随变。'''
+    alt = u"后端之别一字面（探）"
+    o = _run(tmp_path, u"未接", u"no_root",
+             setres={"ok": True, "vault_root": u"D:/n", "vault_root_src": u"env:PA_VAULT_DIR",
+                     "state": u"no_root", "at": u"x", "changed": False,
+                     "env_override": True, "note": alt},
+             action="set", inputval=u"D:/n")
+    assert alt in o["text"], o["text"]
+    assert NOTE not in o["text"], u"⛔ 前端硬编其辞"
