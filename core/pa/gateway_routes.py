@@ -1060,6 +1060,19 @@ def pa_vault_state_code(root=None):
         return STATE_CODE_NO_ROOT, 0, ()
     _n, _names = pa_vault_face_files(_r)
     return (STATE_CODE_OK if _n else STATE_CODE_EMPTY), _n, _names
+
+
+# ⭐ pm_1520 ⛔二.1 ／ pm_1525 ⛔一：`env_override` ＋ `note` —— **一处定形**（⛔ 二处各判）。
+#   义：`PA_VAULT_DIR` 在 ⇒ 配置之写（`paths.vault_root`）**⛔ 生效**（env 居四序之首）⇒ 须**明书**
+#     （⛔ 静默）—— `GET /v9/pa/first_run` 之「面之源」 ／ `POST /v9/pa/vault/set` 之回 **共用此源**。
+PA_VAULT_ENV_KEY = "PA_VAULT_DIR"
+PA_VAULT_ENV_NOTE = (u"本机之库根由环境变量 PA_VAULT_DIR 指定 ⇒ 你所选须清该变量方生效")
+
+
+def vault_env_override():
+    u"""(env_override, note) —— 一处定形（⛔ 二处各判 · 承 pm_1525 ⛔一）。"""
+    _on = bool((os.environ.get(PA_VAULT_ENV_KEY) or "").strip())
+    return _on, (PA_VAULT_ENV_NOTE if _on else "")
 # ============================== ⭐ 首启引导（承 pm_1384 §三.3）==============================
 PA_FIRST_RUN_VERSION = "2026-10-06.5"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
 #  ⭐ .5：「态」之判据 ⇒ 改依**本库根之 PA 检索面**（pm_1517 §一 之裁 · 取拟一）——
@@ -3755,6 +3768,56 @@ def register_pa_routes(app, brain=None):
         except Exception as _e:
             logger.error("first_run 内部错误: %s: %s", type(_e).__name__, str(_e)[:200])
             return jsonify({"ok": False, "error": "first_run: 内部错误（已记日志）"}), 500
+
+    @bp.route("/v9/pa/vault/set", methods=["POST"])
+    def pa_vault_set():
+        u"""⭐ 甲 · 件一（pm_1520 §二.1）：**选一个笔记目录** ⇒ 立库根（`paths.vault_root`）—— **唯一写端**。
+
+        体：`{"path": "<绝对径>"}`（⇒ 立之）｜`{"path": ""}`（⇒ **清** ⇒ 落回内置空库 ／ 未接）。
+        校：**在 ∧ 可写**（⛔ 静默收）｜**幂等**（同值 ⇒ `changed:false` · ⛔ 报错）。
+        回：`{ok, vault_root, vault_root_src, state, at, changed, env_override, note}`；
+        错：`{ok:false, error:"<逐字>"}`（前端唯渲 · ⛔ 自编）。
+        ⛔ 写非库根之物 ／ ⛔ 起停 ／ ⛔ 平台动作。
+        """
+        from time import strftime as _stf
+        _p = request.get_json(silent=True)
+        if not isinstance(_p, dict) or "path" not in _p:
+            return jsonify({"ok": False,
+                            "error": u'体须为 {"path": "<\u7edd\u5bf9\u5f84>"} ∨ {"path": ""}'}), 400
+        _raw = _p.get("path")
+        if not isinstance(_raw, str):
+            return jsonify({"ok": False, "error": u"path 须为字符串"}), 400
+        _s = _raw.strip()
+        try:
+            from core.lib.unified_config import unified_config as _uc
+            if _s == "":
+                _r = _uc.set_and_save("paths.vault_root", "")
+            else:
+                if not os.path.isabs(_s):
+                    return jsonify({"ok": False, "error": u"径须为绝对径：%s" % _s}), 400
+                _ap = os.path.abspath(_s)
+                if not os.path.isdir(_ap):
+                    return jsonify({"ok": False, "error": u"径不存在 ／ 非目录：%s" % _ap}), 400
+                if not os.access(_ap, os.W_OK):
+                    return jsonify({"ok": False, "error": u"径不可写：%s" % _ap}), 400
+                _r = _uc.set_and_save("paths.vault_root", _ap)
+        except Exception as _e:
+            logger.error("vault/set 内部错误: %s: %s", type(_e).__name__, str(_e)[:200])
+            return jsonify({"ok": False,
+                            "error": u"写配置失败：%s: %s" % (type(_e).__name__, str(_e)[:160])}), 500
+        from core.lib import paths as _P
+        _vr = _P.vault_root()
+        _src = _P.vault_root_src()[1]
+        _code = pa_vault_state_code(root=(str(_vr) if _vr else None))[0]
+        _on, _note = vault_env_override()
+        return jsonify({
+            "ok": True, "at": _stf("%Y-%m-%d %H:%M:%S"),
+            "changed": bool(_r.get("changed")),
+            "path": _s, "file": _r.get("file"), "backup": _r.get("backup"),
+            "vault_root": (str(_vr) if _vr else None),
+            "vault_root_src": _src, "state": _code,
+            "env_override": _on, "note": _note,
+        })
     @bp.route("/v9/pa/kb_mapping", methods=["GET"])
     def pa_kb_mapping():
         """知识库 ↔ 沙箱映射（批176 副指标 A）：**只读**三列 + 状态枚举。
