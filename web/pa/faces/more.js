@@ -390,15 +390,44 @@ function paFileFilter(){
       （多候选键 · 命中即**报所用之键**）⇒ 后端定稿后只须对齐此处**一处**。 */
 
 /* —— 走径标（pm_1087 §三.2）：本答走哪一源 ⇒ 读数取**后端回执** · ⛔ 前端自说 —— */
+/* ⭐「本机 / 远端」之二集（**一处定形**）：`paRouteFromObj` 之支 ／ 「出机」之判（红线）**共此一处**
+   ⇒ ⛔ 二份字面（改一漏一 ⇒ 红线漏显 ＝ 假阴）。 */
+const PA_ROUTE_REMOTE_KINDS = ['remote', 'api', '远端'];
+const PA_ROUTE_LOCAL_KINDS  = ['local', 'local_model', '本机'];
+function paRouteIsRemote(kind){
+  return PA_ROUTE_REMOTE_KINDS.indexOf(String(kind == null ? '' : kind).trim().toLowerCase()) >= 0;
+}
+function paRouteIsLocal(kind){
+  return PA_ROUTE_LOCAL_KINDS.indexOf(String(kind == null ? '' : kind).trim().toLowerCase()) >= 0;
+}
 function paRouteFromObj(v){
   if(!v || typeof v !== 'object') return '';
   const kind  = String(v.kind || v.type || v.route || '').trim().toLowerCase();
   const model = String(v.model || v.model_id || v.modelId || '').trim();
   const prov  = String(v.provider || v.provider_id || v.vendor || '').trim();
   if(!model && !prov) return '';
-  if(kind === 'local' || kind === 'local_model' || kind === '本机') return 'src: local:' + (model || '—');
-  if(kind === 'remote' || kind === 'api' || kind === '远端') return 'src: remote:' + (prov || '—') + ':' + (model || '—');
+  if(paRouteIsLocal(kind)) return 'src: local:' + (model || '—');
+  if(paRouteIsRemote(kind)) return 'src: remote:' + (prov || '—') + ':' + (model || '—');
   return 'src: ' + (prov ? (prov + ':') : '') + (model || '—') + '（kind 未给）';
+}
+/* 回执 ⇒ 结构化之（kind ／ model）（键之候选 ≡ `paRouteFromObj` 之面 · **一处定形**）——
+   供「出机」之判（唯此二值 · ⛔ 全文 · 承 ⛔ 自造键）。 */
+function paRouteMeta(v){
+  if(!v || typeof v !== 'object') return {kind: '', model: ''};
+  return {kind : String(v.kind || v.type || v.route || '').trim().toLowerCase(),
+          model: String(v.model || v.model_id || v.modelId || '').trim()};
+}
+/* 串形之回执（`src: remote:prov:model` ／ `src: local:model`）⇒ kind 唯取首段 ∧ model 唯取末段；
+   `—` ＝ 占位（`paRouteFromObj` 之式）⇒ 视同「后端未给」。 */
+function paRouteMetaText(text){
+  const s = String(text || '').replace(/^src:\s*/, '');
+  const parts = s.split(':');
+  const k = String(parts[0] || '').trim().toLowerCase();
+  let m = String(parts.length > 1 ? parts[parts.length - 1] : '').trim();
+  if(m === '—') m = '';
+  if(paRouteIsRemote(k)) return {kind: 'remote', model: m};
+  if(paRouteIsLocal(k))  return {kind: 'local',  model: m};
+  return {kind: '', model: ''};
 }
 function paRouteLabel(rec){
   if(!rec || typeof rec !== 'object') return null;
@@ -406,14 +435,26 @@ function paRouteLabel(rec){
   for(let i = 0; i < keys.length; i++){
     const v = rec[keys[i]];
     if(v == null) continue;
-    if(typeof v === 'object'){ const t = paRouteFromObj(v); if(t) return {text: t, key: keys[i]}; }
-    else { const s = String(v).trim(); if(s) return {text: (s.indexOf('src:') === 0 ? s : ('src: ' + s)), key: keys[i]}; }
+    if(typeof v === 'object'){
+      const t = paRouteFromObj(v);
+      if(t){ const m = paRouteMeta(v); return {text: t, key: keys[i], kind: m.kind, model: m.model}; }
+    }
+    else {
+      const s = String(v).trim();
+      if(s){
+        const t = (s.indexOf('src:') === 0 ? s : ('src: ' + s));
+        const m = paRouteMetaText(t);
+        return {text: t, key: keys[i], kind: m.kind, model: m.model};
+      }
+    }
   }
   const prov = rec.provider || rec.provider_id;
   const mdl  = rec.model || rec.answer_model || rec.model_id;
   if(prov || mdl){
     const t = paRouteFromObj({kind: (rec.kind || rec.answer_kind), provider: prov, model: mdl});
-    if(t) return {text: t, key: 'provider/model（扁平二键）'};
+    if(t) return {text: t, key: 'provider/model（扁平二键）',
+                  kind : String(rec.kind || rec.answer_kind || '').trim().toLowerCase(),
+                  model: String(mdl || '').trim()};
   }
   return null;
 }
@@ -433,6 +474,18 @@ function paRouteLine(box){
 function paRouteHtml(line){
   return '<div class="paroute" style="font-size:11px;line-height:1.6;color:#8b949e;margin:0 0 4px"'
        + ' title="走径标：本答走哪一源（读数取后端回执 · ⛔ 前端自说）">' + paEsc(line) + '</div>';
+}
+/* ⭐⭐ 「出机」之标（承 pm_1454 §一 ／ §二）：**唯**本轮经云端（`kind ∈ 远端集`）⇒ 上此标；
+   本机模型之轮 **⛔ 上**（⛔ 恒挂）。实名**取回执**（`label.model` · ⛔ 前端硬编 ⇒ 其名由后端出）。
+   缺（回执无 `model`）⇒ 「后端未给」之明标（承 `paRouteLine` 之上式 · ⛔ 空 ／ ⛔ 以猜之名充）。 */
+function paLeavesLine(box){
+  const L = (box && box.label) ? box.label : null;
+  if(!L || !paRouteIsRemote(L.kind)) return null;
+  return '本轮经云端 · 内容将出机 · 模型 ' + (String(L.model || '').trim() || '（后端未给）');
+}
+function paLeavesHtml(line){
+  return '<div class="paroute paleaves" style="font-size:11px;line-height:1.6;color:#d2991d;margin:0 0 4px"'
+       + ' title="出机标：本轮经云端 ⇒ 内容将出机（读数取后端回执 · ⛔ 前端自说）">' + paEsc(line) + '</div>';
 }
 try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine; }catch(e){}
 
@@ -468,9 +521,11 @@ try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine; }catc
   if(typeof orig !== 'function') return;
   window.addMsg = function(role, content, skipStore, html, tid){
     if(role !== 'assistant') return orig.apply(this, arguments);
-    const line = paRouteLine(paRouteTake());
-    const c = (typeof content === 'string') ? (line + '\n' + content) : content;
-    const h = (typeof html === 'string' && html) ? (paRouteHtml(line) + html) : html;
+    const box  = paRouteTake();                        /* 一轮一清（⛔ 取二次） */
+    const line = paRouteLine(box);
+    const out  = paLeavesLine(box);                    /* ⭐ 唯远端 ⇒ 有（红线**先于**走径入目 · 承 §一.2） */
+    const c = (typeof content === 'string') ? ((out ? (out + '\n') : '') + line + '\n' + content) : content;
+    const h = (typeof html === 'string' && html) ? ((out ? paLeavesHtml(out) : '') + paRouteHtml(line) + html) : html;
     return orig.call(this, role, c, skipStore, h, tid);
   };
 })();
