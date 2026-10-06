@@ -242,7 +242,10 @@ def test_K_derived_bak_uses_derived_budget(tmp_path, monkeypatch):
     assert len(name.encode("utf-8")) == 189
     p = vault / name
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_bytes(b"old\n")
-    r = wf.WriteFilePlugin().execute({"path": name, "content": "new" + chr(10)}, ctx)
+    # ⚠ 承 TD_1408 之定性：原 "old" ⟷ 新 "new" ＝ **零相似** ⇒ 撞 write_file 之相似度闸
+    #   （core/tools/write_file.py:243 · 唯「已批准」∨ 目标在 `data/tmp/` 方可免）⇒ 本测之本旨
+    #   （`.bak` 之**派生名预算** · 224 B）被其掩 ／ 且其绿红随 basetemp 之位而变 ⇒ 改以**高相似**之料。
+    p.write_bytes(b"old\nline1\nline2\nline3\n")
+    r = wf.WriteFilePlugin().execute({"path": name, "content": "new\nline1\nline2\nline3\n"}, ctx)
     assert r.get("success") is True, r
     assert (vault / (name + ".bak")).is_file(), "派生名 .bak 未落（应按 224 B 预算放行）"
