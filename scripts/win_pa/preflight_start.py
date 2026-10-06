@@ -15,7 +15,7 @@ r"""preflight_start.py -- PA 网关「启动前自检」（P4 稿 · 2026-10-05 
 
 退出码：0 = 全过（可起）｜2 = 有 FAIL（⛔ 不起）｜1 = 自检器自身错（人话报因）
 
-判据（六项 · 逐项 `[PASS]`/`[FAIL]` ＋ 人话因）：
+判据（七项 · 逐项 `[PASS]`/`[FAIL]` ＋ 人话因）：
   1. `services.gateway.port`（真源 `core.lib.port_config`）**可读** —— 不可读 ⇒ **起服必拒**
      （`PortUnconfigured` 族 · 2026-10-05 事故：CWD ≠ ROOT ⇒ 配置解析不到 ⇒ 拒启；⛔ 仅验「端口可绑」）
   2. 端口（真源 `core.lib.port_config`）**可绑** —— 被占 ⇒ 报「已被占用/疑已有实例」
@@ -26,6 +26,10 @@ r"""preflight_start.py -- PA 网关「启动前自检」（P4 稿 · 2026-10-05 
   4. **向量库可写**（真源 `<data_root>/vector_kb` ⇒ ⛔ 字面猜径）｜两段：库目录可写 ⇒ 建得 journal/WAL；`PRAGMA user_version` 同值写 ⇒ 真触盘｜⭐ 「未见」⟷「不可写」**分栏**（且**点名真径**）
   5. `ollama` 服务 `127.0.0.1:11434`（TCP ＋ `/api/tags`）
   6. `logs\` **可写**（console 追加面）
+  7. **依赖（必需）自检**（承 pm_1386 §二.3 · 2026-10-06）：`REQUIRED_DEPS` 逐包 `find_spec` ⇒ 在 ∨ 缺；
+     缺 ⇒ **人话之因 ＋ 修之门**（`pip install -r requirements.txt`）· ⛔ 静默（⛔ 装成可用）。
+     ⚠ 单列一栏（⛔ 并一栏）：缺依赖 ⟷ 端口占用 ⟷ 向量库不可写 ＝ **三族**｜真源 ＝ `requirements.txt`
+     之「运行依赖（必需）」诸节 · 本表**派生**自 `scripts/dev/scan_client_deps.py`（⛔ 手拟）
 
 独立跑亦自 `os.chdir(root)`（配置按 CWD 解析 —— 承 2026-10-05 事故；⛔ 唯 `--root` 探针之根）
 
@@ -50,6 +54,44 @@ OLLAMA_PORT = 11434
 #   2026-10-05 PM 053 §二 之裁：旧稿猜 data\chroma\chroma.sqlite3（该目录实为空）⇒ 假红
 VECTOR_KB_SUBDIR = 'vector_kb'
 VECTOR_KB_SUBDIR = 'vector_kb'
+
+
+# ⭐ 依赖自检之**必需**集（承 pm_1386 §二.3 · 2026-10-06）—— (import 名, pip 发行名)。
+#   ⚠ 真源 ＝ requirements.txt 之「运行依赖（必需）」诸节；本表**派生**自 import 扫描器
+#     scripts/dev/scan_client_deps.py（⛔ 手拟）⇒ 由 tests/unit/test_client_deps_scan.py
+#     钉「本表 ≡ 真源」（二源必漂）。⚠ 唯 `find_spec`（⛔ 导入其包 ⇒ ⛔ 起服务 ／ 烧显卡）。
+REQUIRED_DEPS = (
+    ('flask', 'flask'), ('flask_cors', 'flask-cors'), ('requests', 'requests'),
+    ('yaml', 'PyYAML'), ('numpy', 'numpy'), ('PIL', 'Pillow'), ('ffmpeg', 'ffmpeg-python'),
+    ('jwt', 'PyJWT'), ('redis', 'redis'), ('watchdog', 'watchdog'), ('flasgger', 'flasgger'),
+    ('dotenv', 'python-dotenv'), ('prometheus_client', 'prometheus_client'),
+    ('psutil', 'psutil'), ('tiktoken', 'tiktoken'), ('chromadb', 'chromadb'),
+)
+
+
+def probe_deps(deps=None):
+    u'''⭐ **依赖自检**（承 pm_1386 §二.3）：必需集逐包「在 ∨ 缺」＋ 缺 ⇒ **人话之因 ＋ 修之门**。
+
+    ⚠ 唯 `find_spec`（⛔ 导入其包）；⛔ 静默 —— 缺则**点名**（import 名 ＋ pip 名）＋ 门
+    （`pip install -r requirements.txt`）。``deps`` 可传（自测用）。
+    '''
+    import importlib.util as _ilu
+    ds = REQUIRED_DEPS if deps is None else tuple(deps)
+    miss = []
+    for mod, dist in ds:
+        try:
+            ok = _ilu.find_spec(mod) is not None
+        except Exception:
+            ok = False
+        if not ok:
+            miss.append(u'%s（pip 名 %s）' % (mod, dist))
+    if not miss:
+        return (True, u'ok（必需 %d 包皆在）' % len(ds), u'')
+    return (False,
+            u'⛔ 缺依赖 %d 个：%s ⇒ 网关起来即 ImportError ｜ 修之门：'
+            u'python -m pip install -r requirements.txt（离线包：见 wheel\\ 目录）'
+            % (len(miss), u'、'.join(miss)),
+            u'')
 
 
 def resolve_root():
@@ -253,7 +295,8 @@ def probe_ollama():
 
 def collect(root):
     port, src = resolve_port(root)
-    items = [(u'services.gateway.port 可读', probe_config_port(root))]
+    items = [(u'依赖（必需 %d 包）' % len(REQUIRED_DEPS), probe_deps())]
+    items.append((u'services.gateway.port 可读', probe_config_port(root)))
     items.append((u'端口 %d 可绑' % port, probe_port(port)))
     items.append((u'data\\ 可写', probe_writable(os.path.join(root, 'data'))))
     kb_dir, kb_src = resolve_vector_kb(root)
@@ -355,6 +398,13 @@ def selftest():
     _mn = [n for n in _tr.body if isinstance(n, _ast.FunctionDef) and n.name == 'main']
     _cd = [x for x in _ast.walk(_mn[0]) if isinstance(x, _ast.Call) and getattr(x.func, 'attr', '') == 'chdir'] if _mn else []
     say(len(_cd) == 1, u'正控：main 含 os.chdir(root) 恰一处（独立跑免 CWD 之病 · AST 验）')
+    _dp = probe_deps((('no_such_mod_zzz', 'no-such-dist'),))
+    say(_dp[0] is False and u'修之门' in _dp[1] and u'no_such_mod_zzz' in _dp[1] and u'no-such-dist' in _dp[1],
+        u'正控：缺依赖 ⇒ 判红 ＋ 点名（import 名 ＋ pip 名）＋ 修之门（⛔ 静默）')
+    say(probe_deps((('json', 'n/a'), ('os', 'n/a')))[0] is True,
+        u'反例：在 ⇒ 过（⛔ 假红）')
+    say(probe_deps(REQUIRED_DEPS)[0] is True and u'必需' in probe_deps(REQUIRED_DEPS)[1],
+        u'正控：本机之必需集 ⇒ 过 ∧ 点名其数（若红 ⇒ 本机缺依赖 · 见其因）')
     n, t = sum(1 for c in hits if c), len(hits)
     print(u'=== 自检器自测 %d/%d 通过（%s）===' % (n, t, u'rc=0' if n == t else u'rc=2'))
     return 0 if n == t else 2

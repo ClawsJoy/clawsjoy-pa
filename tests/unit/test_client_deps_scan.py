@@ -15,6 +15,7 @@ u"""客户端依赖清单**器**（`scripts/dev/scan_client_deps.py`）之测（
      `psutil` 必需 ／ `tiktoken` 兜底 ／ 硬缺 ＝ `0`。
   ⒌ **镜像之钉**：`requirements-runtime.txt` ≡ `requirements.txt` 之「运行依赖（必需）」诸节。
 """
+import ast
 import io
 import re
 import sys
@@ -126,3 +127,23 @@ def test_镜像之钉_runtime_eq_必需节():
     assert mirror == src, (u"镜像缺:", sorted(src - mirror), u"镜像多:", sorted(mirror - src))
     for k in ("chromadb", "psutil", "tiktoken"):
         assert k in mirror, k
+
+def test_预检依赖表_eq_真源必需节():
+    u"""承 ⒌＋：`preflight_start.REQUIRED_DEPS` 之 **pip 名** ≡ 真源之必需节（二源必漂 ⇒ 钉之）。
+
+    ⚠ 以 `ast` 取（⛔ `exec_module`）—— 该档于**导入期**调 `sys.stdout.reconfigure` ⇒
+      pytest 之捕获对象无此属性 ⇒ **导入即崩**（我一手逮之族）。
+    """
+    src = (ROOT / "scripts" / "win_pa" / "preflight_start.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    node = None
+    for n in tree.body:
+        if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "REQUIRED_DEPS":
+            node = n
+            break
+    assert node is not None, u"preflight_start.REQUIRED_DEPS 未在（自检之表缺）"
+    deps = ast.literal_eval(node.value)
+    got = {_norm(d) for _m, d in deps}
+    want = _req_names(ROOT / "requirements.txt", only_required=True)
+    assert got == want, (u"表缺:", sorted(want - got), u"表多:", sorted(got - want))
+    assert all(m and _norm(d) for m, d in deps), deps
