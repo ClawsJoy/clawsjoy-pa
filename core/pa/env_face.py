@@ -45,8 +45,8 @@ SRC_CONFIG = org_path("PA_SEAT_CONFIG")
 SRC_ROUTES = "core/pa/gateway_routes.py"
 SRC_TOOLS = org_path("PA_SEAT_TOOLS")
 
-#: 知识库 —— **逐库**入册（⛔ 只报 `收件箱`）
-KB_LIBS = ("内容工坊", "codex", "paseo-pm", os.path.join("_老板", "笔记"), "写小说专栏")
+#: 知识库之库名 —— **自库根之实子目录出**（承 pm_1444 §二.2 ／ pm_1447 §二.2 之准）。
+#:   ⛔ 硬编组织物之五名（净机 ⇒ 首屏尽「未接」＝ **假缺** · 承 pm_1444 §二.2 之族）⇒ 见 `kb_libs()`。
 
 #: 工具面 —— 逐径 ＋ 逐 glob（面之径逐字）；base 之 `REPO:` 前缀 ⇒ 由 REPO_ROOT 拼
 TOOL_DIRS = tuple(
@@ -488,14 +488,51 @@ def agents_col():
 
 
 # ============================== kb ==============================
+def _kb_root():
+    u"""库根 ⇒ `Path` ∨ `None`（＝「**未接（选目录）**」）—— 唯引 `paths.vault_root()`（一处定形）。
+
+    ⚠ ⛔ 借 `_vault()`：其未接 ⇒ `Path("")` ⇒ `.` ⇒ **误列 CWD 之子目录**（＝假内容 · 承「⛔ 假径」）。
+    """
+    try:
+        r = vault_root()
+    except Exception:
+        return None
+    return Path(r) if r else None
+
+
+def kb_libs(root=None):
+    u"""知识库之库名 ⇒ `[名]` —— **自库根之实子目录出**（⛔ 硬编之名 · 承 pm_1444 §二.2 ／ pm_1447 §二.2）。
+
+    唯**实目录**（⛔ 件）· ⛔ 隐（`.` 起）· 名序；库根 ⛔ 得 ⇒ `[]`（⛔ 以 `.` ／ 字面充）。
+    """
+    r = _kb_root() if root is None else Path(root)
+    if r is None or not str(r):
+        return []
+    try:
+        if not r.is_dir():
+            return []
+        return sorted(p.name for p in r.iterdir()
+                      if p.is_dir() and not p.name.startswith("."))
+    except Exception:
+        return []
+
+
 def kb_col():
-    root = _vault()
+    root = _kb_root()
     out = []
-    for lib in KB_LIBS:
+    for lib in kb_libs(root):
         p = root / lib
         ro, st, h = _entry(str(p))
         out.append(_item(lib.replace("\\", "/"), lib, "vault_dir", str(p), ro, st, h))
-    return out, "", "kb"
+    if out:
+        return out, "", "kb"
+    if root is None:
+        _why = u"未接（选目录）—— 库根 ⛔ 得（paths.vault_root()）"
+    elif not root.is_dir():
+        _why = u"未接（选目录）—— 库根 ⛔ 在：%s" % root
+    else:
+        _why = u"空库（库根在 · 0 子目录 —— 空 ≠ 缺）"
+    return out, _why, "kb"
 
 
 # ============================== tools ==============================
