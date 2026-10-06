@@ -2229,18 +2229,13 @@ function paSelfFailText(s){
           paSelfLbl = null;
           const tl = paSelfTag('fallback', null);
           const _arcF = paSelfArchiveText(fbf);
-          /* ⭐ pm 21:20 §二.处1/处3：闸已拒 ∧ 无本机据 ⇒ ⛔ 引模型对本机事实之断言。
-             ⛔ 以词形为唯一之闸；canonical 拒答文之真源 ＝ send.js 之 `PA_REFUSE_CANON`（⛔ 二处各写）。 */
-          /* ⭐ pm_1531 §一.3：本体收窄为「唯判辞」⇒ 前提（族）由**调用处**给（一处定形）。
-             ⚠ 本处（无据之支 · `fbf`）之 `fbf.q` 必 ¬族（`:2094` 之族判已早返）⇒ 本守之值**恒假**
-               ⇒ 下行 `_canon` 支恒⛔达（结构性 · 我 `1528` 一手）；⛔ 删（另报 · 候 pm 裁）。 */
-          const _forbid = paSelfFactFamily(fbf.q) && paSelfModelAssertDenied(raw);
-          /* ⭐ pm 1184 §一.⒜：canonical 引**后端** `fbf.refusal_canon`（真源）；本件之 `PA_REFUSE_CANON` 唯**回落**。 */
-          const _canon = (typeof paRefusalCanon === 'function') ? paRefusalCanon(fbf)
-            : ((typeof PA_REFUSE_CANON === 'string') ? PA_REFUSE_CANON : '⚠ 拒答文缺（⛔ 静默）');
-          const au = tl + '\n' + (_forbid ? _canon : wa(raw)) + (_arcF ? ('\n\n' + _arcF) : '');
-          const fe = (_forbid ? ('⚠ 模型之辞（⛔ 作据 · 已拦下 · 承 pm 21:20 §二.处1/处3）：' + raw + '\n') : '')
-            + ((!_gSay.ok) ? ('⚠ ' + _gSay.note + '\n') : '')   /* ⭐ pm_1492 §二.3：键 ⛔ 得 ⇒ 显形（⛔ 词形兜底） */
+          /* ⭐ pm_1531 §一.3 ＋ pm_1533 §一.⒝：本体收窄为「唯判辞」⇒ 前提（族 ∧ 有据）由**调用处**给（一处定形）。
+             ⚠ 本处（无据之支 · `fbf`）之 `fbf.q` 必 ¬族（`:2107` 族判已早返；`paSelfFb` 之唯置点 `:2119` 在其后）
+               ⇒ 旧守（`paSelfFactFamily(fbf.q) && …`）之值**恒假**（结构性 · 我 `1528` 一手）⇒ 其 `_canon` 支恒⛔达
+               ⇒ **已删**（承「死码之患」· pm_1533 §一.⒝）；本支今恒取 `wa(raw)`（¬族 ∧ 无据 ⇒ 回落 ⇒ 显模型之答 · 正当）。
+             ⚠ canonical 之引（旧 `_canon` ／ `paRefusalCanon`）随之而删 —— 本支今 ⛔ 引 canonical（其义为「本机无据」）。 */
+          const au = tl + '\n' + wa(raw) + (_arcF ? ('\n\n' + _arcF) : '');
+          const fe = ((!_gSay.ok) ? ('⚠ ' + _gSay.note + '\n') : '')   /* ⭐ pm_1492 §二.3：键 ⛔ 得 ⇒ 显形（⛔ 词形兜底） */
             + '本问先过「有据才答」闸（/v9/pa/ask）⇒ ⭐ 闸判 **本机无据（拒答）**'
             + '（承 pm_1076 §三：与答体**两段并标** · ⛔ 单标）⇒ 已按 pm_1032 §三.1 **回落模型**'
             + '（POST /v9/pa/dialog · 分流同一出口 paAskDomain）⇒ 此处之答由模型生成（⛔ 非本机素材）。'

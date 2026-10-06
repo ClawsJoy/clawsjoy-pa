@@ -176,7 +176,7 @@ def test_k4_fork2_three_sites_key_only():
 def test_k5_nodata_visible():
     sd = _read(SD)
     assert (u"const PA_GATE_NODATA = '" + NODATA + u"';") in sd, u"显形之字面须逐字"
-    assert u"+ ((!_gSay.ok) ? ('⚠ ' + _gSay.note + '\\n') : '')" in sd, u"回落支须显形（键 ⛔ 得）"
+    assert u"((!_gSay.ok) ? ('⚠ ' + _gSay.note + '\\n') : '')" in sd, u"回落支须显形（键 ⛔ 得）"
     assert u"const _gateNote = (fbf && !_gSay2.ok) ? ('⚠ ' + _gSay2.note) : '';" in sd
 
 
@@ -290,7 +290,7 @@ def test_k10_body_is_word_only():
     for bad in (u"function paSelfModelAssertForbidden(", u"window.paSelfModelAssertForbidden =",
                 u"paSelfModelAssertForbidden(fbf.q"):
         assert sd.count(bad) == 0, u"旧名之代码形仍存：" + bad
-    assert sd.count("paSelfModelAssertDenied(") == 3, u"本体 1 ＋ 调用 2（无据支 ／ 有据支）"
+    assert sd.count("paSelfModelAssertDenied(") == 2, u"本体 1 ＋ 调用 1（有据支；无据支之恒假守已删 · pm_1533 §一.⒝）"
     assert sd.count("PA_DENY_WORD.test(") == 1, u"判辞之施（`PA_DENY_WORD.test`）唯此一处（⛔ 二源）"
     body = _fn(sd, "paSelfModelAssertDenied")
     assert u"function paSelfModelAssertDenied(a){" in body, u"签名唯（a）⇒ ⛔ 问之参（前提在调用处）"
@@ -336,3 +336,11 @@ def test_k10_gateinfo_branch_has_no_canon():
     assert "PA_SELF_ASSERT_SAY" in blk and "_sa" in blk
     assert "paSelfFactFamily(paSelfLastUser)" in blk and "paSelfModelAssertDenied(raw)" in blk
     assert "paSelfModelAssertForbidden(" not in sd
+
+
+def test_k10_no_dead_guard_in_fbf_branch():
+    u"""pm_1533 §一.⒝：无据支（`fbf`）之恒假守已删（死码之患）⇒ 该支恒取 `wa(raw)` · ⛔ 引 canonical。"""
+    sd = _read(SD)
+    assert "_forbid" not in sd, u"恒假守 `_forbid` 仍在（死码之患 · pm_1533 §一.⒝）"
+    assert u"(_forbid ? _canon : wa(raw))" not in sd, u"旧三歧（`_forbid ? _canon : wa(raw)`）仍在"
+    assert u"wa(raw) + (_arcF" in sd, u"无据支须恒取 `wa(raw)`（¬族 ∧ 无据 ⇒ 回落 ⇒ 显模型之答 · 正当）"
