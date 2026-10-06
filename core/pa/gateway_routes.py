@@ -377,27 +377,35 @@ PA_ASK_MIN_SCORE = 0.42  # ⭐ 2026-10-04：0.34 → 0.42（扩面后弱命中 0
 #     辞以「当前检索范围…未找到相关描述」起首 ⇒ 显「回落」）⇒ **以辞判果 ⇒ 必漏**（承「以形判必漏」）。
 #   ⇒ 正解：**判据归后端**（一处定形）⇒ 前端**唯读键** ⇒ ⛔ 判辞（承「一处定形」）。
 #   ⚠ 唯加键（⛔ 破既有字段之语义）。
+# ⭐⭐ pm_1493 §一（令：正 `why` 与公式之抵）：`refused` 之注旧书「若未回落 ⇒ display=refuse」
+#   —— ⚠ 与码 **⛔ 同物**（`_disp` 唯取 `fact_family` ⇒ ⛔ 含「回落」之维）⇒ **文从码**（承「一名一义」）。
+# ⭐⭐ pm_1493 §三（裁：其义扩为「本机事实族」· **含非是非问**）：旧名 `fact_yn`（是非问）射程 **⛔ 足**
+#   （实证 · CW 一手之漏拦之例：`台账里有哪些项目？` ⇒ 非是非问 ⇒ 旧标恒 `false` ⇒ **漏拦**）
+#   ⇒ 正名 **`fact_family`**（一名一义：本轮之问**是否属「本机事实族」**）
+#   ⇒ `display = "refuse" iff (decision == "refused" ∧ fact_family)`。
+#   ⚠ 一处定形：其判唯自**前端一处**出（`PA_FACT_MARK` 一族 · `web/pa/faces/selfdesc.js:1187`）
+#     ⇒ 后端**唯读入参**（⛔ 自判 ⇒ 免二源）。
 PA_GATE_DECISIONS = ("not_asked", "grounded", "refused", "not_applicable")
 PA_GATE_DISPLAY = ("model", "refuse")
 PA_GATE_WHY = {
     "not_asked": "本轮未过「有据才答」闸（自述 ／ 元问 ／ 域外等）⇒ 答由模型出",
     "grounded": "闸判有据（hits 非空 ／ 直读本机账）⇒ 答非拒答",
-    "refused": "闸判无据（hits 空）· 本轮已回落模型（若未回落 ⇒ display=refuse）",
+    "refused": "闸判无据（hits 空）⇒ 本机事实族之问显 canonical 拒答（余者按回落显模型之答）",
     "not_applicable": "闸判不适用（searched==0：搜索面为空）⇒ 拒答与否皆不成立",
 }
 
 
-def pa_gate_view(decision=None, origin=None, grounded=None, answer_source=None, fact_yn=False):
+def pa_gate_view(decision=None, origin=None, grounded=None, answer_source=None, fact_family=False):
     """⭐ 一处定形：「闸之实 ＋ 回落之意」⇒ **显示之果**（pm_1486 §二.2）。
 
     值域（一名一义 · ⛔ 前端自拟）：
       decision ∈ PA_GATE_DECISIONS —— 本轮之闸判（`refused` ＝ 无据且已回落）
       display  ∈ PA_GATE_DISPLAY  —— **显模型之答**（`model`）∨ **显 canonical 拒答**（`refuse`）
-      fact_yn                     —— 本轮之「本机事实问」之判（转交 · ⛔ 辞）
+      fact_family                 —— 本轮之问**是否属「本机事实族」**（含非是非问 · 转交 · ⛔ 辞）
       refusal_canon               —— canonical 拒答文（真源唯此一处 ⇒ 前端引用）
       why                         —— 该判之由（逐字 · 供注记 · ⛔ 用户面）
-    ⚠ 其源：`decision` 取**后端 `/v9/pa/ask` 自产之闸果**（前端**唯转交**）；`fact_yn` 取前端之
-      **结构判**（`paSelfFactYN` · ⛔ 辞）—— 二者**皆非「模型之辞」**（即本裁之要）。
+    ⚠ 其源：`decision` 取**后端 `/v9/pa/ask` 自产之闸果**（前端**唯转交**）；`fact_family` 取前端之
+      **结构判**（`PA_FACT_MARK` 一族 · ⛔ 辞）—— 二者**皆非「模型之辞」**（即本裁之要）。
     """
     _d = decision if decision in PA_GATE_DECISIONS else None
     if _d is None:
@@ -409,9 +417,9 @@ def pa_gate_view(decision=None, origin=None, grounded=None, answer_source=None, 
             _d = "grounded"
         else:
             _d = "not_asked"
-    _fact = bool(fact_yn)
-    _disp = "refuse" if (_d == "refused" and _fact) else "model"
-    return {"decision": _d, "display": _disp, "fact_yn": _fact,
+    _family = bool(fact_family)
+    _disp = "refuse" if (_d == "refused" and _family) else "model"
+    return {"decision": _d, "display": _disp, "fact_family": _family,
             "refusal_canon": PA_ASK_REFUSAL, "why": PA_GATE_WHY.get(_d, "")}
 
 # ⭐ 2026-10-04 新增（PM b136893 · 老板批 · 阶段 2「素材面接入」之**最小登记** · 只读）：
@@ -2060,7 +2068,7 @@ def register_pa_routes(app, brain=None):
                 "fell_back": bool(_route.get("fell_back")),
                 "fallback_note": _fallback_note(_route),
                 # ⭐ pm_1486 §二.1：闸之实 ⇒ 结构化判据（一处定形 · 唯加键）
-                "gate": pa_gate_view(decision=p.get("gate_decision"), origin=p.get("origin"), grounded=p.get("grounded"), answer_source=p.get("answer_source"), fact_yn=p.get("fact_yn")),
+                "gate": pa_gate_view(decision=p.get("gate_decision"), origin=p.get("origin"), grounded=p.get("grounded"), answer_source=p.get("answer_source"), fact_family=p.get("fact_family")),
                 "cost": _cost,
                 "activity": _activity,
             }
@@ -2174,7 +2182,7 @@ def register_pa_routes(app, brain=None):
             "error": _err or _ses_err,
             "recorded": bool(_ses_readable and _ev_readable
                              and _after > _before and _ev_after > _ev_before),
-            "gate": pa_gate_view(decision=p.get("gate_decision"), origin=p.get("origin"), grounded=p.get("grounded"), answer_source=p.get("answer_source"), fact_yn=p.get("fact_yn")),
+            "gate": pa_gate_view(decision=p.get("gate_decision"), origin=p.get("origin"), grounded=p.get("grounded"), answer_source=p.get("answer_source"), fact_family=p.get("fact_family")),
             "cost": _cost,
         })
 
@@ -2197,7 +2205,7 @@ def register_pa_routes(app, brain=None):
         _vr = vault_root()   # ⚠ 可 None（未接 · 承 pm_1387 §二.2）⇒ ⛔ str(None) 之假径
         kb = os.getenv("PA_VAULT_DIR") or (str(_vr) if _vr is not None else "")
         _at = _pa_read_at()   # ⭐ pm_1478 §二：一处定形（⛔ 二处各打时戳）
-        _fact = bool(p.get("fact_yn"))   # ⭐ pm_1486 §二.2：前端之**结构判**（事实问 · ⛔ 辞）⇒ 转交
+        _fact_family = bool(p.get("fact_family"))   # ⭐ pm_1493 §三：前端之**结构判**（本机事实族 · ⛔ 辞）⇒ 转交
         _tk0 = time.perf_counter()   # ⭐ 058：本轮检索之起点（器取）
         # ⭐ 修①（PM 2026-10-05 · 老板实测之修）：**决策账 ⇒ 直取本机**（⛔ 回落模型）
         _dec = _ask_decision(q, p.get("user_id"), p.get("session_id"))
@@ -2208,7 +2216,7 @@ def register_pa_routes(app, brain=None):
                    "scope": [], "threshold": None, "faces": {}, "faces_missing": [],
                    "faces_skipped": {}, "evidence": [], "archive_hits": [], "judge": _j,
                    "ask_domain": "decision",
-                   "gate": pa_gate_view(decision="grounded", fact_yn=_fact),
+                   "gate": pa_gate_view(decision="grounded", fact_family=_fact_family),
                    "refusal_canon": PA_ASK_REFUSAL, "refusal_stale": PA_ASK_REFUSAL_STALE}
             _bb.update(_dec)
             return ok(_bb)
@@ -2221,7 +2229,7 @@ def register_pa_routes(app, brain=None):
                    "scope": [], "threshold": None, "faces": {}, "faces_missing": [],
                    "faces_skipped": {}, "evidence": [], "archive_hits": [], "judge": _j,
                    "ask_domain": "deadfile",
-                   "gate": pa_gate_view(decision="grounded", fact_yn=_fact),
+                   "gate": pa_gate_view(decision="grounded", fact_family=_fact_family),
                    "refusal_canon": PA_ASK_REFUSAL, "refusal_stale": PA_ASK_REFUSAL_STALE}
             _bb.update(_dead)
             return ok(_bb)
@@ -2233,7 +2241,7 @@ def register_pa_routes(app, brain=None):
                    "threshold": None, "faces": {}, "faces_missing": [], "faces_skipped": {},
                    "evidence": [], "archive_hits": [], "judge": _j,
                    "ask_domain": "meta", "context_meta": _ctx,
-                   "gate": pa_gate_view(decision="not_asked", fact_yn=_fact),
+                   "gate": pa_gate_view(decision="not_asked", fact_family=_fact_family),
                    "refusal_canon": PA_ASK_REFUSAL, "refusal_stale": PA_ASK_REFUSAL_STALE}
             if _prev:
                 return ok({"grounded": False, "refused": False, "answer_source": "context",
@@ -2284,21 +2292,21 @@ def register_pa_routes(app, brain=None):
             return ok({"grounded": False, "refused": False, "answer": "",
                        "answer_source": "not_applicable", "ask_domain": "retrieve",
                        "verdict": "不适用（搜索面为空：知识库目录不可达 ⇒ 拒答与否都不成立）",
-                       "gate": pa_gate_view(decision="not_applicable", fact_yn=_fact), **base})
+                       "gate": pa_gate_view(decision="not_applicable", fact_family=_fact_family), **base})
         if not res["hits"]:
             if _arch:
                 return ok({"grounded": False, "refused": True, "answer": PA_ASK_REFUSAL,
                            "answer_source": "archive_only", "ask_domain": "retrieve",
-                           "gate": pa_gate_view(decision="refused", fact_yn=_fact),
+                           "gate": pa_gate_view(decision="refused", fact_family=_fact_family),
                            "verdict": "拒答（知识面无据）；档案面另有 %d 条（⛔ 作据 —— 那是我们之报述，⛔ 世界之实）" % len(_arch),
                            **base})
             return ok({"grounded": False, "refused": True, "answer": PA_ASK_REFUSAL,
                        "answer_source": "refused", "ask_domain": "retrieve",
-                       "gate": pa_gate_view(decision="refused", fact_yn=_fact),
+                       "gate": pa_gate_view(decision="refused", fact_family=_fact_family),
                        "verdict": "拒答（库里无依据 ⇒ 按「有据才答」不答）", **base})
         return ok({"grounded": True, "refused": False, "answer": "",
                    "answer_source": "knowledge", "ask_domain": "retrieve",
-                   "gate": pa_gate_view(decision="grounded", fact_yn=_fact),
+                   "gate": pa_gate_view(decision="grounded", fact_family=_fact_family),
                    "verdict": "有据（须带出处作答）", **base})
 
     @bp.route("/v9/pa/threads", methods=["GET"])

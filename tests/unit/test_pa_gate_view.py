@@ -9,7 +9,8 @@
 
 判据：
   ⒜ 式：`pa_gate_view` 之值域（decision ／ display）俱在册。
-  ⒝ 三控（本裁之的）：有据 ⇒ display=model｜无据＋回落 ⇒ display=model｜无据＋事实问 ⇒ display=refuse。
+  ⒝ 三控（本裁之的）：有据 ⇒ display=model｜无据＋闲聊（⛔ 事实族）⇒ display=model｜无据＋**本机事实族** ⇒ display=refuse
+     （pm_1493 §三 之裁：其义 ＝ **本机事实族** —— **⛔ 唯是非问** ⇒ 非是非问（如「台账里有哪些项目？」）亦须 `refuse`）。
   ⒞ 齿（要）：**同一问连打二次 ⇒ 果须同**（`/v9/pa/ask` ∧ `/v9/pa/dialog`）。
   ⒟ 一处定形：定义唯一 ∧ 其入参**⛔ 含模型之辞**（即：果 ⛔ 由辞定）。
   ⒠ 唯加键：`gate` 入回执 ∧ 既有键 ⛔ 失。
@@ -56,7 +57,7 @@ def test_value_domains():
     assert GR.PA_GATE_DECISIONS == ("not_asked", "grounded", "refused", "not_applicable")
     assert GR.PA_GATE_DISPLAY == ("model", "refuse")
     r = GR.pa_gate_view()
-    assert set(r) == {"decision", "display", "fact_yn", "refusal_canon", "why"}
+    assert set(r) == {"decision", "display", "fact_family", "refusal_canon", "why"}
     assert r["decision"] in GR.PA_GATE_DECISIONS
     assert r["display"] in GR.PA_GATE_DISPLAY
     assert r["refusal_canon"] == GR.PA_ASK_REFUSAL
@@ -66,21 +67,21 @@ def test_value_domains():
 
 def test_control1_grounded_shows_model():
     u"""⒝①：有据 ⇒ 显模型之答（⛔ 拒答）。"""
-    assert GR.pa_gate_view(decision="grounded", fact_yn=False)["display"] == "model"
-    assert GR.pa_gate_view(decision="grounded", fact_yn=True)["display"] == "model"
+    assert GR.pa_gate_view(decision="grounded", fact_family=False)["display"] == "model"
+    assert GR.pa_gate_view(decision="grounded", fact_family=True)["display"] == "model"
 
 
 def test_control2_refused_fallback_shows_model_even_if_wording_is_cha_budao():
-    u"""⒝②（本裁之要 · 老板之实）：无据 ＋ 回落 ⇒ **显模型之答** ＋ 「回落」之标
+    u"""⒝②（本裁之要 · 老板之实）：无据 ＋ **闲聊**（⛔ 本机事实族）⇒ **显模型之答** ＋ 「回落」之标
     —— **其辞或以「查不到」起首 ⇒ ⛔ 改果**（旧 Fork-2 即在此失手）。"""
-    v = GR.pa_gate_view(decision="refused", fact_yn=False)
+    v = GR.pa_gate_view(decision="refused", fact_family=False)
     assert v["decision"] == "refused"
     assert v["display"] == "model"
 
 
 def test_control3_refused_fact_shows_canonical_refusal():
-    u"""⒝③：无据 ＋ ⛔ 回落（事实问）⇒ canonical 拒答。"""
-    v = GR.pa_gate_view(decision="refused", fact_yn=True)
+    u"""⒝③：无据 ＋ **本机事实族** ⇒ canonical 拒答（⛔ 回落）。"""
+    v = GR.pa_gate_view(decision="refused", fact_family=True)
     assert v["decision"] == "refused"
     assert v["display"] == "refuse"
     assert v["refusal_canon"] == GR.PA_ASK_REFUSAL
@@ -88,9 +89,39 @@ def test_control3_refused_fact_shows_canonical_refusal():
 
 def test_not_applicable_is_not_refusal():
     u"""⒝④（三态纪律）：searched==0 ⇒ 不适用 ⇒ ⛔ 以拒答论。"""
-    v = GR.pa_gate_view(decision="not_applicable", fact_yn=True)
+    v = GR.pa_gate_view(decision="not_applicable", fact_family=True)
     assert v["decision"] == "not_applicable"
     assert v["display"] == "model"
+
+
+def test_control2b_family_non_yn_refuses():
+    u"""⒝②-b（**pm_1493 §三 之裁 · 要**）：**本机事实族**之问（**⛔ 唯是非问**）∧ 无据 ⇒ `refuse`。
+
+    实证（CW 一手之漏拦之例）：`台账里有哪些项目？` —— 属本机事实族 ∧ **非是非问**
+    ⇒ 旧标 `fact_yn` 恒 `false` ⇒ **漏拦**（模型对本机账之断言直上屏）⇒ 故其义须扩为「族」。
+    """
+    v = GR.pa_gate_view(decision="refused", fact_family=True)
+    assert v["display"] == "refuse", v
+
+
+def test_control3b_smalltalk_still_falls_back():
+    u"""⒝③-b：**闲聊**（⛔ 本机事实族）∧ 无据 ⇒ 回落 ⇒ `model`
+    —— ⛔ 以除根而废回落令（闲聊之回落须保 · 承 pm_1493 §三.2）。"""
+    v = GR.pa_gate_view(decision="refused", fact_family=False)
+    assert v["display"] == "model", v
+
+
+def test_control1b_grounded_family_shows_model():
+    u"""⒝①-b：有据（虽在族内）⇒ `model`（**⛔ 拒答** —— 有据则答）。"""
+    assert GR.pa_gate_view(decision="grounded", fact_family=True)["display"] == "model"
+
+
+def test_why_text_matches_formula():
+    u"""⒝⑤（**pm_1493 §一 之齿**）：`why` 之文与 `_disp` 之公式**同物** ——
+    `refused` 之注 ⛔ 再书「未回落 ⇒ refuse」（那与码 ⛔ 同物 ⇒ 「一名一义」之病）。"""
+    w = GR.PA_GATE_WHY["refused"]
+    assert (u"事实族" in w) or (u"fact_family" in w), w
+    assert u"未回落" not in w, w
 
 
 # ---------- ⒞ 齿 ----------
@@ -128,7 +159,7 @@ def test_dialog_echoes_relayed_judgement(client):
 def test_helper_takes_no_model_wording():
     u"""⒟：其入参**⛔ 含模型之辞** —— 即：果之定 ⛔ 由辞（本裁之根）。"""
     params = set(inspect.signature(GR.pa_gate_view).parameters)
-    assert params == {"decision", "origin", "grounded", "answer_source", "fact_yn"}, params
+    assert params == {"decision", "origin", "grounded", "answer_source", "fact_family"}, params
     for bad in ("reply", "answer", "text", "content", "raw"):
         assert bad not in params, u"⛔ 许模型之辞入判：%s" % bad
 
