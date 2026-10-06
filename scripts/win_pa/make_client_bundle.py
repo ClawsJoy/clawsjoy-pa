@@ -305,6 +305,19 @@ def check_bundle(path):
     return r
 
 
+#: 构建依（**必入 wheel\\**）—— 运行依含 sdist（如 `flasgger` 无 wheel）⇒ 装时须**构建**
+#  ⇒ pip 于 `--no-index` 之下唯以 `find-links` 取构建依 ⇒ ⛔ 在 ⇒ 离线装必败
+#  （我一手逮得 · 2026-10-06 M2 预演：`ERROR: Could not find a version that satisfies the
+#   requirement setuptools>=40.8.0 (from versions: none)`）。
+BUILD_DEPS = ("setuptools", "wheel")
+
+
+def download_cmd(wheel_dir, reqs_path, python=None):
+    u"""`pip download` 之 argv —— 运行依（`-r`）＋ **构建依**（`BUILD_DEPS`）⇒ 离线可装（承 pm_1440 §二.2）。"""
+    return [python or sys.executable, "-m", "pip", "download", "-d", wheel_dir,
+            "-r", reqs_path] + list(BUILD_DEPS)
+
+
 def apply_bundle(root=None, out=None, wheel=True, json_out=False):
     u"""真做（⚠ 须**网**）—— ⓐ `pip download` 入 `wheel\\` ⓑ 复运行子集 ⓒ 写册（逐件 sha256）。
     ⛔ 起停 ／ ⛔ 改本仓（唯写 `out`）。"""
@@ -333,9 +346,8 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
         return 2, lines
     os.makedirs(p["wheel_dir"], exist_ok=True)
     if wheel:
-        cmd = [sys.executable, "-m", "pip", "download", "-d", p["wheel_dir"],
-               "-r", os.path.join(p["root"], "requirements-runtime.txt")]
-        lines.append(u"[bundle] pip download（**须网**）: %s" % u" ".join(cmd))
+        cmd = download_cmd(p["wheel_dir"], os.path.join(p["root"], "requirements-runtime.txt"))
+        lines.append(u"[bundle] pip download（**须网** · 运行依 ＋ 构建依）：%s" % u" ".join(cmd))
         r = subprocess.run(cmd)
         if r.returncode != 0:
             lines.append(u"[bundle] ⛔ pip download rc=%d ⇒ 止（离线包不立 —— ⛔ 装成可用）" % r.returncode)

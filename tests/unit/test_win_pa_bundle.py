@@ -117,3 +117,17 @@ def test_安装器离线闸有齿(tmp_path):
     assert g2[u"离线包 wheel"]["ok"] is True, g2[u"离线包 wheel"]
     g3 = {x["name"]: x for x in mod.preflight_gates(offline=False, wheel_dir=str(w))}
     assert u"离线包 wheel" not in g3, u"⛔ --offline ⇒ 其闸 ⛔ 在（⛔ 白判红）"
+
+def test_离线包之下载须含构建依():
+    u"""承 ⒌（**我一手逮得** · 2026-10-06 · M2 预演）：`wheel\\` 须含**构建依**（setuptools ／ wheel）。
+
+    由：运行依含 **sdist**（`flasgger` —— PyPI 上唯 `.tar.gz` ／ ⛔ wheel）⇒ 装时须**构建**
+      ⇒ pip 于 `--no-index` 之下唯以 `find-links` 取构建依 ⇒ ⛔ 在 ⇒ **离线装必败**
+      （实证：M2 预演之 venv 装 rc=1 ／ `No matching distribution found for setuptools>=40.8.0`）。
+    反控：**旧式 argv**（唯 `-r` · ⛔ 构建依）⇒ 本判必红（有齿 · ⛔ 空判）。
+    """
+    cmd = MB.download_cmd("W", "R")
+    assert "setuptools" in cmd, u"构建依 setuptools ⛔ 在 ⇒ sdist 之装必败"
+    assert "wheel" in cmd, u"构建依 wheel ⛔ 在"
+    old = [sys.executable, "-m", "pip", "download", "-d", "W", "-r", "R"]
+    assert not ("setuptools" in old and "wheel" in old), u"反控：旧式 argv ⇒ 本判必红（有齿）"
