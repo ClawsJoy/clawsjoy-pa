@@ -2,13 +2,15 @@
 """PA model provider registry v1 (PM 034 Sec-2 P0, 2026-10-05).
 
 Data in one place: PROVIDERS[id] => id/label/kind/base_url/models[]/params/enabled.
+  enabled is DERIVED (pm_1380): the registry value is only the DEFAULT;
+  the truth is env CLAWSJOY_PA_PROVIDERS_DISABLED (CSV, empty => all on).
 Rules (PM 034 Sec-6 / credentials-as-boolean):
   * key is stored ONLY as an env-var NAME; the value lives in .env; screen shows a BOOLEAN.
   * this module is READ-ONLY: it never issues a request (remote calls belong to P2).
 """
 import os
 
-REGISTRY_VERSION = "2026-10-05.3"   # ★ §二.4：加 params.max_tokens ⇒ +1（承 L152）
+REGISTRY_VERSION = "2026-10-06.1"   # ★ pm_1380 §一：enabled 自 env 派生（⛔ 硬编）＋ 屏上附源 ⇒ +1
 
 PROVIDERS = {
     "local:ollama": {
@@ -24,7 +26,7 @@ PROVIDERS = {
         ],
         "params": {"num_ctx": int(os.getenv("CLAWSJOY_NUM_CTX", "8192")),
                    "max_tokens": int(os.getenv("CLAWSJOY_MAX_TOKENS", "1600"))},
-        "enabled": True,
+        "enabled": True,   # 默认（⛔ 真源 · 真源 ＝ env CLAWSJOY_PA_PROVIDERS_DISABLED）
     },
     "remote:deepseek": {
         "id": "remote:deepseek", "label": "DeepSeek (remote)", "kind": "remote",
@@ -36,7 +38,7 @@ PROVIDERS = {
             {"id": "deepseek-v4-flash", "label": "DeepSeek V4 Flash", "isDefault": True, "ctx": 65536},
             {"id": "deepseek-v4-pro", "label": "DeepSeek V4 Pro", "isDefault": False, "ctx": 65536},
         ],
-        "params": {}, "enabled": True,
+        "params": {}, "enabled": True,   # 默认（⛔ 真源 · 真源 ＝ env CLAWSJOY_PA_PROVIDERS_DISABLED）
     },
 }
 
@@ -66,19 +68,43 @@ def key_state(pid):
     return "configured" if (os.getenv(env) or "").strip() else "missing"
 
 
+ENABLED_ENV = "CLAWSJOY_PA_PROVIDERS_DISABLED"
+
+
+def disabled_ids():
+    """⭐ 停用之 id 列（pm_1380 §一「立（轻形）」）—— env CLAWSJOY_PA_PROVIDERS_DISABLED（CSV · 空 ⇒ 皆启）。
+
+    ⛔ 注册表之字面 enabled 沦为**默认**（⛔ 真源）—— 承 pm_1377 §三（写了不生效 ∧ 一名蔽二态）。"""
+    raw = os.getenv(ENABLED_ENV) or ""
+    return tuple(x.strip() for x in raw.split(",") if x.strip())
+
+
+def is_enabled(pid):
+    """⭐ 启用之**派生** ＋ 其**源之述**（⛔ 一名蔽二态）—— 返回 (bool, src)。
+
+    ⚠ 「齿」（resolve() 遇 disabled ⇒ 拒）随 P2 立项（pm_1380 §一）⇒ 屏上须附源以⛔ 冒「已生效」。"""
+    if pid in disabled_ids():
+        return False, "停用（源 env %s · 齿随 P2）" % ENABLED_ENV
+    if bool((PROVIDERS.get(pid) or {}).get("enabled")):
+        return True, "启用（默认 · ⛔ 未列于 env %s）" % ENABLED_ENV
+    return False, "注册表默认 enabled=False"
+
+
 def public_view():
     """Read-only screen view: no values, boolean only, models[] per provider."""
     items = []
     for pid in PROVIDERS:
         p = PROVIDERS[pid]
         st = key_state(pid)
+        en, en_src = is_enabled(pid)
         items.append({
             "id": p["id"], "label": p["label"], "kind": p["kind"],
             "base_url": p.get("base_url", ""), "base_url_env": p.get("base_url_env") or "",
             "key_env": p.get("key_env") or "", "key_state": st,
             "key_configured": (st == "configured"),
             "models": p["models"], "params": p.get("params", {}),
-            "enabled": bool(p.get("enabled")),
+            "enabled": en,
+            "enabled_src": en_src,
             "base_url_wired": bool(p.get("base_url_wired")),
             "base_url_note": p.get("base_url_note", ""),
         })
