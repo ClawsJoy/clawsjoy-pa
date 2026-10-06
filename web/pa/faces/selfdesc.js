@@ -1835,6 +1835,16 @@ function paPermRender(){
     try{ sec = await paSelfSections(keys); }
     catch(e){ sec = {u:'读取本机自述数据失败。', e:'原始错误：' + String((e && e.message) || e)}; }
     const ans = sec.u;
+    /* ⭐ pm_1483 §一（自述层之走径标 · 一处定形）：本层之答 **⛔ 经后端**（无端点 · 无回执）
+       ⇒ more.js:513 之探针（唯拦 `/v9/pa/(dialog|turn|ask)`）**⛔ 覆此轮** ⇒ 若 ⛔ 自落己标：
+         ⒜ 上一轮有残留 ⇒ 本机自述之答竟挂「本轮经云端 · 内容将出机 · 模型 …」（**假阳** · 红线**反说**）
+         ⒝ 无残留 ⇒ 落 `paRouteLine(null)` 之「src: —（后端未给）」（**不实** —— 此轮**从未问后端**）
+       ⇒ 本层**自落己标**（⛔「清空」：承「空 ≠ 缺」⇒ 人须知「为何无模型之径」 · 与卡头之辞同源）。
+       `kind:'self'` ⇒ **⛔ 入远端集**（`paRouteIsRemote`）⇒ 「出机」标 **⛔ 上**（本机自述**未出机** · 承 L76）。
+       `at` ＝ **本机之刻**（epoch 秒 ⇒ 由 `PA_STAMP.fmt` 一处显形 · **⛔ 后端之 `read_at`** —— 此径无回执）。 */
+    try{ window.PASelfRouteLast = {
+      label: {text: 'src: 本机自述（未调用模型）', key: '本机自述', kind: 'self', model: ''},
+      at: String(Date.now() / 1000), url: 'selfdesc'}; }catch(e){}
     addMsg('assistant', ans, false, paSelfSayHtml(ans, sec.e), undefined);
     try{
       const t = (typeof activeThread === 'function') ? activeThread() : null;
