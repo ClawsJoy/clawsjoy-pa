@@ -340,6 +340,8 @@
   function el(tag,st,html){var d=document.createElement(tag);if(st)d.setAttribute('style',st);if(html!=null)d.innerHTML=html;return d;}
   var SAID={'未接':'本机的 AI 模型**没接上**','在·无权重':'本机有模型服务，但**还没下模型**（下好才能用）',
             '在∧可用':'本机的 AI 模型**可用**','不可达':'本机有模型服务，但**答不上来**','未核':'模型**没查成**（见其据）'};
+  //: 后端之哨符值（`面之源．键[].今` 之「无真源」之明标）—— **唯比** · ⛔ 上屏（上屏之字面唯自后端之「今」／「义」出 · 承 pm_1499 §一.3）
+  var PA_UNSET='未接';
   function box(d){
     var b=el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#0f172a;color:#e8eef7;border:1px solid #334155;border-radius:10px;padding:12px 14px;font:13px/1.75 system-ui,Segoe UI,Microsoft YaHei,sans-serif;box-shadow:0 8px 26px rgba(0,0,0,.35);max-height:48vh;overflow:auto');
     b.appendChild(el('div','font-weight:700;margin:0 0 6px','🔰 第一次用（只读 · 数来自本机后端）'));
@@ -351,11 +353,19 @@
     b.appendChild(el('div','margin-top:6px','• 模型之路：'+esc(q(SAID[m['态']]||m['态']))+' <span style="opacity:.62">［'+esc(m['因']||'')+'］</span>'));
     var dir=d['数据目录']||{};
     b.appendChild(el('div','margin-top:2px','• 数据目录：'+esc(dir['值']||'（未接）')+' <span style="opacity:.62">［'+esc(dir['源']||'')+'］</span>'));
-    var fs=d['面之源'];
+    var fs=d['面之源'],_vk=null;
+    if(fs&&fs['键']){for(var vj=0;vj<fs['键'].length;vj++){if(fs['键'][vj]['键']==='PA_VAULT_DIR'){_vk=fs['键'][vj];}}}
     if(fs&&fs['键']&&fs['键'].length){
-      var ll='• 面之源（面数由三键定 · ⛔ 静默）：';
-      for(var j=0;j<fs['键'].length;j++){var kk=fs['键'][j];ll+=esc(kk['键'])+'＝'+esc(kk['今'])+(j<fs['键'].length-1?'；':'');}
-      b.appendChild(el('div','margin-top:2px',ll+' <span style="opacity:.62">［'+esc(fs['口径']||'')+'］</span>'));
+      b.appendChild(el('div','margin-top:6px','• 面之源（面数由三键定 · ⛔ 静默）：'));
+      for(var j=0;j<fs['键'].length;j++){
+        var kk=fs['键'][j];
+        b.appendChild(el('div','margin:2px 0 2px 16px','· '+esc(kk['键'])+'＝'+esc(kk['今'])+' <span style="opacity:.62">［义：'+esc(q(kk['义']||''))+'］</span>'));
+      }
+      b.appendChild(el('div','margin-top:2px;opacity:.62','［'+esc(fs['口径']||'')+'］'));
+    }
+    var _vm=(!_vk)||(!String(_vk['今']||''))||String(_vk['今'])===PA_UNSET;
+    if(_vk&&_vm){
+      b.appendChild(el('div','margin-top:6px;color:#fbbf24','• 本机<b>资料目录</b>＝'+esc(_vk['今'])+' ⇒ 检索面为空 ⇒ 问「本机自己的事」（事实 ／ 状态 ／ 账 ／ 决定）<b>一律拒答</b>；其余问题由<b>模型</b>作答 —— 若走云端 ⇒ 内容将<b>出机</b>。'));
     }
     var miss=(d['缺']||[]);
     if(miss.length){

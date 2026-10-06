@@ -1196,6 +1196,26 @@ function paSelfFactYN(s){
   if(/[？?]\s*$/.test(t)) return true;                    /* 问句形 ⇒ 是非／状态之问 */
   return PA_YN_MARK.test(t);                              /* ⛔ 无问号者须含是非之标记（承 pm 21:20 §三：⛔ 以「非知识问」漏过） */
 }
+/* ⭐ pm_1492 §二.1（通电 · 一处定形）：本轮之「**本机事实族**」之标 —— 唯此一处出（⛔ 三处各判）。
+   其义 ＝ 「本机事实族」（`PA_FACT_MARK`）· ⚠ **⛔ 唯「是非问」**（`paSelfFactYN` 更窄 · 承 pm_1492 §二.1）
+     —— 由：漏拦之例（「台账里有哪些项目？」· 非是非问）唯以「事实族」之标方得 cover（pm `1491 §三.3`）。
+   ⭐ 键名已定（pm_1493 §三 · §四 \/ pm_1496 §一.2）：`fact_family`（义 ＝ 「本机事实族」·
+     **含非是非问**）—— 后端唯读入参（`gateway_routes.py:398` \/ `:2208`）⇒ 本函数 ⛔ 自造键名。
+   ⚠ 调用方（`status.js` ／ `send.js`）未得本函数（旧页）⇒ **⛔ 带键**（知其实方传 · 承 `status.js` 之注）。 */
+function paSelfFactFamily(q){
+  try{ return PA_FACT_MARK.test(String(q == null ? '' : q)); }catch(e){ return false; }
+}
+/* ⭐ pm_1492 §二.3（一处定形）：Fork-2 之判 ⇒ **唯自后端之键出**（⛔ 以模型之辞之词形判 · 承 pm_1487 §一）。
+   三态（返 {ok, refuse, note}）：⭐ `display==='refuse'` ⇒ 认（显 canonical 拒答）／ `display==='model'` ⇒ 认（显模型之答）
+     ／ 其余（键 ⛔ 得）⇒ **显形**（`note` · ⛔ 词形兜底 · 承「⛔ 静默降级」）。 */
+const PA_GATE_NODATA = '后端未给本轮判据 ⇒ 本条照实显（⛔ 判）';
+function paSelfGateSay(g){
+  const d = (g && g.gate && typeof g.gate.display === 'string') ? g.gate.display : '';
+  if(d === 'refuse') return {ok:true, refuse:true, note:''};
+  if(d === 'model') return {ok:true, refuse:false, note:''};
+  return {ok:false, refuse:false, note:PA_GATE_NODATA};
+}
+try{ window.paSelfFactFamily = paSelfFactFamily; window.paSelfGateSay = paSelfGateSay; }catch(e){}
 function paSelfModelAssertForbidden(q, a){
   if(paSelfFactYN(q)) return true;                                    /* 判据（结构）：本机事实族之是非问 */
   const _q = String(q == null ? '' : q);
@@ -2086,7 +2106,9 @@ function paSelfFailText(s){
                         thr:(g.threshold == null ? '—' : g.threshold),
                         read:(g.read_at || '—'),
                         judge:g.judge, archive_hits:g.archive_hits, answer_source:g.answer_source, verdict:g.verdict,
-                        refusal_canon:g.refusal_canon, refusal_stale:g.refusal_stale};
+                        refusal_canon:g.refusal_canon, refusal_stale:g.refusal_stale,
+                        /* ⭐ pm_1492 §二.2（一处定形）：本轮之**键**入凭据 —— Fork-2 之判唯自键出 */
+                        gate:g.gate};
             paSelfLbl = null;
             const out = {};
             for(const fk in g){ try{ out[fk] = g[fk]; }catch(e){} }
@@ -2127,13 +2149,14 @@ function paSelfFailText(s){
         const say = function(u, e){ return paSelfSayHtml(u, (e ? e : '') + (ar ? ar.e : '') + (unc ? unc.e : '') + (wcE ? ('\n' + wcE) : '')); };
         const fbf = paSelfFb; paSelfFb = null;             /* 一轮一清（⛔ 跨轮复用 ⇒ ⛔ 贴错标） */
         const fx = paSelfFailText(raw);            /* 令③：失败态人话（⛔ 裸异常串上屏） */
+        const _gSay = paSelfGateSay(fbf);   /* ⭐ pm_1492 §二.3（一处定形）：Fork-2 之判 ⇒ 唯自键出（⛔ 词形） */
         /* ⭐ pm_1073 §二.1（承 L103 形与义分 ／ L142 声明⟷执行须符 ／ L76 源随值）：本回「有据才答」闸
            **已判拒答**（`fbf` 在 · 后端 `answer_source ∈ {refused, archive_only}`）者 ⇒ 用户面**须显拒答**
            （照后端 `verdict` 逐字），⛔ 不许把「模型路之败」或「模型之辞」渲成
            「**这题需要模型 … 本次请求本身出错**」—— 该二句皆**谎**（后端 200 且已判 ⇒ 拒答即**正果** · 承 L150）。
            ⚠ 两路仍可分（承 pm_1073 §三 Ⅳ · pm_1032 §三.1 之**回落令未废**）：模型**实答**（其辞非拒答词形）
              ⇒ 落下方 `fbf` 支照旧（贴「由模型作答」 · K5 之形）。 */
-        if(fbf && (fx || paSelfRefusal(raw))){
+        if(fbf && (fx || _gSay.refuse)){
           paSelfLbl = null;
           try{ paSelfAskBump(fx ? 'refusalOnModelFail' : 'refusalOnModelDecline', null, ''); }catch(e){}
           /* ⭐ pm_1073 §二.1 同族（承 L76 源随值 ／ L142 声明⟷执行须符）：模型路若**败**，共用件 send.js:76
@@ -2195,6 +2218,7 @@ function paSelfFailText(s){
             : ((typeof PA_REFUSE_CANON === 'string') ? PA_REFUSE_CANON : '⚠ 拒答文缺（⛔ 静默）');
           const au = tl + '\n' + (_forbid ? _canon : wa(raw)) + (_arcF ? ('\n\n' + _arcF) : '');
           const fe = (_forbid ? ('⚠ 模型之辞（⛔ 作据 · 已拦下 · 承 pm 21:20 §二.处1/处3）：' + raw + '\n') : '')
+            + ((!_gSay.ok) ? ('⚠ ' + _gSay.note + '\n') : '')   /* ⭐ pm_1492 §二.3：键 ⛔ 得 ⇒ 显形（⛔ 词形兜底） */
             + '本问先过「有据才答」闸（/v9/pa/ask）⇒ ⭐ 闸判 **本机无据（拒答）**'
             + '（承 pm_1076 §三：与答体**两段并标** · ⛔ 单标）⇒ 已按 pm_1032 §三.1 **回落模型**'
             + '（POST /v9/pa/dialog · 分流同一出口 paAskDomain）⇒ 此处之答由模型生成（⛔ 非本机素材）。'
@@ -2208,7 +2232,7 @@ function paSelfFailText(s){
             + '\n原问：' + fbf.q;
           return emit.call(this, 'assistant', au, skipStore, say(au, fe), tid);
         }
-        if(aside && paSelfRefusal(raw)){
+        if(aside && paSelfGateSay(fbf).refuse){   /* ⭐ pm_1492 §二.3：改依键（⛔ 词形判）｜⚠ `aside` 今无赋点（恒 null · 报 pm） */
           const a = aside; aside = null;
           const ev = paSelfEvidText(raw);
           const dmk = (a && a.domain);
@@ -2229,28 +2253,32 @@ function paSelfFailText(s){
            ⛔ 载入**后端 ／ 模型之拒答原辞**（「查不到（知识库里没有相关内容）」＝**「知识库」之辞** ——
            而闸实扫**八面**（`g.scope`）⇒ 该辞**失实**）⇒ 概书 canonical；原辞留**径**（注记）。
            ⭐ **今退为「兜底校验」**（pm 1184 §三）：后端已自出 canonical（`refusal_canon`）⇒ 本支
-             **唯于`raw` 仍为拒答之旧辞时**方动（判 ＝ `paSelfRefusal(raw)` · 词形**旁证**）；
+             **唯于后端之键认「显 canonical 拒答」时**方动（判 ＝ `paSelfGateSay(fbf).refuse`）
+             —— ⭐ pm_1492 §二.3：**⛔ 以模型之辞之词形判**；键 ⛔ 得 ⇒ **显形**（⛔ 概覆 · 下 `_gateNote`）；
              ⛔ 概覆 —— 后端之正辞 ／ 逐字之由（如 `decision_none`）皆**不触**本支（守界 · 承 §一.⒜）。
            ⚠ 位次：本支**须在** `paSelfLbl` ／ `paSelfLegacySplit` 之前 —— 二者会把「查不到…」
              渲成「模型生成」或「整条工程注记」（我一手见 · 皆非 canonical ⇒ 承「一处口径」）。
            ⚠ canonical 之真源 ＝ send.js 之 `PA_REFUSE_CANON`（⛔ 二处各写 · 承 L83）。 */
-        if(paSelfRefusal(raw)){
+        const _gSay2 = paSelfGateSay(fbf);   /* ⭐ pm_1492 §二.3：改依键（⛔ 词形兜底） */
+        if(_gSay2.refuse){
           paSelfLbl = null;
           const _cn = (typeof PA_REFUSE_CANON === 'string') ? PA_REFUSE_CANON : '本机无据 ⇒ 我不答此问。';
           const _cu = wa(_cn);
           return emit.call(this, 'assistant', _cu, skipStore,
             say(_cu, '⚠ 后端 ／ 模型之拒答**原辞**（⛔ 载入答话 · 承 pm 22:34 §一.E「载径 ⛔ 载值」）：' + raw), tid);
         }
+        /* ⭐ pm_1492 §二.3：键 ⛔ 得（旧后端 ∨ 键缺）⇒ **显形**（⛔ 词形兜底）—— 唯闸之轮（`fbf` 在）报之 */
+        const _gateNote = (fbf && !_gSay2.ok) ? ('⚠ ' + _gSay2.note) : '';
         if(paSelfLbl){
           const l = paSelfLbl; paSelfLbl = null;
           const full = l + '\n' + wa(raw);
-          return emit.call(this, 'assistant', full, skipStore, say(full, null), tid);
+          return emit.call(this, 'assistant', full, skipStore, say(full, _gateNote || null), tid);
         }
         const lg = paSelfLegacySplit(raw);
-        if(lg) return emit.call(this, 'assistant', wa(lg.u), skipStore, say(wa(lg.u), lg.e), tid);
+        if(lg) return emit.call(this, 'assistant', wa(lg.u), skipStore, say(wa(lg.u), lg.e + (_gateNote ? ('\n' + _gateNote) : '')), tid);
         const hu = paHumanizeErr(raw);
         if(hu !== raw) return emit.call(this, 'assistant', wa(hu), skipStore, undefined, tid);
-        if(an || ar || unc) return emit.call(this, 'assistant', wa(raw), skipStore, (html ? html : say(wa(raw), null)), tid);
+        if(an || ar || unc) return emit.call(this, 'assistant', wa(raw), skipStore, (html ? html : say(wa(raw), _gateNote || null)), tid);
       }
       return origAdd.apply(this, arguments);
     };

@@ -36,6 +36,8 @@ async function paAskGate(text){
        （picked_by:newest）⇒ 元问之「上一句」取自他会话，而屏上仍写「据：本会话」＝ 声明失实。 */
     let _sid=''; try{ const _t=(typeof activeThread==='function')?activeThread():null; _sid=(_t&&_t.id)?String(_t.id):''; }catch(e){ _sid=''; }
     const _q={user_id:curUser(),question:text,limit:5}; if(_sid) _q.session_id=_sid;
+    /* ⭐ pm_1492 §二.1（通电 · 一处出）：本机事实族之标（⛔ 三处各判）—— 未得（旧页）⇒ ⛔ 带键 */
+    try{ if(typeof paSelfFactFamily === 'function') _q.fact_family = paSelfFactFamily(text); }catch(e){}
     const r=await fetch(API+'/v9/pa/ask',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(_q)});
     const d=await r.json(); return (d&&d.ok)?d:null;
@@ -55,6 +57,8 @@ async function recordPaTurn(sid,userText,assistantText,meta){
       if(meta.grounded===true || meta.grounded===false) _b.grounded=meta.grounded;
       if(meta.answer_source) _b.answer_source=String(meta.answer_source);
     }
+    /* ⭐ pm_1492 §二.1（通电 · 一处出）：本机事实族之标（⛔ 三处各判）—— 未得（旧页）⇒ ⛔ 带键 */
+    try{ if(typeof paSelfFactFamily === 'function') _b.fact_family = paSelfFactFamily(userText); }catch(e){}
     const r=await fetch(API+'/v9/pa/turn',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(_b)});
     const d=await r.json(); return (d&&d.ok)?d:null;

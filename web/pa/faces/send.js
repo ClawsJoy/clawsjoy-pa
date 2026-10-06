@@ -109,6 +109,8 @@ async function sendPA(text, t, meta){
     /* ⭐ pm_1465 §二.1（说一用一）：本轮之模型 ⇒ **取用户所选**（自后端之表出 · `paModelSel` **一处出**）
        ⇒ ⛔ 硬编字面；⛔ 在表（表 ⛔ 得 ／ 值非实名）⇒ **⛔ 带此键** ⇒ 后端落会话档 ∨ 默认。 */
     const _mdl = paModelSel(); if(_mdl) _b.model = _mdl;
+    /* ⭐ pm_1492 §二.1（通电 · 一处出）：本机事实族之标（⛔ 三处各判）—— 未得（旧页）⇒ ⛔ 带键 */
+    try{ if(typeof paSelfFactFamily === 'function') _b.fact_family = paSelfFactFamily(text); }catch(e){}
     if(meta && typeof meta==='object'){
       if(meta.origin) _b.origin = String(meta.origin);
       if(meta.grounded===true || meta.grounded===false) _b.grounded = meta.grounded;
