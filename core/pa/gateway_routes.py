@@ -906,8 +906,11 @@ def _src_face_readout():
 
 
 # ============================== ⭐ 首启引导（承 pm_1384 §三.3）==============================
-PA_FIRST_RUN_VERSION = "2026-10-06.2"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+PA_FIRST_RUN_VERSION = "2026-10-06.3"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
 #  ⭐ .2：「面之源」三键（pm_1417 §三.3 · 面之数由三键定 ⇒ 用户须能知）
+#  ⭐ .3：「本机配置」显形（pm_1453 §一 之裁 · 本席一手逮得）——
+#           `config/.env` ／ `config/secrets.yaml` 在**包内必无** ⇒ 「缺」＝**常形**
+#           ⇒ **缺 ⇒ 跳读**（⛔ 崩）＋**显形**：「未配 ⟷ 已配」须有字（⛔ 静默缺）。
 
 #: ⛔ 遥测／分析之显式调用点之形（**调用形** · ⛔ 唯品牌名 —— 名可现于文档而不为调用）
 _TELEMETRY_MARKS = ("posthog.", "sentry_sdk.init(", "mixpanel.", "amplitude.",
@@ -1044,6 +1047,22 @@ def _first_run_readout():
         "辞": u"你的数据留在**这台电脑**上：本产品**自带**之遥测 ／ 自动上传 ＝ **无**；"
               u"唯你显式发起、且远端已接之时方出网（远端**今未接** · P2）。",
     }
+    _lf, _lf_err = [], ""
+    try:
+        from core.lib.local_env_files import local_files_state as _lfs
+        _lf = _lfs(str(_UI_REPO))
+    except Exception as _e:
+        _lf_err = u"%s: %s" % (type(_e).__name__, str(_e)[:120])
+        out["缺"].append({"项": u"本机配置（.env ／ secrets.yaml）", "因": _lf_err})
+    out["本机配置"] = {
+        "口径": u"交付包内**必无** config/.env ／ config/secrets.yaml ⇒ 「未配」＝ **正常之貌**"
+                u"（⛔ 故障）· 缺则**跳读**（⛔ 崩）· 有则照读",
+        "件": _lf,
+        "未核": (_lf_err or None),
+    }
+    _lf_txt = (u" ／ ".join(u"%s＝%s" % (x["名"], x["态"]) for x in _lf)
+               if _lf else (u"未核：%s" % _lf_err))
+    _lf_state = u"已配" if any(x.get("态") == u"已配" for x in _lf) else u"未配"
     out["须知"] = [
         {"话": u"你的数据在这台电脑上" + ((u"：%s" % _d) if _d else u"（⛔ 未接 —— 见下「缺」）"),
          "据": _dsrc or u"未接"},
@@ -1052,6 +1071,8 @@ def _first_run_readout():
                % (len(_tel), (u"（%s）" % u"、".join(_tel[:3])) if _tel else u"")},
         {"话": u"AI 走**本机**模型 —— 现在：**%s**。" % _tri.get("态"),
          "据": _tri.get("因") or u"（三态器未给因 —— 见「缺」）"},
+        {"话": u"云端密钥：本机**%s**（正常 —— 交付包里本来就没有这一件）。" % _lf_state,
+         "据": _lf_txt},
         {"话": u"缺什么，上面就写什么 —— ⛔ 假装能用。",
          "据": u"「缺」列 %d 项" % len(out["缺"])},
     ]

@@ -74,13 +74,14 @@ if not os.path.isdir(os.environ.get("PROJECT_ROOT", "")):
     os.environ["PROJECT_ROOT"] = _PROJECT_ROOT
 
 # 如果 .env 文件没有配置代理，清除 shell 残留的代理
-_env_has_proxy = False
-with open(_env_path, encoding="utf-8") as _f:
-    for _line in _f:
-        if _line.startswith("HTTP_PROXY=") or _line.startswith("HTTPS_PROXY="):
-            _env_has_proxy = True
-            break
-if not _env_has_proxy:
+# ⭐ 2026-10-06（pm_1453 §一 裁 · 本席一手逮得之实缺陷）：
+#   `config/.env` 在**交付包内必无**（`.gitignore:125-126`）⇒ 其「缺」＝**常形**
+#   ⇒ **缺 ⇒ 跳读**（⛔ 崩）＋**显形**（「未配」有字 · 首屏 `/v9/pa/first_run`）。
+#   旧码此处在 `load_dotenv`（容缺）**之后无条件**再 `open(_env_path)` ⇒
+#   净机 `FileNotFoundError` @ import 期（main 之 try 捕不到）⇒ 进程立死。
+#   一处定形：`core/lib/local_env_files.py`（⇔ 各自复述 open）。
+from core.lib.local_env_files import has_proxy_line as _has_proxy_line
+if not _has_proxy_line(_env_path):
     for _k in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"]:
         os.environ.pop(_k, None)
 
