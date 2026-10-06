@@ -112,7 +112,9 @@ class V9GatewayExecutor:
             {
                 "user_id": self.user_id,
                 "session_id": sid,
-                "model": "deepseek-v4-flash",
+                # ⭐ pm_1449 §二.4 正名：实名 ≡ `deepseek-flash`
+                #    （GET /models 之器取 · 2026-10-06）；旧名 `deepseek-v4-flash` 仍为**可通之别名**（器取实证：响应之 model 回 `deepseek-flash`）⇒ 同射程内 ⛔ 二名。
+                "model": "deepseek-flash",
                 "messages": [{"role": "user", "content": str(contract.get("objective", ""))}],
             }
         ).encode()
