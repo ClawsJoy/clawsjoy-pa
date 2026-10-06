@@ -15,6 +15,34 @@ from pathlib import Path
 
 from core.lib.paths import runtime_tmp_path
 
+_PA_PROVIDERS = None
+
+
+def _pa_providers():
+    """`core/pa/providers.py`（PA 注册表）之**按文件路径**载入口 —— 唯此一处。
+
+    ⭐ pm_1474 §一：默认之模型名 ＋ 别名归一 ⇒ **唯自注册表出**（一处定形 · ⛔ 硬编别名）。
+    ⚠ 由（同 `core/gateway/_proc.py` 之已立之律）：`core/gateway/**` ⛔ 走 `from core.pa import …`
+      —— 那会执行 `core/pa/__init__.py`（拉 `pa_core` ＋ `vault_brain`）⇒ ① 有副作用（配置 ＋
+      向量知识中心 · 实测 ≈ 1.3s）② 有**循环导入**之险 ③ 无谓。按路径载 ⇒ 零副作用 ／ 零环 ／
+      **仍单源**（同一文件）。本模块只取其常量 ＋ 纯函数（`providers.py` 唯 `import os`）⇒ 无损。
+    ⚠ 载不到 ⇒ **明报**（⛔ 静默退化 —— 少一源即少一闸）。
+    """
+    global _PA_PROVIDERS
+    if _PA_PROVIDERS is None:
+        import importlib.util as _ilu
+
+        _p = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pa", "providers.py"
+        )
+        _spec = _ilu.spec_from_file_location("_pa_providers_canonical", _p)
+        if _spec is None or _spec.loader is None:
+            raise ImportError(u"PA 注册表不可载（缺件？）：%s" % _p)
+        _m = _ilu.module_from_spec(_spec)
+        _spec.loader.exec_module(_m)
+        _PA_PROVIDERS = _m
+    return _PA_PROVIDERS
+
 
 def prepare_chat_entry(*, data, resolve_session_id_fn):
     """归档层：请求体诊断 → 单数 message 兼容 → TaskContract waiting_user 短路 → 快照恢复 → RC 剥离。"""
@@ -71,7 +99,11 @@ def prepare_chat_entry(*, data, resolve_session_id_fn):
     except Exception:
         pass
     # H1 修复：user_id/session_id/model 提前定义（原在快照恢复之后，快照段用未定义变量被 except 吞 → 从未恢复）
-    model = data.get("model", os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash"))
+    # ⭐ pm_1474 §一（一处定形）：默认之模型名 ＋ 别名归一 ⇒ **唯自 PA 注册表出**（⛔ 硬编别名 ／ ⛔ 二处各写）；
+    #   env `DEEPSEEK_MODEL` ／ 显式 `model` 之旧别名 ⇒ 归一为**注册表之实名**（承 pm_1472 §三）。
+    _prov = _pa_providers()
+    _raw_model = data.get("model", os.getenv("DEEPSEEK_MODEL", _prov.DEFAULT_MODEL.get("model")))
+    model = _prov.resolve_model(_raw_model) or _raw_model
     user_id = data.get("user_id", "default")
     session_id, _auto_sid = resolve_session_id_fn(user_id, data.get("session_id", "default"))
     state.update(
