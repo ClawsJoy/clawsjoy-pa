@@ -35,7 +35,24 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-V9 = Path(r"D:\clawsjoy_v9")
+
+def _org_path(env_name):
+    u"""组织物之径（⛔ 字面 · 承 pm_1409 §二.3）—— 缺 ⇒ `None`（调用处显「未接（组织版）」）。
+
+    自 `core.lib.paths.org_path`（功能级门 `PA_ORG_FACES` · 默认关）；⛔ 得导 ⇒ `None`（照实「未接」）。
+    """
+    try:
+        _root = str(Path(__file__).resolve().parents[2])
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+        from core.lib.paths import org_path
+        return org_path(env_name)
+    except Exception:
+        return None
+
+
+# ⭐ 2026-10-06（pm_1409 §二.3 · 批二）：仓根自 `__file__` 推（⛔ 字面绝对径）。
+V9 = Path(__file__).resolve().parents[2]
 PADIR = V9 / "data" / "v9" / "pa"
 INBOX = PADIR / "inbox"
 INBOX_DONE = INBOX / "_done"
@@ -44,8 +61,10 @@ BOOTLOG = PADIR / "boot_log.jsonl"
 LEDGER = PADIR / "ledger.json"
 DISPATCH = PADIR / "dispatch.jsonl"
 NOWINDOW = V9 / "scripts" / "win_pa" / "pa_nowindow.py"
-XINTONG = Path(r"D:\paseo-workspace\_tools\xintong_tick.py")
-XINTONG_DIR = Path(r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\02_协作\信通")
+# ⭐ 信通之器与箱 ＝ **组织专用**（pm_1409 §二.3 · 批二）⇒ `org_path`；缺 ⇒ `None`
+#   ⇒ 调用处显「未接（组织版）」而**跳过**（⛔ 崩 ／ ⛔ 字面兜底）。
+XINTONG = _org_path("PA_XINTONG_TICK")
+XINTONG_DIR = _org_path("PA_XINTONG_DIR")
 GATHER_CAP = 20       # ⭐ 防呆闸：攒件 > 此数 ⇒ 疑积压冒充离线攒件 ⇒ ⛔ 办（2026-10-05 首跑之事故）
 API = "http://127.0.0.1:5102"
 READER = "PM(boot_resume)"
@@ -214,8 +233,11 @@ def gather_mail(since_ts=None):
     ⛔ **不 ack**：我方之跑 ⛔ 代他方标「已读」⇒ 去重**唯凭我方水印** resume.json。
     ⛔ **无水印 ⇒ 不收**：无上次断点则无从判「离线窗」⇒ 首跑唯取 inbox。
     """
-    if not XINTONG.is_file():
-        warn("信通器不在 ⇒ 跳过（%s）" % XINTONG)
+    if not XINTONG or not Path(XINTONG).is_file():
+        warn("信通器未接（组织版）⇒ 跳过（PA_XINTONG_TICK ⛔ 设 ∨ 器不在）")
+        return []
+    if not XINTONG_DIR:
+        warn("信通箱未接（组织版）⇒ 跳过（PA_XINTONG_DIR ⛔ 设）")
         return []
     if not since_ts:
         say("   （⛔ 无水印 ⇒ 无从判离线窗 ⇒ 信通不收；首跑唯取 inbox）")
@@ -234,7 +256,7 @@ def gather_mail(since_ts=None):
         return []
     out, skipped = [], 0
     for name in (obj.get("all") or []):
-        fp = XINTONG_DIR / name
+        fp = Path(XINTONG_DIR) / name
         if _mtime_ts(fp) < _since:
             skipped += 1                      # ⭐ 离线窗之前 ⇒ 他方积压 ⇒ ⛔ 收
             continue
