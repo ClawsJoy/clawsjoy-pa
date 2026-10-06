@@ -131,3 +131,19 @@ def test_离线包之下载须含构建依():
     assert "wheel" in cmd, u"构建依 wheel ⛔ 在"
     old = [sys.executable, "-m", "pip", "download", "-d", "W", "-r", "R"]
     assert not ("setuptools" in old and "wheel" in old), u"反控：旧式 argv ⇒ 本判必红（有齿）"
+
+
+def test_洁闸零红_本仓之运行子集():
+    u"""pm_1478 §一 之齿：本仓之**运行子集** ⇒ 无 gitignored 之件（本机之产物 ⛔ 入包）。
+
+    由：`apply_bundle()` 见 `ig_payload` 非空 ⇒ 「⇒ 止」（rc 2）⇒ **真出包之路断**
+      （pm_1478 §一 一手：`core/lib/dependency_graph.json` 机器生成 ⇒ 未剔 ⇒ 闸红）。
+    ⚠ 唯走 `_payload_files`（⛔ `scan_live_paths` —— 那是秒级之扫）；本判唯核剔表 ＋ 一齿。
+    """
+    files = MB._payload_files(str(ROOT))
+    assert files, u"运行子集空 ⇒ 判据无齿"
+    assert MB.ignored_payload(str(ROOT), files) == [], u"运行子集含 gitignored 之件"
+    assert "core/lib/dependency_graph.json" in MB.EXCLUDE, u"机器生成物须入剔表（pm_1478 §一）"
+    if (ROOT / "core" / "lib" / "dependency_graph.json").is_file():
+        assert "core/lib/dependency_graph.json" in MB._payload_walk(str(ROOT)), \
+            u"反控（有齿）：该件确在走查之内 ⇒ 剔表正生效力（⛔ 空判）"

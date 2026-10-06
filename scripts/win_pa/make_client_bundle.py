@@ -50,6 +50,10 @@ SKIP_NAMES = ("__pycache__", ".git", "data", "logs", "dist", "node_modules", ".v
 EXCLUDE = (
     "config/secrets.yaml",                     # 密钥（⛔ 入包 · 值皆 ${ENV} 之占位）
     "core/lib/filter_net.json",                # 本机产物（`gitignore:49` 运行期自学习写）
+    # ⭐ pm_1478 §一：同族（机器生成 · `gitignore:59`）—— `apply_bundle()`
+    #   之 `ignored_payload`（`git check-ignore`）实锤 ⇒ 盖闸·二 = 1 ⇒ 「⇒ 止」（rc 2）。
+    #   其读者 `core/gateway/registry.py:188` 有 `.exists()` 守 ⇒ **可选**（客机首跑再生）。
+    "core/lib/dependency_graph.json",          # 本机产物（`gitignore:59` · `code_entity_extractor` 就地改写）
     "config/clawsjoy/memory/vector.yaml",      # 本机态（安装器立默认）
     "config/memory/memory_optimization.yaml",  # 本机态（安装器立默认）
     "config/v5/memory/config.yaml",            # 本机态（安装器立默认）
