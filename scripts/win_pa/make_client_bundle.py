@@ -34,6 +34,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -85,6 +86,27 @@ ORG_MARKS = (u"Obsidian/ClawsJoy", u"Obsidian\\ClawsJoy", u"paseo-workspace", u"
              # ⭐ pm_1468 §二.2：**开发机之仓根**（二树）—— 旧表漏之 ⇒ 洁闸盲区；
              #    「组织物」之一；⛔ 那二路径在客户机 ⛔ 在 ⇒ 入包 即 坏。
              u"clawsjoy_v9", u"clawsjoy_build")
+#: ⭐ 活径之扫之**域**（承 pm_1577 §三.3 之「洁闸之果须 0」· 我一手之探）：
+#   ⒜ 「活径」唯**文本之件**之谓 —— 二进制（`.exe` ／ `.dll` ／ `.pyd` ／ `.whl` ／ `.zip`）
+#     以注音式读 ⇒ **噪**（我一手：CPython 之 `python312.dll` ／ 第三方 `.pyd` 内嵌**其 CI 之建径**
+#     ⇒ `C:/Users/runneradmin/…` 3,381 处 ⇒ **假红** · 承「⛔ 假红」）。
+#   ⒝ `runtime\` ＝ **自带运行时**（embed CPython ＋ PyPI 之轮 · **第三方之件**）
+#     ⇒ ⛔ 本仓之源 ⇒ 其内之字面 ⛔ 作「本仓泄径」之证 ⇒ 扫 ⛔ 及（**明书** · 报 PM 裁）。
+#   ⚠ 「本仓之码」仍全扫（正控 —— 见 self_test）。
+SCAN_SKIP_PREFIX = (u"runtime/",)
+
+
+def _is_text(b):
+    u"""文本 ∨ 二进制（含 NUL ⇒ 二进制；UTF-8 严译败 ⇒ 二进制）—— 器取。"""
+    if b"\x00" in b[:4096]:
+        return False
+    try:
+        b.decode(u"utf-8")
+        return True
+    except Exception:
+        return False
+
+
 #: 「开发机活径」之标（Windows 用户目录 —— 承 pm_1396 §二.5 之「今 29 ＋ 2」之 2）
 #  ⚠ 以「拼」造之（⛔ 字面）—— 否则本器之**自身源**亦中其式 ⇒ 「器自指」之假红。
 DEV_MARKS = (u"C:" + u"/Users/", u"C:" + BS + u"Users" + BS, u"/mnt/c/" + u"Users/")
@@ -118,11 +140,16 @@ def scan_live_paths(root, files):
     for rel in files:
         if rel.lower().endswith(".md"):
             continue
+        if any(rel.startswith(x) for x in SCAN_SKIP_PREFIX):
+            continue
         p = os.path.join(root, rel.replace("/", os.sep))
         try:
-            src = io.open(p, encoding="utf-8", errors="replace").read()
+            raw = io.open(p, "rb").read()
         except Exception:
             continue
+        if not _is_text(raw):
+            continue
+        src = raw.decode("utf-8", "replace")
         ds = _docstring_lines(src) if rel.lower().endswith(".py") else set()
         for i, line in enumerate(src.splitlines(), 1):
             if i in ds or _LINE_COMMENT.match(line):
@@ -262,6 +289,28 @@ def _bundle_files(path):
     return sorted(out)
 
 
+#: 自带运行时之件（供入册）—— 剔 `__pycache__` ／ 点件（与运行子集同式）
+#: ⚠ 自带运行时之**剔之名**（**一处定形**）—— ⛔ 用本仓之 `SKIP_NAMES`！
+#   我一手速（pm_1577 §三.3）：`SKIP_NAMES` 含 `logs` ／ `data`（为**本仓之生成物**而设）
+#   而 site-packages 里 `opentelemetry/proto/collector/logs/` 乃**真代码**
+#   ⇒ 以之剔则 `ModuleNotFoundError: No module named 'opentelemetry.proto.collector.logs'`
+#   。本树唯剔：`__pycache__` ／ `.git` ／ `node_modules` ／ `.venv` ／ 点件（缓存与 VCS 之属）。
+RUNTIME_SKIP_NAMES = ("__pycache__", ".git", "node_modules", ".venv",)
+
+
+def _runtime_walk(src):
+    u"""自带运行时之**入册**之件（相对 `src` · 剔 `__pycache__` ／ `.pyc` ／ 点件）。"""
+    out = []
+    for dp, dns, fns in os.walk(src):
+        dns[:] = [d for d in dns if d not in RUNTIME_SKIP_NAMES and not d.startswith(".")]
+        for fn in fns:
+            if fn.endswith(".pyc") or ".before_" in fn or fn.startswith("."):
+                continue
+            fp = os.path.join(dp, fn)
+            out.append(os.path.relpath(fp, src).replace(os.sep, "/"))
+    return sorted(out)
+
+
 def _sha256(path):
     h = hashlib.sha256()
     with io.open(path, "rb") as fh:
@@ -362,7 +411,7 @@ def manifest_for(entries, dists, src):
             "件之表": list(entries),
             "口径": u"离线包：wheel\\ 之依全 ∧ 运行子集之 sha256；⛔ 含模型（须另下）"}
 
-def apply_bundle(root=None, out=None, wheel=True, json_out=False):
+def apply_bundle(root=None, out=None, wheel=True, json_out=False, runtime=None):
     u"""真做（⚠ 须**网**）—— ⓐ `pip download` 入 `wheel\\` ⓑ 复运行子集 ⓒ 写册（逐件 sha256）。
     ⛔ 起停 ／ ⛔ 改本仓（唯写 `out`）。"""
     p = plan_bundle(root, out)
@@ -393,6 +442,10 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
         lines.append(u"[bundle] ⛔ 源之印 ⛔ 得判（git ⛔ 用 ∨ 非仓 ∨ HEAD 无）⇒ 止"
                      u"（包须自证其出处 · 承 pm_1573 §二）")
         return 2, lines
+    rt_src = runtime
+    if rt_src and not os.path.isdir(rt_src):
+        lines.append(u"[bundle] \u26d4 \u89c1\u81ea\u5e26\u8fd0\u884c\u65f6\uff1a%s\uff08\u26d4 \u9759\u9ed8\uff09" % rt_src)
+        return 2, lines
     os.makedirs(p["wheel_dir"], exist_ok=True)
     if wheel:
         cmd = download_cmd(p["wheel_dir"], os.path.join(p["root"], "requirements-runtime.txt"))
@@ -405,6 +458,20 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
     if miss:
         lines.append(u"[bundle] ⛔ wheel\\ 仍缺 %d：%s ⇒ 离线 ⛔ 可装" % (len(miss), u"、".join(miss[:8])))
         return 2, lines
+    rt_files = _runtime_walk(rt_src) if rt_src else []
+    if rt_files:
+        rt_dst = os.path.join(p["out"], u"runtime")
+        if os.path.isdir(rt_dst):
+            shutil.rmtree(rt_dst)
+        n_rt = 0
+        for rel in rt_files:
+            src = os.path.join(rt_src, rel.replace("/", os.sep))
+            dst = os.path.join(rt_dst, rel.replace("/", os.sep))
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            with io.open(src, "rb") as a, io.open(dst, "wb") as b:
+                b.write(a.read())
+            n_rt += 1
+        lines.append(u"[bundle] \u81ea\u5e26\u8fd0\u884c\u65f6\uff1a%s \u21d2 runtime\\ \uff08%d \u4ef6 \u00b7 \u5165\u518c\uff09" % (rt_src, n_rt))
     entries = []
     for rel in p["payload_files"]:
         src = os.path.join(p["root"], rel.replace("/", os.sep))
@@ -413,6 +480,10 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
         with io.open(src, "rb") as a, io.open(dst, "wb") as b:
             b.write(a.read())
         entries.append({"rel": rel, "sha256": _sha256(dst), "bytes": os.path.getsize(dst)})
+    for rel in rt_files:
+        fp = os.path.join(p["out"], u"runtime", rel.replace("/", os.sep))
+        entries.append({"rel": u"runtime/" + rel, "sha256": _sha256(fp),
+                        "bytes": os.path.getsize(fp)})
     man = manifest_for(entries, p["dists"], p["源"])
     io.open(os.path.join(p["out"], "bundle_manifest.json"), "w", encoding="utf-8", newline="").write(
         json.dumps(man, ensure_ascii=False, indent=1))
@@ -486,6 +557,25 @@ def self_test():
         'X = "D:' + BS + 'clawsjoy_lab' + BS + 'y.py"' + chr(10))
     say(len(live_org_paths(os.path.join(t, "pl"), ["core/pa/g.py"])) == 0,
         u"反控：同前缀异尾（clawsjoy_lab）⇒ ⛔ 判红（⛔ 宽于其分）")
+    # \u2b50 pm_1577 \u00a7\u4e09.3\uff1a\u6d3b\u5f84\u4e4b\u626b\u4e4b**\u57df** \u2014\u2014 \u24dc \u4e8c\u8fdb\u5236 \u26d4 \u5165\uff08\u5185\u5d4c\u4e4b\u5efa\u5f84 \uff1d \u566a\uff09
+    #   \u24dd `runtime\\`\uff08\u81ea\u5e26\u8fd0\u884c\u65f6 \uff1d \u7b2c\u4e09\u65b9\u4e4b\u4ef6\uff09\u26d4 \u5165\u626b\uff08\u660e\u4e66 \u00b7 \u62a5 PM \u88c1\uff09
+    io.open(os.path.join(pd, "h.dll"), "wb").write(b"\x00C:/Users/runneradmin/x" + bytes(4))
+    say(len(live_offenders(os.path.join(t, "pl"), ["core/pa/h.dll"])) == 0,
+        u"\u53cd\u63a7\uff1a\u4e8c\u8fdb\u5236\u4e4b\u4ef6\uff08\u542b NUL\uff09\u21d2 \u26d4 \u5165\u626b\uff08\u5185\u5d4c\u4e4b\u5efa\u5f84 \uff1d \u566a \u00b7 \u26d4 \u5047\u7ea2\uff09")
+    io.open(os.path.join(pd, "i.py"), "w", encoding="utf-8").write('Y = "C:' + "/Users/" + 'x"' + chr(10))
+    say(len(live_offenders(os.path.join(t, "pl"), ["core/pa/i.py"])) == 1,
+        u"\u6b63\u63a7\uff1a\u6587\u672c\u4e4b\u4ef6\uff08.py\uff09\u540c\u5f0f \u21d2 \u5fc5\u901f\uff08\u26d4 \u56e0\u300c\u26d4 \u4e8c\u8fdb\u5236\u300d\u800c\u6f0f\uff09")
+    rd = os.path.join(t, "pl", "runtime", "Lib")
+    os.makedirs(rd, exist_ok=True)
+    io.open(os.path.join(rd, "j.py"), "w", encoding="utf-8").write('Z = "C:' + "/Users/" + 'x"' + chr(10))
+    say(len(live_offenders(os.path.join(t, "pl"), ["runtime/Lib/j.py"])) == 0,
+        u"\u53cd\u63a7\uff1aruntime\\\uff08\u81ea\u5e26\u8fd0\u884c\u65f6 \u00b7 \u7b2c\u4e09\u65b9\u4e4b\u4ef6\uff09\u21d2 \u26d4 \u5165\u626b\uff08\u660e\u4e66 \u00b7 \u975e\u672c\u4ed3\u4e4b\u6e90\uff09")
+    _rd = os.path.join(t, "pl", "runtime", "Lib", "site-packages", "opentelemetry", "proto", "collector", "logs")
+    os.makedirs(_rd, exist_ok=True)
+    io.open(os.path.join(_rd, "__init__.py"), "w", encoding="utf-8").write("x = 1" + chr(10))
+    _rw = _runtime_walk(os.path.join(t, "pl", "runtime"))
+    say(any(x.endswith("collector/logs/__init__.py") for x in _rw),
+        u"\u53cd\u63a7\uff1a\u81ea\u5e26\u8fd0\u884c\u65f6\u4e4b\u5254\u26d4 \u5403\u6389 `logs` \u540d\u4e4b\u771f\u4ee3\u7801\uff08site-packages \u4e4b\u5e38\u89c1\u540d\uff09")
     say(len(required_dists()) >= 10 and "chromadb" in [_norm(d) for d in required_dists()],
         u"正控：真源之必需节含 chromadb（⚠ 若红 ⇒ 本机 requirements.txt 已漂）")
     _git = shutil.which("git")
@@ -538,6 +628,8 @@ def main(argv):
     ap.add_argument("--out", default="")
     ap.add_argument("--go", action="store_true")
     ap.add_argument("--check", default="")
+    ap.add_argument("--runtime", default="", help=u"自带运行时之径（入包 ＋ 入册）")
+    ap.add_argument("--no-wheel", action="store_true", help=u"⛔ 跑 pip download（轮已在）")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args(argv)
@@ -582,9 +674,11 @@ def main(argv):
             _s = p["源"]
             print(u"  源（pm_1573 §二）：commit %s ／ tree %s ／ 分支 %s ／ 刻 %s"
                   % (_s.get("commit"), _s.get("tree"), _s.get("分支"), _s.get("刻")))
-            print(u"  将动：① pip download -d %s -r requirements-runtime.txt ② 复运行子集 ③ 写册" % p["wheel_dir"])
+            print(u"  将动：① pip download -d %s -r requirements-runtime.txt ② 复运行子集 ③ 写册"
+                  u" ④ 自带运行时（--runtime）入包 ＋ 入册" % p["wheel_dir"])
         return 0
-    rc, lines = apply_bundle(a.root, p["out"], wheel=True, json_out=a.json)
+    rc, lines = apply_bundle(a.root, p["out"], wheel=not a.no_wheel, json_out=a.json,
+                             runtime=a.runtime or None)
     for x in lines:
         print(x)
     return rc

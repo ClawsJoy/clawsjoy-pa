@@ -339,9 +339,47 @@ def collect(root):
     return port, src, items
 
 
-def verdict(items):
-    bad = [n for n, (ok, _r, _x) in items if not ok]
+#: ⭐ **降级之闸（advisory）** —— 报而不阻（承 pm_1569 §三「本机模型可选」· pm_1577 §四.1「净机必起」）。
+#   ⒜ `ollama` 之三态（未接 ／ 在·无权重 ／ 可用）：**本机模型可选**（主线 ＝ 云端 deepseek 系）
+#      ⇒ 其 ⛔ 可用**不阻起**（⛔ 阻 ⇒ 净机恒⛔起 ＝ ⒞ 之的落空）。
+#   ⒝ 「向量库**未见**」：**首启之常貌** —— 真源 `core/lib/vector_knowledge_center.py:47` 之
+#      `_init` 先 `mkdir(parents=True, exist_ok=True)` 再 `PersistentClient` ⇒ **自建**
+#      ⇒ 「未见」⛔ 是病 ⇒ **⛔ 阻起**。
+#   ⚠ 「向量库 **不可写**」仍**阻起**（真病 —— 原器之的 · P4 之正控）；`--strict` ⇒ 全按旧律（皆阻）。
+ADVISORY_PREFIXES = ('ollama',)
+ADVISORY_NEEDLES = ('未见',)
+
+
+def is_advisory(name, reason=u''):
+    u'''该闸「报而不阻」否（**一处定形**）—— 唯上列二族；余者皆阻起。'''
+    n = name or u''
+    if any(n.startswith(p) for p in ADVISORY_PREFIXES):
+        return True
+    if n.startswith(u'向量库可写') and any(x in (reason or u'') for x in ADVISORY_NEEDLES):
+        return True
+    return False
+
+
+def verdict(items, strict=False):
+    u'''总判 ⇒ (rc, 先修之名)。rc 0 ＝ 可起。
+
+    ⚠ 降级之闸（`is_advisory`）缺 ⇒ 记 **WARN** 而 ⛔ 计入 rc（除 `strict` ／ `--strict` 之旧律）。
+    '''
+    bad = []
+    for n, (ok, reason, _x) in items:
+        if ok:
+            continue
+        if (not strict) and is_advisory(n, reason):
+            continue
+        bad.append(n)
     return (0 if not bad else 2), bad
+
+
+def degraded(items, strict=False):
+    u'''降级之闸之名（报而行）—— `strict` 之下恒空。'''
+    if strict:
+        return []
+    return [n for n, (ok, reason, _x) in items if (not ok) and is_advisory(n, reason)]
 
 
 def selftest():
@@ -351,8 +389,8 @@ def selftest():
         print(u'  %s %s' % (u'✓' if ok else u'✗', name))
         hits.append(bool(ok))
 
-    def case(name, expect, items):
-        rc, bad = verdict(items)
+    def case(name, expect, items, strict=False):
+        rc, bad = verdict(items, strict)
         say(rc == expect, u'%s ⇒ rc=%d 期望=%d%s' % (name, rc, expect,
                                                      (u'（点名：' + u'；'.join(bad) + u'）') if bad else u''))
 
@@ -382,7 +420,16 @@ def selftest():
     say(_free[0] is True and u'可绑' in _free[1], u'反例：空端口 ⇒ 判「可绑」')
     case(u'反例：向量库 readonly ⇒ 判红', 2,
          ok6[:3] + [(u'向量库可写', classify_db_error(ro) + (u'',))] + ok6[4:])
-    case(u'正控：ollama 未接 ⇒ 判红', 2, ok6[:4] + [(u'ollama', classify_ollama(False, None))] + ok6[5:])
+    _oll = ok6[:4] + [(u'ollama %s:%d' % (HOST, OLLAMA_PORT), classify_ollama(False, None))] + ok6[5:]
+    case(u'正控：ollama 未接 ⇒ **降级**（报而⛔ 阻起）', 0, _oll)
+    case(u'反控：--strict 之下 ollama 未接 ⇒ 判红（旧律）', 2, _oll, strict=True)
+    say(degraded(_oll) == [u'ollama %s:%d' % (HOST, OLLAMA_PORT)],
+        u'正控：降级之名入 [降级] 之列（供人读）')
+    _vecnew = ok6[:5] + [(u'向量库可写', probe_vector_db(os.path.join(sys.prefix, '__nope_vk__')))] + ok6[6:]
+    _vn = _vecnew[5][1][1]
+    say(u'未见' in _vn, u'正控：首启（库目录 ⛔ 见）⇒ 因含「未见」')
+    case(u'正控：向量库「未见」（首启 · chromadb 自建）⇒ **降级**', 0, _vecnew)
+    case(u'反控：--strict 之下「未见」⇒ 判红（旧律）', 2, _vecnew, strict=True)
     # ⭐ 承 PM 1369 §三.2：ollama 三态须**分栏**（⛔ 只退 rc · ⛔ 装成可用）
     _oa = classify_ollama(False, None)
     say(_oa[0] is False and (u'⛔ 未接' in _oa[1]) and (u'装 Ollama' in _oa[1]),
@@ -456,6 +503,8 @@ def main():
     ap = argparse.ArgumentParser(add_help=True)
     ap.add_argument('--root', default=u'')
     ap.add_argument('--self-test', action='store_true')
+    ap.add_argument('--strict', action='store_true',
+                    help=u'旧律：降级之闸亦阻起（默认关）')
     a = ap.parse_args()
     if a.self_test:
         return selftest()
@@ -471,13 +520,20 @@ def main():
         print(u'[自检器异常] %s: %s（rc=1 ⇒ 视同未审 · ⛔ 起）' % (type(e).__name__, e))
         return 1
     print(u'[自检] PA 网关启动前 · root=%s\n[端口真源] %s' % (root, src))
+    _deg = degraded(items, a.strict)
     for name, (ok, reason, note) in items:
-        print(u'  %s %-18s ⇒ %s%s' % (u'[PASS]' if ok else u'[FAIL]', name, reason,
-                                      (u'（' + note + u'）') if note else u''))
-    rc, bad = verdict(items)
+        _warn = (not ok) and is_advisory(name, reason) and (not a.strict)
+        print(u'  %s %-18s ⇒ %s%s' % (u'[PASS]' if ok else (u'[WARN]' if _warn else u'[FAIL]'),
+                                      name, reason, (u'（' + note + u'）') if note else u''))
+    rc, bad = verdict(items, a.strict)
+    if _deg:
+        print(u'[降级] ⚠ %d 项报而⛔ 阻起（可选之能 · 承 pm_1569 §三）：%s'
+              % (len(_deg), u' · '.join(_deg)))
+        print(u'[降级] ⚠ 本机模型路：走云端；向量库：首用自建。⛔ 影响网关与页面。')
     print(u'[总判] %s（%d/%d）%s' % (u'PASS ⇒ 可起' if rc == 0 else u'FAIL ⇒ ⛔ 起',
-                                    len(items) - len(bad), len(items),
-                                    (u'｜先修：' + u' · '.join(bad)) if bad else u''))
+                                    len(items) - len(bad) - len(_deg), len(items),
+                                    (u'｜先修：' + u' · '.join(bad)) if bad
+                                    else ((u'（%d 项降级（⛔ 阻起）、详上「[降级]」）' % len(_deg)) if _deg else u'')))
     return rc
 
 
