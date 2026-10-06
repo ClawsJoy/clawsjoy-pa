@@ -239,7 +239,8 @@ async function exportDeckThumbs(btn){
   const out=card.querySelector('.ppt-export-log');
   /* 渲染目录（承 pm_1385 §一 · 件④ ⓒ · 拔活硬编）：⛔ 前端自持径 —— 旧为开发机桌面之硬编
      （含盘符 ＋ 用户名）⇒ 净机必败。真源 ＝ 后端**一处出径** GET /v9/pa/env 之 `paths.render`
-     （core/pa/env_face.py:157-174）＋ `paths_src.render`。取不到时二分（承 pm_1346 §二.1
+     （`core/pa/env_face.py` 之 `resolve_paths()` 之 `render` 键 —— ⭐ 引位置用「符号之锚」·
+     ⛔ 手书行号 · 承 pm_1425 §二.2）＋ `paths_src.render`。取不到时二分（承 pm_1346 §二.1
      「身分不同者 ⛔ 同支」）：① 后端未应答 ⇒ `PA_GAP.down` ② 应答在而键为 null ⇒ `PA_GAP.todo`
      （附后端之为何）。⛔ 静默 ／ ⛔ 以字面径兜底（承 pm_1367 §二.1）。
      ⭐ 径之消费者之界（承 pm_1423 §二.3）：本面为径之**唯一**消费者（器取 · 唯本档取 env 之 `paths`）
