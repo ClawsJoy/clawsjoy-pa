@@ -30,7 +30,7 @@ import threading
 import time
 from pathlib import Path
 
-from core.lib.paths import vault_root
+from core.lib.paths import org_path, vault_root
 from core.pa import _proc as _proc   # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
 ENV_VERSION = "2026-10-05.3"
@@ -40,16 +40,18 @@ SRC_PASEO = "paseo agent ls --json"
 SRC_SCAN = "core/pa/agent_scan.py"
 SRC_ROSTER = "data/v9/pa/roster.json"
 SRC_PROVIDERS = "core/pa/providers.py"
-SRC_CONFIG = r"D:\paseo-home\config.json"
+# ⭐ 承 pm_1399 §二.3（批一）：组织物之径 ⇒ env ＋ **组织版功能级开关**（缺 ⇒ 「未接（组织版）」· ⛔ 字面）
+SRC_CONFIG = org_path("PA_SEAT_CONFIG")
 SRC_ROUTES = "core/pa/gateway_routes.py"
-SRC_TOOLS = r"D:\paseo-workspace\_tools"
+SRC_TOOLS = org_path("PA_SEAT_TOOLS")
 
 #: 知识库 —— **逐库**入册（⛔ 只报 `收件箱`）
 KB_LIBS = ("内容工坊", "codex", "paseo-pm", os.path.join("_老板", "笔记"), "写小说专栏")
 
 #: 工具面 —— 逐径 ＋ 逐 glob（面之径逐字）；base 之 `REPO:` 前缀 ⇒ 由 REPO_ROOT 拼
-TOOL_DIRS = (
-    (SRC_TOOLS, ("*.py",), "paseo 工具箱 _tools"),
+TOOL_DIRS = tuple(
+    [(SRC_TOOLS, ("*.py",), "paseo 工具箱 _tools")] if SRC_TOOLS else []
+) + (
     (None, ("*.py",), "内容工坊 08_工具"),
     (None, ("*.py", "*.ps1"), "信通插件"),
     ("REPO:scripts/win_pa", ("*.py",), "V9 win_pa 脚本"),
@@ -157,7 +159,8 @@ def resolve_paths():
         p["log"], s["log"] = None, "未接：unified_config 不可读（%s）" % type(e).__name__
     v, _s = _env_first(PATH_ENV["tools"])
     p["tools"] = v or SRC_TOOLS
-    s["tools"] = _s or "core/pa/env_face.py:SRC_TOOLS（既有之一处）"
+    s["tools"] = _s or ("core/pa/env_face.py:SRC_TOOLS（既有之一处）" if SRC_TOOLS
+                        else "未接（组织版）：env PA_TOOLS_DIR ∨ PA_SEAT_TOOLS 皆无")
     p["npm_global"], s["npm_global"] = _npm_global()
     v, _s = _env_first(PATH_ENV["render"])
     if v:
@@ -299,7 +302,6 @@ def allowlist():
     v = _vault()
     dirs = [
         {"path": str(REPO_ROOT / "scripts" / "win_pa"), "label": "V9 win_pa 脚本"},
-        {"path": SRC_TOOLS, "label": "paseo 工具箱 _tools"},
         {"path": str(v / "内容工坊" / "08_工具"), "label": "内容工坊 08_工具"},
         {"path": str(v / "内容工坊" / "08_工具" / "信通插件"), "label": "信通插件"},
         {"path": str(v / "内容工坊"), "label": "知识库 内容工坊"},
@@ -308,6 +310,8 @@ def allowlist():
         {"path": str(v / "_老板" / "笔记"), "label": "知识库 _老板/笔记"},
         {"path": str(v / "写小说专栏"), "label": "知识库 写小说专栏"},
     ]
+    if SRC_TOOLS:
+        dirs.insert(1, {"path": SRC_TOOLS, "label": "paseo 工具箱 _tools"})
     files = [
         {"path": str(REPO_ROOT / "core" / "pa" / "gateway_routes.py"), "label": "本网关路由"},
         {"path": str(REPO_ROOT / "core" / "pa" / "providers.py"),
@@ -338,7 +342,7 @@ def allowlist():
 
 
 def self_config_path():
-    return SRC_CONFIG
+    return SRC_CONFIG or ""
 
 
 def _norm(p):
@@ -525,6 +529,8 @@ def tools_col(route_count=None):
 # ============================== resources ==============================
 def _secret_bool():
     """唯**键名** ＋ 布尔（⛔ 值）。**绝不**把值写进任何返回。"""
+    if not SRC_CONFIG:
+        return "未接（组织版）"
     try:
         with open(SRC_CONFIG, encoding="utf-8-sig") as fh:
             doc = json.load(fh)
@@ -588,7 +594,7 @@ def resources_col():
             out.append(_item("disk:%s" % d[0], d, "disk", "disk:%s" % d, "只读",
                              "缺（%s）" % type(e).__name__))
     out.append(_item("secrets:paseo-home", "Paseo 供应商密钥（唯布尔）", "secret",
-                     SRC_CONFIG, "需授权", _secret_bool()))
+                     SRC_CONFIG or "未接（组织版）", "需授权", _secret_bool()))
     return out, "", "resources"
 
 
@@ -690,7 +696,7 @@ def build_env(route_count=None):
         "sources": {
             "agents": "%s ＋ %s（其果落 %s）" % (SRC_PASEO, SRC_SCAN, SRC_ROSTER),
             "kb": "%s（vault_root() 逐库）" % vault,
-            "tools": "%s ＋ %s ＋ %s" % (SRC_TOOLS, vault, SRC_ROUTES),
+            "tools": "%s ＋ %s ＋ %s" % (SRC_TOOLS or "未接（组织版）", vault, SRC_ROUTES),
             "resources": "%s ／ %s · SERVICES ／ env:CLAWSJOY_NUM_CTX ／ nvidia-smi -L ／ disk_usage"
                          % (SRC_PROVIDERS, SRC_SCAN),
         },
