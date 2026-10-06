@@ -7,6 +7,8 @@ u"""(甲′) Win-PA 一键安装器 —— 净机「装得上」（承 pm_1384 �
   ⓒ ⛔ 动 data/** 之**文件**（唯立目录 ＋ 前置闸之「自建自删」探针 · 同 preflight_start 之式）
   ⓓ 反控：前置 ⛔ 足 ⇒ **⛔ 装** ∧ 逐条报因（⛔ 装成可用 —— 承产品三禁）
   ⓔ 系统动作（计划任务之注册）⛔ 缺省做 —— 须显式 --register-tasks（⛔ 提权／⛔ 默默改机）
+  ⓕ 离线（承 pm_1386 §二.2）：--offline ⇒ 闸「离线包 wheel」＋ `pip install --no-index
+     --find-links=<wheel>`（⛔ 现场拉网）；真装依赖须显式 --go --pip-install（⛔ 缺省动机）
 
 前置闸（**显形** · 人话之因 ＋ 修之门；⛔ 静默过）：
   1. Python 版（>= 3.10 · 承 pyproject requires-python）
@@ -68,6 +70,34 @@ def _pf():
         return None
 
 
+_MC_ERR = None
+
+
+def _mc():
+    u"""离线包器（**一处出**）：make_client_bundle.py —— ⛔ 本器另写一遍「依之表」（二源必漂）。"""
+    global _MC_ERR
+    try:
+        if HERE not in sys.path:
+            sys.path.insert(0, HERE)
+        return importlib.import_module("make_client_bundle")
+    except Exception as e:
+        _MC_ERR = u"%s: %s" % (type(e).__name__, str(e)[:160])
+        return None
+
+
+def install_deps(wheel_dir, offline):
+    u"""⭐ 装依赖（**唯 `--go --pip-install` 方行** —— ⛔ 缺省动机 · 承五约 ⓔ 之式）。
+
+    ⓕ 离线（承 pm_1386 §二.2）：`offline` ⇒ `--no-index --find-links=<wheel>` ⇒ **⛔ 现场拉网**。
+    """
+    cmd = [sys.executable, "-m", "pip", "install"]
+    if offline:
+        cmd += ["--no-index", "--find-links", wheel_dir]
+    cmd += ["-r", os.path.join(ROOT, "requirements-runtime.txt")]
+    print(u"[install] pip（%s）: %s" % (u"离线" if offline else u"**须网**", u" ".join(cmd)))
+    return subprocess.run(cmd).returncode
+
+
 def _vram():
     u"""显存（MiB）—— `nvidia-smi` 只读；⛔ 有 ⇒ (None, 人话之因)。"""
     try:
@@ -96,7 +126,7 @@ def _self_answering(port):
         return False
 
 
-def preflight_gates():
+def preflight_gates(offline=False, wheel_dir=None):
     u"""前置闸（逐条:**人话之因 ＋ 修之门** · ⛔ 只退 rc）—— 返回 [{name, ok, reason, note}]。"""
     g = []
     ok = sys.version_info >= PY_MIN
@@ -149,6 +179,20 @@ def preflight_gates():
     if not _vok:
         _vnote = u"修之门：换机 ∨ 用远端算力（P2 · 未接）—— 硬闸 >= %d MiB" % VRAM_MIN_MIB
     g.append({"name": u"显存 >= %d MiB" % VRAM_MIN_MIB, "ok": bool(_vok), "reason": _vr, "note": _vnote})
+    if offline:
+        _b = _mc()
+        if _b is None:
+            g.append({"name": u"离线包 wheel", "ok": False,
+                      "reason": u"离线包器不可用（%s）" % _MC_ERR,
+                      "note": u"修之门：查 scripts/win_pa/make_client_bundle.py 是否在"})
+        else:
+            _ds = _b.required_dists(ROOT)
+            _miss = _b.missing_wheels(wheel_dir or os.path.join(ROOT, "wheel"), _ds)
+            g.append({"name": u"离线包 wheel", "ok": not _miss,
+                      "reason": (u"缺 %d 个：%s" % (len(_miss), u"、".join(_miss[:6])) if _miss
+                                 else u"全（%d 依）" % len(_ds)),
+                      "note": (u"修之门：在有网之机跑 python -X utf8 scripts" + BS
+                               + u"win_pa" + BS + u"make_client_bundle.py --go") if _miss else u""})
     # ⚠ 自测专用之钩（⛔ 常规用）：env PA_INSTALL_FORCE_FAIL=<闸名之子串> ⇒ 置该闸败 ⇒ 验「⛔ 足 ⇒ ⛔ 装」
     _f = os.environ.get("PA_INSTALL_FORCE_FAIL")
     if _f:
@@ -187,8 +231,8 @@ def task_items():
     ]
 
 
-def plan():
-    return {"preflight": preflight_gates(), "dirs": dir_items(), "tasks": task_items()}
+def plan(offline=False, wheel_dir=None):
+    return {"preflight": preflight_gates(offline, wheel_dir), "dirs": dir_items(), "tasks": task_items()}
 
 
 def render_and_maybe_apply(p, dry, register_tasks=False):
@@ -299,6 +343,15 @@ def main(argv):
         return self_test()
     dry = "--go" not in args
     register_tasks = "--register-tasks" in args
+    offline = "--offline" in args
+    pip_install = "--pip-install" in args
+    wheel_dir = os.path.join(ROOT, "wheel")
+    for _i, _a in enumerate(args):
+        if _a == "--wheel-dir" and _i + 1 < len(args):
+            wheel_dir = args[_i + 1]
+    if pip_install and "--json" in args:
+        print(u"[install] \u26d4 --pip-install \u26d4 \u914d --json\uff08\u7eaf JSON \u987b\u4fdd\uff09")
+        return 3
     # ⚠ `--json` 须**纯 JSON**：前置闸会 import core 之配置（其向 stdout 打 [CONFIG] 数行）
     #   ⇒ 缺省径照印；`--json` 径**收其杂记**（归 `杂记` 键 · ⛔ 弃 —— 承「照实」）
     _chatter = u""
@@ -315,17 +368,22 @@ def main(argv):
 
         _buf = _Sink()
         with _cl.redirect_stdout(_buf):
-            p = plan()
+            p = plan(offline, wheel_dir)
             rc, lines = render_and_maybe_apply(p, dry, register_tasks)
         _chatter = _buf.getvalue()
         print(json.dumps({"version": VERSION, "dry_run": dry, "register_tasks": register_tasks,
                           "rc": rc, "plan": p, "lines": lines, "杂记": _chatter},
                          ensure_ascii=False, indent=2))
     else:
-        p = plan()
+        p = plan(offline, wheel_dir)
         rc, lines = render_and_maybe_apply(p, dry, register_tasks)
         for x in lines:
             print(x)
+        if not offline:
+            print(u"[install] \u26a0 \u672a --offline \u21d2 \u88c5\u4f9d\u8d56\u987b**\u7f51**"
+                  u"\uff08\u26d4 \u6f14\u793a\u73b0\u573a\u62c9\u7f51 \u00b7 \u627f pm_1386 \u00a7\u4e8c.2 \u24d5\uff09")
+    if rc == 0 and pip_install and "--go" in args:
+        rc = install_deps(wheel_dir, offline)
     return rc
 
 
