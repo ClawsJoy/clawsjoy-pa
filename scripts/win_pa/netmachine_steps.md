@@ -1,0 +1,37 @@
+# 净机逐跳（M2 · 首轮）—— 「装得上 ／ 起得来 ／ 卸得掉」
+
+承 pm_1440 §二.2 ／ §三.1。**逐跳 ＝ 谁按 ／ 令（逐字）／ 期望之读 ／ 留痕**。
+**按键者 ＝ 老板**（⛔ 本方远程 ／ ⛔ 代操作 —— 承「⛔ 代操作」之族）。
+径之基 ＝ **包之根**（下以 `<包>` 代之 —— 形如 `D:\clawsjoy_pkg_20261006`）。
+**首轮 ⛔ 装模型**（承 pm_1440 §一.1）⇒ Ollama 之期望 ＝「未接」（**正验之一态**）。
+
+| 跳 | 令（逐字 · 于 `<包>` 下） | 期望之读 | 留痕 |
+|---|---|---|---|
+| J0 | `python -X utf8 scripts\win_pa\netmachine_check.py` | `=> 判：净（⛔ 之项 0）` | 全文 |
+| J1 | `python -X utf8 scripts\win_pa\install_win_pa.py` | 干跑：前置闸逐条 ＋ 「将动」之表（⛔ 动盘） | 全文 |
+| J2 | `python -X utf8 scripts\win_pa\install_win_pa.py --offline` | 闸「离线包 wheel」之读（rc 0） | 全文 |
+| J3 | `python -X utf8 scripts\win_pa\install_win_pa.py --go --offline --pip-install` | 立 ＋ 装（**无网**）· rc 0 | 全文 |
+| J4 | `scripts\win_pa\start_win_pa.bat` | 网关起（`127.0.0.1:5102`） | 窗之文 |
+| J5 | `python -X utf8 scripts\win_pa\probe_alive.py` | 探活之读（三态） | 全文 |
+| J6 | 开 `http://127.0.0.1:5102/pa` | 首屏 ＋ **四态**之显形（未接 ／ ⛔ 不接 ／ 不可达 ／ 陈旧） | 截屏 |
+| J7 | `python -X utf8 scripts\win_pa\uninstall_win_pa.py --go` | 已删 ∨「无物可卸」· rc 0 | 全文 |
+| J8 | 覆 J0（`netmachine_check.py`） | 判 ＋ **痕迹**（起后 ／ 卸后之异 —— 照实） | 全文 |
+
+## 校验（J0 之前 · 一跳）
+
+| 跳 | 令（逐字 · 于 `<包>` 下） | 期望之读 |
+|---|---|---|
+| C0 | `python -X utf8 scripts\win_pa\make_client_bundle.py --check .` | 印全合（依缺 0 ／ 印缺 0 ／ 印异 0 ／ 活∧组织物 0）· rc 0 |
+
+## 投递之形
+
+- ⭐ **推荐 ⒜：U 盘 ／ 网盘（离线 zip）** —— **可核**（`sha256` 逐件）／ **可断**（用毕即拔）／ **无残留**。
+- ⒝ 同网段之共享夹：⚠ 须**用毕即关**（⛔ 长期开共享）。
+- ⭐ **并附**：`bundle_manifest.json`（逐件 `sha256` ＋ 依之表）⇒ **净机侧可逐条核**（承 `C0`）。
+
+## 留痕之式（供逐条比对）
+
+1. **文本之留痕**：诸令之**全文**（⛔ 截尾 —— 尤 `=> 判` 之行 ／ `rc` 之行）。
+2. **截屏**：J6 之首屏（含**状态行** ／ 四态之标）。
+3. **刻**：每跳之刻（`netmachine_check.py` 之「刻」行 ／ `probe_alive.py` 之刻）。
+4. ⚠ **⛔ 留痕中 ⛔ 含**：密钥 ／ `config\.env` 之值 ／ 路径之外泄（洁闸之「三禁」：⛔ 硬编之绝对径 ／ ⛔ 组织物之径 ／ ⛔ 本机之产物）。
