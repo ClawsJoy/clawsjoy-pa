@@ -8,15 +8,17 @@ u"""probe_line_ref_semantics.py —— 「手书行号引」之**语义探针**�
       （其中「已写且漂」者 ⇒ **假据**）。本器**抽锚 ⇒ 取段 ⇒ 判**：所引之段是否仍含「所引之名」。
 
 ⚠ **四限（要紧 · ⛔ 掩）**：
-  ① **抽锚为启发式** —— 唯取**反引号内**之标识符（∨ 径之末段之名）⇒ **⛔ 完备之词法**
-     （自然语言之指代 ／ ⛔ 反引号之引 ⇒ 抽 ⛔ 得 ⇒ 判「无法判」· 单列）。
-  ② **`k` 为经验值** —— 无 `b` 之引 ⇒ 取 `a ± k`（`k ＝ 3`）之窗 ⇒ **⛔ 必有据**。
+  ① **抽锚为启发式** —— 唯取**引之行**之**反引号内之「符」**（**径 ⛔ 计** —— 弃「径末段之名」之锚）
+     ∧ 符之形 ＝ 长 ≥ `4` ∧ **⛔ 泛用 token 之表**（经验值）∧ **大小写归一**
+     ⇒ **⛔ 完备之词法**（自然语言之指代 ／ ⛔ 反引号之引 ⇒ 判「无法判」· 单列）。
+  ② **`k` 为经验值** —— 无 `b` 之引 ⇒ 取 `a ± k`（`k ＝ 3`）之**段**（⚠ 唯段 · **⛔ 及锚**）⇒ **⛔ 必有据**。
   ③ **符号定义在段外而用于段内** ⇒ **假红之险**（段内用 `render` 而定义在别处 ⇒ 判「疑漂」而实非漂）。
   ④ **注中之引（害小）与判中之引（害大）本器 ⛔ 分** —— 二者之价 ⛔ 同。
 ⭐ **本器为「报器」**：**⛔ 定红**（⛔ 使 CI 红）⇒ 唯出三类之计数 ＋ 逐条（供人裁）。
 ⭐ 治本 ＝ **律（新引 ⇒ 用符号之锚）**（承 pm_1431 §二.5 ／ pm_1435 §二.4）；本器 ＝ **兜底**
    （治**存量**之「已写且漂」）⇒ **⛔ 以探针代律**。
 
+⭐ 二次之判（pm_1438 §二.2 · 本刻）：改毕再跑 ⇒ 准 14 ／ 疑漂 27 ／ 无法判 246；目验（全取）⇒ FP 12（≈ 44%）、 FN ≤ 1（≈ 7%）⇒ **超阈**（FP 阈 5%）⇒ **弃**：本器唯存（可复查 · ⛔ 闸） · ⛔ 升常态（承「阈乃自拟 ⇒ 二次不达 ⇒ 弃」之律）。
 出口码：0 ＝ 跑毕（无论「疑漂」几何 · **报器**）｜2 ＝ 用法错。
 ⭐ `--json` ⇒ 全录（供复算）；`--self-test` ⇒ 纯内存之反例门（含**反控三**）。
 """
@@ -39,6 +41,10 @@ V_NA = u"无法判"
 BT = re.compile(u"`([^`]+)`")
 IDENT = re.compile(u"^[A-Za-z_\u4e00-\u9fff][A-Za-z0-9_\u4e00-\u9fff.]*$")
 K_DEFAULT = 3
+MINLEN = 4
+# 泛用之 token（**经验值** · ⛔ 完备）：与目标档之常字易中 ⇒ 弃（pm_1438 §二.1 · 假准之源）
+GENERIC = set(u"""none get load json find tmp self true false null str int dict list set test init main run
+open read write path file name data core web app src error value args result msg state update record handle""".split())
 
 
 def load_scan(path=SCAN):
@@ -54,20 +60,20 @@ def spans_of(text):
 
 
 def anchor_of_span(s):
-    u"""一跨 ⇒ 锚（∨ None）：径 ⇒ 末段之名（去扩展名）；标识符 ⇒ 其末点段；否则 None。"""
+    u"""一跨 ⇒ 锚（∨ None）：**唯符** —— 径 ⛔ 计（弃「径末段之名」之锚 · pm_1438 §二.1）。
+    符之形：标识符 ∧ 长 ≥ MINLEN ∧ ⛔ 泛用之表。"""
     s = s.strip().rstrip(u"()")
     s = re.sub(u"[:：]\\d+(\\s*[-~\u2013\u2014]\\s*\\d+)?$", u"", s).strip()
-    if not s:
+    if not s or u"/" in s or u"\\" in s:
         return None
-    if u"/" in s or u"\\" in s:
-        base = re.split(u"[/\\\\]", s)[-1]
-        return os.path.splitext(base)[0] or None
     s = s.split(u".")[-1] if u"." in s and IDENT.match(s) else s
-    return s if (IDENT.match(s) and len(s) >= 3) else None
+    if not IDENT.match(s) or len(s) < MINLEN or s.lower() in GENERIC:
+        return None
+    return s
 
 
 def anchors_of(text):
-    u"""引处之锚集 S（反引号内之标识符 ∪ 径之末段之名）。"""
+    u"""引处之锚集 S（**唯反引号内之符** · 径 ⛔ 计）。"""
     out = set()
     for sp in spans_of(text):
         a = anchor_of_span(sp)
@@ -76,11 +82,10 @@ def anchors_of(text):
     return out
 
 
-def cite_window(root, cite, at):
-    u"""引处之行 N ± 1（夹于档界）⇒ 其文。"""
+def cite_line(root, cite, at):
+    u"""**唯「引之行」**（⛔ 及 ±1 —— 免邻行之锚污染 · pm_1438 §二.1）。"""
     L = io.open(os.path.join(root, cite), encoding="utf-8", errors="replace").read().split("\n")
-    i = at - 1
-    return "\n".join(L[max(0, i - 1):i + 2])
+    return L[at - 1] if 0 <= at - 1 < len(L) else u""
 
 
 def seg_window(root, tgt, a, b, k=K_DEFAULT):
@@ -103,11 +108,12 @@ def judge_row(root, r, k=K_DEFAULT):
         m = re.match(u"^.*?[:：](\\d{1,5})(?:\\s*[-~\u2013\u2014]\\s*(\\d{1,5}))?$", r["ref"])
     a = int(m.group(1)) if m else 1
     b = int(m.group(2)) if (m and m.group(2)) else None
-    S = anchors_of(cite_window(root, r["cite"], r["at"]))
+    S = anchors_of(cite_line(root, r["cite"], r["at"]))
     a2, b2, seg = seg_window(root, r["tgt"], a, b, k)
+    low = seg.lower()
     if not S:
         v = V_NA
-    elif any(s in seg for s in S):
+    elif any(s.lower() in low for s in S):
         v = V_OK
     else:
         v = V_DRIFT
@@ -155,8 +161,14 @@ def _self_test():
         rep(u"④ 坏口径对照（唯判 S 非空 ⇒ 准 ⇒ 对已知漂**放行**）", bad, [V_OK, V_OK])
         rep(u"④b 本条 ⇒ 对已知漂**⛔ 放行**（有齿）", [r1["verdict"], r2["verdict"]], [V_OK, V_DRIFT])
         # ⚠ 夹具之「行号」以 `%d` **占位**（—— 一处字面即为本器之真引 ⇒ 必自命中·假据）
-        rep(u"⑤ 锚之抽（`core/pa/roster.py:%d` ⇒ `roster`）" % 212,
-            sorted(anchors_of(u"引 `core/pa/roster.py:%d` 之 `load()`" % 212)), sorted([u"roster", u"load"]))
+        rep(u"⑤ 锚之抽（唯符 · 径 ⛔ 计 ∧ `load` 入泛用表 ⇒ 弃）",
+            sorted(anchors_of(u"引 `core/pa/roster.py:%d` 之 `load()` 与 `resolve_paths`" % 212)), [u"resolve_paths"])
+        io.open(os.path.join(d, "t2.py"), "w", encoding="utf-8", newline="\n").write(u"# 头\norigin_model = 1\n")
+        io.open(os.path.join(d, "c2.py"), "w", encoding="utf-8", newline="\n").write(u"# 见 `ORIGIN_MODEL`\n")
+        rep(u"⑧ 大小写归一（`ORIGIN_MODEL` 之锚 ⇒ 中 `origin_model` 之段）",
+            judge_row(d, dict(tgt="t2.py", cite="c2.py", at=1, ref="t2.py:%d" % 2))["verdict"], V_OK)
+        rep(u"⑨ 泛用之 token ⇒ ⛔ 计（`json` ∧ `None`）",
+            sorted(anchors_of(u"`json` 与 `None` 与 `roster_engine`")), [u"roster_engine"])
         rep(u"⑥ ⛔ 反引号之引 ⇒ S ＝ ∅（无据 ⇒ 判「无法判」）", sorted(anchors_of(u'引 "core/lib/paths.py:%d" 而已' % 97)), [])
     finally:
         shutil.rmtree(d, ignore_errors=True)
