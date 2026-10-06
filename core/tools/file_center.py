@@ -9,7 +9,7 @@ FILE_CENTER_SCHEMA = {
     "type": "function",
     "function": {
         "name": "file_center",
-        "description": "独立核验文件是否真实落盘: 检查 Windows 路径(如 C:/Users/flybo/Desktop/xxx.pdf)是否存在及大小。用于导出后验收(不信桥自报 applied:true)。",
+        "description": "独立核验文件是否真实落盘: 检查 Windows 路径(如 C:/<用户>/Desktop/xxx.pdf)是否存在及大小。用于导出后验收(不信桥自报 applied:true)。",
         "parameters": {
             "type": "object",
             "properties": {
