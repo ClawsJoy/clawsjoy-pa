@@ -11,7 +11,8 @@ REM  Port still comes from the single source of truth
 REM  config/system/system_unified.yaml via core.lib.port_config.
 REM ============================================================
 setlocal
-cd /d D:\clawsjoy_v9
+REM  Path is taken from THIS file' location (%~dp0..\..) => runs from any folder.
+cd /d "%~dp0..\.."
 python -X utf8 scripts\win_pa\pa_nowindow.py start
 set RC=%ERRORLEVEL%
 endlocal & exit /b %RC%

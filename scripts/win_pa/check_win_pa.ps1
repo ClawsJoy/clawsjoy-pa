@@ -16,7 +16,7 @@ param(
   [int]$WaitSec = 0
 )
 $ErrorActionPreference = 'Continue'
-Set-Location 'D:\clawsjoy_v9'
+Set-Location (Join-Path $PSScriptRoot '..\..')   # ⛔ 硬编开发机之径
 $t0 = Get-Date
 function Say($s) { if (-not $Quiet) { Write-Output $s } }
 function Probe([int]$prt) {

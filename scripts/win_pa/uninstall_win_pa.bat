@@ -8,7 +8,8 @@ REM  Never touches data\ logs\ web\ core\ (any product file).
 REM  Rationale: pm_1382 Sec-2 item-1 (three-gaps #1).
 REM ============================================================
 setlocal
-cd /d D:\clawsjoy_v9
+REM  Path is taken from THIS file' location (%~dp0..\..) => runs from any folder.
+cd /d "%~dp0..\.."
 python -X utf8 scripts\win_pa\uninstall_win_pa.py %*
 set RC=%ERRORLEVEL%
 endlocal & exit /b %RC%

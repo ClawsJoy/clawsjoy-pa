@@ -10,7 +10,8 @@ REM  never starts the gateway.
 REM  Rationale: pm_1384 Sec-3 item-4 (M1 remaining work #4).
 REM ============================================================
 setlocal
-cd /d D:\clawsjoy_v9
+REM  Path is taken from THIS file' location (%~dp0..\..) => runs from any folder.
+cd /d "%~dp0..\.."
 python -X utf8 scripts\win_pa\install_win_pa.py %*
 set RC=%ERRORLEVEL%
 endlocal & exit /b %RC%

@@ -6,7 +6,8 @@ REM  By convention (see paseo-pm\_端口归属登记_v1.md rule 1):
 REM    the FIRST starter keeps the port; log every start/stop.
 REM ============================================================
 setlocal
-cd /d D:\clawsjoy_v9
+REM  Path is taken from THIS file' location (%~dp0..\..) => runs from any folder.
+cd /d "%~dp0..\.."
 
 set GPORT=
 for /f %%p in ('python -c "import sys;sys.path.insert(0,'.');from core.lib.port_config import gateway_port;print(gateway_port())"') do set GPORT=%%p
