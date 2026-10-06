@@ -2,7 +2,7 @@
 u"""死件账之器（登记之谎 · 唯读）：扫 *.yaml|*.yml 之 `path:` 逐条对盘 ⇒ 分档。
 
 域定义（逐字 · 何谓一条「path: 项」）：
-  ① 起于 --root（默 D:\\clawsjoy_v9）；剔 __pycache__ / .git / node_modules
+  ① 起于 --root（默 ＝ **本仓之根**（自本件之位推·⛔ 硬编））；剔 __pycache__ / .git / node_modules
   ② 件名以 .yaml ∨ .yml 结 ∧ ⛔ 以 .before_ 起（存底件非登记）
   ③ 行形 `^\\s*(?:-\\s*)?path\\s*:\\s*(.+?)\\s*$`（含 YAML 列表项 `- path:`）
   ④ 值剥引号后 ⛔ 得空 ∧ ⛔ 得 $ / { / < 起（模板占位）
@@ -27,8 +27,11 @@ from __future__ import annotations
 import argparse, hashlib, io, json, os, re, sys, time
 
 SELF = os.path.abspath(__file__)
-ROOT_DEFAULT = r'D:\clawsjoy_v9'
-ALT_DEFAULT = r'D:\clawsjoy'
+#: 仓根（**一处定形** · pm_1474 §二）：自本件之位推（`core/lib/x.py` ⇒ 上三级）——
+#   ⛔ 硬编开发机径（「仓根」⟷「开发机径」须明 · 承 pm_1468 §二.2 之洁闸）。
+ROOT_DEFAULT = os.path.dirname(os.path.dirname(os.path.dirname(SELF)))
+#: 「别处」树（可选 · 唯报「别处有」）：env `CLAWSJOY_ALT_ROOT` ∨ `--alt`；空 ⇒ 无。
+ALT_DEFAULT = os.getenv("CLAWSJOY_ALT_ROOT", "")
 PAT = re.compile(r'^\s*(?:-\s*)?path\s*:\s*(.+?)\s*$')
 SKIP_DIRS = {'__pycache__', '.git', 'node_modules'}
 MIRROR_PREFIX = ('data/projects/', 'data/tmp/', '_wt_clean/')
@@ -185,7 +188,7 @@ def main(argv=None):
     if not os.path.isdir(a.root):
         sys.stderr.write(u'rc=3 用法/路径错：root ⛔ 在 → %s\n' % a.root)
         return 3
-    alt = None if a.no_alt else (a.alt if os.path.isdir(a.alt) else None)
+    alt = None if a.no_alt else (a.alt if (a.alt and os.path.isdir(a.alt)) else None)
     rep = scan(a.root, alt)
     if a.out:
         with io.open(a.out, 'w', encoding='utf-8', newline=chr(10)) as f:
