@@ -153,6 +153,7 @@ _TOOL_PRIORITY = {
     "query_index": 1,
     "cu_learning": 2,
     "write_file": 2,
+    "note_kb": 2,
     "execute_command": 2,
     "fetch_web": 3,
     "browse_web": 3,
@@ -183,6 +184,7 @@ def _register_tools():
     from core.tools.file_center import FileCenterPlugin  # 2026-09-11 PA 独立核验交付物落盘
     from core.tools.file_tools import ListDirPlugin, SearchFilesPlugin
     from core.tools.lingxi import LingxiPlugin  # 2026-09-11 PA 驱动灵犀(WPS-AI)桥
+    from core.tools.note_kb import NoteKbPlugin  # ⭐ note 内核之六面之口（pm_1444 §二.2）
     from core.tools.obsidian_knowledge import ObsidianKnowledgePlugin  # S4 单轨(原 elif 迁 handler)
     from core.tools.pa_audit import PaAuditPlugin  # 2026-09-11 PA 验收(preflight/postcheck)
     from core.tools.playwright_browser import PlaywrightBrowserPlugin
@@ -207,6 +209,7 @@ def _register_tools():
             "browser_local": BrowserLocalPlugin,
             "browser_hybrid": BrowserHybridPlugin,
             "cu_learning": CuLearningPlugin,
+            "note_kb": NoteKbPlugin,
             "obsidian_knowledge": ObsidianKnowledgePlugin,
             "web_search": WebSearchPlugin,
             "table_extract": TableExtractPlugin,
