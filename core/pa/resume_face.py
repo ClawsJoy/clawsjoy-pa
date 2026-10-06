@@ -24,13 +24,17 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from core.lib.paths import org_path
 from core.pa import _proc as _proc   # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
 RESUME_VERSION = "2026-10-05.2"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-XT_TICK = Path(os.getenv("PA_XT_TICK") or r"D:\paseo-workspace\_tools\xintong_tick.py")
-XT_DIR = Path(os.getenv("PA_XT_DIR") or r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\02_协作\信通")
+# ⭐ 承 pm_1399 §二.3（批一）：信通之器 ＝ **组织专用** ⇒ env ＋ 组织版开关（缺 ⇒ None ⇒ 「未接（组织版）」）
+_XT_TICK = org_path("PA_XT_TICK")
+_XT_DIR = org_path("PA_XT_DIR")
+XT_TICK = Path(_XT_TICK) if _XT_TICK else None
+XT_DIR = Path(_XT_DIR) if _XT_DIR else None
 SEAT_NAME = os.getenv("PA_RESUME_SEAT_NAME") or "技术总监"
 
 
@@ -62,7 +66,8 @@ def paths(root=None):
             "ledger": str(d / "ledger.json"), "dispatch": str(d / "dispatch.jsonl"),
             "stopped": str(r / "logs" / "win_pa.stopped.json"), "life": str(r / "logs" / "win_pa_life.jsonl"),
             "runner": str(r / "scripts" / "win_pa" / "boot_resume.py"),
-            "xt_tick": str(XT_TICK), "xt_dir": str(XT_DIR), "seat_name": SEAT_NAME}
+            "xt_tick": (str(XT_TICK) if XT_TICK else "未接（组织版）"),
+            "xt_dir": (str(XT_DIR) if XT_DIR else "未接（组织版）"), "seat_name": SEAT_NAME}
 
 
 def _bytes(p):
