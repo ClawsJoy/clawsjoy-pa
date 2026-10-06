@@ -37,7 +37,8 @@ PROVIDERS = {
         #    旧名 `deepseek-v4-flash` 仍为**可通之别名**（⛔ 径删 —— 屏 ／ 旧件仍引之）。
         "key_env": "DEEPSEEK_API_KEY", "command": None,
         "models": [
-            {"id": "deepseek-flash", "label": "DeepSeek V4 Flash", "isDefault": True, "ctx": 65536},
+            {"id": "deepseek-flash", "label": "DeepSeek V4 Flash", "isDefault": True, "ctx": 65536,
+             "aliases": ["deepseek-v4-flash"]},   # ⭐ pm_1447 §二.2：旧名仍为**可通之别名**（器取实证 · 1-token 复证）
             {"id": "deepseek-v4-pro", "label": "DeepSeek V4 Pro", "isDefault": False, "ctx": 65536},
         ],
         "params": {}, "enabled": True,   # 默认（⛔ 真源 · 真源 ＝ env CLAWSJOY_PA_PROVIDERS_DISABLED）
@@ -92,6 +93,74 @@ def is_enabled(pid):
     return False, "注册表默认 enabled=False"
 
 
+# ---------------------------------------------------------------- P2 ③：模型名「一处判」
+# 承 pm_1447 §二.3③ ／ pm_1449 §二.2：**唯此处**判「模型名」——
+#   ⓜ 剥前缀（`remote:` ／ `local:` ／ `ollama:` ／ `deepseek:` ／ `glm:` ／ `anthropic:`）
+#   ⓝ 别名 ⇒ 实名（自注册表 `models[].aliases` 出 · **与实名同格**）
+#   ⓞ 白名单 ⇒ **唯注册表之实名**（⛔ 自由字串 · 后端验 · pm_1449 §二.1）
+# ⚠ 「名之归源」（V8 ↔ PA 之二源 · `config/v8/**` ／ `core/lib/llm_client.py`）
+#   ⇒ **另案**（pm_1449 §二.2）—— 本块唯治 PA 侧之入参归一。
+MODEL_PREFIXES = ("remote:", "local:", "ollama:", "deepseek:", "glm:", "anthropic:")
+
+
+def split_prefix(name):
+    """剥前缀（可叠 ⇒ 循环剥）⇒ (前缀, 裸名)。无名 ⇒ ("", "")。"""
+    s = str(name or "").strip()
+    pre = ""
+    while True:
+        for _p in MODEL_PREFIXES:
+            if s.lower().startswith(_p):
+                pre += s[:len(_p)]
+                s = s[len(_p):].strip()
+                break
+        else:
+            return pre, s
+
+
+def known_models():
+    """白名单：注册表之**实名**（一处出 · ⛔ 手拟第二表）。"""
+    out = []
+    for pid in PROVIDERS:
+        for m in PROVIDERS[pid].get("models") or []:
+            if m.get("id") and m["id"] not in out:
+                out.append(m["id"])
+    return tuple(out)
+
+
+def model_aliases():
+    """别名 ⇒ 实名（自注册表 `models[].aliases` 出 · 一处定形）。"""
+    out = {}
+    for pid in PROVIDERS:
+        for m in PROVIDERS[pid].get("models") or []:
+            for a in m.get("aliases") or []:
+                out[str(a)] = m.get("id")
+    return out
+
+
+def resolve_model(name):
+    """归一 ＋ 白名单 ⇒ **注册表之实名** ∨ None（⛔ 自由字串）。
+
+    大小写归一 ⇒ 回**注册表之实名**（⛔ 回入参之原字面 —— 免「名不对表」）。
+    """
+    _pre, bare = split_prefix(name)
+    if not bare:
+        return None
+    _known = known_models()
+    if bare in _known:
+        return bare
+    _al = model_aliases()
+    if bare in _al:
+        return _al[bare]
+    _low = bare.lower()
+    for _m in _known:
+        if _low == _m.lower():
+            return _m
+    for _k, _v in _al.items():
+        if _low == _k.lower():
+            return _v
+    return None
+
+
 def public_view():
     """Read-only screen view: no values, boolean only, models[] per provider."""
     items = []
@@ -111,6 +180,8 @@ def public_view():
             "base_url_note": p.get("base_url_note", ""),
         })
     return {"providers": items, "default": dict(DEFAULT_MODEL),
+            # ⭐ P2 ③：前端取名之**单源**（⛔ 前端硬编 · pm_1449 §二.1④）
+            "known_models": list(known_models()), "model_aliases": model_aliases(),
             "registry_version": REGISTRY_VERSION, "source": "core/pa/providers.py"}
 
 
