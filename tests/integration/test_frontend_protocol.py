@@ -1,4 +1,26 @@
-"""#106 P2: 前后端协议一致性测试 — agentSend 处理的状态覆盖后端返回"""
+"""#106 P2: 前后端协议一致性测试 — agentSend 处理的状态覆盖后端返回
+
+⭐ 2026-10-06（pm_1415 §一 · 明书 · ⛔ 改其判之逻辑）：本测之「判之式」＋「所扫之面」＋「过取之险」照实：
+
+⒈ **判之式 ＝ 源码扫（双向）**（⛔ 运行之实 —— 唯读文件之字节 ＋ `re.findall`）：
+   后端：`re.findall(r'"status": "([a-z_]+)"', bridge)`
+   前端：`re.findall(r"d.status === '([a-z_]+)'", <该段>)`
+   ⇒ 取「后端所报之状态名之集」−「前端所处理之状态名之集」⇒ 非空即 `assert` 红。
+⒉ **二面之射程**（各以字面串切段 ⇒ 段外 ⛔ 扫）：
+   后端：`routes/v9_chat.py` ＋ `core/gateway/v9_chat/entry.py` ＋ `.../bridge_call.py`
+         ⇒ 自 `def v9_agent_chat()` 切至 `def _handle_write_approval`（前置之 `irrelevant` 表除外）。
+   前端：`web/static/js/chat.js` 之自 `async function agentSend(` 切至 `async function agentSendAsync()`
+         ＋ `web/static/js/approval.js` 之自 `async function sendWriteApproval` 切至
+         `function renderWriteConfirmCard`（后者不在 ⇒ 退 `[]`）。
+⒊ ⚠ **过取之险（要）**：所扫者 ＝ **源码之字面**（⛔ 语义）⇒ **内层字面亦中**
+   ⇒ 可判「前端**须**处理某态」而其态**今生 ⛔ 达前端**（后端只在其内层分支产出）。
+   实例：`approval_exempt` —— 后端之 `"status": "approval_exempt"` 在**内层**产出，前端**⛔ 收**
+   （2026-10-06 修 `chat.js` 之 `seed_failed` ／ `approval_exempt` 二态支，即为此「假阳」所迫 · `39ad4ea`）。
+   ⇒ 本测**过包括**（宁可多要求一端之支）· ⛔ 判「此态真达前端」。
+⒋ ⭐ `v2`（宜改）：判据宜改**「载荷之实」**（真跑后端 ⇒ 录其**实发**之 `status` ⇒ 核前端之支），
+   ⛔ 以「源码之形」代「运行之实」（承「探针 ≠ 活闸」之族）。
+⒌ ⛔ 改本测之判之逻辑（本注唯**明书**；改判 ⇒ 另件）。
+"""
 import re
 
 
