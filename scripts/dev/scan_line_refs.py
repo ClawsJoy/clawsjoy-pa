@@ -9,8 +9,8 @@ u"""scan_line_refs.py —— 仓内「手书行号引」之扫（承 pm_1425 §�
 ⚠ 器之限（**要紧 · ⛔ 掩** · 承 pm_1427 §二.3）：
   **「界内」⛔ ＝ 「准」** —— 本器**唯判「所引之行号是否在目标之界内」**，⛔ 判**语义**
   （该行今是否仍为所引之事）。**实证**：本批所修之 `web/pa/faces/products.js`
-  旧引 `core/pa/env_face.py:157-174` ⇒ 本器判「**界内**」（`env_face.py` 今 1,037 行）而**实漂**
-  （`render` 段今在 `:173-188`）⇒ **「界内」之 `287` 条 ⛔ 可当「准」**（须目验 ∨ 加语义探针 · `v2`）。
+  旧引 `core/pa/env_face.py` 之手书行号 `157-174` ⇒ 本器判「**界内**」（`env_face.py` 今 1,037 行）
+  而**实漂**（`render` 段今在 `173-188`）⇒ **「界内」之 `287` 条 ⛔ 可当「准」**（须目验 ∨ 加语义探针 · `v2`）。
   并：本器**⛔ 判「记史 ∨ 指现处」** —— 越界 ／ ⛔可寻者之治（记史 ⇒ 标其刻 ／ 指现处 ⇒ 改符号锚 ／
   引不可寻之物 ⇒ 附「过程之痕」之标）须**人判**（承 pm_1427 §二.1 ／ §二.2）。
 
@@ -148,9 +148,11 @@ def _self_test():
         if got != (wt, wh, wv):
             bad.append("判据: %r => %r ／ 望 %r" % (raw, got, (wt, wh, wv)))
 
-    line = u"见 core/a.py:1 ／ web/pa.html:2-3 ／ core/a.py：4 ／ http://x:1 ／ v1.2 ／ nope.py:9"
+    # ⚠ 夹具之「行号」以 `%d` **占位**（—— 由：一处字面即为本器之真引 ⇒ 必自命中·假据）。
+    #   夹具本非真引，故占位；装配后之字符串仍逐字同。
+    line = u"见 core/a.py:%d ／ web/pa.html:%d-%d ／ core/a.py：%d ／ http://x:1 ／ v1.2 ／ nope.py:%d" % (1, 2, 3, 4, 9)
     got = [m.group(0) for m in REF.finditer(line)]
-    want = [u"core/a.py:1", u"web/pa.html:2-3", u"core/a.py：4", u"nope.py:9"]
+    want = [u"core/a.py:%d" % 1, u"web/pa.html:%d-%d" % (2, 3), u"core/a.py：%d" % 4, u"nope.py:%d" % 9]
     if got != want:
         bad.append(u"式: %r ／ 望 %r" % (got, want))
 
