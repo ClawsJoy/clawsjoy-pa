@@ -839,7 +839,8 @@ def _src_face_readout():
 
 
 # ============================== ⭐ 首启引导（承 pm_1384 §三.3）==============================
-PA_FIRST_RUN_VERSION = "2026-10-06.1"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+PA_FIRST_RUN_VERSION = "2026-10-06.2"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+#  ⭐ .2：「面之源」三键（pm_1417 §三.3 · 面之数由三键定 ⇒ 用户须能知）
 
 #: ⛔ 遥测／分析之显式调用点之形（**调用形** · ⛔ 唯品牌名 —— 名可现于文档而不为调用）
 _TELEMETRY_MARKS = ("posthog.", "sentry_sdk.init(", "mixpanel.", "amplitude.",
@@ -987,6 +988,26 @@ def _first_run_readout():
         {"话": u"缺什么，上面就写什么 —— ⛔ 假装能用。",
          "据": u"「缺」列 %d 项" % len(out["缺"])},
     ]
+    _org, _ws, _vr = False, None, None
+    try:
+        from core.lib import paths as _P
+        _org, _ws, _vr = bool(_P.org_enabled()), _P.ws_root(), _P.vault_root()
+    except Exception as _e:
+        out["缺"].append({"项": u"面之源（三键）", "因": u"%s: %s" % (type(_e).__name__, str(_e)[:120])})
+    out["面之源"] = {
+        "口径": u"「面之数」由三键定 —— 缺则面减（照实 · ⛔ 静默）",
+        "键": [
+            {"键": "PA_ORG_FACES",
+             "义": u"组织版开关（功能级 · 默认关）—— 开 ⇒ 并入组织面；关 ⇒ 唯产品面「死件账」",
+             "今": (u"开" if _org else u"关（默认）")},
+            {"键": "PA_WS_ROOT",
+             "义": u"工作区根（产品级）—— 组织面之根；缺 ⇒ 组织面 ⛔ 入表",
+             "今": (_ws or u"未接")},
+            {"键": "PA_VAULT_DIR",
+             "义": u"知识库根（用户自选；亦可指配置 paths.vault_root）—— 缺 ⇒ 显「未接（选目录）」",
+             "今": (str(_vr) if _vr else u"未接")},
+        ],
+    }
     return out
 
 def _ask_scope(question):
