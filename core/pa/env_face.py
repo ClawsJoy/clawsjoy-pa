@@ -68,6 +68,9 @@ TOOL_REL = {"内容工坊 08_工具": ("内容工坊", "08_工具"),
 #:   （`vault_root()` ／ `get_data_root()` ／ `config paths.logs_root` ／ `SRC_TOOLS`）；
 #:   ⭐ **无可推之真源 ⇒ `None` ＋ `paths_src` 明书「未接」**（⛔ 以字面兜底 ——
 #:   承「⛔ 以 `C:/Users/…` 兜底」）。
+#: ⭐ 径之消费者之界（承 pm_1423 §二.3）：径之消费者今唯 `1`（`web/pa/faces/products.js` 取 `paths.render`）
+#:   ⇒ **单一消费者 ⇒ 无漂之险 ⇒ 今形合法**；⭐ 若消费者 ≥ `2` ⇒ 须立前端 `PA_PATHS`（一处出 ·
+#:   承 `PA_STAMP` 之例 · `web/pa/core.js:128`）—— 闸 ＝ `tests/unit/test_pa_paths_single_consumer.py`。
 PATH_KEYS = ("repo", "tools", "vault", "data", "npm_global", "render", "log")
 PATH_ENV = {
     "tools": ("PA_TOOLS_DIR",),
