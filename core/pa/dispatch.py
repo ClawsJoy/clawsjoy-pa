@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from core.lib.paths import org_path
 from core.lib.port_config import gateway_base_url
 from core.pa import _proc as _proc   # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
@@ -139,7 +140,8 @@ class V9GatewayExecutor:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File D:\npm-global\paseo.ps1 agent send <席> --prompt-file <件> --no-wait
 # ⇒ 本器**同形复用**（同一入口 · 同一 rc 语义：0 已投递 ／ 1 该刻被拒 ／ 2 用法错 ／ 3 件不存在）。
 # ⛔ 另造运输 ／ ⛔ 直连他方平台 ／ ⛔ 静默兜底。
-SEAT_PASEO_PS1 = os.getenv("PA_SEAT_PASEO_PS1", r"D:\npm-global\paseo.ps1")
+# ⭐ 承 pm_1399 §二.3（批一）：组织物之径 ⇒ env ＋ 组织版开关（缺 ⇒ None ⇒ **明报** · ⛔ 静默兜底）
+SEAT_PASEO_PS1 = org_path("PA_SEAT_PASEO_PS1")
 SEAT_OUTBOX = os.getenv("PA_SEAT_OUTBOX", "data/v9/pa/seat_outbox")
 SEAT_SEND_TIMEOUT = int(os.getenv("PA_SEAT_SEND_TIMEOUT", "180"))
 
@@ -180,6 +182,9 @@ class SeatExecutor:
         except Exception as e:
             return {"ok": False, "stage": "send_failed",
                     "error": "件落盘失败（⛔ 静默）：%s" % type(e).__name__}
+        if not self.ps1:
+            raise RuntimeError("未接（组织版）：env PA_SEAT_PASEO_PS1 无 ⇒ 席轴之投递 ⛔ 执行"
+                               "（承 pm_1399 §二.3 · ⛔ 静默兜底）")
         cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", self.ps1,
                "agent", "send", self.to_seat, "--prompt-file", str(f), "--no-wait"]
         try:
