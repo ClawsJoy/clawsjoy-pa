@@ -46,9 +46,13 @@ def test_self_test_passes():
     r = _run(["--self-test"])
     out = r.stdout.decode("utf-8", "replace")
     assert r.returncode == 0, (r.returncode, out[-600:])
-    # ⚠ 反控之数**随安装器之自测**（今 7 · pm_1500 §一 乙 增 反控 6／7 之库根检查）
-    #   ⇒ 增一条检查须同步改此处（此即「齿」之意 —— ⛔ 只认 PASS 二字）
-    assert "PASS" in out and "7 反控" in out, out[-300:]
+    # ⚠ 免脆之形（pm_1506 §一.2⒉ 之荐）：反控之数**随安装器之自测**（pm_1500 §一 乙 使之 5 ⇒ 7）
+    #   ⇒ ⛔ 钉死其数（器一加控 ⇒ 测又红 ＝ 语之红）｜故：须「PASS」∧ 数可读 ∧ 数 ≥ 基（5）。
+    assert "PASS" in out, out[-300:]
+    _m = re.search(r"PASS（(\d+) 反控）", out)
+    assert _m, (u"自测之报须含「PASS（N 反控）」之形（⛔ 语之红）", out[-300:])
+    _n = int(_m.group(1))
+    assert _n >= 5, (u"反控数 ⛔ 得低于基（5）—— 今 %d（器有齿否？）" % _n, out[-300:])
 
 
 def test_dry_run_is_default_and_idempotent():
