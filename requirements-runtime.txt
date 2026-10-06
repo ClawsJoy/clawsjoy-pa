@@ -1,7 +1,8 @@
-# Win-PA gateway runtime requirements (verified 2026-09-28)
-# extracted verbatim from requirements.txt section '运行依赖（必需）'
-# NOTE: on this machine these are ALREADY present in the system interpreter;
-#       only fastapi is missing - and the gateway does NOT use fastapi (it uses flask).
+# Win-PA gateway runtime requirements
+# ⚠ 本档为**派生镜像**（⛔ 真源）—— 真源 ＝ requirements.txt 之「运行依赖（必需）」诸节。
+#   批1386：旧档漏 psutil ／ tiktoken ／ chromadb（三者皆以 import 扫描得**必需**）
+#   ⇒ 净机按本档装 ⇒ 首屏 ⛔ 开。今以器同步；由 tests/unit/test_client_deps_scan.py
+#   钉「本档 ≡ 真源之必需节」（二源必漂 ⇒ 钉之）。
 # install:  pip install -r requirements-runtime.txt
 
 flask>=3.1.2
@@ -17,3 +18,6 @@ watchdog>=4.0.0
 flasgger>=0.9.7
 python-dotenv>=1.0.0
 prometheus_client>=0.20.0
+psutil>=7.2.2
+tiktoken>=0.14.0
+chromadb>=1.5.9

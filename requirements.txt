@@ -24,6 +24,21 @@ flasgger>=0.9.7
 python-dotenv>=1.0.0
 prometheus_client>=0.20.0
 
+# ===== 运行依赖（必需 · 批1386 补 · 以 import 扫描为器 scripts/dev/scan_client_deps.py）=====
+# 器扫：起器 scripts/win_pa/pa_nowindow.py ⇒ 网关 agent_gateway_enhanced.py ⇒ 逐跳（含诸父包
+# 之 __init__.py）。⛔ 手拟；逐条附「径:行」之据 ⇒ 净机 pip install -r 之后 ⛔ 再 ImportError。
+# ⚠ 器之口径：必需（缺 ⇒ 断网关）／兜底（在 try 内 ⇒ 缺则**静默降级**）／惰性（在函数内 ⇒ 触
+#   该路方断）。凡「必需而未声明」者**硬缺**；兜底者亦声明（⛔ 静默降级之隐债）。
+psutil>=7.2.2            # 必需：scripts/win_pa/pa_nowindow.py:223,:347 ／ core/gateway/shared_state.py:9
+tiktoken>=0.14.0         # 兜底：core/gateway/message_assembler.py:663,:809,:841 ／ core/lib/llm_client.py:21
+
+# 向量检索（⛔「可选」——批1386 器扫得 **必需**）：
+#   core/__init__.py:17（⛔ 兜底）⇒ core/tenant/tenant_vector_index.py:17 ⇒
+#   core/lib/vector_knowledge_center.py:29 `import chromadb`（模块级）＋ 同档 :758
+#   `vector_knowledge_center = VectorKnowledgeCenter()` ＝ **顶层实例化**
+#   ⇒ 凡 `import core.*` 即触 ⇒ 净机缺之 ⇒ 首屏 ⛔ 开。旧标「可选（AI/ML）」＝ 声明与实径 ⛔ 一。
+chromadb>=1.5.9
+
 # ===== 可选依赖（AI/ML，按需安装） =====
 
 # 深度学习与模型
@@ -33,7 +48,6 @@ diffusers>=0.38.0
 ollama>=0.6.2
 
 # 向量检索 / 图像处理
-chromadb>=1.5.9
 rembg>=2.0.75
 # Windows 直装: 官方 fasttext 源码分发需要 C++ 编译链(无 MSVC 时 pip 直接失败),
 # fasttext-wheel 是同一上游的预编译 wheel, **导入名仍是 fasttext**, 功能一致。
