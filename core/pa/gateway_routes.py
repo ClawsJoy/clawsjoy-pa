@@ -198,6 +198,71 @@ def _session_binding(_tstate, _uid):
 def _data_dir():
     return os.getenv("PA_DATA_DIR", "data/v9/pa")
 
+
+# ---------------------------------------------------------------- P2 ①：会话级模型（pm_1449 §二.1）
+# 「表出决定之仓」＝ **会话档之字段**（与 `mode` 同轴 · 一处定形）——
+#   ⛔ 进程级单例（多会话 ⛔ 分）· ⛔ 前端硬编（承 pm_1449 §二.1 之裁）。
+#   名之验 ＝ **后端白名单**（`core/pa/providers.resolve_model` ⇒ 注册表之实名）
+#   ⇒ ⛔ 自由字串（非法 ⇒ 400 显因 · ⛔ 静默回落）。
+def _uid_safe(raw):
+    """单段 uid（⛔ 空 ／ ⛔ 路径分隔 ／ ⛔ 穿越）—— 会话档之径。⛔ 得 ⇒ ""。"""
+    s = str(raw or "").strip()
+    if not s or chr(0) in s or s in (".", "..") or "/" in s or "\\" in s or ":" in s:
+        return ""
+    return s
+
+
+def session_model_of(uid, req=None):
+    u"""会话之 `model` ⇒ (实名 ∨ None, 源之述)。
+
+    `req` 有值 ⇒ **归一 ＋ 白名单验**：非法 ⇒ (None, 拒之由)（调用方 400）
+    · 合法 ⇒ 落档（**唯变时写**）。
+    ⚠ 会话档读不动（`ThreadStoreCorrupt`）⇒ **⛔ 静默当空**：返 (None, 照实之由)。
+    """
+    from core.pa.providers import resolve_model
+    from core.pa.threads import ThreadStore, ThreadStoreCorrupt
+
+    ts, key = ThreadStore(_data_dir()), (uid or "default")
+    if req is not None and str(req).strip():
+        _m = resolve_model(req)
+        if not _m:
+            return None, ("未识之模型名：%s（唯注册表之实名 ∨ 别名 —— 见 GET /v9/pa/providers 之 known_models）" % (str(req)[:60],))
+        try:
+            st = ts.load(key)
+        except ThreadStoreCorrupt as _e:
+            return None, "会话档读不动，⛔ 落模型：%s" % (str(_e.reason or "")[:80],)
+        if st.get("model") != _m:
+            st["model"] = _m
+            try:
+                ts.save(key, st)
+            except ThreadStoreCorrupt as _e:
+                return None, "会话档拒写，⛔ 落模型：%s" % (str(_e.reason or "")[:80],)
+        return _m, "会话档"
+    try:
+        st = ts.load(key)
+    except ThreadStoreCorrupt as _e:
+        return None, "会话档读不动 ⇒ 模型回落默认：%s" % (str(_e.reason or "")[:80],)
+    _m = st.get("model")
+    return (str(_m) if _m else None), ("会话档" if _m else "未设 ⇒ 默认")
+
+
+def session_model_clear(uid):
+    u"""清会话之 `model` ⇒ 回落默认（注册表 `DEFAULT_MODEL`）。⇒ (bool, 述)。"""
+    from core.pa.threads import ThreadStore, ThreadStoreCorrupt
+
+    ts, key = ThreadStore(_data_dir()), (uid or "default")
+    try:
+        st = ts.load(key)
+    except ThreadStoreCorrupt as _e:
+        return False, "会话档读不动，⛔ 清：%s" % (str(_e.reason or "")[:80],)
+    if "model" in st:
+        st.pop("model", None)
+        try:
+            ts.save(key, st)
+        except ThreadStoreCorrupt as _e:
+            return False, "会话档拒写，⛔ 清：%s" % (str(_e.reason or "")[:80],)
+    return True, "已清（回落默认）"
+
 def _permission_grant_provenance(data_dir):
     """**权限档的来源面**（2026-09-30 · PM 裁定「丙 的更严形态」）。
 
@@ -1801,8 +1866,15 @@ def register_pa_routes(app, brain=None):
         # ⭐ PM 043 §二.1（P7 裁）：档 ＝ **显式拨杆（前端）之单源** ⇒ 后端只认 `mode`，⛔ 推断。
         #   本机真脑（llm_brain 所造 · `_is_pa_brain`）按 mode 重组系统提示；注入之别脑（测试）⛔ 覆盖。
         _mode = p.get("mode")
+        # ⭐ P2 ①（pm_1449 §二.1）：模型唯**会话档**出 ∨ 本轮所请
+        #   （后端白名单验 ⇒ ⛔ 自由字串；非法 ⇒ 400 显因 · ⛔ 静默回落）
+        _uid = _uid_safe(p.get("user_id"))
+        _model, _model_src = session_model_of(_uid, p.get("model"))
+        if _model is None and str(p.get("model") or "").strip():
+            return err(_model_src, 400)
         _t0 = time.perf_counter()   # ⭐ 057：本轮墙钟之起点（器取）
-        _brain = llm_brain(system_prompt=pa_system_for(_mode)) if getattr(brain, "_is_pa_brain", False) else brain
+        _brain = (llm_brain(system_prompt=pa_system_for(_mode), model=_model)
+                  if getattr(brain, "_is_pa_brain", False) else brain)
         # 就事论事: 把"目标/议题"一起带给对话脑, 不是闲聊
         # ⭐ PM 2026-10-05 22:34 §四⒝-2：**源标透传**（档行外加性键 · ⛔ 改答话体）
         r = pa.handle("dialog_post", {"sid": sid, "text": text, "topic": p.get("topic"), "brain": _brain,
@@ -1892,6 +1964,9 @@ def register_pa_routes(app, brain=None):
                 "persisted": _persisted,
                 "route": _route,
                 "mode": pa_mode_name(_mode),
+                # ⭐ P2 ①：本轮实用之模型 ＋ 其源（唯加键 · ⛔ 破既有字段）
+                "model": _model or "",
+                "model_source": _model_src,
                 "src": _src_label(_route),
                 "fell_back": bool(_route.get("fell_back")),
                 "fallback_note": _fallback_note(_route),
@@ -2394,6 +2469,38 @@ def register_pa_routes(app, brain=None):
         from core.pa import providers as _PV
 
         return ok(public_view(), 印=_code_sha16(pa_providers, _PV))
+
+    # ---- P2 ①（pm_1449 §二.1）：会话级模型之仓 —— 读（GET）／ 落 · 清（POST） ----
+    @bp.route("/v9/pa/session_model", methods=["GET", "POST"])
+    def pa_session_model():
+        u"""会话级模型之仓（P2 ①）。
+
+        ⛔ 前端硬编：本路由 ⇒ 前端取「当前模型」之单源；合法面 ＝ 注册表（`known_models`）。
+        POST {user_id, model}：`model` 有值 ⇒ 白名单验 ＋ 落档；`model` 空 ／ null ⇒ **清**（回落默认）。
+        """
+        from core.pa import providers as _PV
+
+        if request.method == "GET":
+            _m, _src = session_model_of(_uid_safe(request.args.get("user_id")))
+            return ok({"model": _m or "", "model_source": _src,
+                       "default": dict(_PV.DEFAULT_MODEL),
+                       "known_models": list(_PV.known_models()),
+                       "model_aliases": _PV.model_aliases()},
+                      印=_code_sha16(pa_session_model, _PV))
+        body = request.get_json(silent=True) or {}
+        _uid = _uid_safe(body.get("user_id"))
+        _raw = body.get("model")
+        if _raw is None or not str(_raw).strip():
+            _okc, _src = session_model_clear(_uid)
+            if not _okc:
+                return err(_src, 409)
+            return ok({"model": "", "model_source": _src, "cleared": True},
+                      印=_code_sha16(pa_session_model, _PV))
+        _m, _src = session_model_of(_uid, _raw)
+        if not _m:
+            return err(_src, 400)
+        return ok({"model": _m, "model_source": _src, "cleared": False},
+                  印=_code_sha16(pa_session_model, _PV))
 
     # ---- 执行层 agent 扫描（PM 035/036 Q0 · 037 §B.2）：果灌**既有** roster.upsert ----
     @bp.route("/v9/pa/roster/scan", methods=["POST"])
