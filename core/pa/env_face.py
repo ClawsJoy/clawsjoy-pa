@@ -60,8 +60,8 @@ TOOL_REL = {"内容工坊 08_工具": ("内容工坊", "08_工具"),
 
 
 #: ⭐⭐ 径之**一处**（承 pm_1366 §三 ⓐ「一处出径」）—— `build_env()["paths"]` 之真源表。
-#: ⚠ 何以立此：前端（`web\pa\faces\products.js:240` 之 `C:/Users/flybo/…`）与后端
-#:   （`allowlist()` 之 `D:\npm-global\…`）**各自硬编** ⇒ 「二源必漂」 ∧ **净机必败**。
+#: ⚠ 何以立此：前端（`web\pa\faces\products.js:240` 之 `C:/Users/flybo/…` —— ⓒ 待拔）与后端
+#:   （`allowlist()` 之 `D:\npm-global\…` —— ⓑ **已拔** ⇒ `_shim_files()`）旧为**各自硬编** ⇒ 「二源必漂」 ∧ **净机必败**。
 #:   ⇒ 今唯此处出径；⛔ 值**新硬编**于本档：逐项自 env ∨ **既有之真源**取
 #:   （`vault_root()` ／ `get_data_root()` ／ `config paths.logs_root` ／ `SRC_TOOLS`）；
 #:   ⭐ **无可推之真源 ⇒ `None` ＋ `paths_src` 明书「未接」**（⛔ 以字面兜底 ——
@@ -105,6 +105,22 @@ def _npm_global():
         if _w:
             return os.path.dirname(_w), "shutil.which(%s) 之 dir" % _n
     return None, "未接：env PA_NPM_GLOBAL ／ PA_SEAT_PASEO_PS1 ／ PATH 之 paseo 皆无（⛔ 字面兜底）"
+
+
+#: ⓑ CLI shim 之名（承 pm_1366 §三 ⓑ）—— `allowlist()["files"]` 之四枚（ⓒ 字面）
+SHIM_NAMES = ("paseo", "codex", "pi", "dsh")
+
+
+def _shim_files():
+    """ⓑ CLI shim 之径 —— ⓒ 字面（承 pm_1366 §三 ⓑ「由 `shutil.which` ∨ 配置推」）。
+
+    统一自 `_npm_global()`（真源：env `PA_NPM_GLOBAL` ∨ env `PA_SEAT_PASEO_PS1` ∨ `which`）
+    之 dir 拼（**同源** ⇒ 一处定形 ∧ 变 `PA_NPM_GLOBAL` 则果变 = 反控有齿）；`_npm_global()` 亦无 ⇒ **空表**（ⓒ 字面兜底 ——
+    净机 ⓒ 报一个不存在之「npm-global」径）。"""
+    base, _bs = _npm_global()
+    if not base:
+        return []
+    return [os.path.join(str(base), n + ".CMD") for n in SHIM_NAMES]
 
 
 def resolve_paths():
@@ -292,9 +308,8 @@ def allowlist():
         {"path": str(REPO_ROOT / "core" / "pa" / "roster.py"), "label": "编队花名册"},
         {"path": self_config_path(), "label": "Paseo 配置（唯键名之布尔入面）"},
     ]
-    for p in ("D:\\npm-global\\paseo.CMD", "D:\\npm-global\\codex.CMD",
-              "D:\\npm-global\\pi.CMD", "D:\\npm-global\\dsh.CMD"):
-        files.append({"path": p, "label": "CLI shim（PATH 之解析果）"})
+    for p in _shim_files():
+        files.append({"path": p, "label": "CLI shim（PATH 之解析果 · shutil.which ∨ npm_global）"})
     cmds = [
         {"cmd": SRC_PASEO, "scope": "本机"}, {"cmd": "nvidia-smi -L", "scope": "本机"},
         {"cmd": "env:CLAWSJOY_NUM_CTX", "scope": "本机"},
@@ -304,7 +319,7 @@ def allowlist():
     ]
     ports = [{"endpoint": "%s:%d" % (h, p), "label": "只读 TCP 探"} for h, p in
              (("127.0.0.1", 11434), ("127.0.0.1", 6767), ("127.0.0.1", 5102))]
-    units = [{"unit": "disk:%s:\\" % d, "label": "盘用量（唯stat）"} for d in "CD"]
+    units = [{"unit": "disk:%s:\\" % d, "label": "盘用量（唯stat）"} for d in _drive_letters()]
     #: ⭐ 跨机之源（Dots §5）：WSL 侧须**显式立通道** ⇒ 白名单内明列；⛔ 冒充本机
     cross = [
         {"prefix": "WSL:", "label": "WSL 侧（跨机 · 通道 wsl.exe）", "scope": "跨机"},
@@ -553,7 +568,8 @@ def resources_col():
                              "只读", (ln.split("(", 1)[1].rstrip(")") if "(" in ln else "")))
     else:
         out.append(_item("gpu", "GPU", "gpu", "nvidia-smi -L", "只读", "缺（rc=%s）" % rc))
-    roots = [d + ":\\" for d in "CD" if os.path.exists(d + ":\\")] if os.name == "nt" else ["/"]
+    roots = ([d + ":\\" for d in _drive_letters() if os.path.exists(d + ":\\")]
+             if os.name == "nt" else ["/"])
     for d in roots:
         try:
             u = shutil.disk_usage(d)
