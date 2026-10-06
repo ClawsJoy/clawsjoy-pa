@@ -212,3 +212,45 @@ def test_态码_逐键皆在且值域内(no_orders, monkeypatch, tmp_path):
     for _n, _k in keys.items():
         assert _k.get(u"态") in (u"no_root", u"empty", u"ok"), (u"缺「态」／值越域", _n, _k)
     assert GR._first_run_readout()[u"面之源"].get(u"态域"), u"态域须明书（前端须知其域）"
+
+
+# ============================== pm_1525 §一：env_override ／ note（一处定形 · 与 vault/set 同源） ==============================
+def test_env_override_与_note_两态_同源(no_orders, monkeypatch, tmp_path):
+    u"""pm_1525 §一：`first_run` 之 PA_VAULT_DIR 键须出 `env_override` ＋ `note` —— 二态 ＋ **一处定形**。"""
+    d = tmp_path / u"kb"; d.mkdir()
+    monkeypatch.setattr(P, "_builtin_kb", lambda: str(d))
+    # ⭐ ⒜ env 在 ⇒ True ∧ note 逐字
+    monkeypatch.setenv("PA_VAULT_DIR", str(tmp_path / u"envkb"))
+    vk = _vkey(GR._first_run_readout())
+    assert vk[u"env_override"] is True, vk
+    assert vk[u"note"] == GR.PA_VAULT_ENV_NOTE, vk
+    assert (vk[u"env_override"], vk[u"note"]) == GR.vault_env_override(), u"须一处定形（⛔ 二处各判）"
+    # ⭐ ⒝ env 去 ⇒ False ∧ note 空（随态而变 —— ⛔ 陈旧之假）
+    monkeypatch.delenv("PA_VAULT_DIR", raising=False)
+    vk2 = _vkey(GR._first_run_readout())
+    assert vk2[u"env_override"] is False, vk2
+    assert vk2[u"note"] == u"", vk2
+    assert (vk2[u"env_override"], vk2[u"note"]) == GR.vault_env_override(), u"须一处定形"
+
+
+def test_env_override_逐字与_vault_set_同源(no_orders, monkeypatch, tmp_path):
+    u"""pm_1525 §一：`note` 之逐字须与 `vault/set` 之回**逐字同** —— 同源之证（器取）。"""
+    from flask import Flask
+    from core.lib.unified_config import unified_config as _uc
+    d = tmp_path / u"kb"; d.mkdir()
+    monkeypatch.setattr(P, "_builtin_kb", lambda: str(d))
+    monkeypatch.setenv("PA_VAULT_DIR", str(tmp_path / u"envkb"))
+    _cfg = tmp_path / u"cfg" / u"system_unified.yaml"
+    _cfg.parent.mkdir(parents=True, exist_ok=True)
+    _cfg.write_text(u"version: 4.0.0\npaths:\n  data_root: data\n", encoding=u"utf-8")
+    monkeypatch.setattr(_uc, u"_main_path", _cfg)
+    monkeypatch.setattr(_uc, u"_config", {u"version": u"4.0.0", u"paths": {u"data_root": u"data"}})
+    _fk = _vkey(GR._first_run_readout())
+    app = Flask(__name__)
+    GR.register_pa_routes(app)
+    app.config[u"TESTING"] = True
+    _r = app.test_client().post(u"/v9/pa/vault/set", json={u"path": str(d)})
+    assert _r.status_code == 200, _r.get_data(as_text=True)
+    _j = _r.get_json()
+    assert _j[u"note"] == _fk[u"note"] == GR.PA_VAULT_ENV_NOTE, (_j.get(u"note"), _fk.get(u"note"))
+    assert _j[u"env_override"] is True and _fk[u"env_override"] is True, (_j, _fk)

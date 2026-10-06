@@ -1062,7 +1062,7 @@ def pa_vault_state_code(root=None):
     return (STATE_CODE_OK if _n else STATE_CODE_EMPTY), _n, _names
 
 
-# ⭐ pm_1520 ⛔二.1 ／ pm_1525 ⛔一：`env_override` ＋ `note` —— **一处定形**（⛔ 二处各判）。
+# ⭐ pm_1520 §二.1 ／ pm_1525 §一：`env_override` ＋ `note` —— **一处定形**（⛔ 二处各判）。
 #   义：`PA_VAULT_DIR` 在 ⇒ 配置之写（`paths.vault_root`）**⛔ 生效**（env 居四序之首）⇒ 须**明书**
 #     （⛔ 静默）—— `GET /v9/pa/first_run` 之「面之源」 ／ `POST /v9/pa/vault/set` 之回 **共用此源**。
 PA_VAULT_ENV_KEY = "PA_VAULT_DIR"
@@ -1070,11 +1070,14 @@ PA_VAULT_ENV_NOTE = (u"本机之库根由环境变量 PA_VAULT_DIR 指定 ⇒ �
 
 
 def vault_env_override():
-    u"""(env_override, note) —— 一处定形（⛔ 二处各判 · 承 pm_1525 ⛔一）。"""
+    u"""(env_override, note) —— 一处定形（⛔ 二处各判 · 承 pm_1525 §一）。"""
     _on = bool((os.environ.get(PA_VAULT_ENV_KEY) or "").strip())
     return _on, (PA_VAULT_ENV_NOTE if _on else "")
 # ============================== ⭐ 首启引导（承 pm_1384 §三.3）==============================
-PA_FIRST_RUN_VERSION = "2026-10-06.5"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+PA_FIRST_RUN_VERSION = "2026-10-06.6"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+#  ⭐ .6：「面之源」之 PA_VAULT_DIR 键 ⇒ 增 `env_override` ＋ `note`（pm_1525 §一 —— **一处定形**
+#           `vault_env_override()` · 与 `POST /v9/pa/vault/set` 之回**同源**）：`env` 在 ⇒ 配置之写
+#           **⛔ 生效**（env 居四序之首）⇒ 屏上须**明书**（⛔ 静默）。
 #  ⭐ .5：「态」之判据 ⇒ 改依**本库根之 PA 检索面**（pm_1517 §一 之裁 · 取拟一）——
 #           旧依「内核约定六面」⇒ 本机（`收件箱` 有物 · `searched＝540`）反报 `empty`
 #           ⇒ 屏上不实；一处定形（唯问 `pa_vault_state_code()`）⇒ 前端唯渲、⛔ 比字面哨符。
@@ -1250,9 +1253,11 @@ def _first_run_readout():
     ]
     _org, _ws, _vr = False, None, None
     _wssrc, _vsrc, _vcode = u"未核", u"未核", u"no_root"
+    _v_on, _v_note = False, u""        # ⭐ .6：env 覆盖（唯自 `vault_env_override()` · 一处定形）
     try:
         from core.lib import paths as _P
         _org, _ws, _vr = bool(_P.org_enabled()), _P.ws_root(), _P.vault_root()
+        _v_on, _v_note = vault_env_override()
         # ⭐ pm_1502 §一.3：「源」须**同源**（唯自 `core/lib/paths.py` 之 src 器出 · ⛔ 二处各判）
         _wssrc = _P.ws_root_src()[1]
         _vsrc = _P.vault_root_src()[1]
@@ -1289,10 +1294,15 @@ def _first_run_readout():
                    u"empty ／ ok 按**本库根之 PA 检索面**（`PA_KB_ASK_SCOPES`：收件箱 ／ 知识库"
                    u" ＋ `PA_FACES` 中**根在本库根之下**者）之件数计 —— ⛔ 内核约定六面"
                    u"（notes ／ sop ／ reviews ／ inbox ／ drafts ／ assets ⇒ 另轴 · 二物别）"
-                   u"（承 pm_1517 §一 之裁）",
+                   u"（承 pm_1517 §一 之裁）；env 在 ⇒ 「今」＝ env 之径 ∧ `note` 明书"
+                   u"「所选须清该变量方生效」（env 覆盖配置之写 · 承 pm_1525 §一）",
              "今": (str(_vr) if (_vr and _vcode != u"no_root") else u"未接"),
              "源": _vsrc,
-             "态": _vcode},
+             "态": _vcode,
+             # ⭐ .6（pm_1525 §一 · 一处定形）：`env` 在 ⇒ 配置之写**⛔ 生效** ⇒ 须**明书**
+             #   （⛔ 静默）；其源唯 `vault_env_override()`（与 `vault/set` 之回**同源** · ⛔ 二处各判）。
+             "env_override": _v_on,
+             "note": _v_note},
         ],
     }
     return out
