@@ -54,6 +54,38 @@ def _vault_path():
     return str(root) if root is not None else ""
 
 
+# ⭐⭐ pm_1550 §二（裁 · 一处定形）：库根「未接（选目录）」之**唯一判点** ＋ **面之守**。
+#   病（PM 一手 · 2026-10-06 · 真跑）：未接 ⇒ `_vault_path()` 返 `""` ⇒ `Path("")` ≡ `Path(".")`
+#     ⇒ ⒜ 写面 `mkdir` 于 **CWD**（用户数据落程序目录 · 违「客户端持有机能与数据」；
+#           净机装根若在 UAC 保护区 ⇒ 写失败 ⇒ 被 `except` 吞 ⇒ **静默**）∧
+#        ⒝ 读面 `_scan_vault()` `os.walk(CWD)`（**假有据** · 同 `kb=""` 之族）。
+#   契约（pm_1550 §二.5）：① 未接 ⇒ 写面 ⛔ 造目录 ⛔ 写件 ∧ 读面 `0` 件（⛔ 落 CWD），二者皆**显形**；
+#     ② 已接 ⇒ 行为逐字不变；③ 守**唯此一处**判（⛔ 各调用点各判）。
+_VAULT_UNSET_TAG = "未接（选目录）"
+
+
+def _vault_root_or_none():
+    """库根 `Path` ∨ `None`（＝**未接（选目录）**）—— 本模块**唯一**之「未接」判点。
+
+    ⚠ 派生自 `_vault_path()`（⛔ 二处各判 `vault_root()`）⇒ 既有猴补（测钉 `_vault_path`）仍有效。
+    """
+    s = str(_vault_path() or "").strip()
+    if not s or s == ".":
+        return None
+    return Path(s)
+
+
+def _vault_guard(face):
+    """**面之守**（写 ∧ 读 · 一处）—— 未接 ⇒ 打印**显形**行 ＋ 返 `None`（⛔ 静默吞 · ⛔ 落 CWD）。
+
+    `face` ＝ 调用面之名（供显形行辨认 · 唯诊断）。
+    """
+    root = _vault_root_or_none()
+    if root is None:
+        print(f"[OBSIDIAN] 库根{_VAULT_UNSET_TAG}—— {face} 已守（⛔ 造目录 · ⛔ 写件 · ⛔ 读 CWD）")
+    return root
+
+
 # ===== 检索面排除名单（CEO 2026-09-28 ⑧ 终裁 ＋ ⑤⒝）=====
 # `_冷区` = 冷库、`_垃圾箱` = 垃圾桶 ⇒ 参与检索 = 自相矛盾（且违老板「删权归我」的结构）；
 # `.obsidian` = 配置目录、`Templates` = 模板 —— 都非知识。
@@ -106,7 +138,9 @@ def _scan_vault():
     2026-09-28(CEO ⑧ 终裁 ＋ ⑤⒝): 排除名单 = `_冷区` / `_垃圾箱` / `.obsidian` / `Templates`
     （可在 obsidian.exclude_dirs 配），且**在进入排除目录前剪枝**（见 _walk_vault_md）。
     """
-    root = Path(_vault_path())
+    root = _vault_guard("读面：_scan_vault")     # ⭐ pm_1550 §二：未接 ⇒ ⛔ 扫 CWD（返 0 件 ＋ 显形）
+    if root is None:
+        return []
     skip = set(_exclude_dirs())
     out = []
     for f in _walk_vault_md(root, skip):
@@ -144,13 +178,18 @@ def _scan_vault():
 # 2026-08-30 回填修复: 权威度加权(同一相似度下 SOP/Pitfalls 优先于 Reviews 复盘)
 # 批198 · 复盘目录「单一来源」：此前**写**用 cfg.reviews_dir、**读**硬编码 'Reviews' ⇒ 只改配置就分裂
 def _reviews_write_dir():
-    # 写复盘的目标目录（配置为唯一来源）
-    return Path(_vault_path()) / (str(_obsidian_cfg().get("reviews_dir") or "Reviews"))
+    # 写复盘的目标目录（配置为唯一来源）；⭐ pm_1550 §二：未接 ⇒ `None`（⛔ 落 CWD）
+    root = _vault_guard("写面：_reviews_write_dir")
+    if root is None:
+        return None
+    return root / (str(_obsidian_cfg().get("reviews_dir") or "Reviews"))
 
 
 def _reviews_read_dirs():
     # 读复盘：配置目录 + 历史目录 'Reviews'（迁移期间不丢历史；相同则只一个）
-    root = Path(_vault_path())
+    root = _vault_guard("读面：_reviews_read_dirs")   # ⭐ pm_1550 §二
+    if root is None:
+        return []
     cfg_dir = str(_obsidian_cfg().get("reviews_dir") or "Reviews")
     out = [root / cfg_dir]
     legacy = root / "Reviews"
@@ -661,8 +700,12 @@ def write_task_review(
     cfg = _obsidian_cfg()
     if not cfg.get("enabled"):
         return None
-    root = Path(_vault_path())
+    root = _vault_guard("写面：write_task_review")   # ⭐ pm_1550 §二：未接 ⇒ 显形 ＋ 早返（⛔ mkdir 于 CWD）
+    if root is None:
+        return None
     reviews = _reviews_write_dir()  # 批198: 写=配置（唯一来源）
+    if reviews is None:
+        return None
     try:
         reviews.mkdir(parents=True, exist_ok=True)
         date = time.strftime("%Y-%m-%d")
@@ -846,7 +889,9 @@ def write_vault_note(title, content, tags=None, folder="", append=False):
     cfg = _obsidian_cfg()
     if not cfg.get("enabled"):
         return None
-    root = Path(_vault_path())
+    root = _vault_guard("写面：write_vault_note")     # ⭐ pm_1550 §二：未接 ⇒ 显形 ＋ 早返
+    if root is None:
+        return None
     title = str(title or "").strip()
     if not title:
         return None
@@ -930,7 +975,9 @@ def append_pitfall(issue_text, tags=None):
     cfg = _obsidian_cfg()
     if not cfg.get("enabled") or not cfg.get("append_pitfalls"):
         return None
-    root = Path(_vault_path())
+    root = _vault_guard("写面：append_pitfall")       # ⭐ pm_1550 §二：未接 ⇒ 显形 ＋ 早返
+    if root is None:
+        return None
     pfile = root / _pitfalls_rel()
     try:
         # 目标目录缺失 ⇒ 先建（⛔ 不再静默返回 None —— 静默失败正是「追加已断」没被发现的原因）
@@ -1021,7 +1068,9 @@ def sync_knowledge_to_sandbox(sandbox_base=None):
     cfg = _obsidian_cfg()
     if not cfg.get("enabled"):
         return []
-    root = Path(_vault_path())
+    root = _vault_guard("读面：sync_knowledge_to_sandbox")   # ⭐ pm_1550 §二
+    if root is None:
+        return []
     out = []
     for key, info in _KNOWLEDGE_FILES.items():
         src = root / _sops_rel(info["file"])
@@ -1061,7 +1110,9 @@ def _resolve_knowledge_path(sop_key):
     cfg = _obsidian_cfg()
     if not cfg.get("enabled"):
         return None
-    root = Path(_vault_path())
+    root = _vault_guard("读面：_resolve_knowledge_path")     # ⭐ pm_1550 §二
+    if root is None:
+        return None
     key = str(sop_key or "").strip()
     if key in _KNOWLEDGE_FILES:
         return root / _sops_rel(_KNOWLEDGE_FILES[key]["file"])
@@ -1098,8 +1149,11 @@ def read_knowledge_file(sop_key, max_chars=4000):
         if _key.startswith("Reviews/"):
             cfg = _obsidian_cfg()
             if cfg.get("enabled"):
+                _vroot = _vault_guard("读面：read_knowledge_file(Reviews/)")   # ⭐ pm_1550 §二
+                if _vroot is None:
+                    return None
                 _rp = (
-                    Path(_vault_path())
+                    _vroot
                     / "Reviews"
                     / (_key[len("Reviews/") :] + (".md" if not _key.endswith(".md") else ""))
                 )
@@ -1126,7 +1180,9 @@ def list_knowledge_files():
     cfg = _obsidian_cfg()
     if not cfg.get("enabled"):
         return []
-    root = Path(_vault_path())
+    root = _vault_guard("读面：list_knowledge_files")        # ⭐ pm_1550 §二
+    if root is None:
+        return []
     skip = set(_exclude_dirs())
     _rel_map = _knowledge_rel_map()  # 逐件读配置太贵 ⇒ 一次算好
     out = []
@@ -1168,7 +1224,9 @@ def update_sop(sop_key, section_title, content, append=False):
     if not info:
         print(f"[OBSIDIAN] 未知知识键: {sop_key}, 可选: {list(_KNOWLEDGE_FILES)}")
         return None
-    root = Path(_vault_path())
+    root = _vault_guard("写面：update_sop")                  # ⭐ pm_1550 §二
+    if root is None:
+        return None
     fpath = root / _sops_rel(info["file"])
     try:
         title = str(section_title or "").strip()[:60]

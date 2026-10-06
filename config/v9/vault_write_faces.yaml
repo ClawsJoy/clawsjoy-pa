@@ -88,18 +88,21 @@ writers:
           - "core/pa/vault_brain.py:97"
   - module: core/gateway/precision_inject.py
     side: cw
+    # ⭐ 2026-10-06（pm_1550 §二.5 契约三「登记有漏 ＝ 齿之盲区」）：本件改 `precision_inject` 之
+    #   未接守 ⇒ 写点行号移位 ⇒ evidence 一并**改真行**（旧 673/696/1019/1198/1209 ∧ 900/926 皆已腐，
+    #   ⛔ 指真写调用）；并补 `write_vault_note` 之**缺面**（旧表二面 ⛔ 覆其 `{vault}/{folder}/*.md`）。
+    #   齿：tests/unit/test_precision_vault_unset_1550.py::test_registry_evidence_points_at_real_writes（逐行核真写）
     faces:
       - face: "{sops_dir}/*.md"
         evidence:
-          - "core/gateway/precision_inject.py:673"
-          - "core/gateway/precision_inject.py:696"
-          - "core/gateway/precision_inject.py:1019"
-          - "core/gateway/precision_inject.py:1198"
-          - "core/gateway/precision_inject.py:1209"
+          - "core/gateway/precision_inject.py:765"
+          - "core/gateway/precision_inject.py:1282"
       - face: "{pitfalls_dir}/避坑清单.md"
         evidence:
-          - "core/gateway/precision_inject.py:900"
-          - "core/gateway/precision_inject.py:926"
+          - "core/gateway/precision_inject.py:999"
+      - face: "{vault}/{folder}/*.md"
+        evidence:
+          - "core/gateway/precision_inject.py:939"
   - module: core/tools/write_file.py
     side: cw
     guard: "vault 面 ⇒ write_text_lf()（纯 LF ＋ 逐段 ≤200 B · fail-loud；查在 mkdir 之前）；非 vault 面 ⇒ 行为不变"

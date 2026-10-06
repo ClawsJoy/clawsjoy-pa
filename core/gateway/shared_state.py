@@ -246,9 +246,13 @@ def _vault_file_for_stat(args):
     try:
         import os as _os2
 
-        from core.gateway.precision_inject import _vault_path as _vp
+        from core.gateway.precision_inject import _vault_guard as _vg
 
-        p = _os2.path.join(str(_vp()), key)
+        # ⭐ pm_1550 §二：未接 ⇒ 早返（旧法 `str(_vp())` ＝ "" ⇒ `join("", key)` ⇒ 相对径 ⇒ 以 CWD 为库根）
+        _root = _vg("读面：shared_state._vault_read_target")
+        if _root is None:
+            return None
+        p = _os2.path.join(str(_root), key)
         return p if _os2.path.exists(p) else None
     except Exception:
         return None
