@@ -23,9 +23,9 @@ TIMEOUT = 8
 
 CANDIDATES = [
     {"id": "codex", "name": "Codex CLI", "kind": "coding_agent_cli", "command": ["codex"],
-     "npm": "@openai/codex", "home": r"D:\codex-home", "level": "L2", "channel": "CLI (npm global)"},
+     "npm": "@openai/codex", "home": os.environ.get("PA_AGENT_HOME_CODEX", ""), "level": "L2", "channel": "CLI (npm global)"},
     {"id": "pi", "name": "Pi Agent", "kind": "coding_agent_cli", "command": ["pi"],
-     "npm": "@earendil-works/pi-coding-agent", "home": r"D:\paseo-home", "level": "L2",
+     "npm": "@earendil-works/pi-coding-agent", "home": os.environ.get("PA_AGENT_HOME_PI", ""), "level": "L2",
      "channel": "CLI (npm global)"},
     {"id": "dsh", "name": "DeepSeek Harness", "kind": "coding_agent_cli", "command": ["dsh"],
      "npm": "@deepseek-ai/dsh", "home": r"~/.dsh", "level": "L2",
@@ -43,7 +43,10 @@ SERVICES = [
     {"id": "v9_gateway", "name": "V9 gateway", "kind": "local_service",
      "host": "127.0.0.1", "port": 5102, "level": "L2", "channel": "HTTP"},
 ]
-CAPS_SOURCES = [r"D:\paseo-home\config.json"]  # 能力位唯取**声明处** · ⛔ 猜
+# ⭐ 2026-10-06（pm_1409 §二.3 · 批二）：本机之 agent home 与 Paseo 配置之**字面径** ⇒ 拔。
+#   原 `D:\codex-home` ／ `D:\paseo-home` ／ `D:\paseo-home\config.json` ＝ **开发机之径**
+#   ⇒ 净机必败。今唯 env 出径：缺 ⇒ 空（探读数照实「未接」· ⛔ 崩 ／ ⛔ 字面兜底）。
+CAPS_SOURCES = tuple(p.strip() for p in (os.environ.get("PA_CAPS_SOURCES") or "").split(os.pathsep) if p.strip())
 
 LEVEL_BASIS = ("L4 native API/SDK > L3 MCP/ACP handshake > L2 doc/app entry (CLI, HTTP) "
                "> L1 UI automation > L0 unreachable")
