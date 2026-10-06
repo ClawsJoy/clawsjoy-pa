@@ -124,13 +124,16 @@ function paWpsStateLine(state){
    ===== */
 const PA_MD_MAX = 40000;
 function paMdEsc(s){ return esc(String(s==null?'':s)); }
+/* 属性之境（承 pm_1397 §一 · 同 md.js）：esc 唯转 & < >（⛔ 转 "） ⇒ href 之值须先转 "。 */
+function paMdAttrEsc(s){ return String(s==null?'':s).replace(/"/g, '&quot;'); }
 function paMdInline(t){
   let x = String(t==null?'':t);
   x = x.replace(/\x60([^\x60]+)\x60/g, function(_, c){ return '<code>'+c+'</code>'; });
   x = x.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  x = x.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  /* 强调须「词界」（承 pm_1397 §二 · 同 md.js）：*.py ／ 2*3*4 ⛔ 判强调（字面）。 */
+  x = x.replace(/(^|[^*\w])\*([^\s*](?:[^*\n]*[^\s*])?)\*(?!\w)/g, '$1<em>$2</em>');
   x = x.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)/g,
-                '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+                function(_, t, u){ return '<a href="'+paMdAttrEsc(u)+'" target="_blank" rel="noopener noreferrer">'+t+'</a>'; });
   x = x.replace(/\[([^\]]+)\]\(([^)]*)\)/g, '$1');   /* 非白名单协议 ⇒ 只留文字 */
   return x;
 }
