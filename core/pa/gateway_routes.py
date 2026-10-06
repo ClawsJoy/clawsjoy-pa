@@ -640,10 +640,13 @@ _LINE_CACHE = {}
 
 
 def _cached_lines(p):
-    """按 (path, mtime, size) 缓存行表 ⇒ 复问不重读盘（承「好用」之要求）。"""
+    """按 (path, mtime_ns, size) 缓存行表 ⇒ 复问不重读盘（承「好用」之要求）。
+
+    ⚠ pm_1549 §一.2：粒度**从 ns**（旧 `int(st.st_mtime)` ＝ 秒）—— 同秒内同长之改写
+      ⇒ 行表读旧（与「印」不同轴 ⇒ 印变而读旧 ＝ **假新鲜**）。"""
     try:
         st = p.stat()
-        k = (str(p), int(st.st_mtime), int(st.st_size))
+        k = (str(p), st.st_mtime_ns, st.st_size)   # ⭐ pm_1549 §一.2：**ns**（旧＝秒 ⇒ 同秒同长之改写 ⇒ 读旧）
     except Exception:
         return None
     v = _LINE_CACHE.get(k)
@@ -1543,6 +1546,41 @@ def _kb_root_str():
     return str(_vr) if _vr is not None else ""
 
 
+def pa_ask_scan_specs(kb_root):
+    u"""`/v9/pa/ask` 之**扫面清单**（一处定形）—— `(根, 面名, 通配)` 之列。
+
+    ⭐ pm_1549 §一.2：扫（`pa_kb_search`）与「印」（`pa_ask_scan_stamp`）**同用此单**
+      ⇒ 「将被扫之件集」二处**必同**（⛔ 二处各列 ⇒ 印与扫错位）。
+    """
+    out = [(Path(kb_root) / rel, rel, ("*.md",)) for rel in PA_KB_ASK_SCOPES]
+    for name, roots, globs in pa_faces():
+        for spec in roots:
+            out.append((_face_root(kb_root, spec), name, globs))
+    return out
+
+
+def pa_ask_scan_stamp(kb_root):
+    u"""**扫面之印**（复问缓存之失效判 · pm_1549 §一.2 裁 ⒝）—— ⛔ 读内容 · 唯列举 ＋ `stat`。
+
+    值 ＝ `件数:sha256(径|mtime_ns|size …)[:16]`；**唯作相等判**（⛔ 人读 ／ ⛔ 入屏）。
+    ⇒ 面变（增 ／ 删 ／ 改件 · 或改库根 ⇒ 换面）⇒ 印变 ⇒ 复问缓存**自失效**。
+    ⚠ 与 `_cached_lines` **同轴**（二者皆 `mtime_ns`）—— 印之分辨细于行缓存 ⇒
+      「印变而读旧」＝**假新鲜**（承「⛔ 不实之辞入屏」）⇒ 故二处必同轴。
+    """
+    import hashlib                      # ⭐ 局部导入（本模块级 ⛔ 增导 · 承 L22 之族）
+    _h = hashlib.sha256()
+    _n = 0
+    for root, _face, globs in pa_ask_scan_specs(kb_root):
+        for p in _face_files(root, globs):
+            try:
+                _st = p.stat()
+            except Exception:
+                continue
+            _n += 1
+            _h.update((u"%s|%d|%d\n" % (p, _st.st_mtime_ns, _st.st_size)).encode("utf-8"))
+    return u"%d:%s" % (_n, _h.hexdigest()[:16])
+
+
 def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
     """PA 知识库检索（BUG-2 的「有据面」）。
 
@@ -1620,11 +1658,8 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
                                   "score": round(cov, 3), "role": _role, "text": ln[:160]})
         faces[face] = faces.get(face, 0) + (searched - n0)
 
-    for rel in PA_KB_ASK_SCOPES:
-        _scan(Path(kb_root) / rel, rel, ("*.md",))
-    for name, roots, globs in pa_faces():
-        for spec in roots:
-            _scan(_face_root(kb_root, spec), name, globs)
+    for _root, _face, _globs in pa_ask_scan_specs(kb_root):   # ⭐ pm_1549 §一.2：扫面清单**一处定形**（与「印」同轴）
+        _scan(_root, _face, _globs)
 
     hits.sort(key=lambda x: -x["score"])
     _arch.sort(key=lambda x: -x["score"])
@@ -2166,7 +2201,7 @@ def register_pa_routes(app, brain=None):
                              and _ev_before is not None and _ev_after is not None
                              and _ev_after > _ev_before),
         }
-        # ⭐ PM 034 §三.ⓝ ／ 037 §A.2：走径标取自**后端实况**（⛔ 前端自说）；
+        # ⭐ PM 034 §三.⒝ ／ 037 §A.2：走径标取自**后端实况**（⛔ 前端自说）；
         # 回落 ⇒ 人话（⛔ 说成「正常」）。
         from core.pa.providers import (src_label as _src_label,
                                        fallback_note as _fallback_note,
@@ -2433,7 +2468,12 @@ def register_pa_routes(app, brain=None):
                        **_bb})
         # ⭐ 058 §一.3（裁）：复问缓存 —— 同问（同 kb ／ 同 limit）二次 ⇒ 复用首扫之果。
         _limit = int(p.get("limit") or 5)
-        _ck = (q, str(kb), _limit)
+        # ⭐⭐ pm_1549 §一.2（裁 ⒝ · 印随动）：键含**扫面之印** ——
+        #   病（CW `1546 §三` 一手）：旧键 `(q, kb, limit)` ⇒ **面变而果不变** ⇒ 复问复用
+        #     「整份扫描之果」（含 `face_snapshot_at` ／ 其「据」）⇒ 屏上之刻旧 ∧ 用户以为新实为旧。
+        #   法：面变（增 ／ 删 ／ 改件 ∧ 改库根）⇒ 印变 ⇒ 键变 ⇒ **自失效**（⛔ TTL 之「唯减其时」）。
+        _stamp = pa_ask_scan_stamp(kb)
+        _ck = (q, str(kb), _limit, _stamp)
         _hit = _ASK_CACHE.get(_ck)
         if _hit is not None:
             res, _cached_wall_s = _hit

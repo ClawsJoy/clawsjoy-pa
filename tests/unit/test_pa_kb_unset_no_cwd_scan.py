@@ -112,5 +112,9 @@ def test_single_judge_source():
     seg = inspect.getsource(GR.pa_kb_search)
     # ⚠ 判**调用形之序**（⛔ 判「文中提到同名」 —— 忍者注释自指 ⇒ 假红 · 承 install_win_pa 自测之训）
     assert seg.count(u"no_kb_root") == 1
-    #   判**真叫形**（`Path(kb_root)`）之序 —— ⛔ 判「加号引文字」（注释亦含 `Path("")` ⇒ 假红）
-    assert seg.index(u"no_kb_root") < seg.index(u"Path(kb_root)"), u"早返须在触 Path 之前"
+    #   判**真叫形**之序 —— ⛔ 判「加号引文字」（注释亦含 `Path("")` ⇒ 假红）
+    #   ⭐ pm_1549 §一.2：扫面清单移入 `pa_ask_scan_specs`（一处定形）
+    #     ⇒ 本处改判「早返（`no_kb_root`）先于**扫面之调用**」；
+    #       并断 `pa_kb_search` 内**⛔ 直触**径形（其唯一出处 ⇒ `pa_ask_scan_specs`）。
+    assert seg.index(u"no_kb_root") < seg.index(u"pa_ask_scan_specs("), u"早返须在触扫面之前"
+    assert u"Path(kb_root)" not in seg, u"扫面之径形须唯 `pa_ask_scan_specs` 一处"
