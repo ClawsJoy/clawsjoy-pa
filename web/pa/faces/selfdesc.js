@@ -1868,7 +1868,11 @@ function paPermRender(){
     addLog('✅ 已受理 · 按「本机自述」直接回答（' + keys.map(function(k){ return PA_SELF_Q[k]; }).join(' ＋ ') + '）· 未调用模型 · 未走知识检索'
       + (busy0 ? '（在办任务不受影响）' : ''), 'ok', true, '本机自述（回答层）');
     if(!busy0 && typeof setBusy === 'function'){ try{ setBusy(true); }catch(e){} }
+    /* ⭐ pm_1545 §二.2（承 1470「一轮一清」）：在办（`busy0`）时旧法**整支跳过**
+       ⇒ `paRunSrc` 承前轮 ⇒ 回执之「做了什么」（`srcOf()` ≡ `paRunSrc`）书**前轮**之径。
+       ⇒ 状态不动（⛔ 扰在办之轮），**唯落本轮之源**。 */
     if(!busy0 && typeof paSetState === 'function'){ try{ paSetState('running', '读取本机自述数据', SRC); }catch(e){} }
+    else { try{ paRunSrc = SRC; }catch(e){} }
     let sec = {u:'', e:''};
     try{ sec = await paSelfSections(keys); }
     catch(e){ sec = {u:'读取本机自述数据失败。', e:'原始错误：' + String((e && e.message) || e)}; }
@@ -1893,6 +1897,7 @@ function paPermRender(){
       else { addLog('⚠ 本轮落盘读数不可得 ／ 未落盘：后端无回执 —— ⛔ 不等于已保存', 'warn', true, 'P9 BUG-1'); }
     }catch(e){}
     if(!busy0 && typeof paSetState === 'function'){ try{ paSetState('done', '自述已回答', SRC); }catch(e){} }
+    else { try{ paRunSrc = SRC; }catch(e){} }   /* ⭐ pm_1545 §二.2：同上（收尾亦须落本轮之源）。 */
     if(!busy0 && typeof setBusy === 'function'){ try{ setBusy(false); }catch(e){} }
     try{ if(typeof saveState === 'function') saveState(); }catch(e){}
     return ans;
@@ -2655,6 +2660,21 @@ try{ window.paSelfStubPass = paSelfStubPass; }catch(e){}
    ⛔ 自动载模型：本行只报「本次请求会**触发**载入」（Ollama 于 generate 时自载）⇒ ⛔ 说成「我自动载了」。 */
 let paSelfWaitBoundMs = 130000;
 function paSelfWaitBoundSet(ms){ paSelfWaitBoundMs = Math.max(500, Number(ms) || 130000); return paSelfWaitBoundMs; }
+/* ⭐ pm_1545 §二.1（一处定形）：本轮**实走何路** ⇒ 取所选模型之行 `kind`（`models_table` 同源 · `local` ／ `remote`）
+   —— ⛔ 硬编「本机」（旧文恒书「本机模型」；而闲聊轮回落云端时其上屏 ⇒ 不实之辞）。
+   ⛔ 表未得 ／ 未选（⇒ 后端落默认）⇒ ''（未知）⇒ 措辞取**中性**。 */
+function paSelfModelKind(){
+  try{
+    const id = (typeof paModelSel === 'function') ? String(paModelSel() || '') : '';
+    if(!id) return '';
+    const rows = (typeof paModelRows !== 'undefined' && paModelRows) ? paModelRows : null;
+    if(!rows) return '';
+    for(let i = 0; i < rows.length; i++){
+      if(String((rows[i] || {}).id) === id) return String((rows[i] || {}).kind || '');
+    }
+  }catch(e){}
+  return '';
+}
 function paSelfWaitRow(){
   const t = document.getElementById('thread'); if(!t) return null;
   const el = document.createElement('div');
@@ -2667,11 +2687,21 @@ function paSelfWaitRow(){
 function paSelfWaitPaint(el, secs, over){
   if(!el || !el.parentNode) return;
   const box = el.querySelector('.wsec'); if(!box) return;
+  /* ⭐ pm_1545 §二.1（一处定形）：其字须依「本轮实走何路」（`paSelfModelKind()` 一处出 · ⛔ 恒书「本机」）。 */
+  const k = paSelfModelKind();
+  const who = (k === 'local') ? '本机模型' : ((k === 'remote') ? '云端模型' : '模型');
+  const bound = Math.round(paSelfWaitBoundMs / 1000);
   const txt = over
-    ? ('⚠ 等了 ' + secs + ' 秒仍无回复 —— 因：本机模型未载（首次载入约 40 s · 上限 ' + Math.round(paSelfWaitBoundMs/1000) + ' s）或后端未应答。'
+    ? ('⚠ 等了 ' + secs + ' 秒仍无回复 —— 因：'
+       + (k === 'remote' ? '云端未应答' : (k === 'local' ? '本机模型未载（首次载入约 40 s）' : '模型未应答'))
+       + ' · 上限 ' + bound + ' s。'
        + '\n法：① 再等片刻（载入完成即出答） ② 看顶栏「本地在」确认模型在不在 ③ 需要时可请我载本机模型（默认 5 分钟后自卸 · 须你准 · ⛔ 我不会自动载）')
-    : ('⏳ 已发问 · 等待本机模型回复 —— 已等 ' + secs + ' 秒'
-       + '\n因：本次请求会**触发**本机模型载入（未载时首次约 40 s）；载入后 5 分钟自卸。上限 ' + Math.round(paSelfWaitBoundMs/1000) + ' s。');
+    : ('⏳ 已发问 · 等待' + who + '回复 —— 已等 ' + secs + ' 秒'
+       + '\n因：' + (k === 'remote'
+           ? '本轮走**云端**（内容将出机）。上限 ' + bound + ' s。'
+           : (k === 'local'
+              ? '本次请求会**触发**本机模型载入（未载时首次约 40 s）；载入后 5 分钟自卸。上限 ' + bound + ' s。'
+              : '本轮之模型由后端定（若走本机 · 未载时首次约 40 s）。上限 ' + bound + ' s。')));
   if(box.textContent !== txt) box.textContent = txt;
   el.setAttribute('data-wait-secs', String(secs));
   el.setAttribute('data-wait-over', over ? '1' : '0');
