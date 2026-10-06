@@ -16,7 +16,7 @@ u"""(甲′) Win-PA 一键安装器 —— 净机「装得上」（承 pm_1384 �
      ⚠ 该键**唯新壳**方生效（起器承其父之 env）⇒ 须**关窗 · 重开**再起服。
 
 前置闸（**显形** · 人话之因 ＋ 修之门；⛔ 静默过）：
-  1. Python 版（>= 3.10 · 承 pyproject requires-python）
+  1. Python 版（**CPython 3.12 · 64 位** · 承 pyproject requires-python · 判在 preflight_start）
   2. 依赖（flask ／ yaml）—— 逐条 import（⛔ 只查清单）
   3. 端口（**真源** config/system/system_unified.yaml · 可绑）
   4. data\\ 可写（**真源** core.lib.config_helper.get_data_root()）
@@ -60,7 +60,9 @@ TASKS = (TASK_BOOT, TASK_ONCE)
 #: 依赖（逐条 import ⇒ 「可导入」≠「在清单里」）
 #: 自测钩：env PA_INSTALL_FORCE_FAIL=<闸名子串> ⇒ 置该闸败（⛔ 常规用 · 唯为反控验齿）
 DEPS = ("flask", "yaml")
-PY_MIN = (3, 10)
+# ⭐ pm_1569 §二（裁一 · 一处定形）：Python 版之判**唯一出处** ＝ preflight_start.py
+#   （PY_REQUIRED ／ classify_python ／ probe_python）—— 本器 ⛔ 另写「3.10」之字面（二源必漂）；
+#   本闸改为**承前置器之出**（见 preflight_gates）。
 VRAM_MIN_MIB = 4096          # 硬闸（低于 ⇒ ⛔ 本机模型路不可用）
 VRAM_RECOMMEND_MIB = 8192    # 荐（承 pm_1382 §二.5：荐 >= 8 GB；唯 6 GB ⇒ 用小模型）
 #: ⭐ pm_1500 §一（乙）：库根（知识库目录）之 env 名 —— 与 `core.lib.paths` 同名（一处定形）。
@@ -155,10 +157,17 @@ def _self_answering(port):
 def preflight_gates(offline=False, wheel_dir=None):
     u"""前置闸（逐条:**人话之因 ＋ 修之门** · ⛔ 只退 rc）—— 返回 [{name, ok, reason, note}]。"""
     g = []
-    ok = sys.version_info >= PY_MIN
-    g.append({"name": u"Python 版", "ok": ok,
-              "reason": u"%d.%d.%d" % sys.version_info[:3],
-              "note": u"" if ok else u"修之门：装 Python %d.%d+（python.org）" % PY_MIN})
+    # ⭐ pm_1569 §二（裁一）：Python 版之判**唯一出处** ＝ preflight_start（本器 ⛔ 另判）。
+    _pm = _pf()
+    _pyr = getattr(_pm, "PY_REQUIRED", (3, 12)) if _pm is not None else (3, 12)
+    _pnm = u"Python 版（须 %d.%d · 64 位）" % (_pyr[0], _pyr[1])
+    if _pm is None:
+        g.append({"name": _pnm, "ok": False,
+                  "reason": u"前置器不可用（%s）" % _PF_ERR,
+                  "note": u"修之门：查 scripts/win_pa/preflight_start.py 是否在"})
+    else:
+        _pok, _pwhy, _pdoor = _pm.probe_python()
+        g.append({"name": _pnm, "ok": bool(_pok), "reason": _pwhy, "note": _pdoor or u""})
     for m in DEPS:
         try:
             importlib.import_module(m)
@@ -166,7 +175,7 @@ def preflight_gates(offline=False, wheel_dir=None):
         except Exception as e:
             g.append({"name": u"依赖 %s" % m, "ok": False, "reason": u"%s: %s" % (type(e).__name__, str(e)[:80]),
                       "note": u"修之门：python -m pip install -r requirements.txt（或 pip install %s）" % m})
-    _m = _pf()
+    _m = _pm
     if _m is None:
         g.append({"name": u"前置器", "ok": False,
                   "reason": u"preflight_start.py 不可导入（%s）" % _PF_ERR,

@@ -108,6 +108,21 @@ _ASK_CACHE_MAX = 256
 _LLM_PHASE = {"warmed": False}
 
 
+def _lru_put(cache, key, val, cap):
+    u"""**LRU 存**（一处定形 · pm_1569 §五）—— 满 ⇒ 逐**最旧**（⛔ 弃新）。
+
+    旧病：if len(cache) < cap: cache[k] = v ⇒ 一旦满 ⇒ **新键永不入**（复问恒 miss ∧ 死键只增
+      不减 ⇒ 「治了等于没治」之潜口 · 承 pm_1549 §一 之旨）。
+    ⚠ **命中亦须过此**（pop ＋ 重插 ⇒ 提为最新）—— 否则降为 FIFO（⛔ LRU）。
+    ⚠ dict 保插入序（py3.7+）⇒ 首键 ＝ 最旧 ⇒ ⛔ 须 OrderedDict ／ 新导。
+    """
+    if key in cache:
+        cache.pop(key, None)
+    elif len(cache) >= cap:
+        cache.pop(next(iter(cache)), None)
+    cache[key] = val
+
+
 def _pa_read_at():
     u"""**取数之刻**（一处定形 · pm_1478 §二）—— 后端算成本轮回执之刻。
 
@@ -513,7 +528,29 @@ def _pa_faces_tables():
 #   `N1 | 我的老板叫什么名字 | ✅ 如实未答`）⇒ 2-gram 命中 `1.0` ⇒ **拒答面被冲垮**（假有据）。
 #   ⇒ 故：⒜ 台账面只取台账本身 ⒝ 文件面**排除 `_auto`**（我之报告 ／ 派件集）⒞ 扩面之阈值独立抬高。
 PA_FACES_SKIP = (".git", "node_modules", "__pycache__", ".pytest_cache", "store-assets",
-                 "_tmp", "_tools", "_seats", "_pm", "_cdp_profile", "_out", "_auto")
+                 "_tmp", "_tools", "_seats", "_pm", "_cdp_profile", "_out", "_auto",
+                 # ⭐ pm_1569 §四.1（剔之准随族 · ⛔ 一刀切）：**测试残渣之形** —— --basetemp 落
+                 #   根面之新名（ptmp1564 …）曾入检索面（14 件 fixture ⇒ 抖印 ∧ 假有据之口）。
+                 "ptmp*")
+# ⭐ pm_1569 §四.2（剔之准 ⛔ 随族）：**我方之报告 ／ 派件集** —— 按**件名之前缀族**剔
+#   （⛔ 唯目录名 _auto 一据 ⇒ 根面之同族件漏 · 承 L154 ／ L514 之族）。
+#   量（我一手器取）：文件面 95 件中 **32 件** 属此族（根 31 ＋ reports 1）⇒ 我方之报述入据
+#   ＝ **假有据**。⚠ 唯「文种前缀」之族 · ⛔ 扩面：凡**知识之件**皆留（英文调研 ／ *纪要 ／
+#   *报告 ／ 项目经理_角色卡）。
+PA_FACES_SKIP_PREFIX = ("作废_", "回执_", "作战单_", "发表_", "投递_", "派单_", "请求_",
+                        "申请_", "讲解_", "对表_", "点选表_", "素材_", "方案_", "设计方案_",
+                        "外采集_", "外线风险登记_")
+
+
+def _face_skip_name(name):
+    u"""目录名 ⇒ 剔否（**一处定形** · pm_1569 §四.1）—— 精确名 ∨ 通配形（ptmp*）。
+
+    ⚠ 旧形 e.name in PA_FACES_SKIP 唯精确 ⇒ ptmp1564 之流**漏剔**（残渣入面 ⇒ 抖印 ＋ 假有据）。
+    """
+    if name in PA_FACES_SKIP:
+        return True
+    import fnmatch                     # ⭐ 局部导入（本模块级 ⛔ 增导 · 承 L22 之族）
+    return any(("*" in _p or "?" in _p) and fnmatch.fnmatch(name, _p) for _p in PA_FACES_SKIP)
 PA_FACES_MIN_SCORE = {"文件": 0.5, "台账": 0.5, "台账·信通": 0.5}
 # ⭐ PM 2026-10-05（承 技总 973 §三 · `v3`）：行侧阈按面可配
 #   由：散文面（平台台账 ／ 文件）之长行 ⇒ 行侧覆盖天然低（真答案行 rcv ≈ 0.05–0.11）
@@ -543,7 +580,7 @@ PA_FACE_ROLE = {"收件箱": "knowledge", "知识库": "knowledge",
                 #   ⚠ 此为**我之判** ⇒ 候 PM 核（改 archive 仅一行 · ⛔ 动骨架）。
                 "死件账": "knowledge"}
 # ⭐ 面册 ＋ 角色 ＋ 阈 之版本（改此三物 ⇒ 必 +1 · 承 PM 845 §二.1 · L152）
-PA_FACES_VERSION = "2026-10-06.10"   # ⭐ .10：`PA_ORG_FACES` 门（关 ⇒ 唯产品面 `死件账`）⇒ +1（承 L152）｜ ⭐ .9：元问路（context_missing）之答话 ＋ 死件路「账不可读」之界（PM 1183 §五.1 ／ §八 · 我 1057）⇒ 仍 +1｜⭐ .8：死件账之**直读路**（PM 22:34 §三① 准 · 条件⒟）⇒ 仍 +1（承 L152）｜⭐ .7：面表＋角色表增「死件账」（PM 22:34 §二 裁）｜⭐ 2026-10-05：面表＋角色表增 `文件·产出`（PM「M1 接线收口」§二 ⒜）⇒ 皆 +1
+PA_FACES_VERSION = "2026-10-06.11"   # ⭐ .11（pm_1569 §四）：扫面之剔（PA_FACES_SKIP 增 ptmp* ＋ 新 PA_FACES_SKIP_PREFIX「报告 ／ 派件」族）＋ searched 改**唯一件数**（＋ searched_roles ／ searched_scans）⇒ +1（承 L152）｜ ⭐ .10：`PA_ORG_FACES` 门（关 ⇒ 唯产品面 `死件账`）⇒ +1（承 L152）｜ ⭐ .9：元问路（context_missing）之答话 ＋ 死件路「账不可读」之界（PM 1183 §五.1 ／ §八 · 我 1057）⇒ 仍 +1｜⭐ .8：死件账之**直读路**（PM 22:34 §三① 准 · 条件⒟）⇒ 仍 +1（承 L152）｜⭐ .7：面表＋角色表增「死件账」（PM 22:34 §二 裁）｜⭐ 2026-10-05：面表＋角色表增 `文件·产出`（PM「M1 接线收口」§二 ⒜）⇒ 皆 +1
 # ⭐ 问域类（PM 846 §三 ／ 847 §五 · 承 L151）：元 ／ 指代 ／ 重复 ／ 上文 ⇒ 走**会话路**（⛔ 进检索闸）
 #   ⚠ 轴之分（PM 裁 · 承 L83）：本轴（`meta` ／ `retrieve`）管**路由**；前端 `paAskDomain` 管**自述 ／ 本机 ／ 世界** ⇒ 两轴各管其段（⛔ 二处各判同一物）
 PA_ASK_META_KW = ("上一条", "上一句", "上一问", "前一句", "刚才", "原样重复",
@@ -637,6 +674,7 @@ def _face_root(kb_root, spec):
 
 
 _LINE_CACHE = {}
+_LINE_CACHE_MAX = 3000   # ⭐ pm_1569 §五：上限入常量（旧为字面 3000 · 无淘汰 ⇒ 满则新件永不入）
 
 
 def _cached_lines(p):
@@ -651,14 +689,15 @@ def _cached_lines(p):
         return None
     v = _LINE_CACHE.get(k)
     if v is not None:
+        _lru_put(_LINE_CACHE, k, v, _LINE_CACHE_MAX)   # ⭐ pm_1569 §五：命中提为最新（真 LRU）
         return v
     try:
         txt = p.read_text(encoding="utf-8", errors="replace")
     except Exception:
         return None
     v = txt.splitlines()
-    if len(_LINE_CACHE) < 3000:
-        _LINE_CACHE[k] = v
+    # ⭐ pm_1569 §五（同族 · 一并）：满 ⇒ 逐最旧（⛔ 旧形「满则新件永不入」）
+    _lru_put(_LINE_CACHE, k, v, _LINE_CACHE_MAX)
     return v
 
 
@@ -715,10 +754,13 @@ def _face_files(root, globs):
                 for e in it:
                     try:
                         if e.is_dir(follow_symlinks=False):
-                            if e.name in PA_FACES_SKIP:
+                            if _face_skip_name(e.name):
                                 continue
                             stack.append(Path(e.path))
                         else:
+                            # ⭐ pm_1569 §四.2：**件名之前缀族**（我方之报告 ／ 派件集）⇒ 剔（⛔ 入面）
+                            if any(e.name.startswith(_sp) for _sp in PA_FACES_SKIP_PREFIX):
+                                continue
                             found.append(Path(e.path))
                     except OSError:
                         continue
@@ -1590,7 +1632,8 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
     """
     # ⭐⭐ pm_1500 §二：库根未接 ⇒ **早返**（⛔ 触 `Path("")` ⇒ 误扫 CWD · 假有据）。
     if not str(kb_root or "").strip():
-        return {"hits": [], "archive_hits": [], "searched": 0, "scope": [],
+        return {"hits": [], "archive_hits": [], "searched": 0, "searched_scans": 0,
+                "searched_roles": {}, "scope": [],
                 "threshold": min_score, "faces": {}, "no_kb_root": True,
                 "faces_missing": list(PA_KB_ASK_SCOPES) + [f[0] for f in pa_faces()],
                 "faces_skipped": {}, "faces_version": PA_FACES_VERSION,
@@ -1606,16 +1649,19 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
     hits = []
     _arch = []   # ⭐ 档案面之命中（⛔ 作据 · 另键报出 · 承 L154）
     searched = 0
+    _seen = {}   # ⭐ pm_1569 §四.4：径 ⇒ 角色（searched 之**唯一**之据 · 同件二面 ⇒ 只计一次）
     faces = {}
     face_missing = []
     face_skipped = {}
     if not qg:
-        return {"hits": [], "searched": 0, "scope": [], "threshold": min_score, "faces": {},
+        return {"hits": [], "searched": 0, "searched_scans": 0, "searched_roles": {},
+                "scope": [], "threshold": min_score, "faces": {},
                 "faces_missing": [], "faces_skipped": {}}
 
     def _scan(root, face, globs):
         nonlocal searched
         n0 = searched
+        _role = PA_FACE_ROLE.get(face, "knowledge")   # ⭐ 面级角色（一处取 · pm_1569 §四.3）
         _ms = PA_FACES_MIN_SCORE.get(face, min_score)
         _maxb = PA_FACES_MAX_BYTES.get(face, PA_FACES_DEFAULT_MAX_BYTES)
         if not Path(root).is_dir():
@@ -1631,6 +1677,7 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
             if lines is None:
                 continue
             searched += 1
+            _seen[str(p)] = _role   # ⭐ pm_1569 §四.4：唯一件数之据（同件二面 ⇒ 只计一次）
             for i, ln in enumerate(lines, 1):
                 ln = ln.strip()
                 if len(ln) < 4:
@@ -1641,7 +1688,6 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
                     _lg = _bigrams(ln)
                     _inter = len(qg & _lg)
                 cov = _inter / float(len(qg))      # 问题侧（保留 ⇒ 上屏之 score）
-                _role = PA_FACE_ROLE.get(face, "knowledge")
                 if cov < _ms:
                     continue
                 if _role != "archive":             # ⭐ 行侧（PM 846 §二.2 双向取小 · 承 L150）
@@ -1664,7 +1710,11 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
     hits.sort(key=lambda x: -x["score"])
     _arch.sort(key=lambda x: -x["score"])
     allscope = list(PA_KB_ASK_SCOPES) + [f[0] for f in pa_faces()]
-    return {"hits": hits[:limit], "archive_hits": _arch[:limit], "searched": searched,
+    _roles = {}                      # ⭐ pm_1569 §四.3／§四.4：作据 N ／ 只索引 M（分列 ⇒ ⛔ 静默）
+    for _r in _seen.values():
+        _roles[_r] = _roles.get(_r, 0) + 1
+    return {"hits": hits[:limit], "archive_hits": _arch[:limit], "searched": len(_seen),
+            "searched_scans": searched, "searched_roles": _roles,
             "scope": allscope, "threshold": min_score, "faces": faces,
             "faces_missing": face_missing, "faces_skipped": face_skipped,
             "face_snapshot_at": _snap, "faces_version": PA_FACES_VERSION,
@@ -2478,16 +2528,21 @@ def register_pa_routes(app, brain=None):
         if _hit is not None:
             res, _cached_wall_s = _hit
             _from_cache = True
+            _lru_put(_ASK_CACHE, _ck, _hit, _ASK_CACHE_MAX)   # ⭐ pm_1569 §五：命中提为最新（真 LRU）
         else:
             res = pa_kb_search(q, kb, limit=_limit)
             _cached_wall_s = 0.0
             _from_cache = False
-            if len(_ASK_CACHE) < _ASK_CACHE_MAX:
-                _ASK_CACHE[_ck] = (res, round(time.perf_counter() - _tk0, 3))
+            # ⭐ pm_1569 §五（即刻办 · 治）：满 ⇒ **逐最旧**（⛔ 旧形「满则新键永不入」＝ 复问恒 miss）
+            _lru_put(_ASK_CACHE, _ck, (res, round(time.perf_counter() - _tk0, 3)), _ASK_CACHE_MAX)
         _search_wall_s = round(time.perf_counter() - _tk0, 3)
         _faces = res.get("faces", {})
         _arch = res.get("archive_hits", [])
         base = {"question": q, "read_at": _at, "kb_root": str(kb), "searched": res["searched"],
+                # ⭐ pm_1569 §四.3／§四.4（**唯加键**）：作据 N ／ 只索引 M 分列 —— 面之半
+                #   （今 dsh 308 件）为**只索引**（role: archive）⇒ ⛔ 静默（承「⛔ 不实之辞入屏」）
+                "searched_roles": res.get("searched_roles", {}),
+                "searched_scans": res.get("searched_scans"),
                 "kb_state": "set",
                 "from_cache": _from_cache,
                 # ⭐ PM 2026-10-05 22:34 §四⒝-1：**canonical 之引用面** —— 前端取此二键

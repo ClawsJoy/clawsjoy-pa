@@ -68,6 +68,37 @@ REQUIRED_DEPS = (
     ('psutil', 'psutil'), ('tiktoken', 'tiktoken'), ('chromadb', 'chromadb'),
 )
 
+# ⭐ pm_1569 §二（裁一 · 即刻办）：**净机之 Python 锁 CPython 3.12 · 64 位** —— 包内 wheel
+#   21 件（我一手器取）皆 cp312-cp312-win_amd64 ⇒ 3.10 ／ 3.11 ／ 32 位之机**装必败**；
+#   旧稿书「3.10 或更新」＝ 假言（⛔ 一名一义）⇒ 前置闸须**检版 fail-loud**（⛔ 静默 ／ ⛔ 半装）。
+#   ⚠ **一处定形**：本器为**唯一之判** —— 安装器（install_win_pa.preflight_gates）承此出闸，
+#   ⛔ 另写一遍（二源必漂 · 承 L59-62 之族）。
+PY_REQUIRED = (3, 12)
+PY_REQUIRED_BITS = 64
+
+
+def classify_python(impl, ver, bits):
+    u'''⭐ Python 版之判（**一处定形** · pm_1569 §二）：CPython ∧ ver >= 3.12 ∧ 64 位。
+
+    返回 (ok, 人话之实, 修之门)；⛔ 静默 —— 不合则**点名本机之实**（实现 ／ 版 ／ 位数）＋ 门。
+    '''
+    _v = tuple(ver or ())[:3]
+    _impl = (impl or u'').lower()
+    _bits = int(bits or 0)
+    _ok = (_impl == u'cpython') and (_v >= PY_REQUIRED) and (_bits == PY_REQUIRED_BITS)
+    _why = u'%s %s · %d 位' % (impl or u'?', u'.'.join(str(x) for x in _v) or u'?', _bits)
+    if _ok:
+        return True, _why, u''
+    return False, _why, (u'修之门：装 CPython %d.%d · %d 位'
+                         u'（python.org ⇒ Windows installer (64-bit)）'
+                         % (PY_REQUIRED[0], PY_REQUIRED[1], PY_REQUIRED_BITS))
+
+
+def probe_python():
+    u'''本机之 Python 之实（sys.version_info ＋ sys.maxsize ⇒ 64 位）⇒ classify_python 之果。'''
+    return classify_python(sys.implementation.name, sys.version_info[:3],
+                           64 if sys.maxsize > 2 ** 32 else 32)
+
 
 def probe_deps(deps=None):
     u'''⭐ **依赖自检**（承 pm_1386 §二.3）：必需集逐包「在 ∨ 缺」＋ 缺 ⇒ **人话之因 ＋ 修之门**。
@@ -295,7 +326,9 @@ def probe_ollama():
 
 def collect(root):
     port, src = resolve_port(root)
-    items = [(u'依赖（必需 %d 包）' % len(REQUIRED_DEPS), probe_deps())]
+    items = [(u'Python 版（须 %d.%d · %d 位）'
+              % (PY_REQUIRED[0], PY_REQUIRED[1], PY_REQUIRED_BITS), probe_python()),
+             (u'依赖（必需 %d 包）' % len(REQUIRED_DEPS), probe_deps())]
     items.append((u'services.gateway.port 可读', probe_config_port(root)))
     items.append((u'端口 %d 可绑' % port, probe_port(port)))
     items.append((u'data\\ 可写', probe_writable(os.path.join(root, 'data'))))
@@ -405,6 +438,15 @@ def selftest():
         u'反例：在 ⇒ 过（⛔ 假红）')
     say(probe_deps(REQUIRED_DEPS)[0] is True and u'必需' in probe_deps(REQUIRED_DEPS)[1],
         u'正控：本机之必需集 ⇒ 过 ∧ 点名其数（若红 ⇒ 本机缺依赖 · 见其因）')
+    _pk = classify_python(u'cpython', (3, 12, 10), 64)
+    say(_pk[0] is True and (u'3.12.10' in _pk[1]),
+        u'正控：CPython 3.12.10 · 64 位 ⇒ 过（⛔ 假红）')
+    _po = classify_python(u'cpython', (3, 10, 11), 64)
+    say(_po[0] is False and (u'3.12' in _po[2]) and (u'修之门' in _po[2]),
+        u'反例：CPython 3.10 · 64 位 ⇒ 判红 ＋ 点名须 3.12 ＋ 修之门')
+    _pb = classify_python(u'cpython', (3, 12, 10), 32)
+    say(_pb[0] is False and (u'64' in _pb[2]),
+        u'反例：CPython 3.12 · **32 位** ⇒ 判红 ＋ 点名须 64 位')
     n, t = sum(1 for c in hits if c), len(hits)
     print(u'=== 自检器自测 %d/%d 通过（%s）===' % (n, t, u'rc=0' if n == t else u'rc=2'))
     return 0 if n == t else 2
