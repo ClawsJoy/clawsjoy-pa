@@ -630,7 +630,7 @@ try{ window.paSelfChkNorm = paSelfChkNorm; }catch(e){}
 const paSelfAskStat = {t0:'', hit:0, miss:0, fallback:0, fallbackFail:0, askFail:0, direct:0, lastQ:'', lastRoute:'', lastAt:'',
   lastScope:[], lastFaces:null, lastSearched:null, lastFacesAt:'', lastFacesRead:'', lastKbRoot:'',
   lastFacesMissing:null, lastFacesSkipped:null,
-  lastJudge:null, lastArchiveHits:null, lastAnswerSource:''};
+  lastJudge:null, lastArchiveHits:null, lastAnswerSource:'', lastFromCache:null};
 function paSelfAskStatGet(){
   const s = paSelfAskStat;
   return {t0:s.t0, hit:s.hit, miss:s.miss, fallback:s.fallback, fallbackFail:s.fallbackFail,
@@ -733,11 +733,20 @@ let paSelfTagAt = '';
    ⛔ 自造 ／ ⛔ 以未知充知：`from_cache` 缺 ⇒ null ⇒ **⛔ 冒「复用」**（照旧形 · ⛔ 添辞 · 承 §二.4「人话面 ⛔ 添字」）。
    料唯取**本轮之回**（`from_cache`）—— `scanned` ／ `saved_wall_s` ⛔ 入字面（同上）· 其值留后端之回 · 可回指。 */
 let paSelfCacheReuse = null;   /* null ＝ 未给（⛔ 冒）｜true ＝ 复用｜false ＝ 本轮重扫 */
-function paSelfCacheMark(){
-  /* ⚠ 唯 `=== true` 出辞（⛔ 冒：未给 ／ false ／ 缺键 皆 ⛔ 出）。 */
-  return (paSelfCacheReuse === true) ? '（复用 · ⛔ 本轮重扫）' : '';
+/* ⭐ pm_1562 §二.3（一处定形 · 承 pm_1557 §二.2）：复用之判 —— **唯此处**取 `from_cache`
+   （⛔ 二处各写 `from_cache === true`）。有 `g`（本轮之回）⇒ 唯取 `g.from_cache`
+   （异轮重渲 —— 如「关于 PA」盒再开 —— ⛔ 取全局之残）；无 `g`（`paSelfTag` 之径 · 承 1557 §二.2）
+   ⇒ 取本轮已记之 `paSelfCacheReuse`。缺键 ⇒ null（⛔ 冒）。 */
+function paSelfCacheStateOf(g){
+  const v = (g && typeof g === 'object') ? g.from_cache : paSelfCacheReuse;
+  return (v === true) ? true : ((v === false) ? false : null);
 }
-try{ window.paSelfCacheMark = paSelfCacheMark; }catch(e){}
+/* ⭐ 辞 —— 一处（⛔ 二处各写）。⚠ 唯 `=== true` 出辞（⛔ 冒：未给 ／ false ／ 缺键 皆 ⛔ 出）。 */
+function paSelfCacheMarkOf(g){
+  return (paSelfCacheStateOf(g) === true) ? '（复用 · ⛔ 本轮重扫）' : '';
+}
+function paSelfCacheMark(){ return paSelfCacheMarkOf(null); }
+try{ window.paSelfCacheMark = paSelfCacheMark; window.paSelfCacheMarkOf = paSelfCacheMarkOf; }catch(e){}
 function paSelfTag(kind, n){
   var at = paSelfTagAt ? (' · 检索面采于 ' + paSelfTagAt + paSelfCacheMark()) : '';
   if(kind === 'local') return '📎 源之分标：本机素材（据 ' + ((n == null || n === '') ? '—' : n) + ' 条）' + at;
@@ -1625,7 +1634,7 @@ function paSelfJudgeOf(g){
 function paSelfJudgeText(g){
   const j = paSelfJudgeOf(g);
   let t = '判据 ' + (j.thr == null ? '（本次不适用）' : j.thr) + ' ／ 面册 ' + (j.ver || '版本未给')
-    + ' · 采于 ' + PA_STAMP.fmt((j.snap || j.at) || '刻未给');
+    + ' · 采于 ' + PA_STAMP.fmt((j.snap || j.at) || '刻未给') + paSelfCacheMarkOf(g);   /* ⭐ pm_1562 §二.1：复用与所书之「采于」同源（唯取本轮之回） */
   if(j.cnt != null) t += '（面 ' + j.cnt + ' 枚 · 件 ' + (j.tot == null ? '—' : j.tot) + '）';
   return t + '｜源 /v9/pa/ask 之 judge';
 }
@@ -1672,7 +1681,9 @@ function paSelfJudgeRemember(g){
   try{
     const j = paSelfJudgeOf(g);
     paSelfTagAt = (j.snap || j.at || '');
-    paSelfCacheReuse = (g && g.from_cache === true) ? true : ((g && g.from_cache === false) ? false : null);   /* ⭐ pm_1557 §二.2：复用之判 —— **一处**（⛔ 各渲点各判）· 料唯取本轮之回 · ⛔ 自造（缺键 ⇒ null ⇒ ⛔ 冒） */
+    const _fc = paSelfCacheStateOf(g);   /* ⭐ pm_1557 §二.2 ／ pm_1562 §二.3：复用之判 —— **一处**（⛔ 各渲点各判）· 料唯取本轮之回 · ⛔ 自造（缺键 ⇒ null ⇒ ⛔ 冒） */
+    paSelfCacheReuse = _fc;
+    paSelfAskStat.lastFromCache = _fc;   /* ⭐ pm_1562 §二.3：与所书之「采于」同源 —— 「关于 PA」盒之判据行取此（⛔ 取全局之残） */
     paSelfAskStat.lastJudge = (g && typeof g.judge === 'object' && g.judge) ? g.judge : null;
     paSelfAskStat.lastArchiveHits = (g && Array.isArray(g.archive_hits)) ? g.archive_hits : null;
     paSelfAskStat.lastAnswerSource = (g && g.answer_source) ? String(g.answer_source) : '';
@@ -1684,7 +1695,8 @@ function paSelfJudgeLine(){
     return '判据：本页尚未检索（源 /v9/pa/ask 之 judge）';
   }
   const g = {judge:paSelfAskStat.lastJudge, archive_hits:paSelfAskStat.lastArchiveHits || [],
-             answer_source:paSelfAskStat.lastAnswerSource || '', read_at:paSelfAskStat.lastFacesRead || ''};
+             answer_source:paSelfAskStat.lastAnswerSource || '', read_at:paSelfAskStat.lastFacesRead || '',
+             from_cache:paSelfAskStat.lastFromCache};   /* ⭐ pm_1562 §二.3：与所书之「采于」同源（⛔ 全局之残） */
   let t = paSelfJudgeText(g);
   const as = paSelfAnswerSourceText(g); if(as) t += ' ｜ ' + as;
   const ar = paSelfArchiveText(g); if(ar) t += ' ｜ ' + ar;
@@ -2113,7 +2125,7 @@ function paSelfFailText(s){
                       miss:(g.faces_missing || []), skip:(g.faces_skipped || {}), ev:(g.evidence || []),
                       judge:g.judge, archive_hits:g.archive_hits, answer_source:g.answer_source,
                       refusal_canon:g.refusal_canon, refusal_stale:g.refusal_stale,
-                      verdict:g.verdict, domain:g.ask_domain};
+                      verdict:g.verdict, domain:g.ask_domain, from_cache:g.from_cache};
         } else if(g.grounded === false || g.refused){
           if(g.refused){
             /* ⭐ pm 21:20 §三（裁：三形皆须禁）＋ §二.处2（档亦带标）：
@@ -2151,6 +2163,7 @@ function paSelfFailText(s){
                         read:(g.read_at || '—'),
                         judge:g.judge, archive_hits:g.archive_hits, answer_source:g.answer_source, verdict:g.verdict,
                         refusal_canon:g.refusal_canon, refusal_stale:g.refusal_stale,
+                        from_cache:g.from_cache,
                         /* ⭐ pm_1492 §二.2（一处定形）：本轮之**键**入凭据 —— Fork-2 之判唯自键出 */
                         gate:g.gate};
             paSelfLbl = null;
@@ -2162,7 +2175,7 @@ function paSelfFailText(s){
             try{ paSelfAskBump('miss', lastQ, '检索未命中（grounded:false）'); }catch(e){}
           gateInfo = {n:0, scope:g.scope, faces:g.faces, searched:g.searched, thr:g.threshold, read:g.read_at, ev:[],
                         judge:g.judge, archive_hits:g.archive_hits, answer_source:g.answer_source, verdict:g.verdict,
-                        refusal_canon:g.refusal_canon, refusal_stale:g.refusal_stale};
+                        refusal_canon:g.refusal_canon, refusal_stale:g.refusal_stale, from_cache:g.from_cache};
           }
         }
       }

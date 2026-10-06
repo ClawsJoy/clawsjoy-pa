@@ -7,6 +7,7 @@ u"""pm_1557 \u00a7\u4e8c.5 \u4e4b\u9f7f\uff08CW b2a5182 \u00b7 2026-10-06\uff09\
   L2 \u53cd\u63a7\uff1a`from_cache=false` \u21d2 \u2117 \u542b\u300c\u590d\u7528\u300d\u800c\u4ecd\u542b\u300c\u91c7\u4e8e\u300d\u3002
   L3 \u7f3a\u952e\u4e4b\u5b88\uff1a`from_cache` \u7f3a \u21d2 \u2117 \u5192\u300c\u590d\u7528\u300d \u2117 \u9759\u9ed8\uff08\u884c\u4ecd\u771f\u51fa\uff09\u3002
   L4 \u5e42\u7b49\u63a7\uff1a\u91cd\u6e32 \u21d2 \u9010\u5b57\u540c \u2117 \u500d\u589e\uff08\u300c\u590d\u7528\u300d\u4ecd\u552f 1\uff09\u3002
+  " + chr(92) + u"u26a0 pm_1562 " + chr(92) + u"u00a7" + chr(92) + u"u4e8c.3（一处定形）：判 ／ 辞 今在 paSelfCacheStateOf ／ paSelfCacheMarkOf（本齿仍针 paSelfCacheMark 之旧径 · 行为一字不动）。
 
 \u4ee5\u4f55\u5f62\u8c03\u7528\uff1apython -X utf8 -B -m pytest tests/unit/test_pa_cache_mark_1557.py -q
 """
@@ -66,6 +67,8 @@ HARNESS = u"""__DECL_AT__
 __DECL_CACHE__
 __JUDGEOFFN__
 __JUDGEREM__
+__STATEFN__
+__MARKOF__
 __MARKFN__
 __TAGFN__
 var paSelfAskStat = {};
@@ -90,6 +93,8 @@ def _run() -> dict:
                  .replace("__DECL_CACHE__", _decl(s, "let paSelfCacheReuse = "))
                  .replace("__JUDGEOFFN__", _fn(s, "paSelfJudgeOf"))
                  .replace("__JUDGEREM__", _fn(s, "paSelfJudgeRemember"))
+                 .replace("__STATEFN__", _fn(s, "paSelfCacheStateOf"))
+                 .replace("__MARKOF__", _fn(s, "paSelfCacheMarkOf"))
                  .replace("__MARKFN__", _fn(s, "paSelfCacheMark"))
                  .replace("__TAGFN__", _fn(s, "paSelfTag")))
     return _node(js, "mark")
