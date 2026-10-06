@@ -328,6 +328,51 @@
 <script src="pa/faces/more.js"></script>
 <script src="pa/faces/selfdesc.js"></script>
 <script src="pa/faces/sources.js"></script>
+<!-- ⭐ 首启引导（净机之「第一屏」· M1 余件之三 · 承 pm_1384 §三.3）：
+     ⒜ 数据在本机（**人话** · ⛔ 行话）⒝ 模型三态 ＋ 修之门 ⒞ 数据目录 ⒟ ⛔ 静默（缺则显因）。
+     读数源 ＝ GET /v9/pa/first_run（**只读**）；⛔ 后端 ⛔ 在答 ⇒ 明书「没读成」（⛔ 装成「已就绪」）。
+     ⛔ 行内证：本段 ⛔ 载绝对径 ／ ⛔ 起停 ／ ⛔ 上传。 -->
+<script>
+(function(){
+  var B=(typeof API!=='undefined')?API:'';
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function q(s){return String(s==null?'':s).replace(/\*\*/g,'');}
+  function el(tag,st,html){var d=document.createElement(tag);if(st)d.setAttribute('style',st);if(html!=null)d.innerHTML=html;return d;}
+  var SAID={'未接':'本机的 AI 模型**没接上**','在·无权重':'本机有模型服务，但**还没下模型**（下好才能用）',
+            '在∧可用':'本机的 AI 模型**可用**','不可达':'本机有模型服务，但**答不上来**','未核':'模型**没查成**（见其据）'};
+  function box(d){
+    var b=el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#0f172a;color:#e8eef7;border:1px solid #334155;border-radius:10px;padding:12px 14px;font:13px/1.75 system-ui,Segoe UI,Microsoft YaHei,sans-serif;box-shadow:0 8px 26px rgba(0,0,0,.35);max-height:48vh;overflow:auto');
+    b.appendChild(el('div','font-weight:700;margin:0 0 6px','🔰 第一次用（只读 · 数来自本机后端）'));
+    var need=(d['须知']||[]);
+    for(var i=0;i<need.length;i++){
+      b.appendChild(el('div','margin:2px 0','• '+esc(q(need[i]['话']))+' <span style="opacity:.62">［据 '+esc(need[i]['据'])+'］</span>'));
+    }
+    var m=d['模型']||{};
+    b.appendChild(el('div','margin-top:6px','• 模型之路：'+esc(q(SAID[m['态']]||m['态']))+' <span style="opacity:.62">［'+esc(m['因']||'')+'］</span>'));
+    var dir=d['数据目录']||{};
+    b.appendChild(el('div','margin-top:2px','• 数据目录：'+esc(dir['值']||'（未接）')+' <span style="opacity:.62">［'+esc(dir['源']||'')+'］</span>'));
+    var miss=(d['缺']||[]);
+    if(miss.length){
+      var mm='• 还没接上的：';
+      for(var k=0;k<miss.length;k++){mm+=esc(miss[k]['项'])+'（'+esc(miss[k]['因'])+'）'+(k<miss.length-1?'；':'');}
+      b.appendChild(el('div','margin-top:2px;color:#fbbf24',mm));
+    }
+    var btn=el('button','float:right;margin-left:10px;background:#1e293b;color:#e8eef7;border:1px solid #475569;border-radius:6px;padding:2px 10px;cursor:pointer','知道了');
+    btn.onclick=function(){b.setAttribute('style',b.getAttribute('style')+';display:none');};
+    b.appendChild(btn);
+    document.body.appendChild(b);
+  }
+  function fallback(){
+    document.body.appendChild(el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#3b1d1d;color:#fde8e8;border:1px solid #7f1d1d;border-radius:10px;padding:10px 14px;font:13px/1.7 system-ui,Segoe UI,Microsoft YaHei,sans-serif','🔰 第一次用：**没读成**后端之读数（⛔ 显示为「已就绪」）—— 请查后端是否在答。'));
+  }
+  try{
+    fetch(B+'/v9/pa/first_run',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
+      if(d&&d.ok){try{box(d);}catch(e){fallback();}}else{fallback();}
+    },function(){fallback();});
+  }catch(e){fallback();}
+})();
+</script>
+
 <script src="pa/boot.js"></script>
 </body>
 </html>

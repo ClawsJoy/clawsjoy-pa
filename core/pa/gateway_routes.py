@@ -807,6 +807,158 @@ def _src_face_readout():
             "口径": "画像素材面（左栏「来源面」）之读数 · ⛔ 检索面（PA_FACES）· 两轨两名分列"}
 
 
+
+# ============================== ⭐ 首启引导（承 pm_1384 §三.3）==============================
+PA_FIRST_RUN_VERSION = "2026-10-06.1"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+
+#: ⛔ 遥测／分析之显式调用点之形（**调用形** · ⛔ 唯品牌名 —— 名可现于文档而不为调用）
+_TELEMETRY_MARKS = ("posthog.", "sentry_sdk.init(", "mixpanel.", "amplitude.",
+                    "send_telemetry(", "google-analytics.com", "gtag(", "matomo.", "umami.")
+
+
+def _telemetry_scan():
+    u"""静态核：`core/**` 之显式遥测／分析调用点 —— **器取**（⛔ 口说「无遥测」＝ 装成可用）。
+
+    ⚠ 其为**弱保证**（唯字面扫 · ⛔ 及动态加载）⇒ 面之辞须以本读为据 ＋ 明书其界。
+    """
+    hits = []
+    try:
+        for _p in (_UI_REPO / "core").rglob("*.py"):
+            try:
+                _t = _p.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+            # ⚠ 剔**本表之定义**自身 —— ⛔ 则自指（我一手逮之实：9 处「命中」皆出本档之定义行）
+            if "_TELEMETRY_MARKS = (" in _t:
+                _a = _t.index("_TELEMETRY_MARKS = (")
+                _b = _t.index(")", _a) if ")" in _t[_a:] else len(_t)
+                _t = _t[:_a] + _t[_b + 1:]
+            for _k in _TELEMETRY_MARKS:
+                if _k in _t:
+                    hits.append("%s:%s" % (_p.relative_to(_UI_REPO).as_posix(), _k))
+    except Exception as _e:
+        return ["未核：%s: %s" % (type(_e).__name__, str(_e)[:80])]
+    return hits
+
+
+def _ollama_tri():
+    u"""模型路之**三态** —— **一处出**：`scripts/win_pa/preflight_start.py::probe_ollama`（承 30b523c）。
+
+    ⛔ 本档另写一遍（二源必漂）｜读不到其三态器 ⇒ `态 = 未核` ＋ **显因**（⛔ 静默 · ⛔ 装成可用）。
+    """
+    out = {"态": "未核", "因": "", "models": None, "首": None,
+           "三态器": "scripts/win_pa/preflight_start.py（probe_ollama）"}
+    import importlib.util as _ilu
+    import sys as _sys
+    try:
+        _p = _UI_REPO / "scripts" / "win_pa" / "preflight_start.py"
+        _spec = _ilu.spec_from_file_location("_pa_preflight_tri", str(_p))
+        if _spec is None or _spec.loader is None:
+            out["因"] = u"三态器不可读（spec 空）：%s" % _p.as_posix()
+            return out
+        _m = _ilu.module_from_spec(_spec)
+        _so = _sys.stdout
+        if _so is not None and not hasattr(_so, "reconfigure"):
+            class _Sink(object):      # ⚠ 三态器于**导入期**调 `sys.stdout.reconfigure` ⇒ 须容忍
+                def reconfigure(self, *a, **k):
+                    return None
+
+                def write(self, s):
+                    return len(s)
+
+                def flush(self):
+                    pass
+
+            _sys.stdout = _Sink()
+        try:
+            _spec.loader.exec_module(_m)
+        finally:
+            _sys.stdout = _so
+        _ok, _why, _note = _m.probe_ollama()
+        _why = str(_why or "")
+        _note = str(_note or "")
+        _cnt = None
+        if "models=" in _note:
+            try:
+                _cnt = int(_note.split("models=")[1].split(u"（")[0].split()[0])
+            except Exception:
+                _cnt = None
+        if _ok:
+            _st = u"在∧可用"
+        elif u"未接" in _why:
+            _st = u"未接"
+        elif u"不可达" in _why:
+            _st = u"不可达"
+        elif u"无权重" in _why:
+            _st = u"在·无权重"
+        else:
+            _st = u"未核"
+        out.update({"态": _st, "因": _why, "models": _cnt})
+        if u"（首 " in _note:
+            out["首"] = _note.split(u"（首 ")[1].split(u"）")[0]
+    except Exception as _e:
+        out["因"] = u"三态器不可用：%s: %s ｜ 修之门：查 scripts/win_pa/preflight_start.py" % (
+            type(_e).__name__, str(_e)[:140])
+    return out
+
+
+def _first_run_readout():
+    u"""⭐ 首启引导（净机之「第一屏」）之读数 —— **只读**（承 pm_1384 §三.3 之四判成）。
+
+    ⒜ 数据在本机（**人话** · ⛔ 行话）⒝ 模型三态 ＋ 修之门 ⒞ 数据目录（**真源** · ⛔ 造径）
+    ⒟ ⛔ 静默（缺则显因）。
+    """
+    from time import strftime as _stf
+    out = {"ok": True, "at": _stf("%Y-%m-%d %H:%M:%S"), "version": PA_FIRST_RUN_VERSION,
+           "口径": u"首启之第一屏：数据在本机 ／ 模型三态＋修之门 ／ 数据目录之真源 ／ 缺则显因（⛔ 静默）",
+           "缺": []}
+    pm, ps = {}, {}
+    try:
+        from core.pa import env_face as _ef
+        pm, ps = _ef.resolve_paths()
+    except Exception as _e:
+        out["缺"].append({"项": u"径之真源", "因": u"%s: %s" % (type(_e).__name__, str(_e)[:120])})
+    _d, _dsrc = pm.get("data"), (ps or {}).get("data")
+    out["数据目录"] = {
+        "值": _d, "源": _dsrc,
+        "可指之径": u"env PA_DATA_DIR ∨ config/system/system_unified.yaml:paths.data_root（本面**唯读** · ⛔ 改）",
+    }
+    if not _d:
+        out["缺"].append({"项": u"数据目录", "因": _dsrc or u"真源不可读"})
+    _tri = _ollama_tri()
+    out["模型"] = {"态": _tri.get("态"), "因": _tri.get("因"), "models": _tri.get("models"),
+                   "首": _tri.get("首"), "三态器": _tri.get("三态器")}
+    if _tri.get("态") != u"在∧可用":
+        out["缺"].append({"项": u"本机模型（ollama）", "因": _tri.get("因") or _tri.get("态")})
+    _tel = _telemetry_scan()
+    _port = None
+    try:
+        from core.lib.port_config import gateway_port as _gp
+        _port = int(_gp())
+    except Exception:
+        _port = None
+    _tel_txt = (u"（%s）" % u"、".join(_tel[:3])) if _tel else u""
+    out["数据在本机"] = {
+        "是": True,
+        "上传": False,
+        "据": u"本机之门 127.0.0.1%s · 远端算力**未接**（P2）· core/** 之遥测调用点 %d 处%s"
+              % (((":%d" % _port) if _port else ""), len(_tel), _tel_txt),
+        "辞": u"你的数据留在**这台电脑**上：本产品**自带**之遥测 ／ 自动上传 ＝ **无**；"
+              u"唯你显式发起、且远端已接之时方出网（远端**今未接** · P2）。",
+    }
+    out["须知"] = [
+        {"话": u"你的数据在这台电脑上" + ((u"：%s" % _d) if _d else u"（⛔ 未接 —— 见下「缺」）"),
+         "据": _dsrc or u"未接"},
+        {"话": u"本产品**不自动上传**你的数据，也**没有**遥测。",
+         "据": u"器核（弱保证 · 唯字面扫）：core/** 之遥测调用点 %d 处%s"
+               % (len(_tel), (u"（%s）" % u"、".join(_tel[:3])) if _tel else u"")},
+        {"话": u"AI 走**本机**模型 —— 现在：**%s**。" % _tri.get("态"),
+         "据": _tri.get("因") or u"（三态器未给因 —— 见「缺」）"},
+        {"话": u"缺什么，上面就写什么 —— ⛔ 假装能用。",
+         "据": u"「缺」列 %d 项" % len(out["缺"])},
+    ]
+    return out
+
 def _ask_scope(question):
     """问域类（承 PM 846 §三·⒜）：`meta`（会话路）｜`retrieve`（检索闸）。"""
     _q = (question or "").strip()
@@ -3138,6 +3290,19 @@ def register_pa_routes(app, brain=None):
             logger.error("ui_faces 内部错误: %s: %s", type(_e).__name__, str(_e)[:200])
             return jsonify({"ok": False, "error": "ui_faces: 内部错误（已记日志）"}), 500
 
+    @bp.route("/v9/pa/first_run", methods=["GET"])
+    def pa_first_run():
+        """⭐ 首启引导（净机之「第一屏」）之读数 —— **只读**（承 pm_1384 §三.3）。
+
+        ⒜ 数据在本机（**人话** · ⛔ 行话）⒝ 模型三态（未接／在·无权重／在∧可用）＋ **修之门**
+        ⒞ 数据目录（真源 `env_face.resolve_paths()` · ⛔ 造径）⒟ ⛔ 静默（缺则显因）。
+        ⛔ 写盘 ／ ⛔ 绝对径之字面入面（径为**值**，⛔ 硬编）｜唯 TCP 探 ollama（同 preflight）。
+        """
+        try:
+            return jsonify(dict(_first_run_readout(), 印=_code_sha16(pa_first_run, _first_run_readout)))
+        except Exception as _e:
+            logger.error("first_run 内部错误: %s: %s", type(_e).__name__, str(_e)[:200])
+            return jsonify({"ok": False, "error": "first_run: 内部错误（已记日志）"}), 500
     @bp.route("/v9/pa/kb_mapping", methods=["GET"])
     def pa_kb_mapping():
         """知识库 ↔ 沙箱映射（批176 副指标 A）：**只读**三列 + 状态枚举。
