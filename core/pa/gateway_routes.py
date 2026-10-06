@@ -35,6 +35,7 @@
 """
 import logging
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -43,7 +44,7 @@ from flask import Blueprint, jsonify, request
 logger = logging.getLogger(__name__)
 
 from core.pa.pa_core import PaCore
-from core.lib.paths import cmd_exe, path_forms, vault_root
+from core.lib.paths import cmd_exe, org_enabled, path_forms, vault_root, ws_root
 from core.pa import _proc as _proc   # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
 # ⭐ PM 043 §二.1（裁）：**档** ＝ 显式拨杆（前端）之**单源**；⛔ 推断（`ask_domain` 仅佐证 · ⛔ 作主）。
@@ -294,23 +295,36 @@ PA_ASK_MIN_SCORE = 0.42  # ⭐ 2026-10-04：0.34 → 0.42（扩面后弱命中 0
 # ⭐ 2026-10-04 新增（PM b136893 · 老板批 · 阶段 2「素材面接入」之**最小登记** · 只读）：
 #   面表：面名 ⇒ (根…, 通配…)。⛔ 用户输入之路径 —— 根皆**常量**（"@vault:" 前缀＝vault 内相对）
 #   ⇒ 无穿越风险（沿用 _kb_safe_rel 之精神）。⛔ 不改 (收件箱/知识库) 之既有口径；⛔ 不写盘。
-PA_FACES = (
-    ("文件", (r"D:\paseo-workspace",), ("*.md", "*.txt")),
+# ⭐ 2026-10-06（pm_1409 §二.3 ·「产品 ⟷ 组织」之切）：根皆**非字面绝对径** —— 二源出根：
+#   ⒈ `ws_root()`（**产品级** · env `PA_WS_ROOT`）⇒ 下之相对段（工作区面：文件 ／ 台账 ／ _交付）；
+#   ⒉ `vault_root()`（**用户自选**知识库 · 承 1387 §二.2 ／ 1388 §二.1）⇒ 下之相对段（vault 面）。
+#   ⚠ 缺基（＝ `None`）⇒ 该面 **⛔ 入表**（⛔ 空径 ⇒ 误扫 cwd）—— 照实「未接」（⛔ 崩 ／ ⛔ 静默扫错）。
+_FACE_WS = ws_root()
+_FACE_VR = vault_root()
+
+
+def _rel_under(base, *parts):
+    """`base` 之下的相对径（⛔ 字面绝对径 · 承 pm_1409 §二.3）—— 缺 `base` ⇒ `None`。"""
+    return os.path.join(base, *parts) if base else None
+
+
+_PA_FACES_ORG = (
+    ("文件", (_FACE_WS,), ("*.md", "*.txt")),
     # ⭐ 台账面＝**只取台账本身**（⛔ 不收整个 `_auto\deliver`：那含我的报告集）
-    ("台账", (r"D:\paseo-workspace\_auto\deliver",),
+    ("台账", (_rel_under(_FACE_WS, "_auto", "deliver"),),
      ("老板令台账_v1.md",)),  # ⛔ 收 `投递台账.csv`／`债单_*.md`（真身皆在信通 · 该根下⛔存在 ⇒ 空转）
     # ⭐ PM 2026-10-05（老板批「并入技总写域」之同批 · 承 技总 972 §五）：新面 `平台台账`
     #   真源 ＝ `…\内容工坊\04_平台台账`（`46` 项 · ⛔ 存底类：`*.md` 天然排除 `.before_*` ／ `.bak_*` ／ `.sha256`）
     #   ＋ `平台注册表.md`（生成物 · 源头 `08_工具\平台\*\plugin.json`）⇒ `role: knowledge`（⛔ archive ⇒ 可作据）
-    ("平台台账", (r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\04_平台台账",), ("*.md",)),
-    ("台账·信通", (r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\02_协作\信通",),
+    ("平台台账", (_rel_under(_FACE_VR, "内容工坊/04_平台台账"),), ("*.md",)),
+    ("台账·信通", (_rel_under(_FACE_VR, "内容工坊/02_协作/信通"),),
      ("投递台账.csv",)),  # ⛔ 收 `债单_*.md`（内含测试问题引用 ⇒ 污染）
     # ⭐ 2026-10-05（PM b136893 令「menghua 进 PA 试用」§四「先接素材面」· 老板批）：新面 `梦中月水中花`
     #   真源 ＝ `11_实验室/记忆` —— 皆**插件产出**（`梦_*.md` 做梦读数 ／ `唤醒_*.md` 唤醒(体检)读数）· ⛔ 非我测。
     #   ⇒ `role: archive`（**我们之报述** 之族 ⇒ ⛔ 作据 · 仍可检索回指 · 承 PM 846 §二）。
     #   ⚠ 根 ＝ **既有**面：`11_实验室/记忆/` 系 PM `955`／`956` 准我之**跨面子面**（父面属主 ＝ 工作流实验室席 `e621c26`）
     #     ⇒ 只读 · ⛔ 写 · glob 特指 ⇒ 天然排除 `.唤醒水位` 等点件与 `待做梦_*` 备料。
-    ("梦中月水中花", (r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\11_实验室\记忆",),
+    ("梦中月水中花", (_rel_under(_FACE_VR, "内容工坊/11_实验室/记忆"),),
      ("梦_*.md", "唤醒_*.md")),
     # ⭐ 2026-10-05（PM b136893 令「M1 接线收口：加两个素材面」§二 ⒜ · 老板 20:0x 之纠后）：
     #   新面 `文件·产出` —— **文本产出**（`10_产出` ／ `dsh` ／ `_交付`）⇒ `role: archive`
@@ -321,9 +335,8 @@ PA_FACES = (
     #     ＝ 循环取证。⇒ 故取 `文件·产出`（承本表 `台账·信通` 之「大类·子类」之形）—— **候裁名**（承 1048 §三）。
     #   ⚠ **图产出 ⛔ 入本表** —— 本表之列 ⛔ 能表「目录级聚合」（PM §二 ⒝ 之裁）；且 `_cached_lines`
     #     读图 ⇒ `None` ⇒ 该面恒 `0` 件 ＝ **假绿之面** ⇒ 图面走 `PA_SRC_FACES` ＋ `GET /v9/pa/source_faces`。
-    ("文件·产出", (r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\10_产出",
-                 r"D:\Obsidian\ClawsJoy\ClawsJoy\dsh",
-                 r"D:\paseo-workspace\_交付"), ("*.md",)),
+    ("文件·产出", tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"),
+                                  _rel_under(_FACE_VR, "dsh"), _rel_under(_FACE_WS, "_交付")) if x), ("*.md",)),
     # ⭐ 2026-10-05（PM 22:34 §二 裁「闸面余 9 件」· 逐件列判 ⇒ **唯此一件入闸**）：
     #   判据（PM 定）：**本机有据 ∧ ⛔ 无 GET 面 ⇒ 入闸**；有 GET 面者 ⇒ 归「另路」。
     #   逐件判：余 8 件皆有 GET /v9/pa/*（ledger ／ deliver/mail ／ caliber ／ roster ／
@@ -332,6 +345,20 @@ PA_FACES = (
     #   ⚠ 根取 _data_dir()（与 DecisionStore 一处口径 · ⛔ 另立绝对径 ⇒ 免「两真源」）。
     ("死件账", (_data_dir(),), ("deadfile_ledger.json",)),
 )
+# ⭐ 2026-10-06（pm_1409 §二.3）：`PA_ORG_FACES` 门（**功能级** · 默认关 ⇒ 其径逻辑 ⛔ 执行）。
+#   本表七面中唯 `死件账` 为**产品面**（本机 `data/` 之账 · 与组织物无关）；余六面
+#   （文件 ／ 台账 ／ 平台台账 ／ 台账·信通 ／ 梦中月水中花 ／ 文件·产出）皆**组织物**
+#   （我方工作区 ／ 台账 ／ 信通 ／ 实验室 ／ 产出）⇒ 净机 ⛔ 得读 ⇒ 门关即 ⛔ 入表。
+#   ⚠ **关**时之面集 ＝ `收件箱` ／ `知识库`（`PA_KB_ASK_SCOPES` · vault 相对 · 用户自选库）
+#     ＋ `死件账`（本表产品面）。⚠ **面之数之变须报**（⛔ 静默减面）：响应附 `faces_gate`。
+# ⚠ 缺基（`_FACE_WS` ／ `_FACE_VR` ＝ `None`）⇒ 该面 ⛔ 入表（⛔ 空径 ⇒ 误扫 cwd · 承 pm_1409 §二.3）。
+# ⚠ 空根（全缺基）亦 ⛔ 入表 —— `all(())` 恒真 ⇒ 须并判 `ff[1]` 非空
+#   （否则该面以「0 件」上屏 ＝ **假绿之面** · 承本表 L323 之注）。
+_PA_FACES_ORG = tuple(ff for ff in _PA_FACES_ORG if ff[1] and all(x for x in ff[1]))
+_PA_FACES_ORG_ONLY = tuple(x for x in _PA_FACES_ORG if x[0] != "死件账")
+_PA_FACES_PRODUCT = tuple(x for x in _PA_FACES_ORG if x[0] == "死件账")
+PA_FACES = (_PA_FACES_ORG_ONLY + _PA_FACES_PRODUCT) if org_enabled() else _PA_FACES_PRODUCT
+PA_FACES_GATE = "org" if org_enabled() else "product"
 # ⚠ 语料卫生（2026-10-04 · 三改 · 我引入之风险之修）：
 #   一改曾把「台账」面设成整个 `_auto\deliver` ⇒ 我之报告**逐字引用**测试问题（如
 #   `N1 | 我的老板叫什么名字 | ✅ 如实未答`）⇒ 2-gram 命中 `1.0` ⇒ **拒答面被冲垮**（假有据）。
@@ -367,7 +394,7 @@ PA_FACE_ROLE = {"收件箱": "knowledge", "知识库": "knowledge",
                 #   ⚠ 此为**我之判** ⇒ 候 PM 核（改 archive 仅一行 · ⛔ 动骨架）。
                 "死件账": "knowledge"}
 # ⭐ 面册 ＋ 角色 ＋ 阈 之版本（改此三物 ⇒ 必 +1 · 承 PM 845 §二.1 · L152）
-PA_FACES_VERSION = "2026-10-05.9"   # ⭐ .9：元问路（context_missing）之答话 ＋ 死件路「账不可读」之界（PM 1183 §五.1 ／ §八 · 我 1057）⇒ 仍 +1｜⭐ .8：死件账之**直读路**（PM 22:34 §三① 准 · 条件⒟）⇒ 仍 +1（承 L152）｜⭐ .7：面表＋角色表增「死件账」（PM 22:34 §二 裁）｜⭐ 2026-10-05：面表＋角色表增 `文件·产出`（PM「M1 接线收口」§二 ⒜）⇒ 皆 +1
+PA_FACES_VERSION = "2026-10-06.10"   # ⭐ .10：`PA_ORG_FACES` 门（关 ⇒ 唯产品面 `死件账`）⇒ +1（承 L152）｜ ⭐ .9：元问路（context_missing）之答话 ＋ 死件路「账不可读」之界（PM 1183 §五.1 ／ §八 · 我 1057）⇒ 仍 +1｜⭐ .8：死件账之**直读路**（PM 22:34 §三① 准 · 条件⒟）⇒ 仍 +1（承 L152）｜⭐ .7：面表＋角色表增「死件账」（PM 22:34 §二 裁）｜⭐ 2026-10-05：面表＋角色表增 `文件·产出`（PM「M1 接线收口」§二 ⒜）⇒ 皆 +1
 # ⭐ 问域类（PM 846 §三 ／ 847 §五 · 承 L151）：元 ／ 指代 ／ 重复 ／ 上文 ⇒ 走**会话路**（⛔ 进检索闸）
 #   ⚠ 轴之分（PM 裁 · 承 L83）：本轴（`meta` ／ `retrieve`）管**路由**；前端 `paAskDomain` 管**自述 ／ 本机 ／ 世界** ⇒ 两轴各管其段（⛔ 二处各判同一物）
 PA_ASK_META_KW = ("上一条", "上一句", "上一问", "前一句", "刚才", "原样重复",
@@ -558,20 +585,23 @@ def _face_files(root, globs):
 #   由（PM §二 之裁）：⭐ **面之粒度须与量相称** —— 文本件可**逐件**；图件（千张量级）**按目录聚合**（面 ⛔ 爆）。
 #   ⇒ 每面给：`kind` ／ 根（逐字）／ glob（逐字）／ 量 ／ **聚合之式（逐字）** ／ 最近刻 ／ 印。
 #   ⚠ `role: archive` —— 产出 ＝ **我们之报述**之族 ⇒ ⛔ 作据 · 只索引 · 承 PM 846 §二。
-PA_SRC_FACES = (
+_PA_SRC_FACES_ALL = (
     # ⒜ 「📄 文件」（前端 today.js:159 `srcRowFile`）—— 文本产出 · **逐件计数**
     ("文件", "archive", "files", ("*.md",),
-     (r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\10_产出",
-      r"D:\Obsidian\ClawsJoy\ClawsJoy\dsh",
-      r"D:\paseo-workspace\_交付"),
+     tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"), _rel_under(_FACE_VR, "dsh"),
+                       _rel_under(_FACE_WS, "_交付")) if x),
      "张数＝<根> 递归之 (*.md)（剔 PA_FACES_SKIP 之名）", "文件·产出"),
     # ⒝ 「🎨 出图」（前端 today.js:161 `srcRowDraw`）—— 图产出 · **按目录聚合**（⛔ 逐张 · 千张量级）
     ("出图", "archive", "dirs", ("*.png", "*.jpg", "*.jpeg", "*.webp", "*.gif", "*.svg"),
-     (r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\10_产出",
-      r"D:\Obsidian\ClawsJoy\ClawsJoy\工作区\项目"),
+     tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"), _rel_under(_FACE_VR, "工作区/项目")) if x),
      "张数＝<根> 递归之 (png|jpg|jpeg|webp|gif|svg)（剔 PA_FACES_SKIP 之名）· 按目录聚合", None),
 )
-PA_SRC_FACES_VERSION = "2026-10-05.3"   # ⭐ .3：加「面级之印」（响应之形变 ⇒ 亦 +1）   # ⭐ 改本表 ⇒ 必 +1（承 PA_FACES_VERSION 之律）
+# ⭐ 2026-10-06（pm_1409 §二.3）：`PA_ORG_FACES` 门 —— 本表二面皆**组织物**（`10_产出` ／
+#   `dsh` ／ `_交付` ／ `工作区\项目`）⇒ 门关（默认）即**空表**（响应的 `面之数` ＋ `门` 照实报）。
+_PA_SRC_FACES_ALL = tuple(ff for ff in _PA_SRC_FACES_ALL if ff[4])   # 缺基 ⇒ ⛔ 入表（同上）
+PA_SRC_FACES = _PA_SRC_FACES_ALL if org_enabled() else ()
+PA_SRC_FACES_GATE = "org" if org_enabled() else "product"
+PA_SRC_FACES_VERSION = "2026-10-06.4"   # ⭐ .4：`PA_ORG_FACES` 门（关 ⇒ 空表）⇒ +1（承 PA_FACES_VERSION 之律）｜ ⭐ .3：加「面级之印」（响应之形变 ⇒ 亦 +1）   # ⭐ 改本表 ⇒ 必 +1（承 PA_FACES_VERSION 之律）
 
 # ============================== ⭐ UI 面册（承 pm_1384 §二.1 ／ §三.1）==============================
 #: ⭐ **真源 ＝ 盘上**（`web/pa/faces/*.js` · 剔 `*.before_*`）；**旁源** ＝ `web/pa/faces.json`（title ／ 旧面册）。
@@ -799,7 +829,7 @@ def _src_face_readout():
             _h2.update(("%s|%s|%s|%s\n" % (r.get("root") or r.get("dir"), r.get("count"),
                                            r.get("recent"), r.get("印"))).encode("utf-8"))
     return {"ok": True, "at": _at, "faces": faces, "faces_version": PA_SRC_FACES_VERSION,
-            "面之数": len(faces),
+            "面之数": len(faces), "门": PA_SRC_FACES_GATE,
             "对映": {f["name"]: f["对映检索面"] for f in faces},
             "PA_FACES名": [x[0] for x in PA_FACES],
             "对映之式": "本表（画像素材面）面名 ⇒ PA_FACES（检索面）面名；None ＝ 该面⛔入检索面（图面：PA_FACES ⛔ 能表目录级聚合）",
@@ -1266,7 +1296,8 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
     return {"hits": hits[:limit], "archive_hits": _arch[:limit], "searched": searched,
             "scope": allscope, "threshold": min_score, "faces": faces,
             "faces_missing": face_missing, "faces_skipped": face_skipped,
-            "face_snapshot_at": _snap, "faces_version": PA_FACES_VERSION}
+            "face_snapshot_at": _snap, "faces_version": PA_FACES_VERSION,
+            "faces_gate": PA_FACES_GATE}
 
 
 def _dialog_sessions(pa, limit=20):
@@ -1438,12 +1469,16 @@ def build_kb_mapping(*, kb_root, sandbox_root, scope=KB_MAPPING_DEFAULT_SCOPE, l
 _REPO_AGENT_CLIENT = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "scripts", "agent_client"
 )
-_LEGACY_AGENT_CLIENT = r"C:\Users\flybo\Desktop\agent_client"
 
 
 def _local_client_dir():
-    """客户端目录(模块级常量, 页面无法改): 优先仓库内, 退旧桌面路径。"""
-    return _REPO_AGENT_CLIENT if os.path.isdir(_REPO_AGENT_CLIENT) else _LEGACY_AGENT_CLIENT
+    """客户端目录(模块级常量, 页面无法改): 唯仓库内 scripts/agent_client。
+
+    ⭐ 2026-10-06（pm_1409 §二.3 · 批三）：旧桌面回落（Windows 用户桌面之**字面径**）⇒ **删**
+    （开发机专用 · 承「开发期／我方通道 ⇒ 删」）。缺 ⇒ 空串 ⇒ `local_client_launchable()`
+    判不可启动（⛔ 崩 · 照实「未接」）。
+    """
+    return _REPO_AGENT_CLIENT if os.path.isdir(_REPO_AGENT_CLIENT) else ""
 
 
 def _local_client_ws_url():
@@ -1461,10 +1496,27 @@ def _local_client_ws_url():
         return ""
 
 
+# ⭐ 2026-10-06（pm_1409 §二.3 · 批三）：客户端之 pythonw（原为开发机之字面径）⇒ env ∨ 自推。
+def _client_python():
+    u"""客户端之 pythonw（⛔ 字面开发机径）。
+
+    env `PA_CLIENT_PYTHON` ⇒ 用；缺 ⇒ 自 `sys.executable` 之邻 `pythonw.exe` 推（**产品级**）；
+    再缺 ⇒ 空串（`local_client_launchable()` 判不可启动 · 照实「未接」）。
+    """
+    _v = (os.environ.get("PA_CLIENT_PYTHON") or "").strip()
+    if _v:
+        return _v
+    try:
+        _c = os.path.join(os.path.dirname(sys.executable or ""), "pythonw.exe")
+        return _c if os.path.exists(_c) else ""
+    except Exception:
+        return ""
+
+
 LOCAL_CLIENT = {
     "cmd_exe": cmd_exe(),
     "win_dir": _local_client_dir(),
-    "win_python": r"C:\Users\flybo\AppData\Local\Programs\Python\Python312\pythonw.exe",
+    "win_python": _client_python(),
     "script": "agent_client.py",
     "ws": _local_client_ws_url(),
     "extra_args": ["--chrome"],
