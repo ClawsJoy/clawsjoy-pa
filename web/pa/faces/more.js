@@ -489,7 +489,13 @@ function paLeavesHtml(line){
 }
 try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine; }catch(e){}
 
-/* 回执探针（**被动** · ⛔ 改行为）：唯记 `/v9/pa/dialog|turn|ask` 之**走径** ⇒ 供上屏。 */
+/* 回执探针（**被动** · ⛔ 改行为）：唯记 `/v9/pa/dialog|turn|ask` 之**走径** ⇒ 供上屏。
+   ⭐ P0 修（pm_1467 §一.3 · 式⒈「探针前置」）：原实现**返原始 `p`** ⇒ 探针之 `resp.clone().json()`
+     微任务排在调用方 `await r.json()` 续段**之后** ⇒ `addMsg` 先跑 ⇒ `paRouteTake()` 取 `null`
+     ⇒ **甲（假阴）**真云端轮 ⛔ 上「出机」标；且标签残留至下一轮 ⇒ 误取 ⇒ **乙（假阳）**本机轮挂云端标。
+     修：返回之 promise **须待 label 置毕方 resolve**（`probe.then(… ⇒ resp)`）⇒ 调用方之 `await`
+     续段 ⛔ 得先于 label 之置 ⇒ 竞态根除 ∧ 乙（残留之源）随之除。⛔ 改答体：唯以 `resp.clone()`
+     读探针，原 `resp` 归调用方（承「被动 · ⛔ 改行为」）。 */
 (function(){
   if(typeof window.fetch !== 'function') return;
   const orig = window.fetch;
@@ -497,20 +503,20 @@ try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine; }catc
     const url = String((u && u.url) ? u.url : u);
     const p = orig.apply(this, arguments);
     if(!/\/v9\/pa\/(dialog|turn|ask)(\?|$)/.test(url)) return p;
-    try{
-      p.then(function(resp){
-        try{
-          if(!resp || typeof resp.clone !== 'function') return;
-          resp.clone().json().then(function(j){
+    return p.then(function(resp){
+      let probe = Promise.resolve();   /* ⛔ 探针自身之败 ⛔ 阻答体（⛔ 改行为） */
+      try{
+        if(resp && typeof resp.clone === 'function'){
+          probe = resp.clone().json().then(function(j){
             try{
               const L = paRouteLabel(j);
               if(L) window.PASelfRouteLast = {label: L, at: String((j && (j.read_at || j.at)) || ''), url: url};
             }catch(e){}
           }, function(){});
-        }catch(e){}
-      }, function(){});
-    }catch(e){}
-    return p;
+        }
+      }catch(e){}
+      return probe.then(function(){ return resp; });
+    });
   };
 })();
 
