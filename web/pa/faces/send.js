@@ -50,13 +50,25 @@ async function paSend(){
         const _ans = (typeof g.answer === 'string') ? g.answer.trim() : '';
         const _isRefusal = (!_ans) || (_ans === _canon)
           || ((typeof paRefusalStale === 'function') ? paRefusalStale(_ans) : false);
+        /* ⭐ pm_1542 §一（裁 · 一处定形）：拒答之**由** ⇒ 先引后端之 `verdict`（逐字之由 · 在而未被用）；
+           缺 ⇒ 明书。⛔ 旧「（后端之辞 ⛔ 载入）」—— 其义反（后端之辞**恰已载入** · 承「说一用一」）。
+           二支共用 `_why`（⛔ 二处各写）。 */
+        const _verdict = (typeof g.verdict === 'string') ? g.verdict.trim() : '';
+        const _why = _verdict ? ('后端判词：' + _verdict) : '后端未给逐字之由（唯 canonical）';
         const _r = (_isRefusal ? _canon : _ans)
           + '\n\n（判据 /v9/pa/ask ｜ 检索面 '+((g.scope||[]).join(' / ')||'—')
           + ' ｜ 实搜 '+g.searched+' 件 ｜ 阈值 '+g.threshold+' ｜ 读数 '+g.read_at+'）'
-          + '\n⛔ 本问未进模型：' + (_isRefusal
-              ? '库里无依据，按「有据才答」不答（后端之辞 ⛔ 载入）'
-              : '本机账无此条 ⇒ 如实不答（上为后端之辞 · 逐字照录）')
+          + '\n⛔ 本问未进模型：'
+          + (_isRefusal ? '库里无依据，按「有据才答」不答' : '本机账无此条 ⇒ 如实不答')
+          + ' · ' + _why
           + ' · 见「判据」行。';
+        /* ⭐ pm_1539 §二.1 ／ pm_1543 §二.⒜（承 pm_1483 §一 之同法 · 一处定形）：拒答轮**⛔ 经模型**
+           （本机无据 ⇒ 未调用模型）⇒ 自落己标 ⇒ 屏上走径行为「本机无据（拒答 · 未调用模型）」，
+           ⛔ `paRouteLine(null)` 之「src: —（后端未给）」伪行（该轮本无模型之径 ⇒ 无回执可给）。
+           `kind:'self'` ⇒ ⛔ 入远端集 ⇒ 「出机」标 ⛔ 上（本机拒答**未出机**）。`at` 取后端之 `read_at`。 */
+        try{ window.PASelfRouteLast = {
+          label: {text: 'src: 本机无据（拒答 · 未调用模型）', key: '拒答', kind: 'self', model: ''},
+          at: String(g.read_at || ''), url: '/v9/pa/ask'}; }catch(e){}
         addMsg('assistant', _r);
         paRun.receipt = await recordPaTurn(t.id, text, _r,   /* 拒答也要**真落盘**（照样拿回执）· ⭐ 并带源标（pm 1184 §一.⒝） */
           {origin:'refused', grounded:false, answer_source:(g.answer_source||'refused')});

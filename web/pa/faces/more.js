@@ -472,7 +472,7 @@ function paRouteLine(box){
   return '🔌 走径：' + L.text + '（键 ' + L.key + (at ? (' · 采于 ' + at) : '') + '）';
 }
 function paRouteHtml(line){
-  return '<div class="paroute" style="font-size:11px;line-height:1.6;color:#8b949e;margin:0 0 4px"'
+  return '<div class="paroute" data-pa-route="1" style="font-size:11px;line-height:1.6;color:#8b949e;margin:0 0 4px"'
        + ' title="走径标：本答走哪一源（读数取后端回执 · ⛔ 前端自说）">' + paEsc(line) + '</div>';
 }
 /* ⭐⭐ 「出机」之标（承 pm_1454 §一 ／ §二）：**唯**本轮经云端（`kind ∈ 远端集`）⇒ 上此标；
@@ -484,7 +484,7 @@ function paLeavesLine(box){
   return '本轮经云端 · 内容将出机 · 模型 ' + (String(L.model || '').trim() || '（后端未给）');
 }
 function paLeavesHtml(line){
-  return '<div class="paroute paleaves" style="font-size:11px;line-height:1.6;color:#d2991d;margin:0 0 4px"'
+  return '<div class="paroute paleaves" data-pa-route="1" style="font-size:11px;line-height:1.6;color:#d2991d;margin:0 0 4px"'
        + ' title="出机标：本轮经云端 ⇒ 内容将出机（读数取后端回执 · ⛔ 前端自说）">' + paEsc(line) + '</div>';
 }
 try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine; }catch(e){}
@@ -528,6 +528,15 @@ try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine; }catc
   window.addMsg = function(role, content, skipStore, html, tid){
     if(role !== 'assistant') return orig.apply(this, arguments);
     const box  = paRouteTake();                        /* 一轮一清（⛔ 取二次） */
+    /* ⭐ pm_1539 §二.1 ／ pm_1543 §二.⒜（重渲之幂等 · 一处定形）：本包装在共用件 `addMsg` **之外层**
+       ⇒ `renderThread()`（`chat.js:53` · 启动 ／ 切线程 ／ 续会话 ／ 新建）会**重喂**已含走径行之存档
+       ⇒ 再前置一次 ⇒ 行倍增（`reload` 实测 `.paroute` 2 ⇒ 4 · 我 `1543` 一手器取）。
+       凡本件已渲之标（`data-pa-route` 之 HTML ∨ 以走径行 ／ 出机行开头之纯文）⇒ **⛔ 再前置**。
+       ⚠ 唯改本件（⛔ 动 `chat.js` 一字 · 承 L162）。 */
+    const marked = ((typeof html === 'string') && html.indexOf('data-pa-route') >= 0)
+                || ((typeof content === 'string')
+                    && (content.indexOf('🔌 走径：') === 0 || content.indexOf('本轮经云端 · ') === 0));
+    if(marked) return orig.call(this, role, content, skipStore, html, tid);
     const line = paRouteLine(box);
     const out  = paLeavesLine(box);                    /* ⭐ 唯远端 ⇒ 有（红线**先于**走径入目 · 承 §一.2） */
     const c = (typeof content === 'string') ? ((out ? (out + '\n') : '') + line + '\n' + content) : content;

@@ -726,7 +726,7 @@ function paSelfWhy(text){
    ⇒ 刻取本回响应之 judge.face_snapshot_at ∨ judge_at（⛔ 前端自造刻 · 承 L76）；本轮开头清空（⛔ 跨轮串刻）。 */
 let paSelfTagAt = '';
 function paSelfTag(kind, n){
-  var at = paSelfTagAt ? (' · 采于 ' + paSelfTagAt) : '';
+  var at = paSelfTagAt ? (' · 检索面采于 ' + paSelfTagAt) : '';
   if(kind === 'local') return '📎 源之分标：本机素材（据 ' + ((n == null || n === '') ? '—' : n) + ' 条）' + at;
   if(kind === 'localmiss') return '📎 源之分标：本机素材（未命中）' + at;
   /* ⭐ pm_1076 §三（承 L103 形与义分 · L142 声明⟷执行须符）：本态 ⛔ 单标 ——
@@ -1074,6 +1074,11 @@ function paSelfMulSafe(s){
       const B = off + m.length < whole.length ? whole.charAt(off + m.length) : '';
       const isNum = function(c){ return (c >= '0' && c <= '9') || (c >= '０' && c <= '９'); };
       const isPar = function(c){ return c === ')' || c === '）' || c === '(' || c === '（'; };
+      /* ⭐ pm_1542 §三.3（器取 · 我一手）：`**粗**` 之 MD 标记 ⇒ **⛔ 转**。
+         病：本判据原书「两侧皆非数值 ⇒ ⛔ 转」，然 `（**能力端点册**）` 之首 `*` 其左 ＝ `（`（括）
+         ∧ 末 `*` 其右 ＝ `）` ⇒ 乙支（一侧为括）**命中** ⇒ 屏上 `（ × 能力端点册 × ）`（老板一手）。
+         补：`*` 之邻字亦为 `*` ⇒ 属 `**` 之行 ⇒ ⛔ 转（承 pm_1074 §二 之判据本义 · ⛔ 新立机制）。 */
+      if(A === '*' || B === '*') return m;
       if((isNum(A) || A === ')' || A === '）') && (isNum(B) || B === '(' || B === '（')) return ' × ';
       if(m === '*' && (isNum(A) || isPar(A) || isNum(B) || isPar(B))) return ' × ';
       return m;
