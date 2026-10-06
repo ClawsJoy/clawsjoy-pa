@@ -11,6 +11,10 @@ u"""客户端**离线包**之器（承 pm_1386 §二.2 ／ §一.1「便携自�
 
 洁之闸（承 pm_1396 §二.5）：**活径之扫** —— 包内「活 ∧ 组织物」之径须 ＝ **0**
   （注 ／ docstring ／ `.md` 之例 ⛔ 判红）⇒ ⛔ 0 ⇒ `--go` 拒（免「组织物之径」入交付物）。
+洁之闸·二（承 pm_1399 §一）：**⛔ gitignored 之产物** —— 运行子集里凡被 `.gitignore` 忽略之件
+  ⇒ ⛔ 入包（皆本机之产物 · 如 `core/lib/scan_bom_baseline.json`；⚠ 其径可指组织物 ⇒ 亦「假绿」之口）。
+  ⚠ git ⛔ 得用 ∨ 非仓 ⇒ 判「⛔ 得判」并按拒论（出包须自 **git 树** 出 · 承 pm_1396 §二.1）。
+  ⚠ `--check` 之口径 ⛔ 含此条（所核者 ＝ 已成之包 · ⛔ git 树 ⇒ 无从判 · 唯 `plan` ／ `--go` 有之）。
 
 用法：
   python -X utf8 scripts\\win_pa\\make_client_bundle.py                    # 干跑（印计划 ＋ 估体积）
@@ -121,6 +125,30 @@ def live_offenders(root, files):
     return [r for r in scan_live_paths(root, files) if r["组织物"] or r["开发机"]]
 
 
+def ignored_payload(root, files):
+    u"""**运行子集里被 `.gitignore` 忽略之件**（判「成」＝ 空 · 承 pm_1399 §一）—— **器取**。
+
+    ⭐ 由：`_payload_files` 唯按 `PAYLOAD` 之诸目录走 ⇒ **本机之产物**亦入
+      （如 `core/lib/scan_bom_baseline.json` —— `git check-ignore` 实锤）⇒ ⛔ 净（且其径可指组织物）。
+    ⚠ 唯以 `git check-ignore` 为据（⛔ 自拟规则 ⇒ 必与 `.gitignore` 漂 —— 承「一名一义」之族）。
+    ⚠ 返 `None` ＝ **⛔ 得判**（git ⛔ 用 ∨ 非仓）—— ⛔ 判绿（承「凡阴性须附面与刻」）；
+      出包之路见此 ⇒ **按拒论**（副本 ＝ worktree ⇒ 有 git · 承 pm_1396 §二.1）。
+    """
+    if not files:
+        return []
+    try:
+        # ⚠ 必以**字节**喂 stdin：`text=True` 在 Windows 会把 `\n` 译作 `\r\n`
+        #   ⇒ git 收到 `path\r` ⇒ 与 `.gitignore` 之式 ⛔ 合 ⇒ **静默之假空**（我一手逮得 · 本刻）。
+        r = subprocess.run(["git", "-C", root, "check-ignore", "--stdin"],
+                           input="\n".join(files).encode("utf-8"), capture_output=True)
+    except Exception:
+        return None
+    if r.returncode not in (0, 1):
+        return None
+    txt = (r.stdout or b"").decode("utf-8", "replace")
+    return sorted(set(x.strip() for x in txt.splitlines() if x.strip()))
+
+
 def _norm(n):
     u"""PEP 503 名之归一（⛔ 则 `PyYAML` ⟷ `pyyaml` 判二物）。"""
     return re.sub(r"[-_.]+", "-", str(n)).strip().lower()
@@ -222,7 +250,8 @@ def plan_bundle(root=None, out=None):
                 os.path.getsize(os.path.join(root, f.replace("/", os.sep))) for f in files),
             "wheel_dir": os.path.join(out, "wheel"),
             "live_paths": live, "live_org": [r for r in live if r["组织物"]],
-            "live_off": [r for r in live if r["组织物"] or r["开发机"]]}
+            "live_off": [r for r in live if r["组织物"] or r["开发机"]],
+            "ig_payload": ignored_payload(root, files)}
 
 
 def check_bundle(path):
@@ -262,6 +291,16 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
                      u"（⛔ 入交付物 · 判「成」＝ 0 · 承 pm_1396 §二.5）" % len(p["live_off"]))
         for x in p["live_off"][:20]:
             lines.append(u"  · %s:%d  %s" % (x["file"], x["line"], x["径"]))
+        return 2, lines
+    if p["ig_payload"] is None:
+        lines.append(u"[bundle] ⛔ 洁之闸·二（gitignored）：**⛔ 得判**（git ⛔ 用 ∨ 非仓）⇒ 止"
+                     u"（出包须自 git 树出 · 承 pm_1399 §一）")
+        return 2, lines
+    if p["ig_payload"]:
+        lines.append(u"[bundle] ⛔ 洁之闸·二（gitignored）：运行子集含被 `.gitignore` 忽略之件 %d ⇒ 止"
+                     u"（本机之产物 ⛔ 入包 · 承 pm_1399 §一）" % len(p["ig_payload"]))
+        for x in p["ig_payload"][:20]:
+            lines.append(u"  · %s" % x)
         return 2, lines
     os.makedirs(p["wheel_dir"], exist_ok=True)
     if wheel:
@@ -351,6 +390,21 @@ def self_test():
         u"反控：寻常盘符径（⛔ 组织物 ∧ ⛔ 开发机）⇒ ⛔ 判红")
     say(len(required_dists()) >= 10 and "chromadb" in [_norm(d) for d in required_dists()],
         u"正控：真源之必需节含 chromadb（⚠ 若红 ⇒ 本机 requirements.txt 已漂）")
+    _git = shutil.which("git")
+    if not _git:
+        print(u"  ⊘ 洁闸·二（gitignored）之反控：⛔ 跳（git ⛔ 在 PATH）—— ⛔ 入计（⛔ 判绿）")
+    else:
+        g = os.path.join(t, "g")
+        os.makedirs(os.path.join(g, "core", "pa"))
+        subprocess.run([_git, "-C", g, "init", "-q"], capture_output=True)
+        io.open(os.path.join(g, ".gitignore"), "w", encoding="utf-8").write("core/pa/ig.json" + chr(10))
+        io.open(os.path.join(g, "core", "pa", "ig.json"), "w", encoding="utf-8").write("{}" + chr(10))
+        io.open(os.path.join(g, "core", "pa", "ok.py"), "w", encoding="utf-8").write("x=1" + chr(10))
+        say(ignored_payload(g, ["core/pa/ig.json", "core/pa/ok.py"]) == ["core/pa/ig.json"],
+            u"正控：gitignored 之件必逮 ／ 寻常之件 ⛔ 入（⛔ 假红）")
+        say(ignored_payload(g, []) == [], u"反控：空表 ⇒ 空（⛔ 无谓 git 之调用）")
+        say(ignored_payload(os.path.join(t, "nope"), ["a.py"]) is None,
+            u"反控：⛔ 非仓 ⇒ 返 None（＝「⛔ 得判」· ⛔ 判绿）")
     n, tt = sum(1 for c in hits if c), len(hits)
     print(u"=== 离线包器自测 %d/%d 通过（%s）===" % (n, tt, u"rc=0" if n == tt else u"rc=2"))
     return 0 if n == tt else 2
@@ -398,6 +452,11 @@ def main(argv):
                 len(p["live_paths"]), len(p["live_org"]), len(p["live_off"])))
             for x in p["live_off"][:12]:
                 print(u"    · %s:%d  %s" % (x["file"], x["line"], x["径"]))
+            _ig = p["ig_payload"]
+            print(u"  洁闸·二（⛔ gitignored 之产物）：%s（判「成」＝ 0）" % (
+                u"⛔ 得判（git ⛔ 用 ∨ 非仓）" if _ig is None else u"%d 件" % len(_ig)))
+            for x in (_ig or [])[:12]:
+                print(u"    ⊘ %s" % x)
             print(u"  将动：① pip download -d %s -r requirements-runtime.txt ② 复运行子集 ③ 写册" % p["wheel_dir"])
         return 0
     rc, lines = apply_bundle(a.root, p["out"], wheel=True, json_out=a.json)
