@@ -8,7 +8,11 @@ function loadCfg(){ const c=JSON.parse(localStorage.getItem('pa_cfg')||'{}'); co
    ③ `可用` 逐字照渲（后端六态 · ⛔ 前端自造辞）⇒ **净机无本机模型服务即于此显形**（⛔ 装成可选）。
    ④ 表 ⛔ 得（未应答 ／ 坏体 ／ 键 ⛔ 在）⇒ **显形**（PA_GAP 三态 · ⛔ 静默硬编回退 ⇒ 以旧别名充选）。
    ⑤ 所选之实名 ⇒ `paModelSel()` **一处出**（send.js ／ cards.js 皆取之 ⇒ **说一用一**）；
-     ⛔ 在表内 ⇒ 返 "" ⇒ 请求体 ⛔ 带该键（后端落会话档 ∨ 默认 · 承「其名由后端出」）。 */
+     ⛔ 在表内 ⇒ 返 "" ⇒ 请求体 ⛔ 带该键（后端落会话档 ∨ 默认 · 承「其名由后端出」）。
+   ⑥ 回填之请**先归一、后比**（pm_1472 §二）：以**后端之表之归一**（行 `aliases[]` ／ 顶层 `model_aliases`）
+     ⇒ 别名（如 `deepseek-v4-flash`）**归一为实名** ⇒ 命中即选中 —— ⛔ 静默落默认；⛔ 猜测（前缀剥 ／ 模糊比）。
+   ⑦ ⛔ 命中（真未知名）⇒ **显形**（明书「表 ⛔ 含此名 ＋ 所按之默认」· 紧贴选单 ⇒ ⛔ 与「表未得」之态一名蔽二态）;
+     **存者唯实名**（别名 ⛔ 存底 —— 归正后回写 `pa_cfg.model`）。 */
 var paModelRows = null;   /* 后端之表（本轮之实）· null ＝ 未得 ⇒ paModelSel() 恒 "" */
 var paModelKept = '';     /* 末次**得表**之所选（⛔ 被显形之空值抹去 ⇒ 存底 ⛔ 静默丢） */
 function paModelKindTxt(k){ return (k === 'local') ? '本机' : ((k === 'remote') ? '云端' : '种类未给'); }
@@ -22,7 +26,52 @@ function paModelOptHtml(m){
 function paModelState(sel, txt){
   sel.innerHTML = '<option value="">' + paEsc(txt) + '</option>';
   sel.disabled = true;   /* 显形之态 ⛔ 可择（⛔ 以旧别名充选） */
+  paModelNote(sel, '');  /* 表未得之态 ⇒ 归正／未知名之注 ⛔ 留（二态须别） */
   return sel;
+}
+/* 归一表（**自后端之响应出** · ⛔ 前端硬编别名）：别名 ⇒ **实名**。
+   ① 行级 `aliases[]`（行之所绑 ⇒ **优先**）② 顶层 `model_aliases`（唯当其所指**为表内实名** ⇒ 补之）。
+   ⛔ 猜测（⛔ 前缀剥 ／ ⛔ 模糊比）：唯认后端所给之键值（承 pm_1472 §二.2）。 */
+function paModelAliasMap(rows, d){
+  const ids = {}, m = {};
+  rows.forEach(function(r){ const id = String((r || {}).id || ''); if(id) ids[id] = true; });
+  const top = (d && typeof d.model_aliases === 'object' && d.model_aliases) || {};
+  Object.keys(top).forEach(function(k){ const v = String(top[k] || ''); if(ids[v]) m[k] = v; });
+  rows.forEach(function(r){
+    const id = String((r || {}).id || ''), al = (r && Array.isArray(r.aliases)) ? r.aliases : [];
+    al.forEach(function(x){ const k = String(x || ''); if(k && ids[id]) m[k] = id; });
+  });
+  return m;
+}
+/* 回填之请 ⇒ 实名：① 逐字命中表内实名 ② 别名归一 ③ ⛔ 命中 ⇒ ""（未知名 · 显形用）。 */
+function paModelResolve(rows, amap, want){
+  const w = String(want || '');
+  if(!w) return {id: '', via: ''};
+  for(let i = 0; i < rows.length; i++){ if(String((rows[i] || {}).id) === w) return {id: w, via: 'id'}; }
+  if(amap[w]) return {id: amap[w], via: 'alias'};
+  return {id: '', via: ''};
+}
+/* 归正／未知名之**显形**（pm_1472 §二.1 ／ §三.1）：**唯此一处**出注，紧贴模型选单
+   —— ⛔ 入 select 之项文（免与「表未得」之态一名蔽二态· 二态共用一个注位）。 */
+function paModelNote(sel, txt){
+  if(!sel || !sel.parentNode) return;
+  let n = document.getElementById('cfgModelNote');
+  if(!n){
+    n = document.createElement('span'); n.id = 'cfgModelNote';
+    n.style.cssText = 'display:block;font-size:10.5px;line-height:1.5;margin-top:2px;color:#d2991d';
+    sel.parentNode.appendChild(n);
+  }
+  n.textContent = String(txt || '');
+  n.style.display = txt ? '' : 'none';
+}
+/* 存底之归正（pm_1472 §三.2）：**别名 ⛔ 存** —— 归正后回写 `pa_cfg.model`（唯既有之 model 键 · ⛔ 造新键 · ⛔ 静默改他键）。 */
+function paModelPersist(id){
+  try{
+    const raw = localStorage.getItem('pa_cfg'); if(!raw) return;
+    const c = JSON.parse(raw) || {};
+    if(typeof c.model !== 'string' || !c.model || c.model === id) return;
+    c.model = String(id || ''); localStorage.setItem('pa_cfg', JSON.stringify(c));
+  }catch(e){}
 }
 function paModelRender(sel, st, d, at, err, prev){
   const rows = (d && Array.isArray(d.models_table)) ? d.models_table : null;
@@ -32,12 +81,22 @@ function paModelRender(sel, st, d, at, err, prev){
   if(!rows.length){ paModelRows = null; return paModelState(sel, '后端 models_table 照实 0 行（扫于 ' + at + '）'); }
   paModelRows = rows; sel.disabled = false;
   sel.innerHTML = rows.map(paModelOptHtml).join('');
-  /* 择值之序：**回填之请**（在表）⇒ 后端之 `default.model` ⇒ 首行（⛔ 前端自拟默认）。 */
-  const want = String(prev || ''), dft = String(((d || {}).default || {}).model || '');
-  let hasW = false, hasD = false;
-  rows.forEach(function(m){ const id = String((m || {}).id || ''); if(id === want) hasW = true; if(id === dft) hasD = true; });
-  sel.value = hasW ? want : (hasD ? dft : String((rows[0] || {}).id || ''));
-  paModelKept = String(sel.value || '');
+  /* 择值之序：**回填之请**（先归一 · 在表）⇒ 后端之 `default.model` ⇒ 首行（⛔ 前端自拟默认）。 */
+  const want = String(prev || '').trim(), dft = String(((d || {}).default || {}).model || '');
+  const amap = paModelAliasMap(rows, d), hit = paModelResolve(rows, amap, want);
+  let hasD = false;
+  rows.forEach(function(m){ if(String((m || {}).id) === dft) hasD = true; });
+  const pick = hit.id || (hasD ? dft : String((rows[0] || {}).id || ''));
+  sel.value = pick;
+  paModelKept = String(sel.value || '');   /* **名实同一**：kept 亦为实名（⛔ 落旧别名） */
+  if(hit.via === 'alias'){
+    paModelNote(sel, '原选「' + want + '」（别名）⇒ 已归正为「' + pick + '」');
+    paModelPersist(pick);
+  } else if(hit.via === 'id'){
+    paModelNote(sel, '');
+  } else {
+    paModelNote(sel, '后端之表 ⛔ 含此名「' + want + '」⇒ 已按下之默认「' + pick + '」（⛔ 静默）');
+  }
   return sel;
 }
 function paModelFill(prev){
