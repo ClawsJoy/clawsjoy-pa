@@ -40,6 +40,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from core.lib.paths import org_path
 from core.pa import _proc as _proc   # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 from urllib.parse import urlparse
 
@@ -48,8 +49,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 #: 与 `roster._path()` **同规**（`PA_DATA_DIR` ⇒ 可 stage；⛔ 两处各持一径）
 _DATA_DIR = os.getenv("PA_DATA_DIR", "data/v9/pa")
 PROBE_CACHE = Path(_DATA_DIR) / "card_probes.json"
-CONFIG_JSON = r"D:\paseo-home\config.json"
-PASEO_PS1 = r"D:\npm-global\paseo.ps1"
+# ⭐ 承 pm_1399 §二.3（批一）：组织物之径 ⇒ env ＋ 组织版开关（缺 ⇒ None ⇒ 显「未接（组织版）」）
+CONFIG_JSON = org_path("PA_SEAT_CONFIG")
+PASEO_PS1 = org_path("PA_SEAT_PASEO_PS1")
 
 #: ⭐ 本模块**唯补**此二键（⛔ 重造既存七键）
 CARD_KEYS_ADDED = ("invoke", "probe")
@@ -420,7 +422,8 @@ def registry():
     for s in R.seats():
         sid = s.get("id")
         rows.append({"id": sid, "name": s.get("name"), "kind": "seat", "from": "seat",
-                     "invoke": "powershell -File %s agent send %s --prompt-file <件> --no-wait" % (PASEO_PS1, sid),
+                     "invoke": "powershell -File %s agent send %s --prompt-file <件> --no-wait"
+                               % (PASEO_PS1 or "未接（组织版）", sid),
                      "probe": probes.get(sid) or {"status": "ok",
                                                   "reading": "在册（%s）" % ((s.get("access") or {}).get("source")),
                                                   "at": _now()}})
