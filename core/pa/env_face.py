@@ -132,10 +132,15 @@ def resolve_paths():
     p["repo"] = str(REPO_ROOT)
     s["repo"] = "__file__ 推（parents[2]）"
     try:
-        p["vault"] = str(vault_root())
+        _vr = vault_root()
+        if _vr is None:
+            raise ValueError("无可解析之真源")
+        p["vault"] = str(_vr)
         s["vault"] = "core/lib/paths.py:vault_root()"
     except Exception as e:
-        p["vault"], s["vault"] = None, "未接：vault_root() 不可读（%s）" % type(e).__name__
+        p["vault"], s["vault"] = None, (
+            "未接（选目录）：env PA_VAULT_DIR ∨ 配置 paths.vault_root ∨ 内置 <data_root>/kb 皆无（%s）"
+            % type(e).__name__)
     try:
         from core.lib.config_helper import get_data_root
 
@@ -271,7 +276,10 @@ def _now():
 
 def _vault():
     try:
-        return Path(vault_root())
+        root = vault_root()
+        if root is None:
+            return Path(os.getenv("PA_VAULT_DIR") or "")   # 未接 ⇒ 空 Path（⛔ 假径 · 唯免崩）
+        return Path(root)
     except Exception:
         return Path(os.getenv("PA_VAULT_DIR") or "")
 

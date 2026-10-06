@@ -13,11 +13,20 @@
 
 这里统一按平台解析，并保留环境变量覆盖能力：
 ``PA_VAULT_DIR`` / ``PLAYWRIGHT_BROWSERS_PATH`` / ``COMSPEC``。
+
+⚠ 2026-10-06（承 pm_1387 §二.2 之裁）：vault 之**真源之序**已改 ——
+  env ``PA_VAULT_DIR`` ⇒ 配置 ``paths.vault_root`` ⇒ 内置 ``<data_root>/kb``
+  ⇒ **末选**旧机探测（``WSL_VAULT`` ／ ``WIN_VAULT``）⇒ **None**（＝「未接（选目录）」）。
+  ⛔ 再用 ``D:\\Obsidian\\...`` 作**字面默认** —— 那会把「未接」伪装成「已接」
+  （在**净机**上指向**他人机器**之径 ⇒ 同「净机必败」之族）。
 """
 import os
 import tempfile
 from pathlib import Path
 
+# ⚠ **末选**之旧机探测字面（2026-10-06 承 pm_1387 §二.2 之裁：⛔ 作**默认**）
+#   唯 ``is_dir()`` 命中方用（＝ 本机确有此 vault）；净机 ⇒ 皆不命中 ⇒ vault_root() 返 None
+#   ⇒ 面显「未接（选目录）」。真源之序见 vault_root() 之 docstring。
 WSL_VAULT = "/mnt/d/Obsidian/ClawsJoy/ClawsJoy"
 WIN_VAULT = "D:\\Obsidian\\ClawsJoy\\ClawsJoy"
 WSL_BROWSERS = "/mnt/d/whisper_cache/ms-playwright"
@@ -36,15 +45,60 @@ def _first_existing(*candidates):
     return None
 
 
+def _config_vault_root():
+    """配置真源（首启引导所立）：配置之 ``paths.vault_root``（用户自选知识库目录）。
+
+    ⚠ 惰性 import（免 import 期环）· 唯读；取不到 ⇒ ``None``（⛔ 崩 · 唯返「未接」之据）。
+    """
+    try:
+        from core.lib.unified_config import unified_config
+
+        v = unified_config.get("paths.vault_root", None)
+        if v is None or str(v).strip() in ("", "."):
+            return None
+        return str(v).strip()
+    except Exception:
+        return None
+
+
+def _builtin_kb():
+    """内置（空）知识库：``<data_root>/kb`` —— **存在方用**（⛔ 立目录 · 唯读）。
+
+    净机之默认即是它（⛔ 用 ``D:\\Obsidian\\...`` 之字面兜底）。
+    """
+    try:
+        from core.lib.config_helper import get_data_root
+
+        p = Path(str(get_data_root())) / "kb"
+        return str(p) if p.is_dir() else None
+    except Exception:
+        return None
+
+
 def vault_root():
-    """Obsidian vault 根目录。优先 PA_VAULT_DIR，其次探测 WSL/Windows 实际路径。"""
+    """Obsidian vault 根目录 —— **真源之序**（2026-10-06 承 pm_1387 §二.2 之裁）：
+
+        ① 显式 env ``PA_VAULT_DIR``（最高 · 未变）
+        ② 配置 ``paths.vault_root``（首启引导／设置里所选之知识库目录）
+        ③ 内置空知识库 ``<data_root>/kb``（存在方用）
+        ④ **末选**：旧机之探测（``WSL_VAULT`` ／ ``WIN_VAULT``）—— 唯 ``is_dir()`` 命中才用
+
+    全无 ⇒ **None**（＝「**未接（选目录）**」· 承四态之一处定形 · ⛔ 崩 · ⛔ 静默用字面默认）。
+    ⚠ 调用方须自辨 ``None``（⛔ ``str(vault_root())`` —— 那得 ``"None"`` ＝ 假径）。
+    """
     env = os.environ.get("PA_VAULT_DIR")
     if env:
         return Path(env)
-    found = _first_existing(WSL_VAULT, WIN_VAULT)
-    if found:
-        return Path(found)
-    return Path(WIN_VAULT if IS_WINDOWS else WSL_VAULT)
+    cfg = _config_vault_root()
+    if cfg:
+        return Path(cfg)
+    builtin = _builtin_kb()
+    if builtin:
+        return Path(builtin)
+    legacy = _first_existing(WSL_VAULT, WIN_VAULT)   # 末选（旧机兼容 · ⛔ 作默认）
+    if legacy:
+        return Path(legacy)
+    return None
 
 
 # ===== 件名长度守护（2026-09-28 落 · 承「命名无上限」逮 ＋ 对端回件 §五）=====

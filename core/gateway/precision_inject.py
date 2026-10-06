@@ -46,10 +46,12 @@ def _vault_path():
     2026-09-28(成对改): 此前先读 execution_policy.yaml 的 obsidian.vault_path
     （写死 WSL 挂载形态），读不到才回落 vault_root() ⇒ 同一台机上并存「配置」与「实探测」
     两份口径 —— 脑根一改或两边形态不同，判据就读错对象。
-    现统一由 vault_root() 解析（``PA_VAULT_DIR`` → 实探测 → 平台默认）；
+    现统一由 vault_root() 解析（``PA_VAULT_DIR`` → 配置 → 内置 kb → 末选实探测）；
     ``obsidian.vault_path`` 降为**说明**（⛔ 改它不改变行为）。
+    ⚠ 2026-10-06（承 pm_1387 §二.2）：未接 ⇒ 返 ``""``（⛔ ``str(None)`` 之 ``"None"`` 假径）。
     """
-    return str(vault_root())
+    root = vault_root()
+    return str(root) if root is not None else ""
 
 
 # ===== 检索面排除名单（CEO 2026-09-28 ⑧ 终裁 ＋ ⑤⒝）=====

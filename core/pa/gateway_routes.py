@@ -1952,7 +1952,8 @@ def register_pa_routes(app, brain=None):
         q = (p.get("question") or "").strip()
         if not q:
             return err("ask 需要 question")
-        kb = os.getenv("PA_VAULT_DIR") or str(vault_root())
+        _vr = vault_root()   # ⚠ 可 None（未接 · 承 pm_1387 §二.2）⇒ ⛔ str(None) 之假径
+        kb = os.getenv("PA_VAULT_DIR") or (str(_vr) if _vr is not None else "")
         _at = _dt2.now().strftime("%Y-%m-%d %H:%M:%S")
         _tk0 = time.perf_counter()   # ⭐ 058：本轮检索之起点（器取）
         # ⭐ 修①（PM 2026-10-05 · 老板实测之修）：**决策账 ⇒ 直取本机**（⛔ 回落模型）
@@ -3002,7 +3003,11 @@ def register_pa_routes(app, brain=None):
         from core.pa.vault_brain import BrainSync
 
         pa = _core((request.json or {}).get("user_id"))
-        vault = os.getenv("PA_VAULT_DIR") or str(vault_root())
+        _vr = vault_root()
+        vault = os.getenv("PA_VAULT_DIR") or (str(_vr) if _vr is not None else None)
+        if not vault:
+            return err("vault 未接（选目录）：env PA_VAULT_DIR ∨ 配置 paths.vault_root ∨ "
+                       "内置 <data_root>/kb 皆无 —— 请先在「首启引导／设置」里选知识库目录")
         brain_sync = BrainSync(pa.ledger, vault_dir=vault)
         out = {
             "ledger_md": brain_sync.sync_ledger(),
@@ -3318,7 +3323,8 @@ def register_pa_routes(app, brain=None):
             _sid = (request.args.get("session_id") or "").strip()
             _scope = request.args.get("scope") or KB_MAPPING_DEFAULT_SCOPE
             _limit = request.args.get("limit") or 100
-            _kb = os.getenv("PA_VAULT_DIR") or str(vault_root())
+            _vr = vault_root()   # ⚠ 可 None（未接）⇒ ⛔ str(None) 之假径
+            _kb = os.getenv("PA_VAULT_DIR") or (str(_vr) if _vr is not None else "")
             _sb = ""
             _man = None
             if _sid:

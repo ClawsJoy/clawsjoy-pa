@@ -19,12 +19,19 @@ from core.lib.paths import (check_path_len, runtime_tmp_dir, runtime_tmp_path,
 
 
 def _vault_root() -> Path:
-    """vault 根（唯一真源 = core.lib.paths.vault_root()；2026-09-28 成对改）。
+    """vault 根（唯一真源 = core.lib.paths.vault_root()；2026-09-28 成对改 · 2026-10-06 补未接之辨）。
 
     此前本函数自己再读一遍 execution_policy.yaml ⇒ 与 precision_inject._vault_path
     成为**两份口径**（脑根一改即分裂）。现一律委托 vault_root()。
+    ⚠ 2026-10-06（承 pm_1387 §二.2）：vault_root() 未接时返 ``None`` ⇒ 本函数**报因**
+      （⛔ ``Path(None)`` 之 TypeError ／ ⛔ 静默写错位置）。
     """
-    return vault_root()
+    root = vault_root()
+    if root is None:
+        raise RuntimeError(
+            "vault 未接（选目录）：请先选知识库目录（env PA_VAULT_DIR ∨ 配置 paths.vault_root）"
+        )
+    return root
 
 
 def _llm_summarize(text: str, max_chars: int = 3000) -> str:

@@ -14,13 +14,29 @@ import time
 from pathlib import Path
 from core.lib.paths import check_path_len, vault_root, write_text_lf
 
-VAULT_ROOT = str(vault_root())
+# ⚠ 2026-10-06（承 pm_1387 §三.3）：旧为**模块级取值** ``VAULT_ROOT = str(vault_root())``
+#   ⇒ ① `import` 即解析真源（未接时 `str(None)` = `"None"` ＝ **假径**）
+#     ② 未接若抛 ⇒ **import 即崩**（拉本模块者众：core/pa/__init__.py 等）
+#   ⇒ 改**惰性**：唯用时取（`_vault_root()`）。`VAULT_ROOT` 只留名（⛔ 倚其值 ·
+#     登记表 config/v9/vault_write_faces.yaml 仍以本名认此面）。
+VAULT_ROOT = None   # 弃用（承上）
+
+
+def _vault_root():
+    """vault 根（**惰性** · 承 pm_1387 §三.3）—— 未接 ⇒ **报因**（⛔ 崩于 import · ⛔ 字面默认径）。"""
+    root = vault_root()
+    if root is None:
+        raise RuntimeError(
+            "vault 未接（选目录）：env PA_VAULT_DIR ∨ 配置 paths.vault_root ∨ 内置 "
+            "<data_root>/kb 皆无 ⇒ 请先在「首启引导／设置」里选知识库目录（⛔ 不以字面默认径代）"
+        )
+    return Path(root)
 
 
 class BrainSync:
-    def __init__(self, ledger, vault_dir=VAULT_ROOT):
+    def __init__(self, ledger, vault_dir=None):
         self.ledger = ledger
-        self.vault = Path(vault_dir)
+        self.vault = Path(vault_dir) if vault_dir else _vault_root()
         self.inbox = self.vault / "收件箱"
         self.archive = self.vault / "归档"
         self.assets = self.vault / "附件"

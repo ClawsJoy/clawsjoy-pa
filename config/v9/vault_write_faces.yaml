@@ -66,21 +66,21 @@ writers:
     faces:
       - face: "收件箱/PA待办与进度.md"
         evidence:
-          - "core/pa/vault_brain.py:29"
-          - "core/pa/vault_brain.py:46"
+          - "core/pa/vault_brain.py:45"
+          - "core/pa/vault_brain.py:62"
       - face: "收件箱/_未读索引.md"
         evidence:
-          - "core/pa/vault_brain.py:87"
-          - "core/pa/vault_brain.py:102"
+          - "core/pa/vault_brain.py:103"
+          - "core/pa/vault_brain.py:118"
       - face: "收件箱/PA每日站会.md"
         evidence:
-          - "core/pa/vault_brain.py:108"
-          - "core/pa/vault_brain.py:132"
+          - "core/pa/vault_brain.py:124"
+          - "core/pa/vault_brain.py:148"
       - face: "附件/{kind}/*"
         evidence:
-          - "core/pa/vault_brain.py:26"
-          - "core/pa/vault_brain.py:77"
-          - "core/pa/vault_brain.py:81"
+          - "core/pa/vault_brain.py:42"
+          - "core/pa/vault_brain.py:93"
+          - "core/pa/vault_brain.py:97"
   - module: core/gateway/precision_inject.py
     side: cw
     faces:
