@@ -176,7 +176,7 @@ def resolve_paths():
         else:
             p["render"] = None
             s["render"] = ("未接（M1）：⛔ 真源 —— env PA_RENDER_DIR ∨ config paths.render_root 皆无"
-                           "（旧字面 C:/Users/… 已拔 · 承 pm_1366 §三 ⓒ）")
+                           "（旧字面 %USERPROFILE%\… 已拔 · 承 pm_1366 §三 ⓒ）")
     return p, s
 
 
