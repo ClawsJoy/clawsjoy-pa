@@ -825,8 +825,8 @@ function paSelfMulPass(){
     el.setAttribute('data-raw', note);
     el.setAttribute('data-n', mul);
     if(el.dataset.mulBase === undefined) el.dataset.mulBase = String(el.title || '');
-    el.title = (el.dataset.mulBase ? (el.dataset.mulBase + ' ｜ ') : '') + '合并计数 本轮 ×' + mul;
-    if(!el.querySelector('details.eng')) el.appendChild(paEngNoteEl(note + '\n（合并计数：本轮 ×' + mul + '）'));
+    el.title = (el.dataset.mulBase ? (el.dataset.mulBase + ' ｜ ') : '') + '合并计数 本页 ×' + mul;
+    if(!el.querySelector('details.eng')) el.appendChild(paEngNoteEl(note + '\n（合并计数：本页 ×' + mul + '）'));
     n++;
   }
   return n;
@@ -996,11 +996,11 @@ function paEngCleanThread(){
     const mul = (s.match(/(?:^|\s)×(\d+)(?=\s|$)/) || [, ''])[1];
     const body = paSelfMulClean(s);
     const h = paLogHuman(body); if(!h) continue;
-    el.title = (el.title ? (el.title + ' ｜ ') : '') + body + (mul ? (' ｜ 合并计数 本轮 ×' + mul) : '');
+    el.title = (el.title ? (el.title + ' ｜ ') : '') + body + (mul ? (' ｜ 合并计数 本页 ×' + mul) : '');
     el.setAttribute('data-raw', body);
     el.__engNote = body;
     el.textContent = h;
-    el.appendChild(paEngNoteEl(body + (mul ? ('\n（合并计数：本轮 ×' + mul + '）') : '')));
+    el.appendChild(paEngNoteEl(body + (mul ? ('\n（合并计数：本页 ×' + mul + '）') : '')));
     n++;
   }
   return n;
@@ -2364,7 +2364,7 @@ function paSelfFailText(s){
       const raw0 = String(line == null ? '' : line);
       const mul0 = (raw0.match(/(?:^|\s)×(\d+)(?=\s|$)/) || [, ''])[1];
       const clean0 = mul0 ? paSelfMulClean(raw0) : raw0;
-      const ttl = mul0 ? ((title ? (title + ' ｜ ') : '') + '合并计数 本轮 ×' + mul0) : title;
+      const ttl = mul0 ? ((title ? (title + ' ｜ ') : '') + '合并计数 本页 ×' + mul0) : title;
       /* ⭐ pm_077 §一（正法 · 已撤 pm_076 §二 之绕法）：探针（`store === false`）之轮 ⛔ 计
          —— 其核在共用件 `products.js` 之折叠键 ⇒ ⭐ 按键之**分桶**（探针自成一桶 ·
          `paFoldKey(line, cls, store)`）⇒ ⛔ 由外动全局表（绕法动全局表 · 异常路下真表
@@ -2381,7 +2381,7 @@ function paSelfFailText(s){
             }
             el.dataset.axis = 'global';
             /* ⛔ 盖写 title：合路（products.js:298）后 paSelfMulPass 已把
-               「合并计数 本轮 ×N」写入 title ⇒ 此处只**追加**（⛔ 丢信息 · 幂等）。 */
+               「合并计数 本页 ×N」写入 title ⇒ 此处只**追加**（⛔ 丢信息 · 幂等）。 */
             const _pt = String(el.title || '');
             if(_pt.indexOf(PA_LEDGER_AXIS_TITLE) < 0){
               el.title = (_pt ? (_pt + ' ｜ ') : '') + PA_LEDGER_AXIS_TITLE;
