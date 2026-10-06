@@ -956,11 +956,12 @@ def test_r7_mark_published_relative_path(tmp_path, monkeypatch):
     assert 'post_url: "https://zhuanlan.zhihu.com/p/123"' in txt
 
 
-def test_r7_mark_published_nonexistent():
+def test_r7_mark_published_nonexistent(tmp_path, monkeypatch):
     """R7: mark_published 草稿不存在返回明确错误(不抛异常)"""
     import sys
 
     sys.path.insert(0, ".")
+    monkeypatch.setenv("PA_VAULT_DIR", str(tmp_path))   # 承 pm_1399 §二.3（批一）：vault 字面默认已拔（⛔ 倚本机）
     from core.plugins.draft_box import get_draft_plugin
 
     p = get_draft_plugin("知乎")

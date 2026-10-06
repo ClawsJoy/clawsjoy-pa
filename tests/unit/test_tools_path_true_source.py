@@ -168,9 +168,11 @@ def test_D_selftest_still_green():
                     reason="本机无 Obsidian 体检项库")
 def test_D_reads_real_library_not_file_missing():
     """后绿：工具须**真读到**真件（改前 Win 侧恒报「文件不存在」= 判据没打到对象）。"""
+    env = dict(os.environ)
+    env["PA_VAULT_DIR"] = str(_REAL_VAULT)
     p = subprocess.run(
         [sys.executable, _PY],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(_REPO),
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(_REPO), env=env,
     )
     out = p.stdout or ""
     assert _TITLE in out, out

@@ -26,9 +26,19 @@ def _env():
     return _ENV
 
 
-def test_ws_root_is_abs_str():
-    ws = _env().get("ws_root")
+def test_ws_root_is_abs_str(monkeypatch):
+    """ws_root 一处出径（承 pm_1366 §三 ⓐ）：env PA_WS_ROOT ⇒ 绝对；缺（∧ tools 缺）⇒ None ＋ 源述「未接」。
+
+    ⚠ 承 pm_1399 §二.3（批一）：组织物（`_tools` 之父）已切出 ⇒ 本机缺 env 时 ws_root 可為
+    ``None``（四态之「未接（组织版）」）—— 本测须认之（⛔ 以「恒为绝对」为契）。
+    """
+    fake = os.path.join(os.path.abspath(os.sep), "tmp", "ws_root_probe")
+    monkeypatch.setenv("PA_WS_ROOT", fake)
+    ws = E.build_env().get("ws_root")
     assert isinstance(ws, str) and os.path.isabs(ws), ws
+    monkeypatch.delenv("PA_WS_ROOT", raising=False)
+    v, src = E.resolve_ws_root({"tools": None})
+    assert v is None and "未接" in str(src), (v, src)
 
 
 def test_paths_keys_contract():
