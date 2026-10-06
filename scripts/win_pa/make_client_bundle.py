@@ -45,6 +45,19 @@ PAYLOAD = ("agent_gateway_enhanced.py", "requirements.txt", "requirements-runtim
            "pyproject.toml", "config", "core", "routes", "web", "scripts/win_pa")
 #: 复本时之剔（⛔ 入包）
 SKIP_NAMES = ("__pycache__", ".git", "data", "logs", "dist", "node_modules", ".venv")
+#: ⭐ 运行子集里「剔之件」（相对 ROOT · 承 pm_1417 §二 之逐条裁）—— 密钥 ／ 本机态 ／ 机器相关 ／ 生成物。
+#  由：`PAYLOAD` 唯按**目录**走 ⇒ 本机之产物亦入（同 `ignored_payload` 之族）⇒ 逐条剔之（⛔ 静默 · 见 `excluded_payload`）。
+EXCLUDE = (
+    "config/secrets.yaml",                     # 密钥（⛔ 入包 · 值皆 ${ENV} 之占位）
+    "core/lib/filter_net.json",                # 本机产物（`gitignore:49` 运行期自学习写）
+    "config/clawsjoy/memory/vector.yaml",      # 本机态（安装器立默认）
+    "config/memory/memory_optimization.yaml",  # 本机态（安装器立默认）
+    "config/v5/memory/config.yaml",            # 本机态（安装器立默认）
+    "scripts/win_pa/ClawsJoy_PA_Boot.xml",     # 机器相关（由安装器生）
+    "web/pa/ui_state.json",                    # 运行态（前端读不到 ⇒ 显「未知」 · ⛔ 崩）
+    "web/ppt_thumbs/manifest.json",            # 生成物
+)
+_EXCLUDE_SET = frozenset(EXCLUDE)
 #: 真源之必需节（⛔ 手拟 · 与 requirements.txt 同源）
 SEC_PREFIX = u"运行依赖"
 
@@ -193,8 +206,8 @@ def missing_wheels(wheel_dir, dists):
     return [d for d in dists if _norm(d) not in got]
 
 
-def _payload_files(root):
-    u"""运行子集之**件**（剔 `__pycache__` ／ `.before_*` ／ `__pycache__` 之流）—— **器取**。"""
+def _payload_walk(root):
+    u"""运行子集之**全件**（剔 `__pycache__` ／ `.before_*` ／ 点件 · **⛔ 剔 `EXCLUDE`**）—— **器取**。"""
     out = []
     for rel in PAYLOAD:
         p = os.path.join(root, rel.replace("/", os.sep))
@@ -211,6 +224,16 @@ def _payload_files(root):
                 fp = os.path.join(dp, fn)
                 out.append(os.path.relpath(fp, root).replace(os.sep, "/"))
     return sorted(out)
+
+
+def _payload_files(root):
+    u"""运行子集之**入包**之件（`_payload_walk` 剔 `EXCLUDE`）—— **器取**。"""
+    return [x for x in _payload_walk(root) if x not in _EXCLUDE_SET]
+
+
+def excluded_payload(root):
+    u"""剔表里**实在**之件（剔何物之逐条报 · ⛔ 静默 · 承 pm_1417 §二）—— **器取**。"""
+    return sorted(x for x in _payload_walk(root) if x in _EXCLUDE_SET)
 
 
 def _bundle_files(path):
@@ -244,6 +267,7 @@ def plan_bundle(root=None, out=None):
     out = out or os.path.join(root, "dist", "client_v1")
     dists = required_dists(root)
     files = _payload_files(root)
+    excluded = excluded_payload(root)
     live = scan_live_paths(root, files)
     return {"version": VERSION, "root": root, "out": out, "dists": dists,
             "payload_files": files, "payload_bytes": sum(
@@ -251,6 +275,7 @@ def plan_bundle(root=None, out=None):
             "wheel_dir": os.path.join(out, "wheel"),
             "live_paths": live, "live_org": [r for r in live if r["组织物"]],
             "live_off": [r for r in live if r["组织物"] or r["开发机"]],
+            "excluded": excluded,
             "ig_payload": ignored_payload(root, files)}
 
 
@@ -286,6 +311,10 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
     p = plan_bundle(root, out)
     lines = [u"[bundle] out=%s ｜ 件 %d（%.1f MB）｜ 依 %d" % (
         p["out"], len(p["payload_files"]), p["payload_bytes"] / 1048576.0, len(p["dists"]))]
+    if p["excluded"]:
+        lines.append(u"[bundle] ⊘ 剔（⛔ 入包 · 承 pm_1417 §二）：%d 件" % len(p["excluded"]))
+        for x in p["excluded"]:
+            lines.append(u"  ⊘ %s" % x)
     if p["live_off"]:
         lines.append(u"[bundle] ⛔ 洁之闸（活径之扫）：包内「活 ∧（组织物 ∨ 开发机）」之径 %d 处 ⇒ 止"
                      u"（⛔ 入交付物 · 判「成」＝ 0 · 承 pm_1396 §二.5）" % len(p["live_off"]))
@@ -405,6 +434,19 @@ def self_test():
         say(ignored_payload(g, []) == [], u"反控：空表 ⇒ 空（⛔ 无谓 git 之调用）")
         say(ignored_payload(os.path.join(t, "nope"), ["a.py"]) is None,
             u"反控：⛔ 非仓 ⇒ 返 None（＝「⛔ 得判」· ⛔ 判绿）")
+    # ⭐ 反控（承 pm_1417 §二）：剔表有齿 —— 入表之件必剔 ／ 寻常之件 ⛔ 误剔 ／ 剔何物可报
+    ex = os.path.join(t, "ex")
+    os.makedirs(os.path.join(ex, "config", "memory"))
+    os.makedirs(os.path.join(ex, "core"))
+    io.open(os.path.join(ex, "config", "secrets.yaml"), "w", encoding="utf-8").write("x" + chr(10))
+    io.open(os.path.join(ex, "config", "memory", "memory_optimization.yaml"), "w", encoding="utf-8").write("x" + chr(10))
+    io.open(os.path.join(ex, "core", "keep.py"), "w", encoding="utf-8").write("x=1" + chr(10))
+    _pf = _payload_files(ex)
+    say("config/secrets.yaml" not in _pf and "config/memory/memory_optimization.yaml" not in _pf,
+        u"正控：剔表之件 ⇒ ⛔ 入包")
+    say("core/keep.py" in _pf, u"反控：寻常之件 ⛔ 误剔（⛔ 假红）")
+    say(excluded_payload(ex) == ["config/memory/memory_optimization.yaml", "config/secrets.yaml"],
+        u"正控：剔何物之逐条报（逐件可见 · ⛔ 静默）")
     n, tt = sum(1 for c in hits if c), len(hits)
     print(u"=== 离线包器自测 %d/%d 通过（%s）===" % (n, tt, u"rc=0" if n == tt else u"rc=2"))
     return 0 if n == tt else 2
