@@ -251,7 +251,7 @@ async function runAgentLoop(messages) {
       // seed 门「审批回执豁免」（entry.py:121 `status:"approval_exempt"`）——
       //   回执是同一 run 的延续 ⇒ ⛔ 当错误 · ⛔ 静默（如该值真达前端，照实记一行后停，⛔ 落 `d.data` 而崩）。
       if (d.status === 'approval_exempt') {
-        agentLog('ℹ️ seed 门豁免（审批回执延续）', '#8b949e');
+        agentLog('ℹ️ ' + (d.reason || 'seed 门豁免（审批回执延续）'), '#8b949e');
         return;
       }
 
