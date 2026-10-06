@@ -58,6 +58,138 @@ TOOL_REL = {"内容工坊 08_工具": ("内容工坊", "08_工具"),
             "信通插件": ("内容工坊", "08_工具", "信通插件"),
             "V9 win_pa 脚本": ("scripts", "win_pa")}
 
+
+#: ⭐⭐ 径之**一处**（承 pm_1366 §三 ⓐ「一处出径」）—— `build_env()["paths"]` 之真源表。
+#: ⚠ 何以立此：前端（`web\pa\faces\products.js:240` 之 `C:/Users/flybo/…`）与后端
+#:   （`allowlist()` 之 `D:\npm-global\…`）**各自硬编** ⇒ 「二源必漂」 ∧ **净机必败**。
+#:   ⇒ 今唯此处出径；⛔ 值**新硬编**于本档：逐项自 env ∨ **既有之真源**取
+#:   （`vault_root()` ／ `get_data_root()` ／ `config paths.logs_root` ／ `SRC_TOOLS`）；
+#:   ⭐ **无可推之真源 ⇒ `None` ＋ `paths_src` 明书「未接」**（⛔ 以字面兜底 ——
+#:   承「⛔ 以 `C:/Users/…` 兜底」）。
+PATH_KEYS = ("repo", "tools", "vault", "data", "npm_global", "render", "log")
+PATH_ENV = {
+    "tools": ("PA_TOOLS_DIR",),
+    "ws_root": ("PA_WS_ROOT",),
+    "npm_global": ("PA_NPM_GLOBAL",),
+    "render": ("PA_RENDER_DIR",),
+}
+
+
+def _abs(p):
+    """相对径 ⇒ 按 REPO_ROOT 拼（⭐ 面之径须**绝对** · 承 pm_1366 §三 判成 ⓑ）。"""
+    s = str(p)
+    return s if os.path.isabs(s) else str(REPO_ROOT / s)
+
+
+def _env_first(names):
+    for n in names:
+        v = os.getenv(n)
+        if v:
+            return str(v), "env %s" % n
+    return None, ""
+
+
+def _npm_global():
+    """⭐ NPM 全局 bin 之径 —— ⛔ 硬编（承 pm_1366 §三 ⓑ「由 `shutil.which` ∨ 配置推」）。
+
+    源之序：env `PA_NPM_GLOBAL` ⇒ env `PA_SEAT_PASEO_PS1` 之 dir（**既有之真源** ·
+    `core/pa/dispatch.py:142`）⇒ `shutil.which("paseo")` 之 dir。"""
+    v, s = _env_first(PATH_ENV["npm_global"])
+    if v:
+        return v, s
+    ps1 = os.getenv("PA_SEAT_PASEO_PS1")
+    if ps1:
+        return os.path.dirname(str(ps1)), "PA_SEAT_PASEO_PS1 之 dir（core/pa/dispatch.py:142 之真源）"
+    for _n in ("paseo", "paseo.cmd", "paseo.CMD", "codex", "dsh"):
+        _w = shutil.which(_n)
+        if _w:
+            return os.path.dirname(_w), "shutil.which(%s) 之 dir" % _n
+    return None, "未接：env PA_NPM_GLOBAL ／ PA_SEAT_PASEO_PS1 ／ PATH 之 paseo 皆无（⛔ 字面兜底）"
+
+
+def resolve_paths():
+    """⭐⭐ **一处出径**（承 pm_1366 §三 ⓐ）：返回 `({key: 绝对径|None}, {key: 真源之述})`。
+
+    ⛔ 值硬编：逐项自 env ∨ 既有之真源取；**无可推之真源 ⇒ `None` ＋ 述「未接」**
+    （⛔ 造一个假的绝对径去满足判据 —— 那是「装成可用」）。"""
+    p, s = {}, {}
+    p["repo"] = str(REPO_ROOT)
+    s["repo"] = "__file__ 推（parents[2]）"
+    try:
+        p["vault"] = str(vault_root())
+        s["vault"] = "core/lib/paths.py:vault_root()"
+    except Exception as e:
+        p["vault"], s["vault"] = None, "未接：vault_root() 不可读（%s）" % type(e).__name__
+    try:
+        from core.lib.config_helper import get_data_root
+
+        p["data"] = _abs(get_data_root())
+        s["data"] = "core/lib/config_helper.py:get_data_root()（⇒ config paths.data_root）"
+    except Exception as e:
+        p["data"], s["data"] = None, "未接：get_data_root() 不可读（%s）" % type(e).__name__
+    try:
+        from core.lib.unified_config import unified_config
+
+        p["log"] = _abs(unified_config.get("paths.logs_root", "logs"))
+        s["log"] = "config/system/system_unified.yaml:paths.logs_root"
+    except Exception as e:
+        p["log"], s["log"] = None, "未接：unified_config 不可读（%s）" % type(e).__name__
+    v, _s = _env_first(PATH_ENV["tools"])
+    p["tools"] = v or SRC_TOOLS
+    s["tools"] = _s or "core/pa/env_face.py:SRC_TOOLS（既有之一处）"
+    p["npm_global"], s["npm_global"] = _npm_global()
+    v, _s = _env_first(PATH_ENV["render"])
+    if v:
+        p["render"], s["render"] = _abs(v), _s
+    else:
+        _r, _rs = None, ""
+        try:
+            from core.lib.unified_config import unified_config
+
+            _r = unified_config.get("paths.render_root", None)
+            _rs = "config/system/system_unified.yaml:paths.render_root"
+        except Exception:
+            _r, _rs = None, ""
+        if _r:
+            p["render"], s["render"] = _abs(_r), _rs
+        else:
+            p["render"] = None
+            s["render"] = ("未接（M1）：⛔ 真源 —— env PA_RENDER_DIR ∨ config paths.render_root 皆无"
+                           "（旧字面 C:/Users/… 已拔 · 承 pm_1366 §三 ⓒ）")
+    return p, s
+
+
+def resolve_ws_root(paths_map=None):
+    r"""⭐ 工作区根（`D:\paseo-workspace`）—— ⛔ 字面：env `PA_WS_ROOT` ∨ `tools` 之父。"""
+    v, s = _env_first(PATH_ENV["ws_root"])
+    if v:
+        return _abs(v), s
+    p = paths_map if paths_map is not None else resolve_paths()[0]
+    _t = p.get("tools")
+    if _t:
+        return os.path.dirname(str(_t)), "「tools」之父（工作区根）"
+    return None, "未接：env PA_WS_ROOT ∨ tools 皆无（⛔ 字面兜底）"
+
+
+def _drive_letters():
+    """⭐ 盘符之**推**（⛔ 字面 `"CD"`）—— 由「已解析之径所含之盘 ＋ 系统盘（env `SystemDrive`）」。
+
+    ⚠ 由（承 pm_1366 §三 ⓑ）：字面 `"CD"` ⇒ 净机（唯 `C:`）**报一个不存在之 `D:`**
+    ⇒ 「装有 `D:`」之假（「装成可用」之族）｜⛔ 探 `A:`–`Z:`（白名单外 ⛔ 扫）。"""
+    seen = []
+    for _v in list(resolve_paths()[0].values()):
+        _t = str(_v or "")
+        if len(_t) > 1 and _t[1] == ":" and _t[0].isalpha():
+            _c = _t[0].upper()
+            if _c not in seen:
+                seen.append(_c)
+    _sd = os.environ.get("SystemDrive") or ""
+    if len(_sd) > 1 and _sd[1] == ":" and _sd[0].isalpha():
+        _c = _sd[0].upper()
+        if _c not in seen:
+            seen.insert(0, _c)
+    return seen
+
 #: 密钥前缀之**实形**（本表内仅此一处）；**入面者唯「形之述」**
 #: ⇒ 免末闸自触（面之输出之 `grep -c` 须 0 · 判据 3）
 KEY_PATTERN_RAW = "s" + "k-"
@@ -509,10 +641,19 @@ def build_env(route_count=None):
             errors[name] = "%s: %s" % (type(e).__name__, str(e)[:200])
         dig[name] = _col_digest(cols[name])
     vault = str(_vault())
+    _pm, _ps = resolve_paths()
+    _ws, _ws_src = resolve_ws_root(_pm)
     out = {
         "ok": True,
         "at": _now(),
         "env_version": ENV_VERSION,
+        # ⭐⭐ 径之**一处出径**（承 pm_1366 §三 ⓐ）：`ws_root` 单值（绝对）＋ `paths` 逐键。
+        #    ⛔ 前端自拼（`web\pa\faces\products.js:240` 之活硬编 即此病）｜⛔ `None` 键 ⇒ 顾主须显「未接」
+        #    （⛔ 静默 · ⛔ 以空串 ／ 盘符兜底）。
+        "ws_root": _ws,
+        "ws_root_src": _ws_src,
+        "paths": _pm,
+        "paths_src": _ps,
         "cols": cols,
         "counts": {k: len(cols[k]) for k in cols},
         # ⭐ T2-刀8 §一：`agents` 栏**一栏两义**（席位 ⟷ 端点）⇒ 附**分列之数**（⛔ 抹平）
