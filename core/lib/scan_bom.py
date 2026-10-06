@@ -70,13 +70,23 @@ import os
 import subprocess
 import sys
 
+# ⭐ 2026-10-06（pm_1409 §二.3 · 批二）：自仓根起 ⇒ `core.lib.paths` 可导（直跑 ∨ 引皆可）。
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+from core.lib.paths import org_path   # ⭐ 组织物之径之唯一出口（⛔ 字面）
+
 BOM = b"\xef\xbb\xbf"
 DEFAULT_EXTS = (".py",)
 SKIP_NAMES = (".git", "__pycache__")
 HERE = os.path.abspath(__file__)
 DEFAULT_BASELINE = os.path.join(os.path.dirname(HERE), "scan_bom_baseline.json")
 # ⭐ 内定二面（承 PM `1220 项3`）：仓内 _pm ＋ 仓外 _pm —— ⛔ 给 --face ∧ ⛔ 有基线时所用。
-DEFAULT_FACES = (r"D:\clawsjoy_v9\_pm", r"D:\paseo-workspace\_pm")
+# ⭐ 2026-10-06（pm_1409 §二.3 · 批二）：二径之字面 ⇒ 拔。
+#   仓内 _pm ⇒ 自 `__file__` 推（**产品级** · ⛔ 字面）；仓外 _pm ⇒ `org_path`（**组织版** · 缺 ⇒ ⛔ 入表）。
+_PM_IN = os.path.join(_REPO_ROOT, "_pm")
+_PM_OUT = org_path("PA_PM_OUT")
+DEFAULT_FACES = tuple(x for x in (_PM_IN, _PM_OUT) if x)
 
 RC_MEAN = {
     0: u"已扫且净",
