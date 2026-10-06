@@ -1,0 +1,44 @@
+# ============================================================
+# Win-PA Windows CI  --  SPARE PART ONLY (do NOT arm yet)
+# ------------------------------------------------------------
+# Status: spare part (备件).  Per pm_1382 Sec-2 item-3:
+#   push == platform action => not the TD/PM domain; landing needs the boss.
+#   To activate (boss only):
+#     git mv scripts/win_pa/ci_windows.yml.备件 .github/workflows/ci_windows.yml
+#     git push
+#
+# Scope guard (pm_1382 Sec-2 item-3): a green CI must NOT be read as
+#   "a clean machine can demo".  The real demo face (Ollama / GPU / weights)
+#   is NOT reproducible on CI => this job covers ONLY the static,
+#   dependency-free subset (syntax + the uninstaller's pure self-test).
+# ============================================================
+name: CI (Windows / win_pa)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  win_pa_static:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: py_compile win_pa tools (static, dependency-free)
+        run: python -X utf8 -B -m py_compile scripts/win_pa/preflight_start.py scripts/win_pa/pa_nowindow.py scripts/win_pa/probe_alive.py scripts/win_pa/boot_resume.py
+
+      - name: Uninstaller self-test (pure, no external deps)
+        run: python -X utf8 -B scripts/win_pa/uninstall_win_pa.py --self-test
+
+      - name: Note -- what this job does NOT cover
+        run: echo "NOT covered on CI: real Ollama/GPU/weights, scheduled-task registration, live 4-state screen."
