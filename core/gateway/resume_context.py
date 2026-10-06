@@ -5,9 +5,9 @@
 1) 唯一 no_context 产生点 = core/gateway/v9_chat/recovery.py:306。
    老板回「继续」时它只查两个源（BRIEF.md / .agent_state.json 的 last_task），
    两个都空就当场短路报 no_context —— **同一次 HTTP 请求自带的 messages 历史、
-   goal 目标原文、session_log 事件流一律不看**（web/pa.html:680-685 每次回传最近 30 条）。
+   goal 目标原文、session_log 事件流一律不看**（web/pa.html:680-685 每次回传最近 30 条 · 2026-09-13 之面 · 今漂）。
 2) BRIEF.md 只在 core/gateway/execute_agent_task.py:415-427 生成。PA 走的是
-   POST /v9/agent/chat（web/pa.html:684）→ 桥接循环，**从不调用该函数**
+   POST /v9/agent/chat（web/pa.html:684 · 2026-09-13 之面 · 今漂）→ 桥接循环，**从不调用该函数**
    → 主路径 0 生成（与「verification_chain 主路径 0 调用」同型）。
 3) last_task 全仓只有两个写入点：core/gateway/memory.py:173
    (persist_session_learning_state) 与 core/gateway/v9_bridge/response_builder.py:250
@@ -114,7 +114,7 @@ def resolve_task_text(*, messages, user_id, session_id):
     """续跑上下文兜底链。返回 (文本, 来源标记)；取不到 → ("", "")。
 
     顺序（先近后远）：state.last_task → BRIEF.md → goal.objective → 请求体 messages 历史。
-    最后一项是**永不失败**的源：PA 前端每次都把最近 30 条会话回传（web/pa.html:680）。
+    最后一项是**永不失败**的源：PA 前端每次都把最近 30 条会话回传（web/pa.html:680 · 2026-09-13 之面 · 今漂）。
     """
     _st = _read_json(_state_path(user_id, session_id))
     _lt = str(_st.get("last_task") or "").strip()

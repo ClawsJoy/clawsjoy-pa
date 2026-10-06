@@ -110,7 +110,7 @@ def run_chat_entry(*, data, deps):
             #   审批回执（approve_*）= **同一 run 的延续**，与 _single_run_guard 的豁免口径一致（见 :346/:364）。
             #   修正前：seed 门跑在「回执分发」（recover_session 内）之前且**无豁免** ⇒ 未 seed 会话里
             #   人拍「仅本次」的回执被短路，载荷 {blocked,status,reason} **无 message/error**
-            #   ⇒ 前端 pa.html:2233 渲染成「确认未生效：未知响应」（**假成交**）。
+            #   ⇒ 前端 pa.html:2233（2026-09-20 之面 · 今漂）渲染成「确认未生效：未知响应」（**假成交**）。
             #   安全性：回执只对**已存在**的 _pending_writes[session_id] 生效（无 pending ⇒ write_expired），
             #   不会凭空写入；故豁免不放大权限面。
             #   运行期回滚开关：V9_SEED_GATE_EXEMPT_APPROVALS=0 ⇒ 退回旧行为。

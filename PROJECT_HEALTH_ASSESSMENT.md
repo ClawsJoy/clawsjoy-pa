@@ -42,7 +42,7 @@
 
 主要失败包括：
 
-1. 当前机器由 `/usr/bin/python3`（Python 3.10）执行 pytest 时，`agent_gateway_enhanced.py:5737` 因 PEP 701 之前不支持的 f-string 嵌套引号无法解析；若干模块也使用相同新语法。
+1. 当前机器由 `/usr/bin/python3`（Python 3.10）执行 pytest 时，`agent_gateway_enhanced.py:5737（2026-09-08 之面 · 今漂）` 因 PEP 701 之前不支持的 f-string 嵌套引号无法解析；若干模块也使用相同新语法。
 2. `tests/unit/test_guard_registry.py` 预期 11 个守卫，实际注册 12 个；排除子任务作用域时预期 9 个、实际 10 个，表明守卫注册表与测试契约未同步。
 3. 架构守卫测试无法完成 AST 解析，除主网关外还发现含有 Python 3.12+ f-string 语法的模块。
 

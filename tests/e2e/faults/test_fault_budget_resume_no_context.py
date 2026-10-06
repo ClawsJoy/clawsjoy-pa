@@ -4,10 +4,10 @@
 事故（**第三次同型**：修好的东西在主路径上接不上）：
   1) no_context 唯一产生点 core/gateway/v9_chat/recovery.py:306 —— 老板回「继续」时它只查
      BRIEF.md 与 .agent_state.json 的 last_task 两个源，两个都空就当场短路报 no_context，
-     **同一次 HTTP 请求自带的 messages 历史（web/pa.html:680-685 每次回传 30 条）、
+     **同一次 HTTP 请求自带的 messages 历史（web/pa.html:680-685 每次回传 30 条 · 2026-09-13 之面 · 今漂）、
      goal 目标原文、session_log 事件流一律不看**。
   2) BRIEF.md 只在 core/gateway/execute_agent_task.py:415-427 生成；PA 走
-     POST /v9/agent/chat（web/pa.html:684）→ 桥接循环，**从不调用该函数** → 主路径 0 生成
+     POST /v9/agent/chat（web/pa.html:684 · 2026-09-13 之面 · 今漂）→ 桥接循环，**从不调用该函数** → 主路径 0 生成
      （与「verification_chain 主路径 0 调用」同型）。
   3) last_task 只有 core/gateway/memory.py:173 与
      core/gateway/v9_bridge/response_builder.py:250 两个写入点；预算耗尽轮在

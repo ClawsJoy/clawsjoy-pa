@@ -29,7 +29,7 @@
 
 ### 根因链
 
-1. tool_result 2000 字符硬截断: log_event(tool_result, content=json.dumps(_btr)[:2000]) (agent_gateway_enhanced.py:2020)。seq=7 的 git log 结果正好 2000 字符, 截断在 Untracked files 中间, 无任何截断标记。
+1. tool_result 2000 字符硬截断: log_event(tool_result, content=json.dumps(_btr)[:2000]) (agent_gateway_enhanced.py:2020 · 2026-08-18 之面 · 今漂)。seq=7 的 git log 结果正好 2000 字符, 截断在 Untracked files 中间, 无任何截断标记。
 2. LLM 看到残缺的 git 输出(看不到完整历史/状态) - 认为信息不足 - 下一轮重新执行 git log/list_dir。
 3. 桥接路径缺少已完成操作去重引导: 注入逻辑只在 v9_agent_chat 的 _session_artifacts 分支(3452-3459), 且依赖 _session_artifacts 非空; bridge_loop 每轮 derive_messages 重建后历史完整但 tool_result 内容残缺 - 重跑。
 4. 前端 seenRounds 去重仅限单次 SSE 流内(key=round:tool:arg[:40]), 跨请求(审批恢复/续跑)时 round 重置, 同工具再次渲染 - 加剧观感。
@@ -52,7 +52,7 @@ def _ts_progress():
 # stream wrapper (line 3688) + _stream_on_round(3720) + done(3766) + jsonify(3784)
 'progress': {..., 'total_steps': 8}              # 硬编码 8 (旧8轮上限)
 
-### 前端渲染 (workbench.html:1985)
+### 前端渲染 (workbench.html:1985 · 2026-08-18 之面 · 今漂)
 
 执行进度 {done}/{total}({pct}%) · 步骤 {step_index}/{total_steps}
 
