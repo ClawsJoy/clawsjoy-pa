@@ -46,7 +46,9 @@ def test_self_test_passes():
     r = _run(["--self-test"])
     out = r.stdout.decode("utf-8", "replace")
     assert r.returncode == 0, (r.returncode, out[-600:])
-    assert "PASS" in out and "5 反控" in out, out[-300:]
+    # ⚠ 反控之数**随安装器之自测**（今 7 · pm_1500 §一 乙 增 反控 6／7 之库根检查）
+    #   ⇒ 增一条检查须同步改此处（此即「齿」之意 —— ⛔ 只认 PASS 二字）
+    assert "PASS" in out and "7 反控" in out, out[-300:]
 
 
 def test_dry_run_is_default_and_idempotent():
