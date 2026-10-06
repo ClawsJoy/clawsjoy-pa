@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-u"""pm_1499 之测：首启盒渲「义」＋ 未接态明书其果（唯改 web/pa.html · 一处定形）。
+u"""pm_1499 之测：首启盒渲「义」＋ 未接态明书其果（＋ pm_1504 §一：判态改依「面之源．键[].态」之**机器码**）。
 
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_first_run_box.py -q
 
 判据：
   ⒜ 面之源**逐键渲后端之「义」**（⛔ 唯「键＝今」· ⛔ 前端自造辞）⇒「未接（选目录）」四字得以上屏
-  ⒝ **未接** ⇒ 加一条**明书其果**（检索为空 ⇒ 本机事实族之问拒答 ⇒ 余者由模型答 · 走云端则出机）
-  ⒞ **已接** ⇒ 该条 ⛔ 现（⛔ 恒现）
+  ⒝ **态 ＝ no_root（未接）∨ empty（空库）** ⇒ 加一条**明书其果**（检索为空 ⇒ 本机事实族之问拒答 ⇒ 余者由模型答 · 走云端则出机）
+  ⒞ **态 ＝ ok（已接）** ⇒ 该条 ⛔ 现（⛔ 恒现）
+  ⒟ 判态唯「面之源．键[].态」之**机器码**（pm_1503 §一 ／ pm_1504 §一）—— ⛔ 比字面哨符 · ⛔ 以「今」之形兜底
   反控：banner ⛔ 载绝对径 ／ ⛔ `removeChild(` ／ ⛔ `paDismissCard(`
   器取：以 node 跑**真 banner 之 `box()`**（DOM 桩 · 真函数 ⇒ ⛔ 以源码字面代屏）
 """
@@ -53,34 +54,34 @@ def _need():
     return [{"话": u"你的数据在这台电脑上", "据": u"config（弱保证 · 唯字面扫）"}]
 
 
-def _keys(vault_now):
+def _keys(vault_now, vault_state):
     return [
         {"键": "PA_ORG_FACES",
          "义": u"组织版开关（功能级 · 默认关）—— 开 ⇒ 并入组织面；关 ⇒ 唯产品面「死件账」",
-         "今": u"关（默认）"},
+         "今": u"关（默认）", "态": u"empty"},
         {"键": "PA_WS_ROOT",
          "义": u"工作区根（产品级）—— 组织面之根；缺 ⇒ 组织面 ⛔ 入表",
-         "今": u"未接"},
+         "今": u"未接", "态": u"no_root"},
         {"键": "PA_VAULT_DIR",
          "义": u"知识库根（用户自选；亦可指配置 paths.vault_root）—— 缺 ⇒ 显「未接（选目录）」",
-         "今": vault_now},
+         "今": vault_now, "态": vault_state},
     ]
 
 
-def _payload(vault_now):
+def _payload(vault_now, vault_state):
     return {"ok": True, "须知": _need(), "模型": {"态": u"未接", "因": u"127.0.0.1:11434 无应答"},
             "数据目录": {"值": "", "源": u"未接"},
-            "面之源": {"口径": u"「面之数」由三键定 —— 缺则面减（照实 · ⛔ 静默）", "键": _keys(vault_now)},
+            "面之源": {"口径": u"「面之数」由三键定 —— 缺则面减（照实 · ⛔ 静默）", "键": _keys(vault_now, vault_state)},
             "缺": []}
 
 
-def _render(tmp_path, vault_now):
+def _render(tmp_path, vault_now, vault_state):
     u"""以 node 跑真 `box()`（真函数 · DOM 桩）⇒ 屏文。"""
     node = shutil.which("node")
     if not node:
         pytest.skip("node ⛔ 在 ⇒ 屏文之器取 ⛔ 得跑")
     (tmp_path / "banner.js").write_text(_banner(), encoding="utf-8")
-    (tmp_path / "payload.json").write_text(json.dumps(_payload(vault_now), ensure_ascii=False),
+    (tmp_path / "payload.json").write_text(json.dumps(_payload(vault_now, vault_state), ensure_ascii=False),
                                            encoding="utf-8")
     (tmp_path / "harness.js").write_text(_HARNESS, encoding="utf-8")
     r = subprocess.run([node, str(tmp_path / "harness.js"), str(tmp_path / "banner.js"),
@@ -91,29 +92,37 @@ def _render(tmp_path, vault_now):
 
 
 def test_源之_义_悉渲上屏_未接态(tmp_path):
-    out = _render(tmp_path, u"未接")
+    out = _render(tmp_path, u"未接", u"no_root")
     for w in MISS_WORDS:
         assert w in out, (w, out)
     assert u"组织版开关" in out, u"三键之「义」须各渲（⛔ 唯末键）"
 
 
 def test_未接态_明书其果(tmp_path):
-    out = _render(tmp_path, u"未接")
+    out = _render(tmp_path, u"未接", u"no_root")
     assert u"检索面为空" in out and u"一律拒答" in out, out
     assert u"模型" in out and u"出机" in out, out
 
 
 def test_已接态_该条不现(tmp_path):
-    out = _render(tmp_path, "D:/kb")
+    out = _render(tmp_path, "D:/kb", u"ok")
     assert u"PA_VAULT_DIR＝D:/kb" in out, out
     assert u"一律拒答" not in out, u"已接 ⇒ 该条 ⛔ 得恒现"
     assert u"资料目录" not in out, out
 
 
-def test_无值态_仍明书其果(tmp_path):
-    u"""键在而「今」空（⛔ 静默之别形）⇒ 亦认「未接」（⛔ 一名蔽二态）。"""
-    out = _render(tmp_path, "")
-    assert u"一律拒答" in out, out
+def test_空库态_明书其果且今为径(tmp_path):
+    u"""态 ＝ empty（库根在而六面无件）⇒ 检索亦为空 ⇒ 其果须现；其「今」为径（⛔ 显「未接」· 承「空 ≠ 缺」）。"""
+    out = _render(tmp_path, u"D:/kb", u"empty")
+    assert u"PA_VAULT_DIR＝D:/kb" in out, out
+    assert u"一律拒答" in out, u"空库 ⇒ 检索为空 ⇒ 其果须现（与已接之别）"
+
+
+def test_态未给_该条不现(tmp_path):
+    u"""「态」⛔ 给（旧后端 ∨ 键缺）⇒ ⛔ 兜底 —— 唯渲后端之「今」· ⛔ 以其空形猜「未接」（承 pm_1504 §一）。"""
+    out = _render(tmp_path, u"未接", u"")
+    assert u"PA_VAULT_DIR＝未接" in out, out
+    assert u"一律拒答" not in out, u"态 ⛔ 给 ⇒ ⛔ 兜底（⛔ 以「今」之形猜）"
 
 
 def test_banner_非屏_之戒():

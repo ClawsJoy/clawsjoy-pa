@@ -340,8 +340,8 @@
   function el(tag,st,html){var d=document.createElement(tag);if(st)d.setAttribute('style',st);if(html!=null)d.innerHTML=html;return d;}
   var SAID={'未接':'本机的 AI 模型**没接上**','在·无权重':'本机有模型服务，但**还没下模型**（下好才能用）',
             '在∧可用':'本机的 AI 模型**可用**','不可达':'本机有模型服务，但**答不上来**','未核':'模型**没查成**（见其据）'};
-  //: 后端之哨符值（`面之源．键[].今` 之「无真源」之明标）—— **唯比** · ⛔ 上屏（上屏之字面唯自后端之「今」／「义」出 · 承 pm_1499 §一.3）
-  var PA_UNSET='未接';
+  //: 态之判唯「面之源．键[].态」之机器码（no_root ／ empty ／ ok）—— ⛔ 比字面哨符 · ⛔ 前端自造辞
+  //  （上屏之字面唯自后端之「今」／「义」出 · 承 pm_1499 §一.3 ＋ pm_1503 §一 ＋ pm_1504 §一）
   function box(d){
     var b=el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#0f172a;color:#e8eef7;border:1px solid #334155;border-radius:10px;padding:12px 14px;font:13px/1.75 system-ui,Segoe UI,Microsoft YaHei,sans-serif;box-shadow:0 8px 26px rgba(0,0,0,.35);max-height:48vh;overflow:auto');
     b.appendChild(el('div','font-weight:700;margin:0 0 6px','🔰 第一次用（只读 · 数来自本机后端）'));
@@ -363,7 +363,7 @@
       }
       b.appendChild(el('div','margin-top:2px;opacity:.62','［'+esc(fs['口径']||'')+'］'));
     }
-    var _vm=(!_vk)||(!String(_vk['今']||''))||String(_vk['今'])===PA_UNSET;
+    var _vs=String((_vk||{})['态']||'');var _vm=(!_vk)||_vs==='no_root'||_vs==='empty';
     if(_vk&&_vm){
       b.appendChild(el('div','margin-top:6px;color:#fbbf24','• 本机<b>资料目录</b>＝'+esc(_vk['今'])+' ⇒ 检索面为空 ⇒ 问「本机自己的事」（事实 ／ 状态 ／ 账 ／ 决定）<b>一律拒答</b>；其余问题由<b>模型</b>作答 —— 若走云端 ⇒ 内容将<b>出机</b>。'));
     }
