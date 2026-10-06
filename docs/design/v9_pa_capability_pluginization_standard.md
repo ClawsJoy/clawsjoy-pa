@@ -169,7 +169,7 @@
 - **真实历史实例（v1.2 补 · 改前件在盘可复算）**：
   - ① `dsh_wake.ps1` 的批号上限原写在**调用者口径**里 ⇒ 抽成 `-Ledger`，规则只有一份；**改前件** = `data\tmp\kb_insert\fixtures\w4_gate_old_before_0511629d.ps1`（10,792 B，在盘）；现行 `dsh_wake.ps1` = `142aa2c8`。
   - ② `post_ds.mjs` 原**自带一行**消费确认判据 ⇒ 抽到 `post_ds_ack.mjs`（`bb2f3079`），由**被判方与判据方共用同一函数**（同源，不是复制一份来测）。
-- 常量的家（**不复述数值**）：抓取窗口见 `data\tmp\tools\chan_readgap_probe.py` 的 `SNIP_CAP`；Windows 副本端口见 `config\v9\execution_policy.yaml` 的 `browser_local.ws_port` 与 `config\system\system_unified.yaml` 的 `services.gateway.port`；探针时效见 `mcp_bridge_probe.py` 的 `MAX_AGE_MIN`。
+- 常量的家（**不复述数值**）：抓取窗口见 `data\tmp\tools\chan_readgap_probe.py` 的 `SNIP_CAP`；Windows 副本端口见 `config\system\system_unified.yaml` 的 `services.gateway.port` ＋ `config\v9\execution_policy.yaml` 的 `browser_local.ws_port_offset`（WS 端口 ＝ 二者派生 · pm_1558 §三）；探针时效见 `mcp_bridge_probe.py` 的 `MAX_AGE_MIN`。
 
 ### S2 判据必须能红
 - **要求**：每条判据配负对照；负对照本身还要有一条「换个坏口径必红」的对照（**对照的对照**）。
@@ -260,7 +260,7 @@
 | `pa.authority` | Authorization | `core\pes\authorization.py`：老板级/agent 级**两套授权** + TTL + `revoke` + `HoldQueue`（撤销窗口）+ 审计留痕 | **不是「缺落痕」**（v1.1 此格写错，本遍改正）⇒ **缺的是「接线」**（见 §五.1） |
 | `pa.lessons` | Memory | `core\pes\memory.py`（偏好 / 结论 / 上下文来源） | 条目四要素 + 基线 sha + 条数 |
 | `pa.wake` | Agent 层（外围） | 本线实物 `data\tmp\tools\dsh_wake.ps1` | **起身判据落在收件人侧**；**受 Agent 层纪律约束**（Paseo 只经 Contract 接入，`adapters/paseo/`）—— 见 §十一 |
-| `pa.ports` | Windows 底座 / Storage | `config\v9\execution_policy.yaml`（`browser_local.ws_port`）· `config\system\system_unified.yaml`（`services.gateway.port`） | **单源**；本线已落四件（§十二 第四组） |
+| `pa.ports` | Windows 底座 / Storage | `config\v9\execution_policy.yaml`（`browser_local.ws_port_offset`）· `config\system\system_unified.yaml`（`services.gateway.port`） | **单源**；本线已落四件（§十二 第四组） |
 | `pa.netenv` | Windows 底座 | `core\gateway\boot.py`（loopback 免代理） | 环境变量面单源 + **loopback 不走代理** |
 
 ### §五.1 本遍最重要的结论：**「已建」与「已接线」不是一回事**

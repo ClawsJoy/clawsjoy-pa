@@ -161,7 +161,7 @@ def run_gateway_startup(app):
     except Exception as _e:
         print(f"⚠ 平台连接失败: {_e}")
 
-    # V9 本地浏览器(Manus 对齐): 启动独立 WS 服务(扩展连接；端口真源 = execution_policy.browser_local.ws_port)
+    # V9 本地浏览器(Manus 对齐): 启动独立 WS 服务(扩展连接；端口 = 网关端口 + browser_local.ws_port_offset, 见 ws_port())
     try:
         from core.lib.v8 import browser_local
 

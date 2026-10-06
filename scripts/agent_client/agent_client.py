@@ -2,11 +2,11 @@
 """agent_client — V9 本地浏览器客户端(playwright 持久上下文)
 
 用法:
-  python agent_client.py --user-id <v9-user-id> [--ws ws://127.0.0.1:5007] [--headless] [--platform xiaohongshu]
+  python agent_client.py --user-id <v9-user-id> [--ws ws://127.0.0.1:<端口>] [--headless] [--platform xiaohongshu]
 
 流程:
   1) 启动真实 Chrome(persistent context, headed 默认)
-  2) 连 V9 WS(默认 127.0.0.1:5007, 与 config/v9/execution_policy.yaml 的 browser_local.ws_port 一致), hello 注册 user_id
+  2) 连 V9 WS(端口由 PA 页传 --ws 给出 = 网关端口 + browser_local.ws_port_offset; ⛔ 本器默认值, ⛔ 复述数值), hello 注册 user_id
   3) 主循环收 exec{cmd_id, action, params} → playwright 执行 → result 回传
      (playwright sync 非线程安全: WS 线程只入队, 浏览器操作全在主线程)
   4) --platform 指定时启动即打开该平台登录页, 用户扫码一次, 登录态持久化

@@ -35,9 +35,11 @@ execution_budget:
 
 # ===== V9 本地浏览器操作(Manus 对齐, P1 只读调研) =====
 browser_local:
-  ws_port: 5107              # 扩展 WebSocket 连接端口(独立 WS 服务线程; 数值唯一真源=本键, 调用点不得复述)
-                             # Windows 副本实测(2026-09-19): 5007 不可绑(bind 0.0.0.0:5007 ⇒ WinError 10013
-                             # 权限不允许; WSL 实例的 5007 经 WSL2 localhost 转发占位) ⇒ 与 HTTP 端口(5102)同样错峰
+  ws_port_offset: 5          # WS 端口 = 网关端口(services.gateway.port) + 本偏移 —— pm_1558 §三 裁 ⒜: 由网关端口派生(⛔ 定值)
+                             # 由: 固定值时 5102/5103 两实例共读同键 ⇒ WS 端口必撞(5103 之客户端连到 5102 之 WS ⇒ 本机动作发到别实例)
+                             # 派生 ⇒ 5102+5=5107(=旧固定值, 现役不变) ／ 5103+5=5108(错峰); WSL 5002+5=5007(同旧)
+                             # ⛔ 调用点不得复述数值, 一律经 core.lib.v8.browser_local.ws_port(). 历: 曾固定 ws_port: 5107;
+                             # 再早 5007 不可绑(bind 0.0.0.0:5007 ⇒ WinError 10013, WSL 实例占位).
   ws_host: localhost         # 扩展连接地址(Chrome 侧): Windows 副本同机同栈 ⇒ 直连(不再经 WSL2 localhost 转发)
   domain_whitelist:          # 平台域名白名单(默认 小红书/抖音/B站/知乎/公众号/微博)
     - xiaohongshu.com

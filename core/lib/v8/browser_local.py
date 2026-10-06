@@ -2,7 +2,8 @@
 """V9 本地浏览器操作 — 后端 WS 服务 + 连接管理 + 工具实现
 
 架构: Chrome Extension(SW) 作为 WebSocket 客户端连本服务(V9 侧独立 WS 线程, 端口
-从 execution_policy.browser_local.ws_port 读取（兜底见 start_browser_ws；不复述数值）。V9 Agent 通过
+= 网关端口 + execution_policy.browser_local.ws_port_offset（pm_1558 §三 裁 ⒜: 由网关端口派生）。
+⛔ 不复述数值, 一律经 ws_port()。V9 Agent 通过
 browser_local_* 工具把指令发到该连接, 扩展用 chrome.debugger 操作用户本地浏览器。
 
 安全: 只收 DOM/截图, 不转发 Cookies; 域名白名单 browser_policy.yaml; 敏感操作硬拒绝。
@@ -892,17 +893,56 @@ def _ws_handler_sync(websocket):
             unregister_ws_connection(user_id, reason="disconnect")
 
 
-def ws_port(default: int = 5107) -> int:
-    """WS 端口唯一真源: execution_policy.browser_local.ws_port。
+#: WS 端口之**兜底偏移**（真源 = execution_policy.browser_local.ws_port_offset）。
+WS_PORT_OFFSET_DEFAULT = 5
+
+
+def ws_port() -> int:
+    """WS 端口 = **网关端口 + 偏移**（pm_1558 §三 裁 ⒜ · 一处定形）。
+
+    真源二：``config/v9/execution_policy.yaml`` 之 ``browser_local.ws_port_offset``
+    ＋ ``config/system/system_unified.yaml`` 之 ``services.gateway.port``（经 ``core.lib.port_config``）。
+
+    为何**派生**（⛔ 固定值）：固定值时 5102/5103 两实例共读同键 ⇒
+    WS 端口必撞 ⇒ 5103 之客户端连到 5102 之 WS（本机动作发到别实例）。
+    派生 ⇒ 5102⇒5107（＝旧值 · 现役不变） ／ 5103⇒5108（错峰）。
 
     其他调用点(启动命令/报错文案)必须调本函数, 不得复述数值
     (否则改端口时只改一处, 另一处静默指向旧端口 —— Windows 副本曾正因此
     把本机动作发到 WSL 网关。)
+
+    ⚠ 网关端口不可读（真源未配）⇒ 抛 ``PortUnconfigured``（fail-loud）· ⛔ 回落字面量。
     """
+    off = WS_PORT_OFFSET_DEFAULT
     try:
-        return int((_policy().get("browser_local", {}) or {}).get("ws_port", default) or default)
+        _bl = _policy().get("browser_local", {}) or {}
+        _o = _bl.get("ws_port_offset")
+        if _o is not None:
+            off = int(_o)
     except Exception:
-        return default
+        pass
+    from core.lib.port_config import gateway_port
+
+    return int(gateway_port()) + off
+
+
+def _port_in_use(host: str, port: int, timeout: float = 0.6) -> bool:
+    """起前检占用（pm_1558 §三 裁 ⒞）：连得上 ⇒ 有物在听。⛔ 抛。"""
+    import socket
+
+    for _h in ("127.0.0.1", host if host not in ("0.0.0.0", "") else None):
+        if not _h:
+            continue
+        _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _s.settimeout(timeout)
+        try:
+            _s.connect((_h, int(port)))
+            return True
+        except OSError:
+            pass
+        finally:
+            _s.close()
+    return False
 
 
 # 本文件在 core/lib/v8/ 下 ⇒ 要剥四层才到仓库根(少剥一层会算成 core/scripts/agent_client)。
@@ -916,12 +956,19 @@ _REPO_AGENT_CLIENT = os.path.join(
 
 
 def agent_client_hint() -> str:
-    """拉起本地客户端的命令提示(端口与目录同源, 不复述)。"""
+    """拉起本地客户端的命令提示(端口与目录同源, 不复述)。
+
+    ⚠ 端口取不到（真源未配）⇒ 照实明书，⛔ 抛（本函数常在报错之路上）。
+    """
+    try:
+        _ws = str(ws_port())
+    except Exception:
+        _ws = "端口未配（services.gateway.port 不可读）"
     return (
         "请在 PA 页点「启动本地浏览器」，或手动运行本仓库客户端（"
         + _REPO_AGENT_CLIENT
         + "，命令示例：python agent_client.py --user-id <你的ID> --ws ws://127.0.0.1:"
-        + str(ws_port())
+        + _ws
         + " --chrome）。"
     )
 
@@ -933,6 +980,16 @@ def start_browser_ws(host: str = "0.0.0.0", port: int = None):
         return
     if port is None:
         port = ws_port()
+    # pm_1558 §三 裁 ⒞：起前检占用 ⇒ fail-loud 显形（⛔ 静默、⛔ 崩）。
+    #   旧病：端口被占 ⇒ 线程内 bind 失败 ⇒ 仅一行 logger.error ⇒ 屏上⛔ 见
+    #   ⇒ 本实例之本机动作静默发往别实例（同旧端口之族）。
+    if _port_in_use(host, port):
+        _msg = ("[BROWSER_LOCAL] ⛔ WS 端口 %d 已被占用 ⇒ 本实例之本机浏览器 ⛔ 可用"
+                "（其动作或发往另一实例 —— 旧病之形）。同机多实例须错峰端口"
+                "（WS 端口 = 网关端口 + ws_port_offset）。核：Get-NetTCPConnection -LocalPort %d" % (port, port))
+        print(_msg)
+        logger.error(_msg)
+        return
     from websockets.sync.server import serve as _sync_serve
 
     def _run():
