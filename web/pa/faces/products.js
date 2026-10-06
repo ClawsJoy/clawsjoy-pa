@@ -237,7 +237,31 @@ async function exportDeckThumbs(btn){
   const card=btn.closest('.output-card');
   if(!card) return;
   const out=card.querySelector('.ppt-export-log');
-  const base='C:/Users/flybo/Desktop/wpsai_v2_render/cblock_v6/';
+  /* 渲染目录（承 pm_1385 §一 · 件④ ⓒ · 拔活硬编）：⛔ 前端自持径 —— 旧为开发机桌面之硬编
+     （含盘符 ＋ 用户名）⇒ 净机必败。真源 ＝ 后端**一处出径** GET /v9/pa/env 之 `paths.render`
+     （core/pa/env_face.py:157-174）＋ `paths_src.render`。取不到时二分（承 pm_1346 §二.1
+     「身分不同者 ⛔ 同支」）：① 后端未应答 ⇒ `PA_GAP.down` ② 应答在而键为 null ⇒ `PA_GAP.todo`
+     （附后端之为何）。⛔ 静默 ／ ⛔ 以字面径兜底（承 pm_1367 §二.1）。 */
+  let base='', baseSrc='', baseGap='';
+  try{
+    const _r=await fetch(API+'/v9/pa/env',{cache:'no-store'});
+    if(!_r.ok){ baseGap=PA_GAP.down('GET /v9/pa/env HTTP '+_r.status); }
+    else{
+      const _j=await _r.json();
+      const _p=(_j&&_j.paths)||{}, _s=(_j&&_j.paths_src)||{};
+      const _v=(_p.render==null)?'':String(_p.render);
+      if(_v){ base=_v; baseSrc=String(_s.render==null?'':_s.render); }
+      else{ baseGap=PA_GAP.todo(String(_s.render==null?'后端无 paths_src.render':_s.render)); }
+    }
+  }catch(e){ baseGap=PA_GAP.down('GET /v9/pa/env 未应答（'+String((e&&e.message)||e)+'）'); }
+  if(!base){
+    out.dataset.exportResult='no_render_dir';
+    out.textContent=baseGap+' ⇒ 导出径取不到（fileName 须绝对）⇒ 导出中止 · ⛔ 字面兜底（承 pm_1385 §一）';
+    addLog('⛔ 渲染目录取不到（GET /v9/pa/env 之 paths.render）⇒ 导出中止','warn',true);
+    return;
+  }
+  const _last=base.slice(-1);
+  const fbase=(_last==='/'||_last==='\\')?base:(base+'/');
   out.textContent='读取演示文稿信息…';
   let n=0, ok=0, fail=[];
   try{
@@ -249,13 +273,13 @@ async function exportDeckThumbs(btn){
       const nn=String(i).padStart(2,'0');
       try{
         const r=await paMcp('wpp_export_slide_as_image',
-          {slide:i,fileName:base+'v6_p'+nn+'.png',filterName:'PNG',width:1280,height:720},90);
+          {slide:i,fileName:fbase+'v6_p'+nn+'.png',filterName:'PNG',width:1280,height:720},90);
         if(r.ok) ok++; else fail.push(i);
       }catch(e){ fail.push(i); }
       out.textContent='导出中 '+i+'/'+n+' … 成功 '+ok+'，失败 '+fail.length;
     }
     out.dataset.exportResult=ok+'/'+n;
-    out.textContent='导出完成：成功 '+ok+'/'+n+(fail.length?('，失败页 '+fail.join(',')):'')+' → '+base;
+    out.textContent='导出完成：成功 '+ok+'/'+n+(fail.length?('，失败页 '+fail.join(',')):'')+' → '+base+(baseSrc?('（源 '+baseSrc+'）'):'');
     card.querySelectorAll('.ppt-thumb img').forEach(function(im){
       const s=im.getAttribute('src').split('?')[0];
       im.setAttribute('src',s+'?t='+Date.now());
