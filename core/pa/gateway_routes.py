@@ -573,6 +573,147 @@ PA_SRC_FACES = (
 )
 PA_SRC_FACES_VERSION = "2026-10-05.3"   # ⭐ .3：加「面级之印」（响应之形变 ⇒ 亦 +1）   # ⭐ 改本表 ⇒ 必 +1（承 PA_FACES_VERSION 之律）
 
+# ============================== ⭐ UI 面册（承 pm_1384 §二.1 ／ §三.1）==============================
+#: ⭐ **真源 ＝ 盘上**（`web/pa/faces/*.js` · 剔 `*.before_*`）；**旁源** ＝ `web/pa/faces.json`（title ／ 旧面册）。
+#:   名之分（PM 1384 §二.1 之裁）：既有 `/v9/pa/source_faces` ＝ **源之面**（文件 ／ 出图 · 素材）
+#:   ⟷ 本者 ＝ **UI 面册**（前端之面之册）⇒ **二物 ⛔ 同轴** ⇒ ⛔ 撞名（承「一名一义」）。
+_UI_REPO = Path(__file__).resolve().parents[2]
+UI_FACES_DIR = _UI_REPO / "web" / "pa" / "faces"
+UI_FACES_MANIFEST = _UI_REPO / "web" / "pa" / "faces.json"
+PA_UI_FACES_VERSION = "2026-10-06.1"   # ⭐ 改本表之式 ／ 响应之形变 ⇒ 必 +1（承 PA_SRC_FACES_VERSION 之律）
+
+
+def _ui_face_files():
+    u"""盘上之面（**真源**）：`web/pa/faces/*.js`（剔 `*.before_*` 之底）⇒ 排序之 `[(id, file)]`。
+
+    `file` ＝ **相对** `web/pa/` 之径（如 `faces/chat.js`）—— ⛔ 绝对径入面（⛔ 本机之径上屏）。
+    """
+    out = []
+    try:
+        for _p in sorted(UI_FACES_DIR.glob("*.js")):
+            _n = _p.name
+            if _n.startswith(".") or ".before_" in _n:
+                continue
+            out.append((_n[:-3], "faces/" + _n))
+    except Exception as _e:
+        logger.warning("ui_faces: 盘上之面不可读: %s: %s", type(_e).__name__, str(_e)[:200])
+    return out
+
+
+def _ui_route_norm(s):
+    u"""路由之归一：剔 `<…>` 之参段 ＋ 去尾 `/`（⛔ 参形歧义）。"""
+    return "/".join(x for x in str(s).split("/") if not (x.startswith("<") and x.endswith(">"))).rstrip("/")
+
+
+def _ui_route_set():
+    u"""既有 `/v9/pa/*` 路由集 —— **活读** `url_map`（承 pm_1384 §三.1「须在既有路由集内」）。
+
+    ⚠ ⛔ 手列（手列必与实漂）：无应用上下文（如单测直调本函）⇒ **回落本档之源扫**（同器之真源）。
+    """
+    rs = set()
+    try:
+        from flask import current_app
+        for _r in current_app.url_map.iter_rules():
+            _s = str(_r.rule)
+            if _s.startswith("/v9/pa"):
+                rs.add(_s)
+    except Exception:
+        rs = set()
+    if not rs:
+        try:
+            import re as _re
+            with open(__file__, "r", encoding="utf-8") as _fh:
+                for _m in _re.finditer(r'"(/v9/pa[^"]*)"', _fh.read()):
+                    rs.add(_m.group(1))
+        except Exception:
+            pass
+    return rs
+
+
+def _ui_route_known(cand, rs):
+    u"""`cand` 是否在既有路由集内（**等** 或 **前缀** · ⛔ 悬）。"""
+    _n = _ui_route_norm(cand)
+    if not _n:
+        return False
+    for _r in rs:
+        _rn = _ui_route_norm(_r)
+        if _rn == _n or _rn.startswith(_n + "/"):
+            return True
+    return False
+
+
+def _ui_face_requires(pid, rs):
+    u"""⭐ 面之源里所引之 `/v9/pa/*`（**器取** · ⛔ 手列）⇒ `(在既有路由集内, 悬)`。
+
+    ⚠ 源扫之式（两条 · 皆自 `more.js` ／ `archive.js` 之实读得来）：
+      ⒜ **先剔注**（`/*…*/` ／ 行 `//`）—— ⛔ 则「注里提到某路由」被读成「引用」
+         （实例：`more.js` 之注书「⛔ 自造 `/v9/pa/agents`（该名已撤）」⇒ 剔注方为真）；
+      ⒝ 只取**完整之字面**（引号包裹 · 可带查询串）—— ⛔ 取模板串里之片段
+         （实例：`archive.js` 之注述 `threads_<uid>.json` ⇒ ⛔ 路由）。
+    """
+    import re as _re
+    try:
+        raw = (UI_FACES_DIR / (pid + ".js")).read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return [], []
+    src = _re.sub(r"/\*.*?\*/", "", raw, flags=_re.S)
+    src = _re.sub(r"(?m)^[ \t]*//[^\n]*$", "", src)
+    src = _re.sub(r"(?m)(?<![:/])//[^\n]*$", "", src)
+    _Q = chr(39) + chr(34) + chr(96)      # 引号三形： ' ｜ " ｜ `（⛔ 直书以避源之引号纠缠）
+    _REQ_RE = "[" + _Q + "](/v9/pa/[A-Za-z0-9_/]*)(?:\\?[^" + _Q + "]*)?[" + _Q + "]"
+    cand = sorted(set(_re.findall(_REQ_RE, src)))
+    hit = [c for c in cand if _ui_route_known(c, rs)]
+    miss = [c for c in cand if not _ui_route_known(c, rs)]
+    return hit, miss
+
+
+def _ui_faces_readout():
+    u"""⭐ UI 面册之读数（**只读** · 承 pm_1384 §三.1）。
+
+    `面之数` ≡ `web/pa/faces/*.js`（剔 `*.before_*`）之数（**判成 ⒞**）；`requires` 逐条**已在**既有
+    `/v9/pa/*` 路由集内（⛔ 悬）；「旁源」（`faces.json`）之**对映漂** 照实报（⛔ 静默 · ⛔ 以旁源代真源）。
+    """
+    import json as _json
+    from time import strftime as _stf
+    rs = _ui_route_set()
+    files = _ui_face_files()
+    man, man_err = {}, None
+    try:
+        with open(UI_FACES_MANIFEST, "r", encoding="utf-8") as _fh:
+            for _f in ((_json.load(_fh) or {}).get("faces") or []):
+                if _f.get("id"):
+                    man[_f["id"]] = _f
+    except Exception as _e:
+        man_err = "%s: %s" % (type(_e).__name__, str(_e)[:120])
+    faces, miss_all = [], {}
+    for _pid, _rel in files:
+        _req, _miss = _ui_face_requires(_pid, rs)
+        _m = man.get(_pid) or {}
+        faces.append({"id": _pid, "title": _m.get("title"), "file": _rel, "requires": _req,
+                      "title_src": ("web/pa/faces.json" if _m.get("title") else None)})
+        if _miss:
+            miss_all[_pid] = _miss
+    ids, mids = set(f["id"] for f in faces), set(man)
+    return {
+        "ok": True,
+        "at": _stf("%Y-%m-%d %H:%M:%S"),
+        "version": PA_UI_FACES_VERSION,
+        "面之数": len(faces),
+        "faces": faces,
+        "悬": miss_all,
+        "对映": {
+            "真源": "web/pa/faces/*.js（盘上 · 剔 *.before_*）",
+            "旁源": "web/pa/faces.json",
+            "旁源之数": len(mids),
+            "旁源 open:false（⛔ 计面）": sorted(i for i in mids if man[i].get("open") is False),
+            "旁源多出（⛔ 盘上无件）": sorted(mids - ids),
+            "旁源缺（盘上有件）": sorted(ids - mids),
+            "旁源之读": ("不可读：" + man_err) if man_err else "可读（唯取 title；⛔ 以之代真源之面数）",
+        },
+        "路由集": {"数": len(set(_ui_route_norm(r) for r in rs)),
+                   "式": "current_app.url_map 之 /v9/pa*（无上下文 ⇒ 回落本档源扫）"},
+        "口径": "UI 面册（web/pa/faces/*.js）之面之数 ＋ 逐面所引 /v9/pa/*；⛔ 源之面（source_faces 之素材两轨）· 二物 ⛔ 同轴",
+    }
 
 def _src_face_readout():
     u"""画像素材面之读数（**只读** · ⛔ 起子进程 ⇒ 常闸 `rc 0` · ⛔ 写盘 · ⛔ 读图内容（只 scandir ＋ stat））。
@@ -2982,6 +3123,20 @@ def register_pa_routes(app, brain=None):
         except Exception as _e:
             logger.error("source_faces 内部错误: %s: %s", type(_e).__name__, str(_e)[:200])
             return jsonify({"ok": False, "error": "source_faces: 内部错误（已记日志）"}), 500
+
+    @bp.route("/v9/pa/ui_faces", methods=["GET"])
+    def pa_ui_faces():
+        """⭐ UI 面册（`web/pa/faces/*.js`）之读数 —— **只读**（承 pm_1384 §二.1 ／ §三.1）。
+
+        名之分（PM 1384 §二.1 之裁）：`source_faces` ＝ **源之面**（文件 ／ 出图 · 素材）；
+        本者 ＝ **UI 面册**（前端之面之册）⇒ **二物 ⛔ 同轴** ⇒ ⛔ 撞名 · ⛔ 混一。
+        ⛔ 起子进程 ／ ⛔ 写盘 ／ ⛔ 绝对径入面（`file` 皆 `faces/<名>.js` 之相对径）。
+        """
+        try:
+            return jsonify(dict(_ui_faces_readout(), 印=_code_sha16(pa_ui_faces, _ui_faces_readout)))
+        except Exception as _e:
+            logger.error("ui_faces 内部错误: %s: %s", type(_e).__name__, str(_e)[:200])
+            return jsonify({"ok": False, "error": "ui_faces: 内部错误（已记日志）"}), 500
 
     @bp.route("/v9/pa/kb_mapping", methods=["GET"])
     def pa_kb_mapping():
