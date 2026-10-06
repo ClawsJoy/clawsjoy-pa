@@ -243,39 +243,6 @@
    "platform": "Windows(wsl 副本)"
   },
   {
-   "id": "tests/integration/test_subtask_depth.py::test_depth_persisted_to_agent_state",
-   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
-   "scope": "tmp 沙箱里没出现 .agent_state.json(测试 patch 的是 subtask_executor.Path, 落盘可能走 state_json 模块)",
-   "solo_reproducible": true,
-   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
-   "owner": "老板",
-   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
-   "registered": "2026-09-17",
-   "platform": "Windows(wsl 副本)"
-  },
-  {
-   "id": "tests/integration/test_v9_stream.py::test_stream_mode_emits_sse_events",
-   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
-   "scope": "/v9/agent/chat?stream=true 返回 application/json 而非 text/event-stream",
-   "solo_reproducible": true,
-   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
-   "owner": "老板",
-   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
-   "registered": "2026-09-17",
-   "platform": "Windows(wsl 副本)"
-  },
-  {
-   "id": "tests/integration/test_v9_stream.py::test_non_stream_mode_returns_json",
-   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
-   "scope": "非流式被守卫拦下: {'blocked': True, 'reason': '未 seed(.agent_state.json 无 seed.source_path)'}",
-   "solo_reproducible": true,
-   "evidence": "pristine HEAD worktree(commit 590375c, D:\\cj_head)单跑同样失败 ⇒ 不是本轮 Windows 化引入; 断言对象是同一份字节, Linux 上同样会红",
-   "owner": "老板",
-   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
-   "registered": "2026-09-17",
-   "platform": "Windows(wsl 副本)"
-  },
-  {
    "id": "tests/unit/test_replay.py::test_replay_at_turn_window",
    "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
    "scope": "回放 at_turn=1 只拿到 1 条(期望 3 条); 与 s6d 事件溯源同源",
@@ -362,6 +329,149 @@
    "plan": "待拍板: 修 core/pa/agent_scan.py 之遮蔽 ∨ 若为有意, 调该扫描之白名单",
    "registered": "2026-10-06",
    "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_canary_golden.py::test_canary_01_obsidian_knowledge_read",
+   "nature": "环境依赖 · 现场（⛔ 平台无关 · ⛔ flake · 单跑绿 ／ 批恒红 ⇒ 另立 cls: env）",
+   "scope": "golden canary：obsidian read 应成功（断言在 tests/unit/test_canary_golden.py:133）",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed / 6 skipped / 5 deselected / 1 xfailed（293.65s）；刻＝2026-10-06 07:41（pm_1401 §二 ／ TD_1378 §一 之载 · 输出毕 07:45:32）；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（a537820 07:37:48 ⇒ 6b41f14 07:48:27 之间 · ⚠ 照实：⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同 platform ／ Python ／ pytest · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed（刻 2026-10-06 10:21-10:22 · 源 _pm/_cw_env8solo.txt）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 二壳之批同红（TD 之批 ／ 我之全量批）⇒ ⛔ 平台差；单跑绿而批恒红 ⇒ ⛔ 「时绿时红」⇒ 判「环境 ／ 现场」，⛔ flake（承 tests/baseline/env_dependent_tests.json 之 policy：「环境依赖 ＝ 依赖可达时稳定通过、依赖缺失时必红」）；登而标 cls: env（承 pm_1393 §二.2 ⒜ ／ pm_1401 §二 ／ §三）",
+   "owner": "老板",
+   "plan": "待拍板：令该 canary 之范本 vault hermetic 化（自建 tmp vault）∨ 明书其现场之依；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/unit/test_precision_inject.py::test_update_sop_and_list_knowledge",
+   "nature": "环境依赖 · 现场（⛔ 平台无关 · ⛔ flake · 单跑绿 ／ 批恒红 ⇒ 另立 cls: env）",
+   "scope": "原小节应保留（断言在 tests/unit/test_precision_inject.py:257）",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed / 6 skipped / 5 deselected / 1 xfailed（293.65s）；刻＝2026-10-06 07:41（pm_1401 §二 ／ TD_1378 §一 之载 · 输出毕 07:45:32）；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（a537820 07:37:48 ⇒ 6b41f14 07:48:27 之间 · ⚠ 照实：⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同 platform ／ Python ／ pytest · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed（刻 2026-10-06 10:21-10:22 · 源 _pm/_cw_env8solo.txt）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 二壳之批同红（TD 之批 ／ 我之全量批）⇒ ⛔ 平台差；单跑绿而批恒红 ⇒ ⛔ 「时绿时红」⇒ 判「环境 ／ 现场」，⛔ flake（承 tests/baseline/env_dependent_tests.json 之 policy：「环境依赖 ＝ 依赖可达时稳定通过、依赖缺失时必红」）；登而标 cls: env（承 pm_1393 §二.2 ⒜ ／ pm_1401 §二 ／ §三）",
+   "owner": "老板",
+   "plan": "待拍板：修该例之共享 vault 现场（批内前序之污染 ∨ fixture 未就位）∨ hermetic 化；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/unit/test_precision_inject.py::test_auto_maintain_knowledge",
+   "nature": "环境依赖 · 现场（⛔ 平台无关 · ⛔ flake · 单跑绿 ／ 批恒红 ⇒ 另立 cls: env）",
+   "scope": "assert False（断言在 tests/unit/test_precision_inject.py:286）",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed / 6 skipped / 5 deselected / 1 xfailed（293.65s）；刻＝2026-10-06 07:41（pm_1401 §二 ／ TD_1378 §一 之载 · 输出毕 07:45:32）；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（a537820 07:37:48 ⇒ 6b41f14 07:48:27 之间 · ⚠ 照实：⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同 platform ／ Python ／ pytest · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed（刻 2026-10-06 10:21-10:22 · 源 _pm/_cw_env8solo.txt）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 二壳之批同红（TD 之批 ／ 我之全量批）⇒ ⛔ 平台差；单跑绿而批恒红 ⇒ ⛔ 「时绿时红」⇒ 判「环境 ／ 现场」，⛔ flake（承 tests/baseline/env_dependent_tests.json 之 policy：「环境依赖 ＝ 依赖可达时稳定通过、依赖缺失时必红」）；登而标 cls: env（承 pm_1393 §二.2 ⒜ ／ pm_1401 §二 ／ §三）",
+   "owner": "老板",
+   "plan": "待拍板：修该例之共享 vault 现场 ∨ hermetic 化；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/unit/test_precision_inject.py::test_read_knowledge_file_and_noise_filter",
+   "nature": "环境依赖 · 现场（⛔ 平台无关 · ⛔ flake · 单跑绿 ／ 批恒红 ⇒ 另立 cls: env）",
+   "scope": "读知识文件 ⇒ {'content': '', 'path': '<批内 tmp>/vault/工作区/SOPs/SOPs/平台发布工作流.md', 'exists': False}（断言在 :321）",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed / 6 skipped / 5 deselected / 1 xfailed（293.65s）；刻＝2026-10-06 07:41（pm_1401 §二 ／ TD_1378 §一 之载 · 输出毕 07:45:32）；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（a537820 07:37:48 ⇒ 6b41f14 07:48:27 之间 · ⚠ 照实：⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同 platform ／ Python ／ pytest · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed（刻 2026-10-06 10:21-10:22 · 源 _pm/_cw_env8solo.txt）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 二壳之批同红（TD 之批 ／ 我之全量批）⇒ ⛔ 平台差；单跑绿而批恒红 ⇒ ⛔ 「时绿时红」⇒ 判「环境 ／ 现场」，⛔ flake（承 tests/baseline/env_dependent_tests.json 之 policy：「环境依赖 ＝ 依赖可达时稳定通过、依赖缺失时必红」）；登而标 cls: env（承 pm_1393 §二.2 ⒜ ／ pm_1401 §二 ／ §三）",
+   "owner": "老板",
+   "plan": "待拍板：修该例之共享 vault 现场 ∨ hermetic 化；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/unit/test_precision_inject.py::test_precision_inject_surfaces_sop_section_for_task",
+   "nature": "环境依赖 · 现场（⛔ 平台无关 · ⛔ flake · 单跑绿 ／ 批恒红 ⇒ 另立 cls: env）",
+   "scope": "回填小节应注入: 【精准上下文】根据当前任务检索到的相关知识（断言在 :416）",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed / 6 skipped / 5 deselected / 1 xfailed（293.65s）；刻＝2026-10-06 07:41（pm_1401 §二 ／ TD_1378 §一 之载 · 输出毕 07:45:32）；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（a537820 07:37:48 ⇒ 6b41f14 07:48:27 之间 · ⚠ 照实：⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同 platform ／ Python ／ pytest · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed（刻 2026-10-06 10:21-10:22 · 源 _pm/_cw_env8solo.txt）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 二壳之批同红（TD 之批 ／ 我之全量批）⇒ ⛔ 平台差；单跑绿而批恒红 ⇒ ⛔ 「时绿时红」⇒ 判「环境 ／ 现场」，⛔ flake（承 tests/baseline/env_dependent_tests.json 之 policy：「环境依赖 ＝ 依赖可达时稳定通过、依赖缺失时必红」）；登而标 cls: env（承 pm_1393 §二.2 ⒜ ／ pm_1401 §二 ／ §三）",
+   "owner": "老板",
+   "plan": "待拍板：修该例之共享 vault 现场 ∨ hermetic 化；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/unit/test_precision_inject.py::test_sync_knowledge_to_sandbox",
+   "nature": "环境依赖 · 现场（⛔ 平台无关 · ⛔ flake · 单跑绿 ／ 批恒红 ⇒ 另立 cls: env）",
+   "scope": "[('平台发布工作流','skipped_no_vault'), ('番茄推广SOP','skipped_no_vault'), ('视频制作SOP','skipped_no_vault')]（断言在 :494）",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed / 6 skipped / 5 deselected / 1 xfailed（293.65s）；刻＝2026-10-06 07:41（pm_1401 §二 ／ TD_1378 §一 之载 · 输出毕 07:45:32）；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（a537820 07:37:48 ⇒ 6b41f14 07:48:27 之间 · ⚠ 照实：⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同 platform ／ Python ／ pytest · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed（刻 2026-10-06 10:21-10:22 · 源 _pm/_cw_env8solo.txt）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 二壳之批同红（TD 之批 ／ 我之全量批）⇒ ⛔ 平台差；单跑绿而批恒红 ⇒ ⛔ 「时绿时红」⇒ 判「环境 ／ 现场」，⛔ flake（承 tests/baseline/env_dependent_tests.json 之 policy：「环境依赖 ＝ 依赖可达时稳定通过、依赖缺失时必红」）；登而标 cls: env（承 pm_1393 §二.2 ⒜ ／ pm_1401 §二 ／ §三）",
+   "owner": "老板",
+   "plan": "待拍板：修该例之共享 vault 现场 ∨ hermetic 化；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/unit/test_precision_inject.py::test_r4_list_full_tree",
+   "nature": "环境依赖 · 现场（⛔ 平台无关 · ⛔ flake · 单跑绿 ／ 批恒红 ⇒ 另立 cls: env）",
+   "scope": "固定 SOP 保留 key（断言在 tests/unit/test_precision_inject.py:778）",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed / 6 skipped / 5 deselected / 1 xfailed（293.65s）；刻＝2026-10-06 07:41（pm_1401 §二 ／ TD_1378 §一 之载 · 输出毕 07:45:32）；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（a537820 07:37:48 ⇒ 6b41f14 07:48:27 之间 · ⚠ 照实：⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同 platform ／ Python ／ pytest · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed（刻 2026-10-06 10:21-10:22 · 源 _pm/_cw_env8solo.txt）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 二壳之批同红（TD 之批 ／ 我之全量批）⇒ ⛔ 平台差；单跑绿而批恒红 ⇒ ⛔ 「时绿时红」⇒ 判「环境 ／ 现场」，⛔ flake（承 tests/baseline/env_dependent_tests.json 之 policy：「环境依赖 ＝ 依赖可达时稳定通过、依赖缺失时必红」）；登而标 cls: env（承 pm_1393 §二.2 ⒜ ／ pm_1401 §二 ／ §三）",
+   "owner": "老板",
+   "plan": "待拍板：修该例之共享 vault 现场 ∨ hermetic 化；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/unit/test_workspace_guard_fixes.py::test_web_search_tool_registered",
+   "nature": "环境依赖 · 现场（⛔ 平台无关 · ⛔ flake · 单跑绿 ／ 批恒红 ⇒ 另立 cls: env）",
+   "scope": "{'success': False, 'error': '被更高优先级任务抢占(prio 5): r', 'preempted': True, 'preempted_by_priority': 5, 'preempted_by': 'boss'}（断言在 :224）⇒ TD_1378 §一 定性「环境 · 现场」",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed / 6 skipped / 5 deselected / 1 xfailed（293.65s）；刻＝2026-10-06 07:41（pm_1401 §二 ／ TD_1378 §一 之载 · 输出毕 07:45:32）；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（a537820 07:37:48 ⇒ 6b41f14 07:48:27 之间 · ⚠ 照实：⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同 platform ／ Python ／ pytest · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed（刻 2026-10-06 10:21-10:22 · 源 _pm/_cw_env8solo.txt）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 二壳之批同红（TD 之批 ／ 我之全量批）⇒ ⛔ 平台差；单跑绿而批恒红 ⇒ ⛔ 「时绿时红」⇒ 判「环境 ／ 现场」，⛔ flake（承 tests/baseline/env_dependent_tests.json 之 policy：「环境依赖 ＝ 依赖可达时稳定通过、依赖缺失时必红」）；登而标 cls: env（承 pm_1393 §二.2 ⒜ ／ pm_1401 §二 ／ §三）",
+   "owner": "老板",
+   "plan": "待拍板：修该例之现场（优先级闸之前置）∨ hermetic 化；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/unit/test_obsidian_knowledge_plugin.py::test_obsidian_dispatch_via_router_read",
+   "nature": "环境依赖",
+   "scope": "经路由派发读 .md ⇒ {'success': False, 'exists': False, 'path': '<批内 tmp>/开发区/ComputerUse/Pitfalls/避坑清单.md'}（断言在 tests/unit/test_obsidian_knowledge_plugin.py:67）；⚠ 前登 resolved 之由＝「hermetic tmp vault（批4 691da6f）」⇒ 本刻全量批仍红 ⇒ 移回（承 pm_1401 §二）",
+   "solo_reproducible": false,
+   "evidence": "壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · rootdir D:\\clawsjoy_v9）；批＝tests/unit tests/pes tests/e2e/faults ⇒ 37 failed / 2148 passed（293.65s）；刻＝2026-10-06 07:41；源＝data/tmp/_full1376b.out.txt；树＝该刻之主树（⚠ ⛔ ≣ 今 HEAD 40b481f） ｜ 壳＝CW（本机 · 同族 · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · --basetemp 在仓内）⇒ 1 passed in 0.72s（刻 2026-10-06 10:19:41）⇒ 反证之料（⛔ 主据 · 承 pm_1401 §三）｜⇒ 批恒红而单跑绿 ⇒ 环境 ／ 现场之依；移回之律＝「已 resolved 而当前红 ⇒ 移回」（承 pm_1401 §二）；⛔ 二桶重 ⇒ 同步清 resolved 之该条（item ⑪）",
+   "owner": "老板",
+   "plan": "待拍板：令该例之 vault 就位路径 hermetic 化（批4 之修未覆盖此路）∨ 明书其现场之依；⛔ 改断言",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/integration/test_frontend_protocol.py::test_frontend_handles_backend_statuses",
+   "nature": "平台无关 · 真病（前端 ⛔ 处理后端之状态）· ⛔ cls: env",
+   "scope": "前端未处理后端状态: {'approval_exempt', 'seed_failed'}（断言在 tests/integration/test_frontend_protocol.py:37）⇒ 源码扫描之断言（批序无关）",
+   "solo_reproducible": true,
+   "evidence": "壳＝CW（本机 · 同族 · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 另读：独跑 tests/integration/test_frontend_protocol.py ＋ tests/integration/test_full_flow.py ⇒ 3 failed / 16 passed（527.10s · 刻 2026-10-06 10:0x · 源 _pm/_cw_ev1401.txt）｜⇒ 独跑 1 failed in 0.36s ∧ 独跑该二件批 3 failed/16 passed ∧ 全量批同红 ⇒ 确定性可复现 ⇒ 真病（后端 core/gateway/v9_chat/** 出 approval_exempt ／ seed_failed 而前端 web/static/js/chat.js 之 agentSend ／ approval.js 之 sendWriteApproval ⛔ 有其支）｜承 pm_1401 §二（登而 ⛔ cls: env ＋ 另件令 TD 定性并修，修毕销登）",
+   "owner": "老板",
+   "plan": "待修：前端补 approval_exempt ／ seed_failed 之支 ∨ 后端接线点正之；修毕从 known_failures 销登（承 pm_1401 §二）",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/integration/test_full_flow.py::TestPerformance::test_concurrent_requests",
+   "nature": "环境依赖（本机依：LLM 后端 ／ 出网代理 ＋ 「本机推理 ≤2s」之隐含前置）",
+   "scope": "assert elapsed < 30 ⇒ 实测 192.33s（本轮）／ 113.25s（另读）（断言在 tests/integration/test_full_flow.py:149）",
+   "solo_reproducible": true,
+   "evidence": "壳＝CW（本机 · 同族 · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 另读：独跑 tests/integration/test_frontend_protocol.py ＋ tests/integration/test_full_flow.py ⇒ 3 failed / 16 passed（527.10s · 刻 2026-10-06 10:0x · 源 _pm/_cw_ev1401.txt） ｜ 壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1）；批＝tests/unit tests/pes tests/e2e/faults（⚠ ⛔ 含 tests/integration）⇒ 37 failed / 2148 passed（293.65s）；刻＝2026-10-06 07:41；源＝data/tmp/_full1376b.out.txt｜⇒ 二读同红 ⇒ 本机依（真起服务 ＋ LLM 后端 ／ 推理路径）· ⛔ flake（承 tests/baseline/env_dependent_tests.json · DS 2026-09-18 拍「环境依赖 ≠ flake」） ｜ 同族已登 tests/baseline/env_dependent_tests.json cases[0]（observed_state：直连 Ollama 中位约 11257ms ⇒ 即便网络干净本机亦 ⛔ 达阈值）",
+   "owner": "老板",
+   "plan": "待拍板：等环境满足（推理路径变快 ／ 后端就绪）后复跑；⛔ 改阈值（＝放宽口径 · 须另拍）",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
+  },
+  {
+   "id": "tests/integration/test_full_flow.py::TestPerformance::test_response_time",
+   "nature": "环境依赖（本机依：同上 · 墙钟用例）",
+   "scope": "稳态中位响应 11231ms 超 2000ms（样本 [11231, 11224, 74014]）／ 另读 11230ms（样本 [11213, 11244, 11230]）⇒ assert 11230.8 < 2000（断言在 tests/integration/test_full_flow.py:174）",
+   "solo_reproducible": true,
+   "evidence": "壳＝CW（本机 · 同族 · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 另读：独跑 tests/integration/test_frontend_protocol.py ＋ tests/integration/test_full_flow.py ⇒ 3 failed / 16 passed（527.10s · 刻 2026-10-06 10:0x · 源 _pm/_cw_ev1401.txt） ｜ 壳＝TD 之全批（标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1）；批＝tests/unit tests/pes tests/e2e/faults（⚠ ⛔ 含 tests/integration）⇒ 37 failed / 2148 passed（293.65s）；刻＝2026-10-06 07:41；源＝data/tmp/_full1376b.out.txt｜⇒ 二读同红 ⇒ 本机依（真起服务 ＋ LLM 后端 ／ 推理路径）· ⛔ flake（承 tests/baseline/env_dependent_tests.json · DS 2026-09-18 拍「环境依赖 ≠ flake」） ｜ 同族已登 tests/baseline/env_dependent_tests.json cases[1]",
+   "owner": "老板",
+   "plan": "待拍板：等环境满足后复跑；⛔ 改阈值（＝放宽口径 · 须另拍）",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)",
+   "cls": "env"
   }
  ],
  "resolved": [
@@ -392,8 +502,9 @@
   {
    "id": "tests/integration/test_p2_failure_records.py::test_outer_except_recorded",
    "item": "⑤",
-   "nature": "已被取代",
-   "fix": "换故障注入点(批1)"
+   "nature": "已被取代 ｜ 环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）（⚠ 曾二见 ⇒ 本刻并之 · 承 pm_1405 §二.2）",
+   "fix": "换故障注入点(批1) ｜ 批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
+   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
   },
   {
    "id": "tests/integration/test_subtask_depth.py::test_route_rejects_depth_exceeded",
@@ -424,12 +535,6 @@
    "item": "⑩",
    "nature": "已被取代",
    "fix": "预置超 2KB 摘要(批1)"
-  },
-  {
-   "id": "tests/unit/test_obsidian_knowledge_plugin.py::test_obsidian_dispatch_via_router_read",
-   "item": "⑪",
-   "nature": "环境依赖",
-   "fix": "hermetic tmp vault(批4 691da6f)"
   },
   {
    "id": "tests/unit/test_v9_context_shim.py::test_tool_registry_registered",
@@ -534,12 +639,6 @@
    "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
   },
   {
-   "id": "tests/integration/test_p2_failure_records.py::test_outer_except_recorded",
-   "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
-   "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
-   "evidence": "venv: ModuleNotFoundError: No module named psycopg2（core/lib/code_entity_extractor.py:9）；base 环境 test_v9_context_shim 8 passed / test_precision_inject 64 passed / test_p2_failure_records 4 passed"
-  },
-  {
    "id": "tests/integration/test_p2_failure_records.py::test_failure_record_never_crashes",
    "nature": "环境依赖（venv 缺 psycopg2；**未在任何 requirements 声明**）",
    "fix": "批126 装包：ffmpeg-python==0.2.0 / psycopg2-binary==2.9.12 / python-pptx==1.0.2 / python-docx==1.2.0（pin 到与 base 同版本）+ 三个未声明的包补进 requirements.txt",
@@ -568,6 +667,24 @@
    "nature": "已被取代（旧假设被证伪后同步断言）",
    "fix": "批129 方案A：3 条断言同步 d1（任意代码载体一律 write）+ 删三处死分支 + 新增 3 条守卫测试（累计 41 passed）",
    "evidence": "tests/unit/test_workspace_guard_fixes.py 41 passed；行为矩阵 30 例改前/改后逐条一致（删死代码不改行为）"
+  },
+  {
+   "id": "tests/integration/test_v9_stream.py::test_stream_mode_emits_sse_events",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "fix": "按门之律移桶（tools/check_test_baseline.py:414「已登记而当前不再是失败 ⇒ 从 known_failures 摘到 resolved」）—— 本刻（2026-10-06）全量批 ＋ 独跑皆 ⛔ 再红（承 pm_1393 §二.2 ⒞ ／ pm_1401 §二「移」）",
+   "evidence": "壳＝CW（本机 · platform win32 · Python 3.12.10 · pytest-9.1.1 · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · 同刻族）该 3 条 ⇒ 3 passed（69.88s · 刻 2026-10-06 10:1x · 源 _pm/_cw_ev1401.txt）⇒ 当前 ⛔ 是失败。依门之律 tools/check_test_baseline.py:414（已登记而当前不再是失败 ⇒ 摘到 resolved）＋ pm_1393 §二.2 ⒞ ／ pm_1401 §二 之裁 ⇒ 移桶。⚠ 唯移桶 · 该条之 nature 照录 · ⛔ 改其内容。"
+  },
+  {
+   "id": "tests/integration/test_v9_stream.py::test_non_stream_mode_returns_json",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "fix": "按门之律移桶（tools/check_test_baseline.py:414「已登记而当前不再是失败 ⇒ 从 known_failures 摘到 resolved」）—— 本刻（2026-10-06）全量批 ＋ 独跑皆 ⛔ 再红（承 pm_1393 §二.2 ⒞ ／ pm_1401 §二「移」）",
+   "evidence": "壳＝CW（本机 · platform win32 · Python 3.12.10 · pytest-9.1.1 · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · 同刻族）该 3 条 ⇒ 3 passed（69.88s · 刻 2026-10-06 10:1x · 源 _pm/_cw_ev1401.txt）⇒ 当前 ⛔ 是失败。依门之律 tools/check_test_baseline.py:414（已登记而当前不再是失败 ⇒ 摘到 resolved）＋ pm_1393 §二.2 ⒞ ／ pm_1401 §二 之裁 ⇒ 移桶。⚠ 唯移桶 · 该条之 nature 照录 · ⛔ 改其内容。"
+  },
+  {
+   "id": "tests/integration/test_subtask_depth.py::test_depth_persisted_to_agent_state",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "fix": "按门之律移桶（tools/check_test_baseline.py:414「已登记而当前不再是失败 ⇒ 从 known_failures 摘到 resolved」）—— 本刻（2026-10-06）全量批 ＋ 独跑皆 ⛔ 再红（承 pm_1393 §二.2 ⒞ ／ pm_1401 §二「移」）",
+   "evidence": "壳＝CW（本机 · platform win32 · Python 3.12.10 · pytest-9.1.1 · --basetemp 在仓内）；批＝tests 全量 ⇒ 45 failed / 2413 passed / 6 skipped / 1 deselected / 1 xfailed（733.71s）；刻＝2026-10-06 10:0x；源＝_pm/_cw_full1397b.txt；树＝40b481f ｜ 独跑（同壳 · 同刻族）该 3 条 ⇒ 3 passed（69.88s · 刻 2026-10-06 10:1x · 源 _pm/_cw_ev1401.txt）⇒ 当前 ⛔ 是失败。依门之律 tools/check_test_baseline.py:414（已登记而当前不再是失败 ⇒ 摘到 resolved）＋ pm_1393 §二.2 ⒞ ／ pm_1401 §二 之裁 ⇒ 移桶。⚠ 唯移桶 · 该条之 nature 照录 · ⛔ 改其内容。"
   }
  ],
  "flaky_watch": [
