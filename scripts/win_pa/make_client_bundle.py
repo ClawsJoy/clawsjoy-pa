@@ -9,6 +9,9 @@ u"""客户端**离线包**之器（承 pm_1386 §二.2 ／ §一.1「便携自�
   requirements-runtime.txt` 可装完 ⇒ 网关可起 ∧ 首屏可开。**本器 ⛔ 自评「已通过」** ——
   离线之装须**净机**验之（候老板之净机 · M2）。
 
+洁之闸（承 pm_1396 §二.5）：**活径之扫** —— 包内「活 ∧ 组织物」之径须 ＝ **0**
+  （注 ／ docstring ／ `.md` 之例 ⛔ 判红）⇒ ⛔ 0 ⇒ `--go` 拒（免「组织物之径」入交付物）。
+
 用法：
   python -X utf8 scripts\\win_pa\\make_client_bundle.py                    # 干跑（印计划 ＋ 估体积）
   python -X utf8 scripts\\win_pa\\make_client_bundle.py --go               # 真做（须**网**：pip download）
@@ -20,6 +23,7 @@ u"""客户端**离线包**之器（承 pm_1386 §二.2 ／ §一.1「便携自�
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import io
 import json
@@ -39,6 +43,82 @@ PAYLOAD = ("agent_gateway_enhanced.py", "requirements.txt", "requirements-runtim
 SKIP_NAMES = ("__pycache__", ".git", "data", "logs", "dist", "node_modules", ".venv")
 #: 真源之必需节（⛔ 手拟 · 与 requirements.txt 同源）
 SEC_PREFIX = u"运行依赖"
+
+
+# ---------------------------------------------------------------- 洁之闸 · 「活径之扫」
+# 承 pm_1396 §二.5：洁之闸加「活径之扫」—— 判「成」＝ 包内「活之组织物径」＝ 0。
+# 口径（承 scripts/dev/scan_abs_paths.py · 同一式）：
+#   类甲 绝对径：`[A-Za-z]:[\\/]` ／ `/mnt/[a-z]/` ／ `\\\\srv\\`（UNC）／ `/home/`。
+#   类乙 组织物（径中含）：Obsidian/ClawsJoy ／ paseo-workspace ／ paseo-home ／ npm-global
+#     ／ codex-home ／ 内容工坊 ／ _tools ／ _auto ／ _交付 ／ _老板 ／ 写小说专栏 ／ dsh。
+#   载：`.py` 之 docstring（ast 取）／ 行注（# // * <!--）／ `.md` ⇒ **非活**；余 ⇒ **活**。
+#   ⚠ 唯「活」者入闸（注 ／ docstring ／ .md 之例 ⇒ ⛔ 判红 · 承「⛔ 假红」）。
+PAT_DRIVE = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/](?![\\/])[^\s'\"\)\],;`]*")
+PAT_MNT = re.compile(r"(?<![A-Za-z0-9])/mnt/[a-z]/[^\s'\"\)\],;`]*")
+PAT_UNC = re.compile(r"(?<![\\\w])\\\\[A-Za-z0-9_.\-]+\\")
+PAT_HOME = re.compile(r"(?<![A-Za-z0-9])/home/[A-Za-z0-9_.\-]+/")
+ORG_MARKS = (u"Obsidian/ClawsJoy", u"Obsidian\\ClawsJoy", u"paseo-workspace", u"paseo-home",
+             u"npm-global", u"codex-home", u"内容工坊", u"_tools", u"_auto",
+             u"_交付", u"_老板", u"写小说专栏", u"\\dsh", u"/dsh")
+#: 「开发机活径」之标（Windows 用户目录 —— 承 pm_1396 §二.5 之「今 29 ＋ 2」之 2）
+#  ⚠ 以「拼」造之（⛔ 字面）—— 否则本器之**自身源**亦中其式 ⇒ 「器自指」之假红。
+DEV_MARKS = (u"C:" + u"/Users/", u"C:" + BS + u"Users" + BS, u"/mnt/c/" + u"Users/")
+_LINE_COMMENT = re.compile(r"^\s*(#|//|\*|/\*|<!--)")
+
+
+def _docstring_lines(src):
+    u"""`.py` 之 docstring 行号集（`ast` 取 · ⛔ 猜引号）。"""
+    out = set()
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return out
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            body = getattr(node, "body", None) or []
+            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) \
+                    and isinstance(body[0].value.value, str):
+                s = body[0].value.lineno
+                e = getattr(body[0].value, "end_lineno", s)
+                out.update(range(s, e + 1))
+    return out
+
+
+def scan_live_paths(root, files):
+    u"""**活**之绝对径（剔 注 ／ docstring ／ `.md`）⇒ [{file,line,径,组织物}] —— 器取。
+
+    ⚠ 唯「活」者 —— 注 ／ docstring 之例（如 `C:/Users/x`）⇒ ⛔ 入（⛔ 假红）。
+    """
+    rows = []
+    for rel in files:
+        if rel.lower().endswith(".md"):
+            continue
+        p = os.path.join(root, rel.replace("/", os.sep))
+        try:
+            src = io.open(p, encoding="utf-8", errors="replace").read()
+        except Exception:
+            continue
+        ds = _docstring_lines(src) if rel.lower().endswith(".py") else set()
+        for i, line in enumerate(src.splitlines(), 1):
+            if i in ds or _LINE_COMMENT.match(line):
+                continue
+            for pat in (PAT_DRIVE, PAT_MNT, PAT_UNC, PAT_HOME):
+                for m in pat.finditer(line):
+                    lit = m.group(0)
+                    rows.append({"file": rel, "line": i, "径": lit,
+                                 "组织物": any(k in lit for k in ORG_MARKS),
+                                 "开发机": any(k in lit for k in DEV_MARKS)})
+    return rows
+
+
+def live_org_paths(root, files):
+    u"""**活 ∧ 组织物**之径（判「成」＝ 空 · 承 pm_1396 §二.5）。"""
+    return [r for r in scan_live_paths(root, files) if r["组织物"]]
+
+
+def live_offenders(root, files):
+    u"""**活 ∧（组织物 ∨ 开发机）**之径 —— 洁之闸之标的（判「成」＝ 空）。"""
+    return [r for r in scan_live_paths(root, files) if r["组织物"] or r["开发机"]]
 
 
 def _norm(n):
@@ -136,16 +216,20 @@ def plan_bundle(root=None, out=None):
     out = out or os.path.join(root, "dist", "client_v1")
     dists = required_dists(root)
     files = _payload_files(root)
+    live = scan_live_paths(root, files)
     return {"version": VERSION, "root": root, "out": out, "dists": dists,
             "payload_files": files, "payload_bytes": sum(
                 os.path.getsize(os.path.join(root, f.replace("/", os.sep))) for f in files),
-            "wheel_dir": os.path.join(out, "wheel")}
+            "wheel_dir": os.path.join(out, "wheel"),
+            "live_paths": live, "live_org": [r for r in live if r["组织物"]],
+            "live_off": [r for r in live if r["组织物"] or r["开发机"]]}
 
 
 def check_bundle(path):
     u"""**只读**核：ⓐ wheel\\ 之依全 ／ 缺 ／ 多 ⓑ `bundle_manifest.json` 之印合 ／ 缺 ／ 异。"""
     man = os.path.join(path, "bundle_manifest.json")
-    r = {"包": path, "有册": os.path.isfile(man), "依缺": [], "印缺": [], "印异": [], "印多": []}
+    r = {"包": path, "有册": os.path.isfile(man), "依缺": [], "印缺": [], "印异": [],
+         "印多": [], "活径": []}
     if not r["有册"]:
         r["依缺"] = missing_wheels(os.path.join(path, "wheel"), required_dists())
         return r
@@ -163,6 +247,7 @@ def check_bundle(path):
     for f in _bundle_files(path):
         if f not in seen:
             r["印多"].append(f)
+    r["活径"] = live_offenders(path, _bundle_files(path))
     return r
 
 
@@ -172,6 +257,12 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
     p = plan_bundle(root, out)
     lines = [u"[bundle] out=%s ｜ 件 %d（%.1f MB）｜ 依 %d" % (
         p["out"], len(p["payload_files"]), p["payload_bytes"] / 1048576.0, len(p["dists"]))]
+    if p["live_off"]:
+        lines.append(u"[bundle] ⛔ 洁之闸（活径之扫）：包内「活 ∧（组织物 ∨ 开发机）」之径 %d 处 ⇒ 止"
+                     u"（⛔ 入交付物 · 判「成」＝ 0 · 承 pm_1396 §二.5）" % len(p["live_off"]))
+        for x in p["live_off"][:20]:
+            lines.append(u"  · %s:%d  %s" % (x["file"], x["line"], x["径"]))
+        return 2, lines
     os.makedirs(p["wheel_dir"], exist_ok=True)
     if wheel:
         cmd = [sys.executable, "-m", "pip", "download", "-d", p["wheel_dir"],
@@ -234,6 +325,30 @@ def self_test():
         say("a.py" in r2["印异"], u"正控：改件 ⇒ 印随即变")
     finally:
         shutil.rmtree(t, ignore_errors=True)
+    pd = os.path.join(t, "pl", "core", "pa")
+    os.makedirs(pd)
+    io.open(os.path.join(pd, "a.py"), "w", encoding="utf-8").write(
+        'P = r"D:' + BS + 'paseo-workspace' + BS + '_tools"' + chr(10))
+    io.open(os.path.join(pd, "b.py"), "w", encoding="utf-8").write(
+        'u"""例：D:' + BS + BS + 'paseo-home"""' + chr(10) + 'Q = 1' + chr(10))
+    io.open(os.path.join(pd, "c.py"), "w", encoding="utf-8").write(
+        '# 注：D:' + BS + BS + 'Obsidian' + BS + 'ClawsJoy' + chr(10) + 'R = 2' + chr(10))
+    _lp = scan_live_paths(os.path.join(t, "pl"),
+                          ["core/pa/a.py", "core/pa/b.py", "core/pa/c.py"])
+    say(len(_lp) >= 1 and all(x["file"] == "core/pa/a.py" for x in _lp),
+        u"正控：活之组织物径必逮 ／ 注与 docstring ⛔ 入（⛔ 假红）")
+    say(len(_lp) == 1 and _lp[0]["组织物"], u"反控：唯 a.py 之一处 · 且判「组织物」")
+    say(len(live_org_paths(os.path.join(t, "pl"), ["core/pa/b.py", "core/pa/c.py"])) == 0,
+        u"反控：唯注 ／ docstring ⇒ 活∧组织物 空（⛔ 假红）")
+    io.open(os.path.join(pd, "d.py"), "w", encoding="utf-8").write(
+        'U = "C:' + "/Users/" + 'flybo/x.pdf"' + chr(10))
+    _lo = live_offenders(os.path.join(t, "pl"), ["core/pa/d.py"])
+    say(len(_lo) == 1 and _lo[0]["开发机"] and not _lo[0]["组织物"],
+        u"正控：开发机活径（用户目录之式）必逮 ／ 且判「开发机」（⛔ 混组织物）")
+    io.open(os.path.join(pd, "e.py"), "w", encoding="utf-8").write(
+        'V = "D:' + BS + 'other' + BS + 'x"' + chr(10))
+    say(len(live_offenders(os.path.join(t, "pl"), ["core/pa/e.py"])) == 0,
+        u"反控：寻常盘符径（⛔ 组织物 ∧ ⛔ 开发机）⇒ ⛔ 判红")
     say(len(required_dists()) >= 10 and "chromadb" in [_norm(d) for d in required_dists()],
         u"正控：真源之必需节含 chromadb（⚠ 若红 ⇒ 本机 requirements.txt 已漂）")
     n, tt = sum(1 for c in hits if c), len(hits)
@@ -257,13 +372,15 @@ def main(argv):
             print(u"[bundle] ⛔ 入口错：--check 之径不在：%s" % a.check)
             return 3
         r = check_bundle(a.check)
-        bad = bool(r["依缺"] or r["印缺"] or r["印异"])
+        bad = bool(r["依缺"] or r["印缺"] or r["印异"] or r["活径"])
         if a.json:
             print(json.dumps(r, ensure_ascii=False, indent=1))
         else:
             print(u"[核] %s ｜ 册 %s" % (r["包"], u"在" if r["有册"] else u"⛔ 无"))
-            print(u"  依缺 %d ／ 印缺 %d ／ 印异 %d ／ 印多 %d" % (
-                len(r["依缺"]), len(r["印缺"]), len(r["印异"]), len(r["印多"])))
+            print(u"  依缺 %d ／ 印缺 %d ／ 印异 %d ／ 印多 %d ／ 活∧组织物 %d" % (
+                len(r["依缺"]), len(r["印缺"]), len(r["印异"]), len(r["印多"]), len(r["活径"])))
+            for x in r["活径"][:10]:
+                print(u"  ⛔ 活径: %s:%d  %s" % (x["file"], x["line"], x["径"]))
             for k in ("依缺", "印缺", "印异"):
                 for x in r[k][:10]:
                     print(u"  ⛔ %s: %s" % (k, x))
@@ -277,6 +394,10 @@ def main(argv):
             print(u"  件 %d（%.1f MB）｜ 依 %d：%s" % (
                 len(p["payload_files"]), p["payload_bytes"] / 1048576.0, len(p["dists"]),
                 u"、".join(p["dists"])))
+            print(u"  洁闸（活径之扫）：活 %d ／ 活∧组织物 %d ／ 活∧（组织物∨开发机）%d（判「成」＝ 0）" % (
+                len(p["live_paths"]), len(p["live_org"]), len(p["live_off"])))
+            for x in p["live_off"][:12]:
+                print(u"    · %s:%d  %s" % (x["file"], x["line"], x["径"]))
             print(u"  将动：① pip download -d %s -r requirements-runtime.txt ② 复运行子集 ③ 写册" % p["wheel_dir"])
         return 0
     rc, lines = apply_bundle(a.root, p["out"], wheel=True, json_out=a.json)
