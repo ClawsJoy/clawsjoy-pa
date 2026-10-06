@@ -440,8 +440,6 @@ def pa_gate_view(decision=None, origin=None, grounded=None, answer_source=None, 
 #   ⒈ `ws_root()`（**产品级** · env `PA_WS_ROOT`）⇒ 下之相对段（工作区面：文件 ／ 台账 ／ _交付）；
 #   ⒉ `vault_root()`（**用户自选**知识库 · 承 1387 §二.2 ／ 1388 §二.1）⇒ 下之相对段（vault 面）。
 #   ⚠ 缺基（＝ `None`）⇒ 该面 **⛔ 入表**（⛔ 空径 ⇒ 误扫 cwd）—— 照实「未接」（⛔ 崩 ／ ⛔ 静默扫错）。
-_FACE_WS = ws_root()
-_FACE_VR = vault_root()
 
 
 def _rel_under(base, *parts):
@@ -449,57 +447,67 @@ def _rel_under(base, *parts):
     return os.path.join(base, *parts) if base else None
 
 
-_PA_FACES_ORG = (
-    ("文件", (_FACE_WS,), ("*.md", "*.txt")),
-    # ⭐ 台账面＝**只取台账本身**（⛔ 不收整个 `_auto\deliver`：那含我的报告集）
-    ("台账", (_rel_under(_FACE_WS, "_auto", "deliver"),),
-     ("老板令台账_v1.md",)),  # ⛔ 收 `投递台账.csv`／`债单_*.md`（真身皆在信通 · 该根下⛔存在 ⇒ 空转）
-    # ⭐ PM 2026-10-05（老板批「并入技总写域」之同批 · 承 技总 972 §五）：新面 `平台台账`
-    #   真源 ＝ `…\内容工坊\04_平台台账`（`46` 项 · ⛔ 存底类：`*.md` 天然排除 `.before_*` ／ `.bak_*` ／ `.sha256`）
-    #   ＋ `平台注册表.md`（生成物 · 源头 `08_工具\平台\*\plugin.json`）⇒ `role: knowledge`（⛔ archive ⇒ 可作据）
-    ("平台台账", (_rel_under(_FACE_VR, "内容工坊/04_平台台账"),), ("*.md",)),
-    ("台账·信通", (_rel_under(_FACE_VR, "内容工坊/02_协作/信通"),),
-     ("投递台账.csv",)),  # ⛔ 收 `债单_*.md`（内含测试问题引用 ⇒ 污染）
-    # ⭐ 2026-10-05（PM b136893 令「menghua 进 PA 试用」§四「先接素材面」· 老板批）：新面 `梦中月水中花`
-    #   真源 ＝ `11_实验室/记忆` —— 皆**插件产出**（`梦_*.md` 做梦读数 ／ `唤醒_*.md` 唤醒(体检)读数）· ⛔ 非我测。
-    #   ⇒ `role: archive`（**我们之报述** 之族 ⇒ ⛔ 作据 · 仍可检索回指 · 承 PM 846 §二）。
-    #   ⚠ 根 ＝ **既有**面：`11_实验室/记忆/` 系 PM `955`／`956` 准我之**跨面子面**（父面属主 ＝ 工作流实验室席 `e621c26`）
-    #     ⇒ 只读 · ⛔ 写 · glob 特指 ⇒ 天然排除 `.唤醒水位` 等点件与 `待做梦_*` 备料。
-    ("梦中月水中花", (_rel_under(_FACE_VR, "内容工坊/11_实验室/记忆"),),
-     ("梦_*.md", "唤醒_*.md")),
-    # ⭐ 2026-10-05（PM b136893 令「M1 接线收口：加两个素材面」§二 ⒜ · 老板 20:0x 之纠后）：
-    #   新面 `文件·产出` —— **文本产出**（`10_产出` ／ `dsh` ／ `_交付`）⇒ `role: archive`
-    #   （**只索引 · ⛔ 作据** · 承 PM 846 §二）。
-    #   ⚠ **名 ⛔ 取 `文件`** —— 由：`PA_FACE_ROLE` ／ `PA_FACES_MIN_ROW` 皆**按名取** ⇒ 与本表**既有**之
-    #     `文件`（`D:\paseo-workspace` · `knowledge`）**撞名** ⇒ 一面二义：改 `archive` ⇒ 撤 `q07` 之
-    #     真据行（`项目经理_角色卡.md:71` · 承 L152 之注）；改 `knowledge` ⇒ 产出（我们之报述）入据
-    #     ＝ 循环取证。⇒ 故取 `文件·产出`（承本表 `台账·信通` 之「大类·子类」之形）—— **候裁名**（承 1048 §三）。
-    #   ⚠ **图产出 ⛔ 入本表** —— 本表之列 ⛔ 能表「目录级聚合」（PM §二 ⒝ 之裁）；且 `_cached_lines`
-    #     读图 ⇒ `None` ⇒ 该面恒 `0` 件 ＝ **假绿之面** ⇒ 图面走 `PA_SRC_FACES` ＋ `GET /v9/pa/source_faces`。
-    ("文件·产出", tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"),
-                                  _rel_under(_FACE_VR, "dsh"), _rel_under(_FACE_WS, "_交付")) if x), ("*.md",)),
-    # ⭐ 2026-10-05（PM 22:34 §二 裁「闸面余 9 件」· 逐件列判 ⇒ **唯此一件入闸**）：
-    #   判据（PM 定）：**本机有据 ∧ ⛔ 无 GET 面 ⇒ 入闸**；有 GET 面者 ⇒ 归「另路」。
-    #   逐件判：余 8 件皆有 GET /v9/pa/*（ledger ／ deliver/mail ／ caliber ／ roster ／
-    #     seats ／ roster(probe 二键) ／ resume ／ threads）⇒ ⛔ 入闸；唯 deadfile_ledger.json
-    #     **无任何路由**（rg dead core/pa/gateway_routes.py ⇒ 0 命中）⇒ **入闸**。
-    #   ⚠ 根取 _data_dir()（与 DecisionStore 一处口径 · ⛔ 另立绝对径 ⇒ 免「两真源」）。
-    ("死件账", (_data_dir(),), ("deadfile_ledger.json",)),
-)
-# ⭐ 2026-10-06（pm_1409 §二.3）：`PA_ORG_FACES` 门（**功能级** · 默认关 ⇒ 其径逻辑 ⛔ 执行）。
-#   本表七面中唯 `死件账` 为**产品面**（本机 `data/` 之账 · 与组织物无关）；余六面
-#   （文件 ／ 台账 ／ 平台台账 ／ 台账·信通 ／ 梦中月水中花 ／ 文件·产出）皆**组织物**
-#   （我方工作区 ／ 台账 ／ 信通 ／ 实验室 ／ 产出）⇒ 净机 ⛔ 得读 ⇒ 门关即 ⛔ 入表。
-#   ⚠ **关**时之面集 ＝ `收件箱` ／ `知识库`（`PA_KB_ASK_SCOPES` · vault 相对 · 用户自选库）
-#     ＋ `死件账`（本表产品面）。⚠ **面之数之变须报**（⛔ 静默减面）：响应附 `faces_gate`。
-# ⚠ 缺基（`_FACE_WS` ／ `_FACE_VR` ＝ `None`）⇒ 该面 ⛔ 入表（⛔ 空径 ⇒ 误扫 cwd · 承 pm_1409 §二.3）。
-# ⚠ 空根（全缺基）亦 ⛔ 入表 —— `all(())` 恒真 ⇒ 须并判 `ff[1]` 非空
-#   （否则该面以「0 件」上屏 ＝ **假绿之面** · 承本表 L323 之注）。
-_PA_FACES_ORG = tuple(ff for ff in _PA_FACES_ORG if ff[1] and all(x for x in ff[1]))
-_PA_FACES_ORG_ONLY = tuple(x for x in _PA_FACES_ORG if x[0] != "死件账")
-_PA_FACES_PRODUCT = tuple(x for x in _PA_FACES_ORG if x[0] == "死件账")
-PA_FACES = (_PA_FACES_ORG_ONLY + _PA_FACES_PRODUCT) if org_enabled() else _PA_FACES_PRODUCT
-PA_FACES_GATE = "org" if org_enabled() else "product"
+# ⭐⭐ pm_1520 §二.3（甲 · 件三）：本表 ⇒ **惰算**（⛔ import 即定形）——
+#   病：旧为**顶层赋值**（根取自 import 之刻）⇒ 改库根（`POST /v9/pa/vault/set`）⇒
+#     **须重起方生效**（承 pm_1517 §二.4 之「选了 ⛔ 生效」）。
+#   法：全表移入本函数（`_FACE_WS` ／ `_FACE_VR` 取**当刻**）＋ 名由模块级 `__getattr__` 供 ⇒
+#     读者字面**不变** ∧ 取值**当刻** ∧ **无缓存**（⛔ `lru_cache` 之族 · 承 pm_1517 §三.2）。
+def _pa_faces_tables():
+    u"""（PA_FACES, PA_FACES_GATE）—— **惰算**（依**当刻**之 `ws_root()` ／ `vault_root()`）。"""
+    _FACE_WS = ws_root()
+    _FACE_VR = vault_root()
+    _PA_FACES_ORG = (
+        ("文件", (_FACE_WS,), ("*.md", "*.txt")),
+        # ⭐ 台账面＝**只取台账本身**（⛔ 不收整个 `_auto\deliver`：那含我的报告集）
+        ("台账", (_rel_under(_FACE_WS, "_auto", "deliver"),),
+         ("老板令台账_v1.md",)),  # ⛔ 收 `投递台账.csv`／`债单_*.md`（真身皆在信通 · 该根下⛔存在 ⇒ 空转）
+        # ⭐ PM 2026-10-05（老板批「并入技总写域」之同批 · 承 技总 972 §五）：新面 `平台台账`
+        #   真源 ＝ `…\内容工坊\04_平台台账`（`46` 项 · ⛔ 存底类：`*.md` 天然排除 `.before_*` ／ `.bak_*` ／ `.sha256`）
+        #   ＋ `平台注册表.md`（生成物 · 源头 `08_工具\平台\*\plugin.json`）⇒ `role: knowledge`（⛔ archive ⇒ 可作据）
+        ("平台台账", (_rel_under(_FACE_VR, "内容工坊/04_平台台账"),), ("*.md",)),
+        ("台账·信通", (_rel_under(_FACE_VR, "内容工坊/02_协作/信通"),),
+         ("投递台账.csv",)),  # ⛔ 收 `债单_*.md`（内含测试问题引用 ⇒ 污染）
+        # ⭐ 2026-10-05（PM b136893 令「menghua 进 PA 试用」§四「先接素材面」· 老板批）：新面 `梦中月水中花`
+        #   真源 ＝ `11_实验室/记忆` —— 皆**插件产出**（`梦_*.md` 做梦读数 ／ `唤醒_*.md` 唤醒(体检)读数）· ⛔ 非我测。
+        #   ⇒ `role: archive`（**我们之报述** 之族 ⇒ ⛔ 作据 · 仍可检索回指 · 承 PM 846 §二）。
+        #   ⚠ 根 ＝ **既有**面：`11_实验室/记忆/` 系 PM `955`／`956` 准我之**跨面子面**（父面属主 ＝ 工作流实验室席 `e621c26`）
+        #     ⇒ 只读 · ⛔ 写 · glob 特指 ⇒ 天然排除 `.唤醒水位` 等点件与 `待做梦_*` 备料。
+        ("梦中月水中花", (_rel_under(_FACE_VR, "内容工坊/11_实验室/记忆"),),
+         ("梦_*.md", "唤醒_*.md")),
+        # ⭐ 2026-10-05（PM b136893 令「M1 接线收口：加两个素材面」§二 ⒜ · 老板 20:0x 之纠后）：
+        #   新面 `文件·产出` —— **文本产出**（`10_产出` ／ `dsh` ／ `_交付`）⇒ `role: archive`
+        #   （**只索引 · ⛔ 作据** · 承 PM 846 §二）。
+        #   ⚠ **名 ⛔ 取 `文件`** —— 由：`PA_FACE_ROLE` ／ `PA_FACES_MIN_ROW` 皆**按名取** ⇒ 与本表**既有**之
+        #     `文件`（`D:\paseo-workspace` · `knowledge`）**撞名** ⇒ 一面二义：改 `archive` ⇒ 撤 `q07` 之
+        #     真据行（`项目经理_角色卡.md:71` · 承 L152 之注）；改 `knowledge` ⇒ 产出（我们之报述）入据
+        #     ＝ 循环取证。⇒ 故取 `文件·产出`（承本表 `台账·信通` 之「大类·子类」之形）—— **候裁名**（承 1048 §三）。
+        #   ⚠ **图产出 ⛔ 入本表** —— 本表之列 ⛔ 能表「目录级聚合」（PM §二 ⒝ 之裁）；且 `_cached_lines`
+        #     读图 ⇒ `None` ⇒ 该面恒 `0` 件 ＝ **假绿之面** ⇒ 图面走 `PA_SRC_FACES` ＋ `GET /v9/pa/source_faces`。
+        ("文件·产出", tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"),
+                                      _rel_under(_FACE_VR, "dsh"), _rel_under(_FACE_WS, "_交付")) if x), ("*.md",)),
+        # ⭐ 2026-10-05（PM 22:34 §二 裁「闸面余 9 件」· 逐件列判 ⇒ **唯此一件入闸**）：
+        #   判据（PM 定）：**本机有据 ∧ ⛔ 无 GET 面 ⇒ 入闸**；有 GET 面者 ⇒ 归「另路」。
+        #   逐件判：余 8 件皆有 GET /v9/pa/*（ledger ／ deliver/mail ／ caliber ／ roster ／
+        #     seats ／ roster(probe 二键) ／ resume ／ threads）⇒ ⛔ 入闸；唯 deadfile_ledger.json
+        #     **无任何路由**（rg dead core/pa/gateway_routes.py ⇒ 0 命中）⇒ **入闸**。
+        #   ⚠ 根取 _data_dir()（与 DecisionStore 一处口径 · ⛔ 另立绝对径 ⇒ 免「两真源」）。
+        ("死件账", (_data_dir(),), ("deadfile_ledger.json",)),
+    )
+    # ⭐ 2026-10-06（pm_1409 §二.3）：`PA_ORG_FACES` 门（**功能级** · 默认关 ⇒ 其径逻辑 ⛔ 执行）。
+    #   本表七面中唯 `死件账` 为**产品面**（本机 `data/` 之账 · 与组织物无关）；余六面
+    #   （文件 ／ 台账 ／ 平台台账 ／ 台账·信通 ／ 梦中月水中花 ／ 文件·产出）皆**组织物**
+    #   （我方工作区 ／ 台账 ／ 信通 ／ 实验室 ／ 产出）⇒ 净机 ⛔ 得读 ⇒ 门关即 ⛔ 入表。
+    #   ⚠ **关**时之面集 ＝ `收件箱` ／ `知识库`（`PA_KB_ASK_SCOPES` · vault 相对 · 用户自选库）
+    #     ＋ `死件账`（本表产品面）。⚠ **面之数之变须报**（⛔ 静默减面）：响应附 `faces_gate`。
+    # ⚠ 缺基（`_FACE_WS` ／ `_FACE_VR` ＝ `None`）⇒ 该面 ⛔ 入表（⛔ 空径 ⇒ 误扫 cwd · 承 pm_1409 §二.3）。
+    # ⚠ 空根（全缺基）亦 ⛔ 入表 —— `all(())` 恒真 ⇒ 须并判 `ff[1]` 非空
+    #   （否则该面以「0 件」上屏 ＝ **假绿之面** · 承本表 L323 之注）。
+    _PA_FACES_ORG = tuple(ff for ff in _PA_FACES_ORG if ff[1] and all(x for x in ff[1]))
+    _PA_FACES_ORG_ONLY = tuple(x for x in _PA_FACES_ORG if x[0] != "死件账")
+    _PA_FACES_PRODUCT = tuple(x for x in _PA_FACES_ORG if x[0] == "死件账")
+    PA_FACES = (_PA_FACES_ORG_ONLY + _PA_FACES_PRODUCT) if org_enabled() else _PA_FACES_PRODUCT
+    PA_FACES_GATE = "org" if org_enabled() else "product"
+    return PA_FACES, PA_FACES_GATE
 # ⚠ 语料卫生（2026-10-04 · 三改 · 我引入之风险之修）：
 #   一改曾把「台账」面设成整个 `_auto\deliver` ⇒ 我之报告**逐字引用**测试问题（如
 #   `N1 | 我的老板叫什么名字 | ✅ 如实未答`）⇒ 2-gram 命中 `1.0` ⇒ **拒答面被冲垮**（假有据）。
@@ -726,22 +734,29 @@ def _face_files(root, globs):
 #   由（PM §二 之裁）：⭐ **面之粒度须与量相称** —— 文本件可**逐件**；图件（千张量级）**按目录聚合**（面 ⛔ 爆）。
 #   ⇒ 每面给：`kind` ／ 根（逐字）／ glob（逐字）／ 量 ／ **聚合之式（逐字）** ／ 最近刻 ／ 印。
 #   ⚠ `role: archive` —— 产出 ＝ **我们之报述**之族 ⇒ ⛔ 作据 · 只索引 · 承 PM 846 §二。
-_PA_SRC_FACES_ALL = (
-    # ⒜ 「📄 文件」（前端 today.js:159 `srcRowFile`）—— 文本产出 · **逐件计数**
-    ("文件", "archive", "files", ("*.md",),
-     tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"), _rel_under(_FACE_VR, "dsh"),
-                       _rel_under(_FACE_WS, "_交付")) if x),
-     "张数＝<根> 递归之 (*.md)（剔 PA_FACES_SKIP 之名）", "文件·产出"),
-    # ⒝ 「🎨 出图」（前端 today.js:161 `srcRowDraw`）—— 图产出 · **按目录聚合**（⛔ 逐张 · 千张量级）
-    ("出图", "archive", "dirs", ("*.png", "*.jpg", "*.jpeg", "*.webp", "*.gif", "*.svg"),
-     tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"), _rel_under(_FACE_VR, "工作区/项目")) if x),
-     "张数＝<根> 递归之 (png|jpg|jpeg|webp|gif|svg)（剔 PA_FACES_SKIP 之名）· 按目录聚合", None),
-)
-# ⭐ 2026-10-06（pm_1409 §二.3）：`PA_ORG_FACES` 门 —— 本表二面皆**组织物**（`10_产出` ／
-#   `dsh` ／ `_交付` ／ `工作区\项目`）⇒ 门关（默认）即**空表**（响应的 `面之数` ＋ `门` 照实报）。
-_PA_SRC_FACES_ALL = tuple(ff for ff in _PA_SRC_FACES_ALL if ff[4])   # 缺基 ⇒ ⛔ 入表（同上）
-PA_SRC_FACES = _PA_SRC_FACES_ALL if org_enabled() else ()
-PA_SRC_FACES_GATE = "org" if org_enabled() else "product"
+# ⭐⭐ pm_1520 §二.3（甲 · 件三）：同病之**同轴兄弟**（本表亦取 `_FACE_VR` ／ `_FACE_WS`）——
+#   ⇒ 一并惰算（⛔ 穷扫：唯同轴之此一表 · 承 pm_1517 §三.2 之记债）。
+def _src_faces_tables():
+    u"""（PA_SRC_FACES, PA_SRC_FACES_GATE）—— **惰算**（同上 · 一处定形）。"""
+    _FACE_WS = ws_root()
+    _FACE_VR = vault_root()
+    _PA_SRC_FACES_ALL = (
+        # ⒜ 「📄 文件」（前端 today.js:159 `srcRowFile`）—— 文本产出 · **逐件计数**
+        ("文件", "archive", "files", ("*.md",),
+         tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"), _rel_under(_FACE_VR, "dsh"),
+                           _rel_under(_FACE_WS, "_交付")) if x),
+         "张数＝<根> 递归之 (*.md)（剔 PA_FACES_SKIP 之名）", "文件·产出"),
+        # ⒝ 「🎨 出图」（前端 today.js:161 `srcRowDraw`）—— 图产出 · **按目录聚合**（⛔ 逐张 · 千张量级）
+        ("出图", "archive", "dirs", ("*.png", "*.jpg", "*.jpeg", "*.webp", "*.gif", "*.svg"),
+         tuple(x for x in (_rel_under(_FACE_VR, "内容工坊/10_产出"), _rel_under(_FACE_VR, "工作区/项目")) if x),
+         "张数＝<根> 递归之 (png|jpg|jpeg|webp|gif|svg)（剔 PA_FACES_SKIP 之名）· 按目录聚合", None),
+    )
+    # ⭐ 2026-10-06（pm_1409 §二.3）：`PA_ORG_FACES` 门 —— 本表二面皆**组织物**（`10_产出` ／
+    #   `dsh` ／ `_交付` ／ `工作区\项目`）⇒ 门关（默认）即**空表**（响应的 `面之数` ＋ `门` 照实报）。
+    _PA_SRC_FACES_ALL = tuple(ff for ff in _PA_SRC_FACES_ALL if ff[4])   # 缺基 ⇒ ⛔ 入表（同上）
+    PA_SRC_FACES = _PA_SRC_FACES_ALL if org_enabled() else ()
+    PA_SRC_FACES_GATE = "org" if org_enabled() else "product"
+    return PA_SRC_FACES, PA_SRC_FACES_GATE
 PA_SRC_FACES_VERSION = "2026-10-06.4"   # ⭐ .4：`PA_ORG_FACES` 门（关 ⇒ 空表）⇒ +1（承 PA_FACES_VERSION 之律）｜ ⭐ .3：加「面级之印」（响应之形变 ⇒ 亦 +1）   # ⭐ 改本表 ⇒ 必 +1（承 PA_FACES_VERSION 之律）
 
 # ============================== ⭐ UI 面册（承 pm_1384 §二.1 ／ §三.1）==============================
@@ -903,7 +918,7 @@ def _src_face_readout():
     from time import strftime as _stf, localtime as _lt
     _at = _stf("%Y-%m-%d %H:%M:%S")
     faces = []
-    for name, role, kind, globs, roots, form, mirror in PA_SRC_FACES:
+    for name, role, kind, globs, roots, form, mirror in pa_src_faces():
         rows = []
         missing = []
         total = 0
@@ -970,9 +985,9 @@ def _src_face_readout():
             _h2.update(("%s|%s|%s|%s\n" % (r.get("root") or r.get("dir"), r.get("count"),
                                            r.get("recent"), r.get("印"))).encode("utf-8"))
     return {"ok": True, "at": _at, "faces": faces, "faces_version": PA_SRC_FACES_VERSION,
-            "面之数": len(faces), "门": PA_SRC_FACES_GATE,
+            "面之数": len(faces), "门": pa_src_faces_gate(),
             "对映": {f["name"]: f["对映检索面"] for f in faces},
-            "PA_FACES名": [x[0] for x in PA_FACES],
+            "PA_FACES名": [x[0] for x in pa_faces()],
             "对映之式": "本表（画像素材面）面名 ⇒ PA_FACES（检索面）面名；None ＝ 该面⛔入检索面（图面：PA_FACES ⛔ 能表目录级聚合）",
             "印": _h2.hexdigest()[:16],
             "口径": "画像素材面（左栏「来源面」）之读数 · ⛔ 检索面（PA_FACES）· 两轨两名分列"}
@@ -1015,7 +1030,7 @@ def pa_vault_face_files(root):
         _n += _c
         if _c:
             _names.append(_rel)
-    for _name, _roots, _globs in PA_FACES:
+    for _name, _roots, _globs in pa_faces():
         _c = 0
         for _spec in _roots:
             _rp = _face_root(_r, _spec)
@@ -1516,7 +1531,7 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
     if not str(kb_root or "").strip():
         return {"hits": [], "archive_hits": [], "searched": 0, "scope": [],
                 "threshold": min_score, "faces": {}, "no_kb_root": True,
-                "faces_missing": list(PA_KB_ASK_SCOPES) + [f[0] for f in PA_FACES],
+                "faces_missing": list(PA_KB_ASK_SCOPES) + [f[0] for f in pa_faces()],
                 "faces_skipped": {}, "faces_version": PA_FACES_VERSION,
                 "face_snapshot_at": None}
     qg = _bigrams(question)
@@ -1584,18 +1599,18 @@ def pa_kb_search(question, kb_root, limit=5, min_score=PA_ASK_MIN_SCORE):
 
     for rel in PA_KB_ASK_SCOPES:
         _scan(Path(kb_root) / rel, rel, ("*.md",))
-    for name, roots, globs in PA_FACES:
+    for name, roots, globs in pa_faces():
         for spec in roots:
             _scan(_face_root(kb_root, spec), name, globs)
 
     hits.sort(key=lambda x: -x["score"])
     _arch.sort(key=lambda x: -x["score"])
-    allscope = list(PA_KB_ASK_SCOPES) + [f[0] for f in PA_FACES]
+    allscope = list(PA_KB_ASK_SCOPES) + [f[0] for f in pa_faces()]
     return {"hits": hits[:limit], "archive_hits": _arch[:limit], "searched": searched,
             "scope": allscope, "threshold": min_score, "faces": faces,
             "faces_missing": face_missing, "faces_skipped": face_skipped,
             "face_snapshot_at": _snap, "faces_version": PA_FACES_VERSION,
-            "faces_gate": PA_FACES_GATE}
+            "faces_gate": pa_faces_gate()}
 
 
 def _dialog_sessions(pa, limit=20):
@@ -3929,3 +3944,47 @@ def register_pa_routes(app, brain=None):
 
     app.register_blueprint(bp)
     return bp
+
+
+# ⭐ 惰算之**四门**（甲 · 件三 · 一处定形）—— 内读者**唯此四门**。
+#   由：模块级 `__getattr__` **唯**外读者（`module.NAME` ／ `from ... import`）得用；
+#   本模块**自己**之函数取全局名**不经**之（`LOAD_GLOBAL` 直查 `__dict__`）⇒ 内读者须显式调门。
+def pa_faces():
+    u"""PA **检索面**之表（**惰算** · pm_1520 §二.3）—— 旧名 `PA_FACES` 亦由此出。"""
+    return _pa_faces_tables()[0]
+
+
+def pa_faces_gate():
+    u"""`PA_ORG_FACES` 之**门**（`org` ／ `product` · 惰算）。"""
+    return _pa_faces_tables()[1]
+
+
+def pa_src_faces():
+    u"""画像**素材面**之表（惰算 · ⛔ 检索面）。"""
+    return _src_faces_tables()[0]
+
+
+def pa_src_faces_gate():
+    u"""素材面之门（惰算）。"""
+    return _src_faces_tables()[1]
+
+
+# ===== ⭐ 惰算之门（甲 · 件三 · pm_1520 §二.3）—— 一处定形 =====
+# 由：`_FACE_WS` ／ `_FACE_VR` ／ `PA_FACES`（＋ `PA_SRC_FACES`）旧为**顶层赋值** ⇒ **import 即定形**
+#     ⇒ 改库根 ⇒ 须重起方生效。本门按名**当刻**算（⛔ 缓存 ⇒ 无「旧缓存残留」之反控）。
+# ⚠ 其名**唯此一处**出（⛔ 二处各判 · 承「一处定形」）；令以 `AttributeError` 收（⛔ 吞）。
+def __getattr__(name):
+    u"""模块级惰算（⛔ 顶层赋值 ⇒ ⛔ import 即定形）—— ⛔ 缓存。"""
+    if name == "_FACE_WS":
+        return ws_root()
+    if name == "_FACE_VR":
+        return vault_root()
+    if name == "PA_FACES":
+        return pa_faces()
+    if name == "PA_FACES_GATE":
+        return pa_faces_gate()
+    if name == "PA_SRC_FACES":
+        return pa_src_faces()
+    if name == "PA_SRC_FACES_GATE":
+        return pa_src_faces_gate()
+    raise AttributeError("module %r has no attribute %r" % (__name__, name))
