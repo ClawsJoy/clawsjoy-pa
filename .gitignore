@@ -92,7 +92,8 @@ _gate_*.json
 _gate_*.md
 session_vfy9/
 archive/
-sandbox/
+# ⭐ 锚位（承 pm_1417 §二）：裸名 `sandbox/` 亦中 `core/sandbox/`（产品源码）⇒ 误伤；本式维根之 `sandbox/`
+/sandbox/
 goals/
 data/sync_state/
 
