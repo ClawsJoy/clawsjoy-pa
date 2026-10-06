@@ -1,14 +1,27 @@
 @echo off
 setlocal EnableExtensions
+for /f "tokens=2 delims=:" %%C in ('chcp') do set "_CJPA_CP=%%C"
+chcp 65001 >nul
 rem ============================================================
-rem  ClawsJoyPA-Setup.exe（iexpress 自解压）之 AppLaunched 入口（承 pm_1577 §二.3 ／ §三.3）
+rem  ClawsJoyPA-Setup.exe (iexpress self-extract) -- AppLaunched entry
 rem
-rem  位次：iexpress 把本件 ＋ payload.zip 解到 %TEMP%\IXP*.TMP ⇒ 以本目录为 CWD 跑本件。
-rem        ⭐ 故本件：ⓐ tar 解 payload.zip 入装根  ⓑ 以**自带之 runtime** 跑 installer_post.py
-rem        ⛔ 本件 ⛔ 起服 ／ ⛔ 装依赖（依已在 runtime 内 ⇒ 免网之要）
+rem  iexpress unpacks this file + payload.zip into %TEMP%\IXP*.TMP and runs
+rem  this file with CWD = that folder, so:
+rem    [1] tar -xf payload.zip into DEST
+rem    [2] run installer_post.py with the BUNDLED runtime (never the system
+rem        python; never start the service; never install deps -- they are
+rem        already inside runtime\, which is what makes install offline)
 rem
-rem  装根 ＝ %LOCALAPPDATA%\ClawsJoyPA（**用户级** ⇒ ⛔ UAC）
-rem   ⚠ 可覆：set CJPA_DEST=<径>
+rem  DEST = %LOCALAPPDATA%\ClawsJoyPA (user level => no UAC).
+rem  Override with:  set CJPA_DEST=<path>
+rem
+rem  THIS FILE MUST STAY 100% ASCII (pm_1578 s2.2).  Why: cmd.exe decodes
+rem  .cmd BYTES with the CONSOLE code page.  A BOM-less UTF-8 file on a
+rem  GBK(936) console mis-pairs CJK bytes with DBCS units, and Windows
+rem  DBCS decoding swallows 2 bytes on an invalid trail byte => it eats
+rem  CR / ^ / quotes => lines splice and CJK bytes get run as commands
+rem  (first-hand control: 'm' is not recognized ... / syntax is incorrect).
+rem  Human-facing words come from the bundled Python instead.
 rem ============================================================
 set "SRC=%~dp0"
 if "%SRC:~-1%"=="\" set "SRC=%SRC:~0,-1%"
@@ -16,41 +29,41 @@ set "DEST=%LOCALAPPDATA%\ClawsJoyPA"
 if not "%CJPA_DEST%"=="" set "DEST=%CJPA_DEST%"
 
 echo ============================================================
-echo   ClawsJoy PA 安装
-echo   自带 Python 运行时 ｜ 免网 ｜ 免管理员
-echo   装到：%DEST%
+echo   ClawsJoy PA setup
+echo   bundled Python runtime  ^|  offline  ^|  no administrator
+echo   DEST: %DEST%
 echo ============================================================
 echo.
 
 if not exist "%SRC%\payload.zip" (
-  echo [FAIL] 找不到 payload.zip —— 安装包不完整
+  echo [FAIL] payload.zip not found -- the setup package is incomplete
   pause
   exit /b 2
 )
 if not exist "%DEST%" mkdir "%DEST%" >nul 2>&1
 
-echo [1/3] 解包（程序 ＋ 自带运行时）…… 约需 1-3 分钟
+echo [1/3] unpacking program + bundled runtime ... about 1-3 minutes
 tar -xf "%SRC%\payload.zip" -C "%DEST%"
 if errorlevel 1 (
-  echo       tar 不可用或失败 —— 改走 PowerShell
+  echo       tar unavailable or failed -- falling back to PowerShell
   powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -LiteralPath '%SRC%\payload.zip' -DestinationPath '%DEST%' -Force"
   if errorlevel 1 (
-    echo [FAIL] 解包失败 —— 磁盘空间是否够（约需 1 GB）
+    echo [FAIL] unpack failed -- is there enough free space? about 1 GB needed
     pause
     exit /b 2
   )
 )
 
-echo [2/3] 立目录 ／ 建快捷 ／ 注册卸载项 ……
+echo [2/3] creating folders / shortcuts / uninstall entry ...
 "%DEST%\runtime\python.exe" -X utf8 "%DEST%\scripts\win_pa\installer_post.py" --go --dest "%DEST%"
 set "RC=%ERRORLEVEL%"
 
 echo.
-echo [3/3] 结果 rc=%RC%
-if not "%RC%"=="0" echo [WARN] 有未成之项 —— 见上之数行
+echo [3/3] result rc=%RC%
+if not "%RC%"=="0" echo [WARN] some steps did not succeed -- see the lines above
 echo.
-echo 已装。开始菜单 ^> ClawsJoy PA ^> 「启动 ClawsJoy PA」即可起服（首启约 30 秒）。
-echo 卸载：开始菜单 ^> ClawsJoy PA ^> 「卸载 ClawsJoy PA」（你的 data\ 会保留）。
+echo Done. Start it from the Start Menu under ClawsJoy PA.
+echo Uninstall from the Start Menu too -- your data folder is kept.
 echo.
 pause
 endlocal & exit /b %RC%

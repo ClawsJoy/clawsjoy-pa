@@ -97,32 +97,54 @@ def default_dest():
     return os.path.join(la, APP_ID)
 
 
+#: -- cmd shell (ONE PLACE) --
+#: IRON RULE (pm_1578 s2, my first-hand evidence): cmd.exe decodes the .cmd BYTES with the
+#:   console code page.  A UTF-8 (no BOM) file on a GBK(936) console mis-pairs CJK bytes with
+#:   DBCS units; Windows DBCS decoding SWALLOWS 2 bytes on an invalid trail byte => it eats
+#:   `\r` (line splice), `^` (escape broken) or `'` (quote lost) => CJK bytes get executed as
+#:   commands (my first-hand control: on a 936 console `rem <star>` prints `'m' ...`).
+#:   => THREE GUARDS: (a) first line `chcp 65001` (this single place) (b) every .cmd literal
+#:      is ASCII-ONLY (no CJK, no emoji) (c) human-facing words come from the bundled Python
+#:      (it writes via WriteConsoleW => code-page independent).
+CMD_PROLOGUE = (u"@echo off\r\n"
+                u"setlocal EnableExtensions\r\n"
+                u"for /f \"tokens=2 delims=:\" %%C in ('chcp') do set \"_CJPA_CP=%%C\"\r\n"
+                u"chcp 65001 >nul\r\n")
+CMD_CP_RESTORE = u"if defined _CJPA_CP chcp %_CJPA_CP% >nul\r\n"
+
+
 def _head():
-    return (u"@echo off\r\n"
-            u"setlocal EnableExtensions\r\n"
-            + u"rem ⭐ 装根由 %~dp0 定位 ⇒ 整根可移（承 pm_1577 · 一处定形）\r\n"
+    u"""四启动器之头（**一处定形**）：码页 → 装根由 `%~dp0` 定位 ⇒ 整根可移。
+    ⚠ 字面**尽 ASCII**（承 pm_1578 §二.2）—— 人话之辞交 `pa_msg.py`。"""
+    return (CMD_PROLOGUE
+            + u"rem ClawsJoyPA launcher -- root located by %~dp0 (whole tree stays movable)\r\n"
             + u"set \"ROOT=%~dp0\"\r\n"
             + u"if \"%ROOT:~-1%\"==\"" + BS + u"\" set \"ROOT=%ROOT:~0,-1%\"\r\n"
             + u"cd /d \"%ROOT%\"\r\n")
 
 
 def launcher_texts():
-    u"""四启动器之逐字（**一源**）—— 皆以 `%~dp0` 定位 ⇒ 装根可移；皆走唯一入口 `pa_nowindow.py`。"""
+    u"""四启动器之逐字（**一源**）—— 皆以 `%~dp0` 定位 ⇒ 装根可移；皆走唯一入口 `pa_nowindow.py`。
+    ⚠ **字面尽 ASCII**（pm_1578 §二.2）：人话之辞 ⇒ `pa_msg.py`（自带 Python 输出）。"""
     head = _head()
     py = u"\"%ROOT%" + BS + u"runtime" + BS + u"python.exe\""
     pn = u"\"%ROOT%" + BS + u"scripts" + BS + u"win_pa" + BS + u"pa_nowindow.py\""
+    msg = u"\"%ROOT%" + BS + u"scripts" + BS + u"win_pa" + BS + u"pa_msg.py\""
     start = (head
-             + u"echo [PA] 起服务（无窗）…… 首启约 30 秒\r\n"
+             + py + u" -X utf8 " + msg + u" start\r\n"
              + py + u" -X utf8 " + pn + u" start\r\n"
              + u"set \"RC=%ERRORLEVEL%\"\r\n"
-             + u"if not \"%RC%\"==\"0\" echo [PA] 起服失败 rc=%RC% —— 因见上之数行\r\n"
+             + u"if not \"%RC%\"==\"0\" " + py + u" -X utf8 " + msg + u" start-failed\r\n"
              + u"if not \"%RC%\"==\"0\" pause\r\n"
+             + CMD_CP_RESTORE
              + u"endlocal & exit /b %RC%\r\n")
     stop = (head
+            + py + u" -X utf8 " + msg + u" stop\r\n"
             + py + u" -X utf8 " + pn + u" stop\r\n"
             + u"set \"RC=%ERRORLEVEL%\"\r\n"
+            + CMD_CP_RESTORE
             + u"endlocal & exit /b %RC%\r\n")
-    # ⚠ Python 之一行 ⛔ 用 `%` 格式化（批处理 `for /f` 会吞之）⇒ 以 `+` 拼
+    # NOTE: no `%` formatting below -- batch `for /f` eats it; concatenate instead
     openp = (head
              + u"set \"URL=\"\r\n"
              + u"for /f \"usebackq delims=\" %%U in (`" + py
@@ -131,16 +153,16 @@ def launcher_texts():
              + u"print('http://127.0.0.1:'+str(gateway_port())+'/web/pa.html')\"`) do set \"URL=%%U\"\r\n"
              + u"if not defined URL set \"URL=http://127.0.0.1:5103/web/pa.html\"\r\n"
              + u"start \"\" \"%URL%\"\r\n"
+             + CMD_CP_RESTORE
              + u"endlocal & exit /b 0\r\n")
     uninst = (head
               + py + u" -X utf8 \"%ROOT%" + BS + u"scripts" + BS + u"win_pa" + BS
               + u"uninstall_pa.py\" --go --root \"%ROOT%\"\r\n"
               + u"set \"RC=%ERRORLEVEL%\"\r\n"
+              + CMD_CP_RESTORE
               + u"pause\r\n"
               + u"endlocal & exit /b %RC%\r\n")
     return {LAUNCH_START: start, LAUNCH_STOP: stop, LAUNCH_OPEN: openp, LAUNCH_UNINSTALL: uninst}
-
-
 def write_launchers(root, dry=False):
     rows = []
     for name, text in launcher_texts().items():
@@ -150,10 +172,6 @@ def write_launchers(root, dry=False):
             with io.open(p, "w", encoding="utf-8", newline=u"") as fh:
                 fh.write(text)
     return rows
-
-
-def _ps_quote(s):
-    return u"'" + str(s).replace(u"'", u"''") + u"'"
 
 
 def sm_dir():
@@ -174,40 +192,118 @@ def shortcut_paths(desktop=True):
     return out
 
 
-def make_shortcuts(root, desktop=True, dry=False):
-    u"""三快捷（＋「卸载」入开始菜单）—— 以 WScript.Shell（⛔ 第三方依）。"""
-    ps = [u"$sh = New-Object -ComObject WScript.Shell"]
+#: shortcut maker (ONE PLACE, pm_1578 s2.4): the .ps1 literal is ASCII-ONLY and the CJK names
+#: come from a UTF-8 JSON file.  WHY: PS 5.1 reads a BOM-less UTF-8 .ps1 as ANSI(936) => the
+#: same DBCS byte swallowing => it eats a `'` => "string is missing the terminator"
+#: (my first-hand control: 7-shortcut ps1 rc=1 ; with BOM or mbcs rc=0).
+PS_LNK_SCRIPT = (u"param([Parameter(Mandatory=$true)][string]$Spec)\r\n"
+                 u"$ErrorActionPreference = 'Stop'\r\n"
+                 u"$sh = New-Object -ComObject WScript.Shell\r\n"
+                 u"$raw = Get-Content -LiteralPath $Spec -Raw -Encoding UTF8\r\n"
+                 u"$items = @(foreach ($x in (ConvertFrom-Json -InputObject $raw)) { $x })\r\n"
+                 u"foreach ($it in $items) {\r\n"
+                 u"  $dir = Split-Path -Parent $it.lnk\r\n"
+                 u"  if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }\r\n"
+                 u"  try {\r\n"
+                 u"    $s = $sh.CreateShortcut($it.lnk)\r\n"
+                 u"    $s.TargetPath = $it.target\r\n"
+                 u"    $s.WorkingDirectory = $it.workdir\r\n"
+                 u"    $s.Description = $it.desc\r\n"
+                 u"    $s.IconLocation = $it.icon\r\n"
+                 u"    $s.Save()\r\n"
+                 u"  } catch {\r\n"
+                 u"    [Console]::Error.WriteLine('[shortcut] FAILED ' + $it.lnk + ' :: ' + $_.Exception.Message)\r\n"
+                 u"    exit 1\r\n"
+                 u"  }\r\n"
+                 u"}\r\n"
+                 u"$out = @()\r\n"
+                 u"foreach ($it in $items) {\r\n"
+                 u"  $v = $sh.CreateShortcut($it.lnk)\r\n"
+                 u"  $out += [pscustomobject]@{ lnk = $it.lnk; target = $v.TargetPath; workdir = $v.WorkingDirectory; desc = $v.Description; icon = $v.IconLocation }\r\n"
+                 u"}\r\n"
+                 u"ConvertTo-Json -InputObject $out -Compress\r\n")
+
+
+def _icon_path(v):
+    u"""read-back icon (Windows appends `,0`) => its path."""
+    v = (v or u"").strip()
+    if len(v) > 1 and v[0] == u'"' and v[-1] == u'"':
+        v = v[1:-1]
+    i = v.rfind(u",")
+    if i > 0 and v[i + 1:].strip().isdigit():
+        v = v[:i]
+    return v
+
+
+def shortcut_specs(root, desktop=True):
+    u"""(name, lnk, target, workdir, desc, icon) -- ONE SOURCE; icon WITHOUT `,0`."""
     spec = {n: (t, d) for n, t, d in (SHORTCUTS + SM_EXTRA)}
     rows = []
     for name, lnk in shortcut_paths(desktop):
         target, desc = spec[name]
-        rows.append(u"  [shortcut] %s -> %s" % (lnk, target))
-        if dry:
-            continue
-        os.makedirs(os.path.dirname(lnk), exist_ok=True)
-        ps.append(u"$s = $sh.CreateShortcut(%s)" % _ps_quote(lnk))
-        ps.append(u"$s.TargetPath = %s" % _ps_quote(os.path.join(root, target)))
-        ps.append(u"$s.WorkingDirectory = %s" % _ps_quote(root))
-        ps.append(u"$s.Description = %s" % _ps_quote(desc))
-        ps.append(u"$s.IconLocation = %s" % _ps_quote(runtime_exe(root) + u",0"))
-        ps.append(u"$s.Save()")
+        rows.append({u"lnk": lnk, u"target": os.path.join(root, target), u"workdir": root,
+                     u"desc": desc, u"icon": runtime_exe(root)})
+    return rows
+
+
+def make_shortcuts(root, desktop=True, dry=False):
+    u"""three shortcuts (+ uninstall in Start Menu): ASCII .ps1 + UTF-8 JSON, no 3rd-party dep.
+    Then READ BACK verbatim -- a silent corruption must not pass as rc=0."""
+    specs = shortcut_specs(root, desktop)
+    rows = [u"  [shortcut] %s -> %s" % (r[u"lnk"], r[u"target"]) for r in specs]
     if dry:
         return rows
-    fd, ps1 = tempfile.mkstemp(prefix=u"cjpa_lnk_", suffix=u".ps1")
-    os.close(fd)
+    tmp = []
     try:
-        with io.open(ps1, "w", encoding="utf-8") as fh:
-            fh.write(u"\r\n".join(ps) + u"\r\n")
-        r = subprocess.run([u"powershell", u"-NoProfile", u"-NonInteractive",
-                            u"-ExecutionPolicy", u"Bypass", u"-File", ps1],
+        fdp, ps1 = tempfile.mkstemp(prefix=u"cjpa_lnk_", suffix=u".ps1")
+        os.close(fdp)
+        tmp.append(ps1)
+        with io.open(ps1, u"w", encoding=u"utf-8-sig", newline=u"") as fh:
+            fh.write(PS_LNK_SCRIPT)
+        fdj, spec_json = tempfile.mkstemp(prefix=u"cjpa_lnk_", suffix=u".json")
+        os.close(fdj)
+        tmp.append(spec_json)
+        with io.open(spec_json, u"w", encoding=u"utf-8", newline=u"") as fh:
+            fh.write(json.dumps(specs, ensure_ascii=False))
+        for r in specs:
+            os.makedirs(os.path.dirname(r[u"lnk"]), exist_ok=True)
+        r = subprocess.run([u"powershell", u"-NoProfile", u"-NonInteractive", u"-ExecutionPolicy",
+                            u"Bypass", u"-File", ps1, u"-Spec", spec_json],
                            capture_output=True, text=True, encoding=u"utf-8", errors=u"replace")
         if r.returncode != 0:
-            rows.append(u"  [shortcut] ⛔ 败 rc=%s：%s" % (r.returncode, (r.stderr or u"")[-300:]))
+            rows.append(u"  [shortcut] ⛔ 败 rc=%s：%s" % (
+                r.returncode, ((r.stderr or u"") + (r.stdout or u"")).strip()[-400:]))
+            return rows
+        back = json.loads((r.stdout or u"").strip() or u"[]")
+        if not isinstance(back, list):
+            back = [back]
+        got = {b[u"lnk"]: b for b in back}
+        bad = 0
+        for want in specs:
+            b = got.get(want[u"lnk"])
+            if not b:
+                rows.append(u"  [shortcut] ⛔ 回读无此件：%s" % want[u"lnk"])
+                bad += 1
+                continue
+            got_icon = _icon_path(b.get(u"icon"))
+            for key, label, val in ((u"target", u"目标", want[u"target"]),
+                                    (u"workdir", u"工作目录", want[u"workdir"]),
+                                    (u"desc", u"说明", want[u"desc"])):
+                if os.path.normcase(b.get(key) or u"") != os.path.normcase(val):
+                    rows.append(u"  [shortcut] ⛔ %s ⛔ 对：%s ⇒ 实 %s" % (label, want[u"lnk"], b.get(key)))
+                    bad += 1
+            if os.path.normcase(got_icon) != os.path.normcase(want[u"icon"]):
+                rows.append(u"  [shortcut] ⛔ 图标 ⛔ 对：%s ⇒ 实 %s" % (want[u"lnk"], b.get(u"icon")))
+                bad += 1
+        rows.append(u"  [shortcut] 回读核 %d 件：%s" % (len(specs), u"俱合" if not bad else u"⛔ %d 处" % bad))
+        if bad:
+            rows.append(u"  [shortcut] ⛔ 有 ⛔ 对之项 ⇒ **⛔ 当绿**")
     finally:
-        try:
-            os.remove(ps1)
-        except Exception:
-            pass
+        for p in tmp:
+            try:
+                os.remove(p)
+            except Exception:
+                pass
     return rows
 
 
@@ -352,6 +448,21 @@ def self_test():
     say(not os.path.isdir(u"C:" + BS + u"__nope__"), u"反控：plan 唯读（⛔ 动盘）")
     rc, ln = render_and_maybe_apply(plan(u"C:" + BS + u"__nope__"), True)
     say(rc == 2 and any(u"⛔ 装" in x for x in ln), u"反控：装根 ⛔ 在 ⇒ rc 2 ∧ 报「⛔ 装」")
+    lt2 = launcher_texts()
+    say(all(t.startswith(CMD_PROLOGUE) for t in lt2.values()),
+        u"正控：四启动器之头 ≡ CMD_PROLOGUE（码页**一处定形**）")
+    say(sorted({c for t in lt2.values() for c in t if ord(c) > 127}) == [],
+        u"正控：四启动器之字面**尽 ASCII**（⛔ CJK ⛔ emoji —— cmd 依台之码页解 .cmd 之字节）")
+    say(u"pa_msg.py" in lt2[LAUNCH_START] and u"pa_msg.py" in lt2[LAUNCH_STOP],
+        u"正控：人话之辞走 pa_msg.py（自带 Python 输出 · ⛔ cmd 之手）")
+    say(CMD_PROLOGUE.count(u"chcp 65001") == 1 and CMD_PROLOGUE.count(u"chcp ") == 1,
+        u"正控：码页之改**唯此一处**（⛔ 各点各写）")
+    say(sorted({c for c in PS_LNK_SCRIPT if ord(c) > 127}) == [],
+        u"正控：快捷之 .ps1 尽 ASCII（CJK 之名自 UTF-8 之 JSON 读）")
+    say(all(r[u"icon"] == runtime_exe(root=r"C:" + BS + u"x") for r in shortcut_specs(r"C:" + BS + u"x")),
+        u"正控：快捷之图标 ⛔ 带 `,0`（下标缺省即 0）")
+    say(len(shortcut_specs(r"C:" + BS + u"x")) == 7,
+        u"正控：快捷之规格表 7 件（开始菜单 4 ＋ 桌面 3）")
     src = io.open(__file__, encoding=u"utf-8").read()
     say((_SYSREG_A not in src) and (_SYSREG_B not in src), u"反控：源 ⛔ 含系统级域")
     say((u"rm" + u"tree") not in src, u"反控：源 ⛔ 含删树（卸载归 uninstall_pa）")

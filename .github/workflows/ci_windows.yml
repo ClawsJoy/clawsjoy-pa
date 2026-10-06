@@ -1,11 +1,12 @@
 # ============================================================
-# Win-PA Windows CI  --  SPARE PART ONLY (do NOT arm yet)
+# Win-PA Windows CI  --  ARMED (was the spare part `ci_windows.yml.备件`)
 # ------------------------------------------------------------
-# Status: spare part (备件).  Per pm_1382 Sec-2 item-3:
-#   push == platform action => not the TD/PM domain; landing needs the boss.
-#   To activate (boss only):
+# Status: armed.  The arming recipe has THREE lines -- pm_1382 Sec-2 item-3,
+#   whose spare-part note omitted line 2 (corrected per pm_1579 s2.2):
 #     git mv scripts/win_pa/ci_windows.yml.备件 .github/workflows/ci_windows.yml
+#     git commit
 #     git push
+#   push == platform action => the boss's domain, NOT TD/PM.
 #
 # Scope guard (pm_1382 Sec-2 item-3): a green CI must NOT be read as
 #   "a clean machine can demo".  The real demo face (Ollama / GPU / weights)

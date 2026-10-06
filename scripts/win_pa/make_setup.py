@@ -167,9 +167,13 @@ def build(dist, out, name, zip_only=False, reuse=False, deflate=False):
         rows.append(u"[--] --zip-only ⇒ ⛔ 造 exe")
         return 0, rows
     sed = p["sed"]
-    with io.open(sed, "w", encoding="utf-8", newline=u"") as fh:
-        fh.write(sed_text(stage, p["exe"], friendly=name))
-    rows.append(u"[OK] SED：%s" % sed)
+    body = sed_text(stage, p["exe"], friendly=name)
+    if sorted({c for c in body if ord(c) > 127}):
+        return 2, rows + [u"[FAIL] SED 含非 ASCII 之字 ⇒ **⛔ 造**"
+                          u"（iexpress 所认之码页 ⛔ 定：名 ⁄ 径 须尽 ASCII —— pm_1578 §二.3）"]
+    with io.open(sed, "w", encoding=u"ascii", newline=u"") as fh:
+        fh.write(body)
+    rows.append(u"[OK] SED → %s（尽 ASCII · 码页 ⛔ 涉）" % sed)
     exe = p["exe"]
     t0 = time.time()
     r = subprocess.run([u"iexpress", u"/N", sed], capture_output=True, text=True,
@@ -234,6 +238,13 @@ def self_test():
     say(ZIP_NAME in sed and ENTRY in sed, u"正控：二件之名在 SED")
     say(u"SourceFiles0=" + stage + BS in sed, u"正控：源目录为**绝对径**（SED 之径为构建期之绝对径）")
     say(sed.count(u"\n") == sed.count(u"\r\n"), u"正控：SED 全 CRLF（iexpress 之要）")
+    say(sorted({c for c in sed if ord(c) > 127}) == [],
+        u"正控：SED 尽 ASCII（iexpress 所认之码页 ⛔ 涉 ⇒ 丌下之争自消 · pm_1578 §二.3）")
+    _eb = io.open(os.path.join(HERE, ENTRY), "rb").read()
+    say(sorted({b for b in _eb if b > 127}) == [],
+        u"正控：入口 %s 尽 ASCII（cmd 依台之码页解 .cmd 之字节 ⇒ CJK 则吞字节 · pm_1578 §二.2）" % ENTRY)
+    say(b"chcp 65001" in _eb,
+        u"正控：入口首行之码页已定（一处定形）")
     import tempfile
     t = tempfile.mkdtemp(prefix=u"cjpa_ms_")
     try:
