@@ -216,6 +216,13 @@ def test_F_knowledge_pointers_hit_live_files(monkeypatch):
 
     monkeypatch.setenv("PA_VAULT_DIR", str(_REAL_VAULT))
     monkeypatch.chdir(_REPO)
+    # ⭐ pm_1517 §二.2（**测须自足** · 器取之实）：本件之红曾**取决于同进程先跑之件** ——
+    #   `pi._cfg_roots()` 乃 `lru_cache(maxsize=1)` ∧ 其内 `_obsidian_cfg()` 以**相对径**开
+    #   `config/v9/execution_policy.yaml` ⇒ 前件 `chdir(tmp_path)` 后已填缓存（回落 `SOPs`）
+    #   ⇒ 本件 `chdir(_REPO)` 亦得**旧缓存** ⇒ 假红（测依外之序 ⇒ 器之病）。
+    #   ⇒ **自清**（承本模块 `cache_clear()` 之既有式 · 见 precision_inject.py:169）。
+    pi._cfg_roots.cache_clear()
+    pi.reset_inject_cfg()
     root = paths.vault_root()
     cfg = pi._obsidian_cfg()
 
