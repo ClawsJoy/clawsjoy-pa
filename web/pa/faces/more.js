@@ -522,7 +522,16 @@ function paProvRowHtml(p){
     ? (o.key_configured ? '✓已配' : ((kstate === 'not_required') ? '—不需（无此项）' : '—未配'))
     : ((kstate === 'configured') ? '✓已配' : ((kstate === 'missing') ? '—未配'
       : ((kstate === 'not_required') ? '—不需（无此项）' : '未给')));
-  const enTxt = (typeof o.enabled === 'boolean') ? (o.enabled ? '启用' : '停用') : '未给';
+  /* ⭐ 启用之「源」（承 pm_1385 §二 · ⛔ 一名蔽二态）：`enabled`（布尔）唯态 ⇒ 附 `enabled_src`
+     （后端之源自陈 · core/pa/providers.py:82-90）：env 停用 ⟷ 注册表默认停 ⟷ 默认启用 ⛔ 同辞。
+     ⚠ 印随值（⛔ 前端自断其源）：后端之源自陈已含态辞者 ⇒ 逐字照渲（⛔ 重说 ⇒ 免「停用（源 停用（源…））」之叠）；
+     未含 ⇒ 「态（源 …）」；`enabled_src` ⛔ 出（旧后端）⇒ 源段显「未给」（⛔ 假称「默认」）。 */
+  const enSrc = String(o.enabled_src == null ? '' : o.enabled_src);
+  const enTxt = (typeof o.enabled === 'boolean')
+    ? ((enSrc && enSrc.indexOf(o.enabled ? '启用' : '停用') === 0)
+        ? enSrc
+        : ((o.enabled ? '启用' : '停用') + '（源 ' + (enSrc || '未给') + '）'))
+    : '未给';
   /* ⭐ 根（承 pm 1367 §二.2）：后端出 `base_url` ／ `base_url_env` ／ `base_url_wired`（布尔）＋ `base_url_note`
      ⇒ 旧面 **零字符渲及** ⇒ 须显（⛔ 静默吞其值）｜⚠ `False` ＝「唯显示 · 未生效」⇒ ⛔ 以一名蔽之；
      ⛔ 前端亦 ⛔ 自断「env 已置」（后端 ⛔ 出此读数）⇒ 唯照其值 ＋ 其注（印随值）。 */
