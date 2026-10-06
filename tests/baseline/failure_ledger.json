@@ -285,6 +285,83 @@
    "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
    "registered": "2026-09-17",
    "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_no_shadowing_imports.py::test_no_use_before_local_import_shadowing",
+   "nature": "平台无关 · 源码扫描门(基线 2026-09-14 之后的重构新增/迁走了被扫描对象)",
+   "scope": "扫全仓「函数内 import 遮蔽(先用后绑定 · 会 UnboundLocalError)」: 命中 core/pa/agent_scan.py 之 save_seat_roster 等",
+   "solo_reproducible": true,
+   "evidence": "本刻(2026-10-06 · D:\\clawsjoy_v9)单跑 1 failed(-q -p no:cacheprovider · --basetemp 在工作区内) ∧ 全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)同红 ⇒ 非批序/平台所致(断言对象是仓内源码 ／ 接口行为之字节)。承 pm_1385 §三 二约①: 补登 ⛔ ＝ 修 ⇒ 唯记其存",
+   "owner": "老板",
+   "plan": "待拍板: 修 core/pa/agent_scan.py 之函数内 import 遮蔽 ∨ 若为有意, 调该 lint 之白名单",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_pa_routes.py::test_dialog_collects_fields_and_recaps",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "scope": "dialog 未收字段: assert set() == {'industry', 'report_detail'}(断言在 :171)",
+   "solo_reproducible": true,
+   "evidence": "本刻(2026-10-06 · D:\\clawsjoy_v9)单跑 1 failed(-q -p no:cacheprovider · --basetemp 在工作区内) ∧ 全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)同红 ⇒ 非批序/平台所致(断言对象是仓内源码 ／ 接口行为之字节)。承 pm_1385 §三 二约①: 补登 ⛔ ＝ 修 ⇒ 唯记其存",
+   "owner": "老板",
+   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_screenshot_media.py::test_media_missing_params",
+   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
+   "scope": "缺参提示与断言口径不一致: assert (False is False and 'path' in 'v9/media: 缺 session_id')(断言在 :41)",
+   "solo_reproducible": true,
+   "evidence": "本刻(2026-10-06 · D:\\clawsjoy_v9)单跑 1 failed(-q -p no:cacheprovider · --basetemp 在工作区内) ∧ 全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)同红 ⇒ 非批序/平台所致(断言对象是仓内源码 ／ 接口行为之字节)。承 pm_1385 §三 二约①: 补登 ⛔ ＝ 修 ⇒ 唯记其存",
+   "owner": "老板",
+   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_test_hygiene.py::test_no_exact_set_equality_on_registry",
+   "nature": "平台无关 · 源码扫描门(基线 2026-09-14 之后的重构新增/迁走了被扫描对象)",
+   "scope": "本仓 lint: 注册表集合断言应改超集(⛔ ==); 命中 tests/unit/test_pm011_caliber_check_shape.py:128 等(断言在 :77)",
+   "solo_reproducible": true,
+   "evidence": "本刻(2026-10-06 · D:\\clawsjoy_v9)单跑 1 failed(-q -p no:cacheprovider · --basetemp 在工作区内) ∧ 全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)同红 ⇒ 非批序/平台所致(断言对象是仓内源码 ／ 接口行为之字节)。承 pm_1385 §三 二约①: 补登 ⛔ ＝ 修 ⇒ 唯记其存",
+   "owner": "老板",
+   "plan": "待拍板: 把命中处之注册表集合断言改超集(⛔ 全等), 或调该 lint 之射程",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_vault_write_faces.py::test_B1_no_unregistered_writer",
+   "nature": "平台无关 · 源码扫描门(基线 2026-09-14 之后的重构新增/迁走了被扫描对象)",
+   "scope": "逮到未登记的 vault 写者: ['core/pa/env_face.py'](断言在 :143)",
+   "solo_reproducible": true,
+   "evidence": "本刻(2026-10-06 · D:\\clawsjoy_v9)单跑 1 failed(-q -p no:cacheprovider · --basetemp 在工作区内) ∧ 全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)同红 ⇒ 非批序/平台所致(断言对象是仓内源码 ／ 接口行为之字节)。承 pm_1385 §三 二约①: 补登 ⛔ ＝ 修 ⇒ 唯记其存",
+   "owner": "老板",
+   "plan": "待拍板: core/pa/env_face.py 之 vault 写者登记 ∨ 改道(⛔ 直写)",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/unit/test_vault_write_faces.py::test_B3_tmp_vault_writers_registered",
+   "nature": "平台无关 · 源码扫描门(基线 2026-09-14 之后的重构新增/迁走了被扫描对象)",
+   "scope": "登记之唯一出口不见了: data/tmp/cw_emit.py::emit_text(断言在 :216) ⇒ 疑迁走",
+   "solo_reproducible": true,
+   "evidence": "本刻(2026-10-06 · D:\\clawsjoy_v9)单跑 1 failed(-q -p no:cacheprovider · --basetemp 在工作区内) ∧ 全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)同红 ⇒ 非批序/平台所致(断言对象是仓内源码 ／ 接口行为之字节)。承 pm_1385 §三 二约①: 补登 ⛔ ＝ 修 ⇒ 唯记其存",
+   "owner": "老板",
+   "plan": "待拍板: 定位 data/tmp/cw_emit.py::emit_text 之新落点(迁走?) ⇒ 更新该登记表",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)"
+  },
+  {
+   "id": "tests/e2e/faults/test_fault_truncated_output.py::test_PASS_full_repo_has_no_shadowing",
+   "nature": "平台无关 · 源码扫描门(基线 2026-09-14 之后的重构新增/迁走了被扫描对象)",
+   "scope": "全仓 import 遮蔽扫描(同 test_no_shadowing_imports 族): 命中 core/pa/agent_scan.py:363/364 与 :394/395(断言在 :49)",
+   "solo_reproducible": true,
+   "evidence": "本刻(2026-10-06 · D:\\clawsjoy_v9)单跑 1 failed(-q -p no:cacheprovider · --basetemp 在工作区内) ∧ 全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)同红 ⇒ 非批序/平台所致(断言对象是仓内源码 ／ 接口行为之字节)。承 pm_1385 §三 二约①: 补登 ⛔ ＝ 修 ⇒ 唯记其存",
+   "owner": "老板",
+   "plan": "待拍板: 修 core/pa/agent_scan.py 之遮蔽 ∨ 若为有意, 调该扫描之白名单",
+   "registered": "2026-10-06",
+   "platform": "Windows(wsl 副本)"
   }
  ],
  "resolved": [
@@ -529,6 +606,24 @@
    "evidence": "全量跑：B 块得 0 failed / 1545 passed；DSH 得 1 failed / 1544 passed —— 两次总数都是 1545，差异只在红数分配。单跑本文件 6/6 绿、单跑该条 1/1 绿。机制：共享 UID 下 sid 原不带 pid，并发 pytest 进程互删现场（B 已加 pid 隔离，文件第 34-36/89 行确认在），DSH 那次运行疑似与并发进程重叠",
    "owner": "B 块（9fb1b9fe，故障注入 #15：预算耗尽→回「继续」→任务链必须接上）",
    "plan": "pid 隔离已落地。若再现：先确认是否与其它 pytest 进程同跑（跨进程），再考虑同进程内顺序污染。"
+  },
+  {
+   "id": "tests/unit/test_confirm_fragment_fix.py::test_write_file_approved_bypasses_similarity",
+   "nature": "flaky",
+   "scope": "守卫「未批准时相似度低应拒绝」: 返回 {'success': True, 'hint': '', 'git_status': None}(断言在 :56)",
+   "solo_reproducible": false,
+   "evidence": "⚠ 本刻(2026-10-06)单跑 1 passed; 与另 8 条同批(9 条一会话)亦 passed; **门之正令之全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)亦 passed** ⇒ 单跑 ／ 全量批皆 ⛔ 可复现「红」。而 TD 1378 §一 之批(tests/unit tests/pes tests/e2e/faults)中红 ⇒ 二读 ⛔ 合 ⇒ 待 TD 报「以何形调用」(套件 ／ 顺序 ／ 并发 ／ 环境)。依 policy solo_reproducible=false ⇒ 脆弱桶。",
+   "owner": "待定",
+   "plan": "待 TD 报「以何形调用」复现其红; 定位其前置污染件后修, 或 hermetic 化"
+  },
+  {
+   "id": "tests/unit/test_workspace_guard_fixes.py::test_write_file_tmp_bypasses_similarity",
+   "nature": "flaky",
+   "scope": "守卫「非 tmp 低相似度应拒绝」: 返回 {'success': True, 'hint': '', 'git_status': None}(断言在 :276)",
+   "solo_reproducible": false,
+   "evidence": "⚠ 本刻(2026-10-06)单跑 1 passed; 与另 8 条同批(9 条一会话)亦 passed; **门之正令之全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)亦 passed** ⇒ 单跑 ／ 全量批皆 ⛔ 可复现「红」。而 TD 1378 §一 之批(tests/unit tests/pes tests/e2e/faults)中红 ⇒ 二读 ⛔ 合 ⇒ 待 TD 报「以何形调用」(套件 ／ 顺序 ／ 并发 ／ 环境)。依 policy solo_reproducible=false ⇒ 脆弱桶。",
+   "owner": "待定",
+   "plan": "待 TD 报「以何形调用」复现其红; 定位其前置污染件后修, 或 hermetic 化"
   }
  ],
  "windows_baseline": {
