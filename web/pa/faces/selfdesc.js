@@ -725,8 +725,21 @@ function paSelfWhy(text){
 /* ⭐ pm_1067 §三 ⒝（承 pm_1066 §一）：源之分标旁须带**采样刻**（素材面在长 ⇒ 同问之据随刻变）
    ⇒ 刻取本回响应之 judge.face_snapshot_at ∨ judge_at（⛔ 前端自造刻 · 承 L76）；本轮开头清空（⛔ 跨轮串刻）。 */
 let paSelfTagAt = '';
+/* ⭐ pm_1557 §二（承 pm_1549 §二.2 之裁 ／ TD 1556 §四 之实）：**复用之屏上明示** ——
+   病：后端 /v9/pa/ask 之回含 `from_cache`（复用首扫之果）。复用 ⇒ 其 `face_snapshot_at` 为**旧刻**
+   （扫面未重扫）⇒ 屏上唯书「采于 <旧刻>」⇒ **读者以为新 · 实为旧**（承 L76 源随值）。
+   治：二物俱须 —— 「采于」**并**书「复用」（⛔ 唯书其一：其一则读者不知所采之刻）。
+   一处定形：判**一处**（`paSelfJudgeRemember` 之 `from_cache` 支 · 唯取**本轮之回**）；辞**一处**（`paSelfCacheMark`）。
+   ⛔ 自造 ／ ⛔ 以未知充知：`from_cache` 缺 ⇒ null ⇒ **⛔ 冒「复用」**（照旧形 · ⛔ 添辞 · 承 §二.4「人话面 ⛔ 添字」）。
+   料唯取**本轮之回**（`from_cache`）—— `scanned` ／ `saved_wall_s` ⛔ 入字面（同上）· 其值留后端之回 · 可回指。 */
+let paSelfCacheReuse = null;   /* null ＝ 未给（⛔ 冒）｜true ＝ 复用｜false ＝ 本轮重扫 */
+function paSelfCacheMark(){
+  /* ⚠ 唯 `=== true` 出辞（⛔ 冒：未给 ／ false ／ 缺键 皆 ⛔ 出）。 */
+  return (paSelfCacheReuse === true) ? '（复用 · ⛔ 本轮重扫）' : '';
+}
+try{ window.paSelfCacheMark = paSelfCacheMark; }catch(e){}
 function paSelfTag(kind, n){
-  var at = paSelfTagAt ? (' · 检索面采于 ' + paSelfTagAt) : '';
+  var at = paSelfTagAt ? (' · 检索面采于 ' + paSelfTagAt + paSelfCacheMark()) : '';
   if(kind === 'local') return '📎 源之分标：本机素材（据 ' + ((n == null || n === '') ? '—' : n) + ' 条）' + at;
   if(kind === 'localmiss') return '📎 源之分标：本机素材（未命中）' + at;
   /* ⭐ pm_1076 §三（承 L103 形与义分 · L142 声明⟷执行须符）：本态 ⛔ 单标 ——
@@ -1659,6 +1672,7 @@ function paSelfJudgeRemember(g){
   try{
     const j = paSelfJudgeOf(g);
     paSelfTagAt = (j.snap || j.at || '');
+    paSelfCacheReuse = (g && g.from_cache === true) ? true : ((g && g.from_cache === false) ? false : null);   /* ⭐ pm_1557 §二.2：复用之判 —— **一处**（⛔ 各渲点各判）· 料唯取本轮之回 · ⛔ 自造（缺键 ⇒ null ⇒ ⛔ 冒） */
     paSelfAskStat.lastJudge = (g && typeof g.judge === 'object' && g.judge) ? g.judge : null;
     paSelfAskStat.lastArchiveHits = (g && Array.isArray(g.archive_hits)) ? g.archive_hits : null;
     paSelfAskStat.lastAnswerSource = (g && g.answer_source) ? String(g.answer_source) : '';
@@ -1835,6 +1849,7 @@ function paPermRender(){
     const inp = document.getElementById('input');
     const text = inp ? String(inp.value || '').trim() : '';
     paSelfTagAt = '';   /* ⭐ pm_1067 §三 ⒝：采样刻**一轮一清**（⛔ 跨轮串刻 · 承 L76） */
+    paSelfCacheReuse = null;   /* ⭐ pm_1557 §二.3：复用之标同为一轮一清（⛔ 跨轮串标 · 承 L76） */
     paSelfRoundPersisted = false;   /* ⭐ pm_1111 §二：落盘闸同为一轮一清（见 §六·六 paSelfLocalRecord） */
     /* ⭐ 误判可退（pm_1002 §三 补②）：句首「检索：」／「@ask」⇒ 强制走正常 /v9/pa/ask（⛔ 硬吞） */
     const fo = paSelfForce(text);
@@ -2567,6 +2582,7 @@ function paSelfFailText(s){
     if(!m){ const r = await orig.apply(this, arguments); paSelfRefusalStatePass(); return r; }
     if(!paSelfMarks){ try{ await paSelfMarksLoad(); }catch(e){} }
     paSelfTagAt = '';   /* ⭐ 元问之刻已由「源：本会话 <刻>」行担 ⇒ ⛔ 分标再挂采样刻（免二处各表一刻） */
+    paSelfCacheReuse = null;   /* ⭐ pm_1557 §二.3：元问不挂采样刻 ⇒ 复用之标同不挂（一轮一清） */
     const r = render(m);
     try{ paSetState('done', '元问已回答（后端会话路）', 'POST /v9/pa/ask'); }catch(e){}
     try{ addMsg('assistant', r.u, false, paSelfSayHtml(r.u, r.e), undefined); }catch(e){}
