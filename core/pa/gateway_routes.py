@@ -1151,23 +1151,33 @@ def _first_run_readout():
          "据": u"「缺」列 %d 项" % len(out["缺"])},
     ]
     _org, _ws, _vr = False, None, None
+    _wssrc, _vsrc = u"未核", u"未核"
     try:
         from core.lib import paths as _P
         _org, _ws, _vr = bool(_P.org_enabled()), _P.ws_root(), _P.vault_root()
+        # ⭐ pm_1502 §一.3：「源」须**同源**（唯自 `core/lib/paths.py` 之 src 器出 · ⛔ 二处各判）
+        _wssrc = _P.ws_root_src()[1]
+        _vsrc = _P.vault_root_src()[1]
     except Exception as _e:
         out["缺"].append({"项": u"面之源（三键）", "因": u"%s: %s" % (type(_e).__name__, str(_e)[:120])})
+    # ⭐ pm_1502 §一.3 ／ §一.4：每键增「源」（env ／ 配置 ／ 内置空库）⇒ 今 ／ 义 二形须合。
     out["面之源"] = {
-        "口径": u"「面之数」由三键定 —— 缺则面减（照实 · ⛔ 静默）",
+        "口径": u"「面之数」由三键定 —— 缺则面减（照实 · ⛔ 静默）· 每键附「源」（今之值所自出）",
         "键": [
             {"键": "PA_ORG_FACES",
              "义": u"组织版开关（功能级 · 默认关）—— 开 ⇒ 并入组织面；关 ⇒ 唯产品面「死件账」",
-             "今": (u"开" if _org else u"关（默认）")},
+             "今": (u"开" if _org else u"关（默认）"),
+             "源": u"env:PA_ORG_FACES（功能级开关 · 默认关）"},
             {"键": "PA_WS_ROOT",
              "义": u"工作区根（产品级）—— 组织面之根；缺 ⇒ 组织面 ⛔ 入表",
-             "今": (_ws or u"未接")},
+             "今": (_ws or u"未接"),
+             "源": _wssrc},
             {"键": "PA_VAULT_DIR",
-             "义": u"知识库根（用户自选；亦可指配置 paths.vault_root）—— 缺 ⇒ 显「未接（选目录）」",
-             "今": (str(_vr) if _vr else u"未接")},
+             "义": u"知识库根（用户自选；亦可指配置 paths.vault_root；皆无 ⇒ 用内置空库 "
+                   u"<data_root>/kb）—— 唯四序皆无 ⇒ 显「未接（选目录）」；内置空库在 ⇒"
+                   u"「今」为其径 ∧ 「源」明书其自内置空库（⛔ 混同「未接」）",
+             "今": (str(_vr) if _vr else u"未接"),
+             "源": _vsrc},
         ],
     }
     return out

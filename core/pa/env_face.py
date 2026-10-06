@@ -30,7 +30,7 @@ import threading
 import time
 from pathlib import Path
 
-from core.lib.paths import org_path, vault_root
+from core.lib.paths import org_path, vault_root, vault_root_src
 from core.pa import _proc as _proc   # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
 
 ENV_VERSION = "2026-10-05.3"
@@ -136,16 +136,11 @@ def resolve_paths():
     p, s = {}, {}
     p["repo"] = str(REPO_ROOT)
     s["repo"] = "__file__ 推（parents[2]）"
-    try:
-        _vr = vault_root()
-        if _vr is None:
-            raise ValueError("无可解析之真源")
-        p["vault"] = str(_vr)
-        s["vault"] = "core/lib/paths.py:vault_root()"
-    except Exception as e:
-        p["vault"], s["vault"] = None, (
-            "未接（选目录）：env PA_VAULT_DIR ∨ 配置 paths.vault_root ∨ 内置 <data_root>/kb 皆无（%s）"
-            % type(e).__name__)
+    # ⭐ pm_1502 §一.3：**同源** —— 「源」唯自 `paths.vault_root_src()` 出（⛔ 二处各判）；
+    #   首启之「面之源」取同一物 ⇒ 两处之「源」恒同。
+    _vr, _vsrc = vault_root_src()
+    p["vault"] = str(_vr) if _vr is not None else None
+    s["vault"] = _vsrc
     try:
         from core.lib.config_helper import get_data_root
 

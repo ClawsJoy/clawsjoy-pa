@@ -53,10 +53,20 @@ def org_path(env_name):
     return v or None
 
 
+def ws_root_src():
+    """工作区根之**值 ＋ 源**（一处定形 · 承 pm_1502 §一.3）—— ⛔ 二处各判。
+
+    返回 ``(值|None, 源)``；源 ∈ {``env:PA_WS_ROOT``, ``未接：…``}。
+    """
+    v = (os.environ.get("PA_WS_ROOT", "") or "").strip()
+    if v:
+        return v, "env:PA_WS_ROOT"
+    return None, "未接：env PA_WS_ROOT 缺（⛔ 字面兜底）"
+
+
 def ws_root():
     """工作区根（**产品级**）—— env ``PA_WS_ROOT`` ⇒ 缺 ⇒ ``None``（⛔ 字面兜底）。"""
-    v = (os.environ.get("PA_WS_ROOT", "") or "").strip()
-    return v or None
+    return ws_root_src()[0]
 
 
 WSL_BROWSERS = "/mnt/d/whisper_cache/ms-playwright"
@@ -116,19 +126,32 @@ def vault_root():
     全无 ⇒ **None**（＝「**未接（选目录）**」· 承四态之一处定形 · ⛔ 崩 · ⛔ 静默用字面默认）。
     ⚠ 调用方须自辨 ``None``（⛔ ``str(vault_root())`` —— 那得 ``"None"`` ＝ 假径）。
     """
+    return vault_root_src()[0]
+
+
+def vault_root_src():
+    """库根之**值 ＋ 源**（一处定形 · 承 pm_1502 §一.3）—— ⛔ 二处各判。
+
+    返回 ``(Path|None, 源)``；源 ∈ {``env:PA_VAULT_DIR``, ``配置:paths.vault_root``,
+    ``内置空库（本机默认 · 空）``, ``末选:PA_VAULT_LEGACY``, ``未接（选目录）：…皆无``}。
+
+    ⚠ 「源」为**唯此一处**所判 ⇒ `env_face.resolve_paths()` 之 `paths_src.vault`
+      与首启「面之源」之「源」**恒同**（承 pm_1502 §一.3「同源 · ⛔ 二处各判」）。
+    """
     env = os.environ.get("PA_VAULT_DIR")
     if env:
-        return Path(env)
+        return Path(env), "env:PA_VAULT_DIR"
     cfg = _config_vault_root()
     if cfg:
-        return Path(cfg)
+        return Path(cfg), "配置:paths.vault_root"
     builtin = _builtin_kb()
     if builtin:
-        return Path(builtin)
+        return Path(builtin), "内置空库（本机默认 · 空）"
     legacy = org_path("PA_VAULT_LEGACY")   # 末选（旧机兼容）—— 组织版关（默认）⇒ None
     if legacy and os.path.isdir(legacy):
-        return Path(legacy)
-    return None
+        return Path(legacy), "末选:PA_VAULT_LEGACY"
+    return None, ("未接（选目录）：env PA_VAULT_DIR ∨ 配置 paths.vault_root ∨ "
+                  "内置 <data_root>/kb 皆无")
 
 
 # ===== 件名长度守护（2026-09-28 落 · 承「命名无上限」逮 ＋ 对端回件 §五）=====
