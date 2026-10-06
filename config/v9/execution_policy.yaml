@@ -67,7 +67,7 @@ obsidian:
   enabled: true
   # 2026-09-28(成对改): vault_path 降为**说明** —— 真源 = core/lib/paths.py:vault_root()
   #   （PA_VAULT_DIR → 实探测 → 平台默认）。⛔ 改这里不改变行为。
-  vault_path: "D:/Obsidian/ClawsJoy/ClawsJoy"   # 仅供参考 · ⛔ 非真源
+  vault_path: "<用户自选知识库目录>"   # 占位（承 pm_1409 §二.2）· 仅供参考 · ⛔ 非真源
   exclude_dirs: ["_冷区", "_垃圾箱", ".obsidian", "Templates"]   # 检索排除面(CEO 2026-09-28 ⑧ 终裁)
   reviews_dir: "聊天区/复盘"   # 批198: 按《第二大脑分类规范 v2》目标目录（此前仍写顶层 Reviews ⇒ 迁移回退、972 份堆积）
   sops_dir: "工作区/SOPs/SOPs"   # 2026-09-28: 真件目录(vault 根无 SOPs/ ⇒ 3 键曾 4/4 断链)
