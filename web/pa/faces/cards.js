@@ -268,9 +268,12 @@ async function paWriteDecide(id, action, card){
   addLog(action==='reject'?'👤 已拒绝写入':(action==='always'?'👤 已确认写入（一直允许本场景）':'👤 已确认写入（仅本次）'),
          action==='reject'?'warn':'ok', true);
   try{
+    /* ⭐ pm_1465 §二.1（说一用一）：`model` ⇒ **用户所选**（**一处出** `paModelSel` · ⛔ 硬编字面）。 */
+    const _wb={user_id:curUser(),session_id:activeThread().id,
+        approve_write:{id:id,action:action},messages:window.__paSendMessages||[]};
+    const _wm=paModelSel(); if(_wm) _wb.model=_wm;
     const r=await fetch(API+'/v9/agent/chat',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:curUser(),session_id:activeThread().id,model:'deepseek-v4-flash',
-        approve_write:{id:id,action:action},messages:window.__paSendMessages||[]})});
+      body:JSON.stringify(_wb)});
     const d=await r.json().catch(function(){ return {}; });
     if(d.status==='write_confirmed'){
       const ok=!!(d.tool_result&&d.tool_result.success);

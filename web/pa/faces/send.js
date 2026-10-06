@@ -106,6 +106,9 @@ async function sendPA(text, t, meta){
        `origin` ／ `grounded` ／ `answer_source`（后端 `/v9/pa/dialog` 已认 `origin` 之键）。
        ⚠ 知其实方传（闸判有据 ⇒ grounded）；未知 ⇒ **不发键** ⇒ 后端落其默认 `model`（⛔ 前端冒真）。 */
     const _b = {user_id:curUser(), session_id:t.id, text:text, topic:null};
+    /* ⭐ pm_1465 §二.1（说一用一）：本轮之模型 ⇒ **取用户所选**（自后端之表出 · `paModelSel` **一处出**）
+       ⇒ ⛔ 硬编字面；⛔ 在表（表 ⛔ 得 ／ 值非实名）⇒ **⛔ 带此键** ⇒ 后端落会话档 ∨ 默认。 */
+    const _mdl = paModelSel(); if(_mdl) _b.model = _mdl;
     if(meta && typeof meta==='object'){
       if(meta.origin) _b.origin = String(meta.origin);
       if(meta.grounded===true || meta.grounded===false) _b.grounded = meta.grounded;
@@ -157,8 +160,12 @@ async function sendAgent(t, userText){
   try{
     paSetState('model', '已提交，等待模型返回');   // 批159：请求发出 → 首个事件之前 = 等待模型
     paRunSrc='POST /v9/agent/chat';   /* 裁③：真源标识 */
+    /* ⭐ pm_1465 §二.1：`model` ⇒ **用户所选**（**一处出** `paModelSel`）—— ⛔ 硬编 `deepseek-v4-flash`
+       （旧硬编 ＝ 别名 ⇒ 与屏之实名**二形** ＝ 违「说一用一」· 承 pm_1447 §二.2 之正名）。 */
+    const _ab = {user_id:curUser(), session_id:t.id, messages:msgs, stream:true};
+    const _am = paModelSel(); if(_am) _ab.model = _am;
     const resp = await fetch(API+'/v9/agent/chat', {method:'POST', headers:{'Content-Type':'application/json'}, signal:abortCtrl.signal,
-      body: JSON.stringify({user_id:curUser(), session_id:t.id, model:'deepseek-v4-flash', messages:msgs, stream:true})});
+      body: JSON.stringify(_ab)});
     let d; const ct = resp.headers.get('content-type')||'';
     if(ct.includes('text/event-stream')) d = await readSSE(resp); else d = await resp.json();
     /* 批189 · #6：后端单活动 run ⇒ busy 要有中性文案（不是「失败」）*/
