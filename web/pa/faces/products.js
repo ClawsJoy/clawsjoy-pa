@@ -241,7 +241,10 @@ async function exportDeckThumbs(btn){
      （含盘符 ＋ 用户名）⇒ 净机必败。真源 ＝ 后端**一处出径** GET /v9/pa/env 之 `paths.render`
      （core/pa/env_face.py:157-174）＋ `paths_src.render`。取不到时二分（承 pm_1346 §二.1
      「身分不同者 ⛔ 同支」）：① 后端未应答 ⇒ `PA_GAP.down` ② 应答在而键为 null ⇒ `PA_GAP.todo`
-     （附后端之为何）。⛔ 静默 ／ ⛔ 以字面径兜底（承 pm_1367 §二.1）。 */
+     （附后端之为何）。⛔ 静默 ／ ⛔ 以字面径兜底（承 pm_1367 §二.1）。
+     ⭐ 径之消费者之界（承 pm_1423 §二.3）：本面为径之**唯一**消费者（器取 · 唯本档取 env 之 `paths`）
+     ⇒ **今形合法**（单一消费者 ⇒ 无漂之险）；⭐ 若他面亦取径（消费者 ≥ `2`）⇒ 须立 `window.PA_PATHS`
+     （一处出 · 承 `PA_STAMP`）—— 闸 ＝ `tests/unit/test_pa_paths_single_consumer.py`。 */
   let base='', baseSrc='', baseGap='';
   try{
     const _r=await fetch(API+'/v9/pa/env',{cache:'no-store'});
