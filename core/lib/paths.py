@@ -16,7 +16,8 @@
 
 ⚠ 2026-10-06（承 pm_1387 §二.2 之裁）：vault 之**真源之序**已改 ——
   env ``PA_VAULT_DIR`` ⇒ 配置 ``paths.vault_root`` ⇒ 内置 ``<data_root>/kb``
-  ⇒ **末选**旧机探测（``WSL_VAULT`` ／ ``WIN_VAULT``）⇒ **None**（＝「未接（选目录）」）。
+  ⇒ **末选**：旧机之探测 —— ⚠ **⛔ 字面**（承 pm_1399 §二.3）：唯 env ``PA_VAULT_LEGACY``
+  ∧ **组织版开**（``org_enabled()`` · 默认 **关**）方取 ⇒ 否则 **None**（＝「未接（选目录）」）。
   ⛔ 再用 ``D:\\Obsidian\\...`` 作**字面默认** —— 那会把「未接」伪装成「已接」
   （在**净机**上指向**他人机器**之径 ⇒ 同「净机必败」之族）。
 """
@@ -24,11 +25,40 @@ import os
 import tempfile
 from pathlib import Path
 
-# ⚠ **末选**之旧机探测字面（2026-10-06 承 pm_1387 §二.2 之裁：⛔ 作**默认**）
-#   唯 ``is_dir()`` 命中方用（＝ 本机确有此 vault）；净机 ⇒ 皆不命中 ⇒ vault_root() 返 None
-#   ⇒ 面显「未接（选目录）」。真源之序见 vault_root() 之 docstring。
-WSL_VAULT = "/mnt/d/Obsidian/ClawsJoy/ClawsJoy"
-WIN_VAULT = "D:\\Obsidian\\ClawsJoy\\ClawsJoy"
+# ⭐⭐⭐ 承 pm_1399 §二.3 ／ §三.2（批一）：**组织版之功能级开关** ＋ 组织物之径之**唯一出口**。
+#   ⚠ 病（逐字）：旧为**字面**（`/mnt/d/Obsidian/...` ／ `D:\paseo-home\...`）⇒
+#     ⠐ **净机必败**（指向他人机器之径）⠐ 且「未接」被伪装成「已接」⇒ ⛔ 入交付物（承 pm_1387 §二.3）。
+#   ⇒ 今唯 env 出径；**默认 ⛔ 装**（关闭 ⇒ 其径逻辑 ⛔ 执行 ⇒ 面显「未接（组织版）」）。
+ORG_ENV = "PA_ORG_FACES"
+ORG_ON_VALUES = ("1", "true", "yes", "on")
+
+
+def org_enabled():
+    """组织版之**功能级**开关（env ``PA_ORG_FACES``）—— 默认 **关**。
+
+    关 ⇒ 凡「组织专用」之面 ／ 器 **⛔ 执行其径逻辑**（其根径 ⛔ 被读 ∧ ⛔ 被 walk）
+    ⇒ 显「未接（组织版）」（⛔ 崩 · ⛔ 静默兜底）。
+    """
+    return (os.environ.get(ORG_ENV, "") or "").strip().lower() in ORG_ON_VALUES
+
+
+def org_path(env_name):
+    """组织物之径之**唯一出口**（env ⇒ 缺 ⇒ ``None``）—— ⛔ 字面 · ⛔ 兜底（承 pm_1399 §二.3）。
+
+    唯 ``org_enabled()`` 为真时取值 ⇒ 默认 **关** ⇒ ``None``（其径逻辑 ⛔ 执行）。
+    """
+    if not org_enabled():
+        return None
+    v = (os.environ.get(env_name, "") or "").strip()
+    return v or None
+
+
+def ws_root():
+    """工作区根（**产品级**）—— env ``PA_WS_ROOT`` ⇒ 缺 ⇒ ``None``（⛔ 字面兜底）。"""
+    v = (os.environ.get("PA_WS_ROOT", "") or "").strip()
+    return v or None
+
+
 WSL_BROWSERS = "/mnt/d/whisper_cache/ms-playwright"
 WIN_BROWSERS = "D:\\whisper_cache\\ms-playwright"
 WSL_CMD_EXE = "/mnt/c/Windows/System32/cmd.exe"
@@ -81,7 +111,7 @@ def vault_root():
         ① 显式 env ``PA_VAULT_DIR``（最高 · 未变）
         ② 配置 ``paths.vault_root``（首启引导／设置里所选之知识库目录）
         ③ 内置空知识库 ``<data_root>/kb``（存在方用）
-        ④ **末选**：旧机之探测（``WSL_VAULT`` ／ ``WIN_VAULT``）—— 唯 ``is_dir()`` 命中才用
+        ④ **末选**：旧机之探测 —— env ``PA_VAULT_LEGACY``（⚠ 唯组织版开时取 · ⛔ 字面）
 
     全无 ⇒ **None**（＝「**未接（选目录）**」· 承四态之一处定形 · ⛔ 崩 · ⛔ 静默用字面默认）。
     ⚠ 调用方须自辨 ``None``（⛔ ``str(vault_root())`` —— 那得 ``"None"`` ＝ 假径）。
@@ -95,8 +125,8 @@ def vault_root():
     builtin = _builtin_kb()
     if builtin:
         return Path(builtin)
-    legacy = _first_existing(WSL_VAULT, WIN_VAULT)   # 末选（旧机兼容 · ⛔ 作默认）
-    if legacy:
+    legacy = org_path("PA_VAULT_LEGACY")   # 末选（旧机兼容）—— 组织版关（默认）⇒ None
+    if legacy and os.path.isdir(legacy):
         return Path(legacy)
     return None
 
