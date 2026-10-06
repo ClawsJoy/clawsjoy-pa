@@ -1216,13 +1216,26 @@ function paSelfGateSay(g){
   return {ok:false, refuse:false, note:PA_GATE_NODATA};
 }
 try{ window.paSelfFactFamily = paSelfFactFamily; window.paSelfGateSay = paSelfGateSay; }catch(e){}
-function paSelfModelAssertForbidden(q, a){
-  if(paSelfFactYN(q)) return true;                                    /* 判据（结构）：本机事实族之是非问 */
-  const _q = String(q == null ? '' : q);
-  if(!PA_FACT_MARK.test(_q)) return false;                           /* ⛔ 非本机事实族 ⇒ ⛔ 以词形独断（承「以形判必漏」） */
-  return PA_DENY_WORD.test(String(a == null ? '' : a));              /* 旁证（词形）· 仅于本机事实族之问内作旁证 */
+/* ⭐ pm_1531 §一.3（裁 · 合成 · 一处定形）：本体**收窄为「唯判辞」** —— 去旧 ⓜ（`paSelfFactYN` 之
+   先闸）／ⓝ（`PA_FACT_MARK` 之短接）**二死轴**（我 `1528` 一手：其唯调用点之前提 `fbf` 必 ¬族
+   ⇒ 二轴恒短接 ⇒ 「拦」之实 ＝ ∅）⇒ **判辞者唯此一处 ／ 判「何时问之」在调用处**
+   （调用处带 `paSelfFactFamily(q) && …` · 承「一处定形 ⊕ 二源必漂」）。
+   ⚠ 改名之由：旧名含轴判 ⇒ 与新义（唯判辞）不符 ⇒ 存之即「声明⟷执行之患」。
+   ⚠ 旧导出 `window.paSelfModelAssertForbidden` 之消费者 ＝ **0**（全扫 `web\**` ／ `core\**` ／
+     `scripts\**` ／ `config\**` ／ `tests\**` · 唯本件定义 ／ 导出 ／ 调用各 `1`）⇒ 本件去其导出
+     （⛔ 留别名：别名 ＝ 或「另立一体＝二源」或「一名二义」）⇒ 报 pm；若裁「留」⇒ 一行可回。 */
+function paSelfModelAssertDenied(a){
+  return PA_DENY_WORD.test(String(a == null ? '' : a));              /* 唯判辞（⛔ 族外独断 —— 前提在调用处 · 承 pm_1531 §一.1） */
 }
-try{ window.paSelfFactYN = paSelfFactYN; window.paSelfModelAssertForbidden = paSelfModelAssertForbidden; }catch(e){}
+try{ window.paSelfFactYN = paSelfFactYN; }catch(e){}
+/* ⭐ pm_1531 §二.4（可退之形 · 报 pm 候核）：本条之判**由词形出**（`PA_DENY_WORD` ⇒ 量之限已明书于
+   pm_1531 §一.1）⇒ 一时之开关：置 `false` ⇒ 本条即退（答照旧）· ⛔ 改他处。 */
+const PA_SELF_ASSERT_GUARD = true;
+/* ⭐ pm_1531 §一.2（裁 · 合成）：**显形之果**之逐字（有据轮之模型断言 ⇒ 拦而 ⛔ 显其断）。
+   ⛔ 用 `_canon`：其义为「本机无据」⇒ 于有据之轮 ＝ 以一不实易一不实（承「不实之辞入屏」）。
+   其义含三：ⓘ 本机已得据 ⓙ 模型对本机作了断言 ⇒ 已拦 ⓚ ⛔ 采信。
+   ⛔ 新态名之字面（承 `_cw_dbl1.py` 首注之界 · 复扫须持平 `106`）。 */
+const PA_SELF_ASSERT_SAY = '⚠ 本条已拦：模型对本机之断言 ⛔ 采信 —— 本机已得据（见下「本机素材」）；其辞或与据相抵 ⇒ 唯以本机之据为准（原辞入注记 · 人可核）。';
 function paSelfEvidText(s){
   const m = String(s == null ? '' : s).match(/（判据[^）]*）/);
   return m ? m[0] : '';
@@ -2218,7 +2231,10 @@ function paSelfFailText(s){
           const _arcF = paSelfArchiveText(fbf);
           /* ⭐ pm 21:20 §二.处1/处3：闸已拒 ∧ 无本机据 ⇒ ⛔ 引模型对本机事实之断言。
              ⛔ 以词形为唯一之闸；canonical 拒答文之真源 ＝ send.js 之 `PA_REFUSE_CANON`（⛔ 二处各写）。 */
-          const _forbid = paSelfModelAssertForbidden(fbf.q, raw);
+          /* ⭐ pm_1531 §一.3：本体收窄为「唯判辞」⇒ 前提（族）由**调用处**给（一处定形）。
+             ⚠ 本处（无据之支 · `fbf`）之 `fbf.q` 必 ¬族（`:2094` 之族判已早返）⇒ 本守之值**恒假**
+               ⇒ 下行 `_canon` 支恒⛔达（结构性 · 我 `1528` 一手）；⛔ 删（另报 · 候 pm 裁）。 */
+          const _forbid = paSelfFactFamily(fbf.q) && paSelfModelAssertDenied(raw);
           /* ⭐ pm 1184 §一.⒜：canonical 引**后端** `fbf.refusal_canon`（真源）；本件之 `PA_REFUSE_CANON` 唯**回落**。 */
           const _canon = (typeof paRefusalCanon === 'function') ? paRefusalCanon(fbf)
             : ((typeof PA_REFUSE_CANON === 'string') ? PA_REFUSE_CANON : '⚠ 拒答文缺（⛔ 静默）');
@@ -2248,12 +2264,18 @@ function paSelfFailText(s){
           try{ paSelfLocalRecord(paSelfLastUser, au); }catch(e){}   /* ⭐ pm_1111 §二：本地作答（本机素材未命中）亦须落盘 */
           return emit.call(this, 'assistant', au, skipStore, paSelfSayHtml(au, a.e + (ev ? ('\n原读数：' + ev) : '')), tid);
         }
+          /* ⭐ pm_1531 §一（裁 · 合成）：有据轮之守 —— 触发**取窄**（族 ∧ 词形命中；判辞唯
+             `paSelfModelAssertDenied` · 「何时问之」在此处）⇒ 命中 ⇒ 以**显形之果**（`PA_SELF_ASSERT_SAY`）
+             易其断言；⛔ 用 `_canon`（其义为「本机无据」⇒ 于有据之轮 ＝ 以一不实易一不实）。
+             ⚠ 贴据照旧（`b.u` ／ `b.e` 仍渲）· ⚠ 原辞入注记（人可核 · 承 pm_1531 §一.2）。 */
         if(gateInfo){
           const g = gateInfo; gateInfo = null;
           const b = paSelfEvidBlock(g);
           const tag = paSelfTag(g.n > 0 ? 'local' : 'model', g.n);
-          const full = tag + '\n' + wa(raw) + '\n\n' + b.u;
-          return emit.call(this, 'assistant', full, skipStore, say(full, b.e), tid);
+          const _sa = PA_SELF_ASSERT_GUARD && paSelfFactFamily(paSelfLastUser) && paSelfModelAssertDenied(raw);
+          const full = tag + '\n' + (_sa ? PA_SELF_ASSERT_SAY : wa(raw)) + '\n\n' + b.u;
+          return emit.call(this, 'assistant', full, skipStore,
+            say(full, b.e + (_sa ? ('\n⚠ 模型之辞（本条已拦 · ⛔ 采信 · 承 pm_1531 §一.2）：' + raw) : '')), tid);
         }
         /* ⭐ pm 22:34 §一.E ／ §四（CW 办「拒答话术」）＋ 承 pm 21:20 §二.处3 ＋ ⭐ pm 1184 §三：
            ⛔ 载入**后端 ／ 模型之拒答原辞**（「查不到（知识库里没有相关内容）」＝**「知识库」之辞** ——

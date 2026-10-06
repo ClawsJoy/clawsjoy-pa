@@ -221,3 +221,118 @@ def test_k9_guard_axis_is_fact_family():
     assert fam[0] != yn[0], u"⛔ 无齿（二轴同值 ⇒ 挖了还能过）"
     # 反控：是非问（族内）⇒ 二轴同真（故其非「守之轴改」之反例）
     assert fam[1] is True and yn[1] is True
+
+
+# ---------------------------------------------------------------- K10 收窄之守（pm_1531 §一 ／ §二）
+SCRATCH_B = ROOT / "data" / "tmp" / "_cw_1531"
+
+
+def _js_assert() -> str:
+    u"""pm_1531 之真源（⛔ 复制）：唯判辞之本体 ／ 开关 ／ 显形之果 ／ 触发之逐字 ／ 有据轮之渲之逐字。"""
+    sd = _read(SD)
+    m_fact = re.search(r"const PA_FACT_MARK = .*?;", sd)
+    m_deny = re.search(r"const PA_DENY_WORD = .*?;", sd)
+    m_grd = re.search(r"const PA_SELF_ASSERT_GUARD = .*?;", sd)
+    m_say = re.search(r"const PA_SELF_ASSERT_SAY = .*?;", sd)
+    m_sa = re.search(r"^ *const _sa = .*?;", sd, re.M)
+    m_ful = re.search(r"^ *const full = tag \+ '\\n' \+ \(_sa \? .*?;", sd, re.M)
+    for nm, m in ((u"PA_FACT_MARK", m_fact), (u"PA_DENY_WORD", m_deny),
+                  (u"PA_SELF_ASSERT_GUARD", m_grd), (u"PA_SELF_ASSERT_SAY", m_say),
+                  (u"const _sa = …", m_sa), (u"const full = tag+…", m_ful)):
+        assert m, u"未找到 " + nm
+    decls = "\n".join(m.group(0) for m in (m_fact, m_deny, m_grd, m_say)).replace(
+        u"const PA_SELF_ASSERT_GUARD = true;", u"let PA_SELF_ASSERT_GUARD = true;")
+    sa_line = m_sa.group(0).strip()
+    ful_line = m_ful.group(0).strip()
+    cases = json.dumps([
+        {"q": u"台账里有哪些项目？", "raw": u"已完成。"},
+        {"q": u"你好，今天天气怎么样？", "raw": u"已完成。"},
+        {"q": u"台账里有哪些项目？", "raw": u"据本机素材：见下。"},
+        {"q": u"台账里有哪些项目？", "raw": None},
+    ], ensure_ascii=False)
+    return (decls + "\n" + _fn(sd, "paSelfFactFamily") + "\n" + _fn(sd, "paSelfModelAssertDenied") + "\n"
+            + u"const CASES = " + cases + ";\n"
+            + u"function saOf(paSelfLastUser, raw){\n  " + sa_line + u"\n  return _sa; }\n"
+            + u"function saOff(paSelfLastUser, raw){ PA_SELF_ASSERT_GUARD = false;\n  " + sa_line
+            + u"\n  PA_SELF_ASSERT_GUARD = true; return _sa; }\n"
+            + u"function screenOf(q, raw){\n  const paSelfLastUser = q;\n"
+            + u"  const tag = " + json.dumps(u"【本机素材（据 3 条）】", ensure_ascii=False) + ";\n"
+            + u"  const wa = function(s){ return s; };\n"
+            + u"  const b = {u: " + json.dumps(u"本机素材（据 3 条）：台账.md ／ 决策.md", ensure_ascii=False) + "};\n"
+            + u"  const _sa = saOf(paSelfLastUser, raw);\n  " + ful_line + u"\n  return full; }\n"
+            + u"const o = {sa: [], off: [], screen: '', screen_plain: ''};\n"
+            + u"for(const c of CASES) o.sa.push(saOf(c.q, c.raw));\n"
+            + u"o.off = CASES.map(function(c){ return saOff(c.q, c.raw); });\n"
+            + u"o.screen = screenOf(CASES[0].q, CASES[0].raw);\n"
+            + u"o.screen_plain = screenOf(CASES[1].q, CASES[1].raw);\n"
+            + u"console.log(JSON.stringify(o));\n")
+
+
+def _run_node_assert() -> dict:
+    SCRATCH_B.mkdir(parents=True, exist_ok=True)
+    f = SCRATCH_B / "assert_gate.js"
+    io.open(str(f), "wb").write(_js_assert().encode("utf-8"))
+    r = subprocess.run(["node", str(f)], capture_output=True, text=True, encoding="utf-8")
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+OUTB = _run_node_assert()
+
+
+def test_k10_body_is_word_only():
+    u"""pm_1531 §一.3：本体**收窄为「唯判辞」** —— ⛔ 轴判（旧 ⒜／⒝ 二死轴）／ ⛔ 旧名 ／ 判辞之施仍一处。
+
+    ⚠ 扫**代码形**（⛔ 裸名）：本件之明书之注须引旧名 ／ `_canon` ⇒ 裸计数自伤（假红）。
+    """
+    sd = _read(SD)
+    assert sd.count("function paSelfModelAssertDenied(a){") == 1
+    for bad in (u"function paSelfModelAssertForbidden(", u"window.paSelfModelAssertForbidden =",
+                u"paSelfModelAssertForbidden(fbf.q"):
+        assert sd.count(bad) == 0, u"旧名之代码形仍存：" + bad
+    assert sd.count("paSelfModelAssertDenied(") == 3, u"本体 1 ＋ 调用 2（无据支 ／ 有据支）"
+    assert sd.count("PA_DENY_WORD.test(") == 1, u"判辞之施（`PA_DENY_WORD.test`）唯此一处（⛔ 二源）"
+    body = _fn(sd, "paSelfModelAssertDenied")
+    assert u"function paSelfModelAssertDenied(a){" in body, u"签名唯（a）⇒ ⛔ 问之参（前提在调用处）"
+    assert "PA_DENY_WORD.test(" in body
+    assert "PA_FACT_MARK" not in body and "paSelfFactYN" not in body, u"本体唯判辞（⛔ 轴）"
+    assert sd.count("PA_SELF_ASSERT_GUARD") == 2, u"开关之读者唯「定义 ＋ 触发」二处"
+    assert sd.count("const PA_SELF_ASSERT_GUARD = true;") == 1
+
+
+def test_k10_narrow_trigger_and_screen():
+    u"""pm_1531 §一：触发**取窄**（族 ∧ 词形命中）⇒ 以**显形之果**易断言（⛔ `_canon`）。§二.2 正控 ＋ 三反控。"""
+    o = OUTB
+    assert o["sa"][0] is True, u"正控：族 ∧ 有据 ∧ 答含 deny 辞 ⇒ 触发"
+    assert o["sa"][1] is False, u"反控一：非族 ⇒ ⛔ 触发（答照显）"
+    assert o["sa"][2] is False, u"反控二：族 ∧ 有据 ∧ 答 ⛔ 含辞 ⇒ ⛔ 触发"
+    assert o["sa"][3] is False, u"边界：辞 ⛔ 给（null）⇒ ⛔ 触发（⛔ 崩）"
+    scr = o["screen"]
+    assert u"已拦" in scr, u"正控：屏须显「已拦」之字"
+    assert u"本机已得据" in scr and u"⛔ 采信" in scr, u"显形之果须含三义（已得据 ／ 已拦 ／ ⛔ 采信）"
+    assert u"本机无据" not in scr, u"反控三：有据之轮 ⛔ 显「本机无据」（⛔ `_canon`）"
+    assert u"据 3 条" in scr, u"贴据照旧（「据 N 条」仍在屏）"
+    assert u"已完成。" in o["screen_plain"], u"反控一之屏：非族 ⇒ 模型之辞照显"
+    assert o["off"][0] is False, u"可退之形（§二.4）：开关 false ⇒ 本守不触"
+    assert any(a != b for a, b in zip(o["sa"], o["off"])), u"⛔ 无齿（开关无损 ⇒ 可退之形不立）"
+
+
+def test_k10_gateinfo_branch_has_no_canon():
+    u"""结构：有据轮之支（`gateInfo`）⛔ 引 `_canon`（其义为「本机无据」⇒ 以一不实易一不实）。"""
+    sd = _read(SD)
+    assert sd.count("if(gateInfo){") == 1
+    i = sd.index("if(gateInfo){")
+    d, j = 0, i
+    while j < len(sd):
+        if sd[j] == "{":
+            d += 1
+        elif sd[j] == "}":
+            d -= 1
+            if d == 0:
+                break
+        j += 1
+    blk = sd[i:j + 1]
+    assert "_canon" not in blk, u"`gateInfo` 支 ⛔ 引 `_canon`"
+    assert "PA_SELF_ASSERT_SAY" in blk and "_sa" in blk
+    assert "paSelfFactFamily(paSelfLastUser)" in blk and "paSelfModelAssertDenied(raw)" in blk
+    assert "paSelfModelAssertForbidden(" not in sd
