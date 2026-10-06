@@ -45,9 +45,12 @@ PROVIDERS = {
     },
 }
 
-# single source of the default model (clearing a session override falls back here)
-DEFAULT_MODEL = {"provider": "local:ollama", "model": "qwen2.5:7b-instruct-q4_0-gpu",
-                 "thinking": None}
+# ⭐ pm_1471 §三.1（裁）：默认之**首选** provider（注册键 · 一处定形）。
+#   由 —— 老板一手「配置里我默认选择了 deepseek-v4-flash」＋ M4 走云端（**净机无 Ollama**）
+#   ⇒ 旧值 `local:ollama` 之 7B 于净机**不可达**（演示首屏之默认错）。
+#   ⚠ 模型名**唯自注册表**（`default_model_of` · ⛔ 硬编 —— 免与 `models[].id` 二处漂）；
+#     可用者优先 ＋ 显形 ⇒ 见 `default_route()`。
+DEFAULT_PROVIDER = "remote:deepseek"
 
 # route label: LLMClient provider => local / remote (PM 034 Sec-3 b)
 PROVIDER_KIND = {"ollama": "local", "deepseek": "remote", "glm": "remote", "anthropic": "remote"}
@@ -57,8 +60,8 @@ DEFAULT_MAX_TOKENS = 1600   # ★ §二.4：临时经验值（无据）⇒ 待�
 
 
 def default_max_tokens():
-    """单源：默认 provider 之 params.max_tokens（⛔ 魔数散落）。"""
-    pid = DEFAULT_MODEL.get("provider")
+    """单源：**默认之路**之 provider 的 `params.max_tokens`（⛔ 魔数散落 · 随可用者优先）。"""
+    pid = default_route()[0].get("provider")
     v = (PROVIDERS.get(pid, {}).get("params") or {}).get("max_tokens")
     return int(v or DEFAULT_MAX_TOKENS)
 
@@ -141,6 +144,13 @@ def default_model_of(pid):
     return ms[0]["id"] if ms and ms[0].get("id") else None
 
 
+#: 默认之值（**首选** · 注册表之**实名** · 一处定形 · pm_1471 §三.1）——
+#   清除会话覆盖之回落点；⚠ 其「可用之判 ＋ 代者（显形）」见 `default_route()`（**⛔ 静默换**）。
+DEFAULT_MODEL = {"provider": DEFAULT_PROVIDER,
+                 "model": default_model_of(DEFAULT_PROVIDER),
+                 "thinking": None}
+
+
 def model_aliases():
     """别名 ⇒ 实名（自注册表 `models[].aliases` 出 · 一处定形）。"""
     out = {}
@@ -204,6 +214,11 @@ def _host_port(base_url):
 #: 可用态之辞表（**一处定形** · 逐字 · 承 pm_1464 §二.1）
 AVAIL_STATES = (u"在", u"空", u"未接", u"钥已配", u"未配钥", u"停用")
 
+#: 「**可用**」之态集（**一处定形** · pm_1471 §三.2）—— 唯此二者许为默认：
+#   本机「在」（端口通 ∧ ≥ 1 模型 · 探活之实）／ 远端「钥已配」（可发外呼）。
+#   ⛔ 「空」（通而 0 模型）／「未接」（净机无 Ollama）／「未配钥」／「停用」。
+AVAIL_OK = (AVAIL_STATES[0], AVAIL_STATES[3])
+
 
 def available_state(pid):
     u"""可用之态（**一处定形** · 逐字）⇒ `(态, 由)`。
@@ -233,6 +248,52 @@ def available_state(pid):
     if key_state(pid) == "configured":
         return AVAIL_STATES[3], u"密钥在（⛔ 本层不发外呼 ⇒ 探活未测）"
     return AVAIL_STATES[4], u"密钥 ⛔ 在（key_env=%s）" % (_p.get("key_env") or "—")
+
+
+def default_route():
+    u"""默认之路（**一处定形** · pm_1471 §三）⇒ `(route, note)`。
+
+    route ＝ `{"provider": <注册键>, "model": <实名>, "thinking": None}`；
+    note  ＝ `""` ∨ **显形之辞**（⛔ 静默换 · 承 pm_1471 §三.2）。
+
+    序（**可用者优先** · 本函数即其**唯一**处）：
+      ⒈ 首选 `DEFAULT_PROVIDER` 之默认模型（实名自注册表）——其态 ∈ `AVAIL_OK` ⇒ 用之 · note ＝ ""。
+      ⒉ 首选 ⛔ 可用 ⇒ 按 `PROVIDERS` 注册序取**首个可用**者之默认模型 ⇒ 用之 ·
+         note 明书「默认之 X 不可用 · 由 Y 代之（因 …）」。
+      ⒊ 皆 ⛔ 可用 ⇒ 回首选之默认模型（**⛔ 崩**）· note 明书「亦无可用者」。
+
+    ⚠ 「可用」之判唯 `available_state`（一处定形）⇒ 净机无 Ollama ⇒ 本机态「未接」 ⇒ 自落云端。
+    """
+    _pref = DEFAULT_PROVIDER
+    _pref_model = default_model_of(_pref)
+    _pref_st, _pref_why = available_state(_pref)
+    if _pref_model and _pref_st in AVAIL_OK:
+        return ({"provider": _pref, "model": _pref_model, "thinking": None}, "")
+    _pref_label = (PROVIDERS.get(_pref) or {}).get("label") or _pref
+    for _pid in PROVIDERS:
+        if _pid == _pref:
+            continue
+        _m = default_model_of(_pid)
+        if not _m:
+            continue
+        _st, _why = available_state(_pid)
+        if _st in AVAIL_OK:
+            _label = (PROVIDERS.get(_pid) or {}).get("label") or _pid
+            return ({"provider": _pid, "model": _m, "thinking": None},
+                    u"默认之 %s 之 %s 不可用（因：%s）· 由 %s 之 %s 代之" % (
+                        _pref_label, _pref_model or u"—", _pref_why, _label, _m))
+    return ({"provider": _pref, "model": _pref_model, "thinking": None},
+            u"默认之 %s 之 %s 不可用（因：%s）· 亦无可用者（照实）" % (
+                _pref_label, _pref_model or u"—", _pref_why))
+
+
+def default_view():
+    u"""默认之**屏上形**（默认值 ＋ 显形之辞 · **一处定形**）——
+    `public_view()` 与 `/v9/pa/session_model` 同源（⛔ 二处各算）。"""
+    _r, _note = default_route()
+    _d = dict(_r)
+    _d["note"] = _note
+    return _d
 
 
 def models_table(prov_items):
@@ -287,7 +348,7 @@ def public_view():
             # ⭐ pm_1464 §二.1（唯加键）：可用之态 ＋ 其由（**逐字** · ⛔ 布尔）
             "可用": _av, "可用之由": _av_why,
         })
-    return {"providers": items, "default": dict(DEFAULT_MODEL),
+    return {"providers": items, "default": default_view(),
             # ⭐ pm_1464 §一（老板已准「从后端出表」）：一行一模型 · 唐 `kind` 与可用态（唯加键）
             "models_table": models_table(items),
             # ⭐ P2 ③：前端取名之**单源**（⛔ 前端硬编 · pm_1449 §二.1④）

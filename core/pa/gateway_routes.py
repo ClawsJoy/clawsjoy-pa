@@ -2514,7 +2514,7 @@ def register_pa_routes(app, brain=None):
         if request.method == "GET":
             _m, _src = session_model_of(_uid_safe(request.args.get("user_id")))
             return ok({"model": _m or "", "model_source": _src,
-                       "default": dict(_PV.DEFAULT_MODEL),
+                       "default": _PV.default_view(),
                        "known_models": list(_PV.known_models()),
                        "model_aliases": _PV.model_aliases()},
                       印=_code_sha16(pa_session_model, _PV))
