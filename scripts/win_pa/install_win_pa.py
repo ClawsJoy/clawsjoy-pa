@@ -9,8 +9,9 @@ u"""(甲′) Win-PA 一键安装器 —— 净机「装得上」（承 pm_1384 �
   ⓔ 系统动作（计划任务之注册）⛔ 缺省做 —— 须显式 --register-tasks（⛔ 提权／⛔ 默默改机）
   ⓕ 离线（承 pm_1386 §二.2）：--offline ⇒ 闸「离线包 wheel」＋ `pip install --no-index
      --find-links=<wheel>`（⛔ 现场拉网）；真装依赖须显式 --go --pip-install（⛔ 缺省动机）
-  ⓗ 库根（乙 · pm_1500 §一）：**问一次目录** ⇒ `setx PA_VAULT_DIR`（**用户级** · 与既有三键同形）
-     —— 未接 ⇒ 检索面为空 ⇒ **答由模型出**；所择之径须**在 ∧ 可写**（⛔ 静默收）。
+  ⓗ 库根（乙 · pm_1500 §一 ／ pm_1502 §一.5）：**问一次目录** ⇒ `setx PA_VAULT_DIR`（**用户级** · 与既有三键同形）
+     —— 未指定 ⇒ 用**内置空库**（本机默认 · 空）⇒ 检索面为空 ⇒ **答由模型出**（正常之貌）；
+     所择之径须**在 ∧ 可写**（⛔ 静默收）。
      ⚠ ⛔ 写死开发机之径（承洁闸之戒）；「跳过」支常在（⛔ 强制）。
      ⚠ 该键**唯新壳**方生效（起器承其父之 env）⇒ 须**关窗 · 重开**再起服。
 
@@ -281,12 +282,12 @@ def check_vault_dir(path):
 
 
 def vault_item(vault_dir=None):
-    u"""库根之逐项（乙 · pm_1500 §一）—— 未给 ⇒ 「未接」（⛔ 静默收 · 其果须明书）。"""
+    u"""库根之逐项（乙 · pm_1500 §一）—— 未给 ⇒ **用内置空库**（⛔ 「未接」· 承 pm_1502 §一.5）。"""
     it = {"item": "env", "name": VAULT_ENV, "value": None, "ok": True, "why": None,
           "current": _env_user_get(VAULT_ENV)}
     if not vault_dir:
-        it["note"] = (u"未接（选目录）：未指定 ⇒ 检索面为空 ⇒ "
-                      u"**答由模型出**（⛔ 病 · 可知之事）")
+        it["note"] = (u"未指定 ⇒ 用**内置空库**（本机默认 · 空 · 装程立其骨架）⇒ "
+                      u"检索面为空 ⇒ **答由模型出**（正常之貌）")
         return it
     _ok, _why = check_vault_dir(vault_dir)
     it["ok"], it["why"] = _ok, _why
@@ -370,8 +371,8 @@ def render_and_maybe_apply(p, dry, register_tasks=False):
         if _v.get("current"):
             lines.append(u"  （旧值：%s）" % _v["current"])
     else:
-        lines.append(u"[install] 库根：未接（选目录）⇒ 检索面为空 ⇒ "
-                     u"**答由模型出**（⛔ 病 · 可知之事）")
+        lines.append(u"[install] 库根：未指定 ⇒ 用**内置空库**（本机默认 · 空）⇒ 检索面为空 ⇒ "
+                     u"**答由模型出**（正常之貌 · ⛔ 「未接（选目录）」唯四序皆无时现）")
     lines.append(u"  ⭐ 问一次目录：--vault-dir 〈路径〉（非交互）∨ 交互时当场问 ∨ --skip-vault 跳过")
     lines.append(u"[install] 组织版（可选）三键 —— 面之数由三键定（缺则面减 · ⛔ 静默）：① PA_ORG_FACES=1（功能级开关 · 默认关）② PA_WS_ROOT=〈工作区根〉 ③ PA_VAULT_DIR=〈知识库根〉 ⇒ 首启引导（GET /v9/pa/first_run · 键「面之源」）逐条显其「今」")
     if dry:
@@ -463,8 +464,10 @@ def self_test():
     if not _ok_here:
         fails.append(u"反控 6：在 ∧ 可写之径竟判「⛔ 可用」（%s）" % _why_here)
     _vi = vault_item(None)
-    if _vi.get("value") is not None or u"未接" not in (_vi.get("note") or u""):
-        fails.append(u"反控 6：跳过支未明书「未接」")
+    if _vi.get("value") is not None or u"内置空库" not in (_vi.get("note") or u""):
+        fails.append(u"反控 6：跳过支未明书「内置空库」")
+    if u"未接" in (_vi.get("note") or u""):
+        fails.append(u"反控 6：跳过支误书「未接」（内置空库在 ⇒ ⛔「未接」· 承 pm_1502 §一.5）")
     _vb = vault_item(os.path.join(ROOT, "___nope___"))
     if _vb.get("ok") or _vb.get("value") is not None:
         fails.append(u"反控 6：⛔ 在之径竟入将设之值（⛔ 静默收）")
