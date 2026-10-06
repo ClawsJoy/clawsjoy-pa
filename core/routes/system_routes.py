@@ -11,6 +11,9 @@
 
 from flask import Blueprint, Response, jsonify, request
 
+# ⭐ 版号之「一处定形」（承 pm_1384 §三.5）—— ⛔ 本档再书字面（旧字面 ⇒ 拔）
+from core.lib.version import __version__
+
 try:
     from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 except ImportError:  # pragma: no cover
@@ -28,7 +31,7 @@ def health():
     from core.lib.hardware_probe import hardware_probe
     return jsonify({
         "status": "healthy" if startup_manager.ready else "starting",
-        "version": "6.0.0",
+        "version": __version__,
         "startup": startup_manager.status(),
         "hardware": hardware_probe.report(),
     })

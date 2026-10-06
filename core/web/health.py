@@ -5,6 +5,9 @@
 
 from flask import Blueprint, jsonify, send_from_directory
 
+# ⭐ 版号之「一处定形」（承 pm_1384 §三.5）—— ⛔ 本档再书字面（旧字面 ⇒ 拔）
+from core.lib.version import SERVICE_NAME, __version__
+
 health_bp = Blueprint("health", __name__)
 
 
@@ -17,7 +20,7 @@ def favicon():
 @health_bp.route("/")
 def index():
     """首页：服务状态"""
-    return jsonify({"service": "ClawsJoy Gateway", "version": "6.0.0"})
+    return jsonify({"service": SERVICE_NAME, "version": __version__})
 
 
 @health_bp.route("/web")

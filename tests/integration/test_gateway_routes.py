@@ -12,6 +12,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from agent_gateway_enhanced import app
 
+# ⭐ 版号之「一处定形」（承 pm_1384 §三.5）—— 判据打在真源上（⛔ pin 字面）
+from core.lib.version import __version__
+
 
 def _client():
     app.config["TESTING"] = True
@@ -25,7 +28,7 @@ def test_health():
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["status"] in ("healthy", "starting")
-    assert data["version"] == "6.0.0"
+    assert data["version"] == __version__
     assert "startup" in data
     assert "hardware" in data
 

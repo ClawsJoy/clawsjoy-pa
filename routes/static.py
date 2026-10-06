@@ -9,6 +9,9 @@ from flask import Blueprint, current_app, jsonify, send_from_directory
 
 from core.gateway import _proc as _proc  # ⭐ 子进程唯一出口（窗隐）
 
+# ⭐ 版号之「一处定形」（承 pm_1384 §三.5）—— ⛔ 本档再书字面（旧字面 ⇒ 拔）
+from core.lib.version import SERVICE_NAME, __version__
+
 bp = Blueprint("static_routes", __name__)
 
 
@@ -114,4 +117,4 @@ for panel in [
 
 @bp.route("/")
 def index():
-    return jsonify({"service": "ClawsJoy Gateway", "version": "6.0.0"})
+    return jsonify({"service": SERVICE_NAME, "version": __version__})
