@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import datetime
 import hashlib
 import io
 import json
@@ -269,6 +270,34 @@ def _sha256(path):
     return h.hexdigest()
 
 
+def _git_out(args, cwd):
+    u"""git 之一行（**只读** · ⛔ 起停 · 失败 ⇒ `None`）—— 一处定形（pm_1573 §二）。"""
+    try:
+        r = subprocess.run(["git", "-C", cwd] + list(args), capture_output=True,
+                           text=True, encoding="utf-8", errors="replace")
+    except Exception:
+        return None
+    if r.returncode != 0:
+        return None
+    return (r.stdout or "").strip() or None
+
+
+def source_stamp(root=None, now=None):
+    u"""**源之印**（一处定形 · pm_1573 §二）：册须自证其出处 ⇒ `commit` ／ `tree` ／ `刻`。
+
+    由（PM 1573 §二.1 · 我一手）：旧册唯四键（`version` ／ `依之表` ／ `件之表` ／ `口径`）
+      ⇒ 「此包出于何源」**唯靠回件可回指** ⇒ 包 **⛔ 自证**（承「入库 ＝ 快照 ⛔ 品质之证」）。
+    ⚠ 主库（`master`）之对件 **⛔ 入册**：本器于**副本**跑 ∧ ⛔ 知主库之径
+      （硬编码本机径 ＝ 新病 · 承「⛔ 硬编码本机径」）⇒ **明书**之（回件报其 `sha` · 承 PM 1573 §二.2「∨ 明书」）。
+    """
+    root = root or ROOT
+    commit = _git_out(["rev-parse", "HEAD"], root)
+    tree = _git_out(["rev-parse", "HEAD^{tree}"], root)
+    branch = _git_out(["rev-parse", "--abbrev-ref", "HEAD"], root)
+    stamp = now or datetime.datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
+    return {"commit": commit, "tree": tree, "分支": branch, "刻": stamp,
+            "明书": u"唯副本之源：主库（master）之对件 sha 由回件明书（器 ⛔ 知主库之径）"}
+
 def plan_bundle(root=None, out=None):
     root = root or ROOT
     out = out or os.path.join(root, "dist", "client_v1")
@@ -277,6 +306,7 @@ def plan_bundle(root=None, out=None):
     excluded = excluded_payload(root)
     live = scan_live_paths(root, files)
     return {"version": VERSION, "root": root, "out": out, "dists": dists,
+            "源": source_stamp(root),
             "payload_files": files, "payload_bytes": sum(
                 os.path.getsize(os.path.join(root, f.replace("/", os.sep))) for f in files),
             "wheel_dir": os.path.join(out, "wheel"),
@@ -295,6 +325,7 @@ def check_bundle(path):
         r["依缺"] = missing_wheels(os.path.join(path, "wheel"), required_dists())
         return r
     j = json.loads(io.open(man, encoding="utf-8").read())
+    r["源"] = j.get("源")
     r["依缺"] = missing_wheels(os.path.join(path, "wheel"), [d for d in j.get("依之表", [])])
     seen = set()
     for f in j.get("件之表", []):
@@ -325,6 +356,12 @@ def download_cmd(wheel_dir, reqs_path, python=None):
             "-r", reqs_path] + list(BUILD_DEPS)
 
 
+def manifest_for(entries, dists, src):
+    u"""册之形（**一处出** · pm_1573 §二）—— 唯此一处拼册（⛔ 各点各拼 ⇒ 免「二源必漂」）。"""
+    return {"version": VERSION, "源": dict(src), "依之表": list(dists),
+            "件之表": list(entries),
+            "口径": u"离线包：wheel\\ 之依全 ∧ 运行子集之 sha256；⛔ 含模型（须另下）"}
+
 def apply_bundle(root=None, out=None, wheel=True, json_out=False):
     u"""真做（⚠ 须**网**）—— ⓐ `pip download` 入 `wheel\\` ⓑ 复运行子集 ⓒ 写册（逐件 sha256）。
     ⛔ 起停 ／ ⛔ 改本仓（唯写 `out`）。"""
@@ -351,6 +388,11 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
         for x in p["ig_payload"][:20]:
             lines.append(u"  · %s" % x)
         return 2, lines
+
+    if not (p["源"].get("commit") and p["源"].get("tree")):
+        lines.append(u"[bundle] ⛔ 源之印 ⛔ 得判（git ⛔ 用 ∨ 非仓 ∨ HEAD 无）⇒ 止"
+                     u"（包须自证其出处 · 承 pm_1573 §二）")
+        return 2, lines
     os.makedirs(p["wheel_dir"], exist_ok=True)
     if wheel:
         cmd = download_cmd(p["wheel_dir"], os.path.join(p["root"], "requirements-runtime.txt"))
@@ -371,8 +413,7 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False):
         with io.open(src, "rb") as a, io.open(dst, "wb") as b:
             b.write(a.read())
         entries.append({"rel": rel, "sha256": _sha256(dst), "bytes": os.path.getsize(dst)})
-    man = {"version": VERSION, "依之表": p["dists"], "件之表": entries,
-           "口径": u"离线包：wheel\\ 之依全 ∧ 运行子集之 sha256；⛔ 含模型（须另下）"}
+    man = manifest_for(entries, p["dists"], p["源"])
     io.open(os.path.join(p["out"], "bundle_manifest.json"), "w", encoding="utf-8", newline="").write(
         json.dumps(man, ensure_ascii=False, indent=1))
     lines.append(u"[bundle] 立毕：件 %d ｜ 依 %d ｜ 册 bundle_manifest.json" % (len(entries), len(p["dists"])))
@@ -475,6 +516,17 @@ def self_test():
     say("core/keep.py" in _pf, u"反控：寻常之件 ⛔ 误剔（⛔ 假红）")
     say(excluded_payload(ex) == ["config/memory/memory_optimization.yaml", "config/secrets.yaml"],
         u"正控：剔何物之逐条报（逐件可见 · ⛔ 静默）")
+    # ⭐ pm_1573 §二：册须载「源」（`commit` ／ `tree` ／ `刻`）⇒ 齿（正控 ／ 反控）
+    _st = source_stamp(ROOT)
+    say(len(_st.get("commit") or "") == 40 and len(_st.get("tree") or "") == 40,
+        u"正控：源之印须得（`commit` ／ `tree` 各 40 hex —— 册须自证其出处 · pm_1573 §二）")
+    say(bool(re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{4}$", _st.get("刻") or "")),
+        u"正控：刻之形（含时区 ⇒ 可回指）")
+    _man = manifest_for([{"rel": "a.py", "sha256": "0" * 64, "bytes": 1}], ["flask"], _st)
+    say(_man["源"]["commit"] == _st["commit"] and _man["件之表"] and _man["依之表"],
+        u"正控：册之形（唯 `manifest_for` 一处出 · 含源）")
+    say(source_stamp(os.path.join(t, "norepo"))["commit"] is None,
+        u"反控：⛔ 非仓 ⇒ `commit` `None`（fail-loud 之据 · ⛔ 假印）")
     n, tt = sum(1 for c in hits if c), len(hits)
     print(u"=== 离线包器自测 %d/%d 通过（%s）===" % (n, tt, u"rc=0" if n == tt else u"rc=2"))
     return 0 if n == tt else 2
@@ -527,6 +579,9 @@ def main(argv):
                 u"⛔ 得判（git ⛔ 用 ∨ 非仓）" if _ig is None else u"%d 件" % len(_ig)))
             for x in (_ig or [])[:12]:
                 print(u"    ⊘ %s" % x)
+            _s = p["源"]
+            print(u"  源（pm_1573 §二）：commit %s ／ tree %s ／ 分支 %s ／ 刻 %s"
+                  % (_s.get("commit"), _s.get("tree"), _s.get("分支"), _s.get("刻")))
             print(u"  将动：① pip download -d %s -r requirements-runtime.txt ② 复运行子集 ③ 写册" % p["wheel_dir"])
         return 0
     rc, lines = apply_bundle(a.root, p["out"], wheel=True, json_out=a.json)

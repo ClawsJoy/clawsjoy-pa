@@ -10,6 +10,9 @@ u"""客户端**离线包**（`scripts/win_pa/make_client_bundle.py` ＋ 安装�
   ⒊ **三源同轴**（二源必漂 ⇒ 钉之）：`requirements.txt` 之必需节 ≡ `requirements-runtime.txt` ≡
      `make_client_bundle.required_dists()` ≡ `preflight_start.REQUIRED_DEPS`。
   ⒋ **安装器之 `--offline` 闸有齿**：空 wheel ⇒ 判红 ＋ 点名 ＋ **修之门**（⛔ 静默）／全轮 ⇒ 过。
+  ⒌ **下载之 argv 须含构建依**（`setuptools` ／ `wheel`）：⛔ 在 ⇒ sdist 之离线装必败。
+  ⒍ **册之「源」键**（pm_1573 §二）：`commit` ／ `tree` ／ `刻` 须得（包须自证其出处）；
+     ⛔ 非仓 ⇒ `commit` `None`（fail-loud 之据 · ⛔ 假印）。
 """
 import ast
 import io
@@ -147,3 +150,19 @@ def test_洁闸零红_本仓之运行子集():
     if (ROOT / "core" / "lib" / "dependency_graph.json").is_file():
         assert "core/lib/dependency_graph.json" in MB._payload_walk(str(ROOT)), \
             u"反控（有齿）：该件确在走查之内 ⇒ 剔表正生效力（⛔ 空判）"
+
+
+
+def test_册之源键(tmp_path):
+    u"""承 ⒍（pm_1573 §二）：册须载「源」（`commit` ／ `tree` ／ `刻`）⇒ 包自证其出处 · ⛔ 唯靠回件。"""
+    src = MB.source_stamp(str(ROOT))
+    assert re.match(r"^[0-9a-f]{40}$", src["commit"] or ""), src
+    assert re.match(r"^[0-9a-f]{40}$", src["tree"] or ""), src
+    assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{4}$", src["刻"] or ""), src
+    assert u"唯副本之源" in src["明书"], src
+    man = MB.manifest_for([{"rel": "a.py", "sha256": "0" * 64, "bytes": 1}], ["flask"], src)
+    assert man["源"]["commit"] == src["commit"] and man["源"]["tree"] == src["tree"]
+    assert man["version"] == MB.VERSION and man["件之表"] and man["依之表"] == ["flask"], man
+    # 反控：⛔ 非仓 ⇒ 源之印 ⛔ 得判（⛔ 假印 —— apply 遇之则止）
+    assert MB.source_stamp(str(tmp_path / "norepo"))["commit"] is None
+
