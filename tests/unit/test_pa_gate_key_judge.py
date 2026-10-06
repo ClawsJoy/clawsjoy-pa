@@ -16,6 +16,9 @@ u"""pm_1492 §二 · Fork-2 改依键之测（承 pm_1490 §二 · pm_1491 §二
   K7 齿：旧式（`paSelfRefusal` 之词形）vs 新式（键）喂**同一对** ⇒ 果**必不同**
      （即：挖掉键之判而回词形 ⇒ 旧病立现 —— ⛔ 挖了还能过）
   K8 不回归：`paSelfRefusal` 之本体**仍在**（`send.js` 之 `paRefusalStale` 尚倚之 ⇒ ⛔ 删）
+  K9 pm_1524 §一.2（裁一 · 红线）：**该守之轴 ⇒ 改依 `paSelfFactFamily`** —— ⛔ 旧 `paSelfFactYN`
+     （族 ∧ **是非问**）⇒ 非是非问之事实族问（「台账里有哪些项目？」）落回落 ⇒ **题文出机**。
+     齿：该问 ⇒ `paSelfFactFamily` 真 ∧ `paSelfFactYN` 假 ⇒ **二轴必分**（挖掉本改 ⇒ 旧病立现）。
 
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_gate_key_judge.py -q
@@ -68,9 +71,12 @@ def _js() -> str:
     assert m, "PA_FACT_MARK 未找到"
     m2 = re.search(r"const PA_GATE_NODATA = .*?;", sd)
     assert m2, "PA_GATE_NODATA 未找到"
-    return (m.group(0) + "\n" + m2.group(0) + "\n"
+    m3 = re.search(r"const PA_STATE_ASK = .*?;", sd)
+    m4 = re.search(r"const PA_YN_MARK = .*?;", sd)
+    assert m3 and m4, u"是非问之二字表未找到"
+    return (m.group(0) + "\n" + m2.group(0) + "\n" + m3.group(0) + "\n" + m4.group(0) + "\n"
             + _fn(sd, "paSelfFactFamily") + "\n" + _fn(sd, "paSelfGateSay") + "\n"
-            + _fn(sd, "paSelfRefusal") + "\n")
+            + _fn(sd, "paSelfFactYN") + "\n" + _fn(sd, "paSelfRefusal") + "\n")
 
 
 def _run_node() -> dict:
@@ -90,8 +96,9 @@ def _run_node() -> dict:
               {},
               None,
           ], ensure_ascii=False) + ";\n"
-          + u"const o = {fam: [], gate: [], old_vs_new: []};\n"
+          + u"const o = {fam: [], yn: [], gate: [], old_vs_new: []};\n"
           + u"for(const c of CASES) o.fam.push(paSelfFactFamily(c.q));\n"
+          + u"for(const c of CASES) o.yn.push(paSelfFactYN(c.q));\n"
           + u"for(const g of GATES) o.gate.push(paSelfGateSay(g));\n"
           + u"for(const p of [['查不到。', {gate:{display:'model'}}],"
             u" ['已完成。', {gate:{display:'refuse'}}], ['随便答一句。', {gate:{display:'model'}}]]){\n"
@@ -195,3 +202,22 @@ def test_k7_teeth_wordform_vs_key_diverge():
         u"raw「已完成。」∧ 键 display=refuse ⇒ 旧判⛔拒 ／ 新判拒（必分）"
     assert rows[2]["old"] is False and rows[2]["neu"] is False
     assert any(r["old"] != r["neu"] for r in rows), u"⛔ 无齿（二式果同 ⇒ 挖了还能过）"
+
+
+# ---------------------------------------------------------------- K9 守之轴（pm_1524 §一.2）
+def test_k9_guard_axis_is_fact_family():
+    u"""pm_1524 §一.2（裁一 · 红线）：本守（`selfdesc.js` 保拒答支）之轴 ⇒ **唯 `paSelfFactFamily`**。
+
+    病（我 `1523 §三` 一手）：旧轴 `paSelfFactYN`（族 ∧ 是非问）⇒ 「台账里有哪些项目？」（非是非问）
+      ⇒ 支 ⛔ 取 ⇒ 回落模型 ⇒ **题文出机** ⇒ 而屏仍显 canonical 拒答 ⇒ 二事并立 ＝ 红线。
+    """
+    sd = _read(SD)
+    assert u"if(paSelfFactFamily(lastQ)){" in sd, u"本守之轴须为 `paSelfFactFamily`"
+    assert u"if(paSelfFactYN(lastQ)){" not in sd, u"⛔ 留旧轴（二轴并存 ⇒ 二源必漂）"
+    # 齿（行为 · node 真跑）：该问 ⇒ 二轴**必分** ⇒ 用于守则果别
+    fam, yn = OUT["fam"], OUT["yn"]
+    assert fam[0] is True, u"「台账里有哪些项目？」⇒ 本机事实族（含非是非问）"
+    assert yn[0] is False, u"同一问 ∧ 旧轴（是非问）⇒ 假 ⇒ 二轴必分（此即出机之因）"
+    assert fam[0] != yn[0], u"⛔ 无齿（二轴同值 ⇒ 挖了还能过）"
+    # 反控：是非问（族内）⇒ 二轴同真（故其非「守之轴改」之反例）
+    assert fam[1] is True and yn[1] is True

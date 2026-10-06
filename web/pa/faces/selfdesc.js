@@ -2084,9 +2084,15 @@ function paSelfFailText(s){
                  ⒝ 该答由**后端**写档（`dialog.py` 之 `s.post("assistant", reply)`）⇒ **档无标**（承 §二.处2）；
                  ⒞ 保 `refused=true` ⇒ 共用件 send.js 之闸支就地出 canonical 拒答
                     ＋ 经 `recordPaTurn`（POST /v9/pa/turn）落盘 ⇒ **档带标**（承 L83 单源出口）。
-               ⚠ 非「事实／状态／账／决策」之族（闲聊 ／ 商量 ／ 域外知识）**仍回落**（pm_1032 §三.1 之令未废）。 */
-            if(paSelfFactYN(lastQ)){
-              try{ paSelfAskBump('miss', lastQ, '本机事实族之是非问 ∧ 无据 ⇒ 保拒答 ⛔ 回落（承 pm 21:20 §三）'); }catch(e){}
+               ⚠ 非「事实／状态／账／决策」之族（闲聊 ／ 商量 ／ 域外知识）**仍回落**（pm_1032 §三.1 之令未废）。
+               ⭐⭐ pm_1524 §一.2（裁一 · 红线之即办 · 一处定形）：本守之轴 ⇒ **改依 `paSelfFactFamily(lastQ)`**
+                 （＝ `PA_FACT_MARK` · **与后端之 `fact_family` 同轴**）—— ⛔ 旧用 `paSelfFactYN`（族 ∧ **是非问**）
+                 ⇒ **非是非问之事实族问**（如「台账里有哪些项目？」）落回落 ⇒ **题文出机**（我 `1523 §三` 一手之逮）
+                 ⇒ 而屏仍显 canonical 拒答 ⇒ 「屏上拒答」∧「题外已出机」二事并立 ＝ 红线（承「说一用一」）。
+                 ⚠ 二轴之别（⛔ 一名蔽二事）：`paSelfFactFamily` ＝ 「本机事实族」（含非是非问）／
+                   `paSelfFactYN` ＝ 「族 ∧ 是非问」（更窄 · 另二读者：`:1220` 断言之先闸 · `:1937` 路由之判）。 */
+            if(paSelfFactFamily(lastQ)){
+              try{ paSelfAskBump('miss', lastQ, '本机事实族 ∧ 无据 ⇒ 保拒答 ⛔ 回落（承 pm 21:20 §三 · 轴依 pm_1524 §一.2）'); }catch(e){}
               paSelfLbl = null; paSelfFb = null;
               return g;
             }
