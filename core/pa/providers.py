@@ -193,6 +193,21 @@ def src_label(route):
                            route.get("model") or "?")
 
 
+def route_kind(route):
+    u"""走径之 `kind`（`local` ／ `remote`）—— **一处定形**（与 `src_label` 同源 `PROVIDER_KIND`）。
+
+    承 pm_1460 §一（裁）：回执**必给** `kind` ——
+      由：前端「出机」之标（红线 · 「本轮经云端 · 内容将出机」）
+      **唯** `kind ∈ 远端集` 时上屏 ⇒ `kind` ⛔ 给 ⇒ 标 ⛔ 上
+      ⇒ **红线恰于 M4 演示（走云端）时失效**。
+    戒：⛔ 以 `model` 名反推（那是「猜」 · 承「⛔ 前端猜」之族）—— 真源唯 `provider`。
+    未识之 provider ⇒ `"unknown"`（同 `src_label` 之形 ⇒ 前端二集皆不中 ⇒ 照实显「kind 未给」）。
+    """
+    if not isinstance(route, dict) or not route.get("provider"):
+        return ""
+    return PROVIDER_KIND.get(str(route.get("provider")), "unknown")
+
+
 # ---- fallback human note (PM 037 §A.2 ／ 034 §六) ----
 # 回落 ⛔ 说成「正常」：用户面须为**人话**；reason 码仍随 route 上屏（可机检）。
 FALLBACK_HUMAN = {"no_api_key": "未配置密钥",

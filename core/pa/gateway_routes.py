@@ -1941,9 +1941,19 @@ def register_pa_routes(app, brain=None):
         }
         # ⭐ PM 034 §三.ⓝ ／ 037 §A.2：走径标取自**后端实况**（⛔ 前端自说）；
         # 回落 ⇒ 人话（⛔ 说成「正常」）。
-        from core.pa.providers import src_label as _src_label, fallback_note as _fallback_note
+        from core.pa.providers import (src_label as _src_label,
+                                       fallback_note as _fallback_note,
+                                       route_kind as _route_kind)
 
         _route = dict(getattr(_brain, "last_route", None) or {}) if _brain else {}
+        # ⭐ pm_1460 §一（裁）：**回执必给 `kind`**（`local` ／ `remote` ·
+        #   一处定形 ＝ `providers.route_kind` · 与 `src_label` 同源 `PROVIDER_KIND`
+        #   · ⛔ 前端猜 ／ ⛔ 由 `model` 名反推）。
+        #   由：前端「出机」之标（红线）唯 `kind ∈ 远端集` 时上屏
+        #   ⇒ 无 `kind` ⇒ **红线恰于演示（走云端）时失效**。
+        #   唯加键（⛔ 改既有字段之语义）；空 route（⛔ 走模型）⇒ 自不加。
+        if _route:
+            _route["kind"] = _route_kind(_route)
         # ⭐ 057 §一：成本轴（器取 · 唯加键 ⇒ ⛔ 改既有字段之语义）。
         #   ⒜ wall_s 墙钟 ⒝ bytes 入／出分列 ⒞ tokens 模型径（无 ⇒ None）⒟ money 外呼花费。
         #   ⭐ 对内对外分轴（PA-5：⛔ 对用户按 token 计费）⇒ 本轴属**内部成本闸**，用户面由前端择取。
