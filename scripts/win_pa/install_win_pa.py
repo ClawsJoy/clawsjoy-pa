@@ -256,6 +256,7 @@ def render_and_maybe_apply(p, dry, register_tasks=False):
             lines.append(u"  %-26s %s" % (t["name"], u"在（no-op）" if t["registered"] else u"不在（将注册）"))
     else:
         lines.append(u"[install] 计划任务：⛔ 本器 ⛔ 注册（**系统动作** ⇒ 须显式 --register-tasks；缺省 ⛔ 改机）")
+    lines.append(u"[install] 组织版（可选）三键 —— 面之数由三键定（缺则面减 · ⛔ 静默）：① PA_ORG_FACES=1（功能级开关 · 默认关）② PA_WS_ROOT=〈工作区根〉 ③ PA_VAULT_DIR=〈知识库根〉 ⇒ 首启引导（GET /v9/pa/first_run · 键「面之源」）逐条显其「今」")
     if dry:
         lines.append(u"[install] 干跑（⛔ 未动）—— --go 方真立目录")
         return 0, lines
