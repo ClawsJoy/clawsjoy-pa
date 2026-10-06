@@ -334,6 +334,9 @@
      ⒠ 果行「本机资料目录＝〈今〉」⇒ 其「＝」后附后端之「源」（唯渲 · ⛔ 自造辞）——
         使人能辨「你所选（env ／ 配置）」⟷「内置库」（pm_1513 §一 · 承 pm_1502 §一.3）；
         态 no_root ⇒ 其「源」即其由 ⇒ ⛔ 重出（唯 empty 之境有径可辨）。
+     ⒡ 选笔记目录之步（pm_1518 §一 · 契约 TD_1515 §六.1）：径 POST /v9/pa/vault/set ／ 体 {path} ／
+        回 {ok,vault_root,vault_root_src,state,at,changed} ／ 错 = 后端之 error 逐字（⛔ 自编）／
+        态唯比机器码（no_root ／ empty ⇒ 步现；ok ⇒ ⛔ 强现）。
      ⛔ 行内证：本段 ⛔ 载绝对径 ／ ⛔ 起停 ／ ⛔ 上传。 -->
 <script>
 (function(){
@@ -345,6 +348,13 @@
             '在∧可用':'本机的 AI 模型**可用**','不可达':'本机有模型服务，但**答不上来**','未核':'模型**没查成**（见其据）'};
   //: 态之判唯「面之源．键[].态」之机器码（no_root ／ empty ／ ok）—— ⛔ 比字面哨符 · ⛔ 前端自造辞
   //  （上屏之字面唯自后端之「今」／「义」出 · 承 pm_1499 §一.3 ＋ pm_1503 §一 ＋ pm_1504 §一）
+  //: 选笔记目录之步（pm_1518 §一 · 契约 TD_1515 §六.1）—— 径 ／ 体 ／ 错之字面唯取契约 · ⛔ 自拟
+  function vset(path,cb){
+    fetch(B+'/v9/pa/vault/set',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+      body:JSON.stringify({path:String(path==null?'':path)})}).then(function(r){
+      return r.json().then(function(j){return j;},function(){return null;});
+    },function(){return null;}).then(function(j){cb(j);});
+  }
   function box(d){
     var b=el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#0f172a;color:#e8eef7;border:1px solid #334155;border-radius:10px;padding:12px 14px;font:13px/1.75 system-ui,Segoe UI,Microsoft YaHei,sans-serif;box-shadow:0 8px 26px rgba(0,0,0,.35);max-height:48vh;overflow:auto');
     b.appendChild(el('div','font-weight:700;margin:0 0 6px','🔰 第一次用（只读 · 数来自本机后端）'));
@@ -370,6 +380,34 @@
     if(_vk&&_vm){
       var _vsr=(_vs==='no_root')?'':String(_vk['源']||'');
       b.appendChild(el('div','margin-top:6px;color:#fbbf24','• 本机<b>资料目录</b>＝'+esc(_vk['今'])+(_vsr?('（'+esc(_vsr)+'）'):'')+' ⇒ 检索面为空 ⇒ 问「本机自己的事」（事实 ／ 状态 ／ 账 ／ 决定）<b>一律拒答</b>；其余问题由<b>模型</b>作答 —— 若走云端 ⇒ 内容将<b>出机</b>。'));
+    }
+    if(_vk&&_vm){
+      var _vbox=el('div','margin-top:6px;border-top:1px solid #334155;padding-top:6px');
+      _vbox.appendChild(el('div','font-weight:700','• 选一个笔记目录（本机之资料面）'));
+      var _vrow=el('div','margin-top:4px');
+      var _vin=el('input','background:#0b1220;color:#e8eef7;border:1px solid #475569;border-radius:6px;padding:3px 8px;width:46%;font:13px system-ui,Segoe UI,Microsoft YaHei,sans-serif');
+      _vin.setAttribute('type','text');
+      _vin.setAttribute('placeholder','例：D 盘之某个目录（绝对径）');
+      _vrow.appendChild(_vin);
+      var _vbn=function(t){return el('button','margin-left:6px;background:#1e293b;color:#e8eef7;border:1px solid #475569;border-radius:6px;padding:2px 10px;cursor:pointer',t);};
+      var _vgo=_vbn('用此目录'),_vskip=_vbn('跳过'),_vclr=_vbn('清除（回退）');
+      _vrow.appendChild(_vgo);_vrow.appendChild(_vskip);_vrow.appendChild(_vclr);
+      _vbox.appendChild(_vrow);
+      var _vout=el('div','margin-top:4px;opacity:.85','');
+      _vbox.appendChild(_vout);
+      var _vapply=function(j){
+        if(!j){_vout.innerHTML='［没读成］';return;}
+        _vout.innerHTML = j['ok'] ? ('［'+esc(j['vault_root_src']||'')+'］') : ('［'+esc(j['error']||'')+'］');
+        if(j['ok']){
+          fetch(B+'/v9/pa/first_run',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d2){
+            if(d2&&d2.ok){ b.setAttribute('style',(b.getAttribute('style')||'')+';display:none'); box(d2); }
+          },function(){});
+        }
+      };
+      _vgo.onclick=function(){vset(_vin.value,_vapply);};
+      _vskip.onclick=function(){_vbox.setAttribute('style',(_vbox.getAttribute('style')||'')+';display:none');};
+      _vclr.onclick=function(){vset('',_vapply);};
+      b.appendChild(_vbox);
     }
     var miss=(d['缺']||[]);
     if(miss.length){
