@@ -127,6 +127,20 @@ def known_models():
     return tuple(out)
 
 
+def default_model_of(pid):
+    u"""某 provider 之默认模型**实名** ⇒ `str` ∨ `None`（注册表之**一处定形** · ⛔ 硬编模型名）。
+
+    承 pm_1468 §二.1：消费者（`core/pa/dispatch.py`）⛔ 硬编新名 ⇒ **唯自此取**；
+    注册表 ⛔ 有此 provider ∨ ⛔ 有 `isDefault` ⇒ `None`（由调用方**明报缺源** · ⛔ 静默字面兜底）。
+    """
+    pv = PROVIDERS.get(pid) or {}
+    ms = pv.get("models") or []
+    for m in ms:
+        if m.get("isDefault") and m.get("id"):
+            return m["id"]
+    return ms[0]["id"] if ms and ms[0].get("id") else None
+
+
 def model_aliases():
     """别名 ⇒ 实名（自注册表 `models[].aliases` 出 · 一处定形）。"""
     out = {}

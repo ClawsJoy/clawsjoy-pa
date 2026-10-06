@@ -17,6 +17,7 @@ from pathlib import Path
 from core.lib.paths import org_path
 from core.lib.port_config import gateway_base_url
 from core.pa import _proc as _proc   # ⭐ 窗隐唯一出口（PM 2026-10-05 令 · ⛔ 各写 creationflags）
+from core.pa.providers import default_model_of   # ⭐ pm_1468 §二.1：模型名**唯自注册表**（一处定形 · ⛔ 硬编）
 
 DEFAULT_REVIEW_RULES = [
     ("artifact", "执行结果必须有产物(文件/文本/URL), 不能空手交付"),
@@ -96,6 +97,18 @@ class StubExecutor:
                 "stage": "executed"}
 
 
+def dispatch_model():
+    u"""派件所走之模型 ⇒ 注册表之**实名**（一处定形 · ⛔ 硬编 · 承 pm_1468 §二.1）。
+
+    缺源（注册表 ⛔ 有 `remote:deepseek` ∨ ⛔ 有 `isDefault`）⇒ `RuntimeError`（明报 · ⛔ 静默字面兜底。承「缺源之态」）。
+    """
+    m = default_model_of("remote:deepseek")
+    if not m:
+        raise RuntimeError(
+            u"未接：注册表无 remote:deepseek 之默认模型（core/pa/providers.PROVIDERS）")
+    return m
+
+
 class V9GatewayExecutor:
     """真实执行: 调 live 网关 /v9/agent/chat(独立 session), 返回末条 assistant 文本。"""
 
@@ -112,9 +125,9 @@ class V9GatewayExecutor:
             {
                 "user_id": self.user_id,
                 "session_id": sid,
-                # ⭐ pm_1449 §二.4 正名：实名 ≡ `deepseek-flash`
-                #    （GET /models 之器取 · 2026-10-06）；旧名 `deepseek-v4-flash` 仍为**可通之别名**（器取实证：响应之 model 回 `deepseek-flash`）⇒ 同射程内 ⛔ 二名。
-                "model": "deepseek-flash",
+                # ⭐ pm_1449 §二.4 正名 ＋ pm_1468 §二.1「同源」：⛔ 硬编模型名
+                #    ⇒ 唯自注册表取**实名**（`dispatch_model()` ⇒ `PROVIDERS['remote:deepseek'].models[*].isDefault`）。
+                "model": dispatch_model(),
                 "messages": [{"role": "user", "content": str(contract.get("objective", ""))}],
             }
         ).encode()
