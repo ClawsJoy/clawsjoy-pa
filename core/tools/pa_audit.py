@@ -18,7 +18,7 @@ PA_AUDIT_SCHEMA = {
                 "pages": {"type": "array", "description": "preflight: 页 spec 数组(每项含 layout/data/palette 等)"},
                 "png_dir": {
                     "type": "string",
-                    "description": "postcheck: PNG 目录(如 /mnt/c/Users/flybo/Desktop/wpsai_v2_render)",
+                    "description": "postcheck: PNG 目录(如 /mnt/c/<用户>/Desktop/wpsrender)",
                 },
                 "prefix": {"type": "string", "description": "postcheck: PNG 文件名前缀(默认 ppc_P)"},
             },
