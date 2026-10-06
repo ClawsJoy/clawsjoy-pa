@@ -108,6 +108,18 @@ _ASK_CACHE_MAX = 256
 _LLM_PHASE = {"warmed": False}
 
 
+def _pa_read_at():
+    u"""**取数之刻**（一处定形 · pm_1478 §二）—— 后端算成本轮回执之刻。
+
+    ⚠ 义（⛔ 混）：**取数之刻**（就地时钟 · 本回执诸数之取时）
+      —— ⛔ **落盘之刻**（那属 `persisted.*` 之域 · 另一端）。
+    ① 名就旧：与 `/v9/pa/ask` 之 `read_at` **同名同义**（前端 `read_at || at` 之首选）。
+    ② 格式就旧：`%Y-%m-%d %H:%M:%S`（承三处旧行 · 唯此一处出）。
+    """
+    from datetime import datetime as _dt
+    return _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
 def llm_brain(system_prompt=None, model=None, max_tokens=None):
     """构造对话脑: 用 V9 LLMClient 生成 PA 回复; 失败返回 None(上层降级为模板回复)。"""
 
@@ -1137,7 +1149,7 @@ def _last_user_before(pa, question, session_id=None):
         return None, {"picked_by": None, "reason": "sessions/ 无可读会话"}
     _meta = {"picked_by": _how, "path": str(_p),
              "session_id": _p.name[len("session_"):-len(".jsonl")], "skipped_self": 0,
-             "read_at": _dt5.now().strftime("%Y-%m-%d %H:%M:%S")}
+             "read_at": _pa_read_at()}
     _last = None
     try:
         for _ln in _p.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -1988,6 +2000,9 @@ def register_pa_routes(app, brain=None):
             _activity["error"] = str(_e_act)[:200]
         return ok(
             {
+                # ⭐ pm_1478 §二：本轮之**取数刻**（回执必给 · 唯加键）——
+                #   前端走径行刻（`more.js` 探针取 `read_at || at`）之真源。
+                "read_at": _pa_read_at(),
                 "reply": reply,
                 "topic": (r.get("dialog") or {}).get("topic", ""),
                 "session_id": sid,
@@ -2135,7 +2150,7 @@ def register_pa_routes(app, brain=None):
             return err("ask 需要 question")
         _vr = vault_root()   # ⚠ 可 None（未接 · 承 pm_1387 §二.2）⇒ ⛔ str(None) 之假径
         kb = os.getenv("PA_VAULT_DIR") or (str(_vr) if _vr is not None else "")
-        _at = _dt2.now().strftime("%Y-%m-%d %H:%M:%S")
+        _at = _pa_read_at()   # ⭐ pm_1478 §二：一处定形（⛔ 二处各打时戳）
         _tk0 = time.perf_counter()   # ⭐ 058：本轮检索之起点（器取）
         # ⭐ 修①（PM 2026-10-05 · 老板实测之修）：**决策账 ⇒ 直取本机**（⛔ 回落模型）
         _dec = _ask_decision(q, p.get("user_id"), p.get("session_id"))
