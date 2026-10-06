@@ -190,13 +190,14 @@ def judge(pidfile_pid, pid_ok, port_open, health_ok, pending):
 
 def collect(root, port_default=5102):
     pidfile = os.path.join(root, 'logs', 'win_pa.pid')
-    console = os.path.join(root, 'logs', 'gateway_5102_console.log')
     try:
         sys.path.insert(0, root)
         from core.lib.port_config import gateway_port
         port = int(gateway_port())
     except Exception:
         port = port_default
+    # ⭐ pm_1453 §三.4：名随端口（旧码硬编 5102 ⇒ 端口改后名实不符）
+    console = os.path.join(root, 'logs', 'gateway_%d_console.log' % port)
     pidfile_pid = read_pid(pidfile)
     pid_ok = pid_alive(pidfile_pid)
     open_ = tcp_open(port)

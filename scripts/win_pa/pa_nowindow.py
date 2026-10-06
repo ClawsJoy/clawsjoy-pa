@@ -14,7 +14,7 @@
   3. 起法 = CREATE_NO_WINDOW | DETACHED_PROCESS | CREATE_BREAKAWAY_FROM_JOB
      (2026-10-05 061 §一.3 真脱离: 不受起者 job 连坐; 若 job 不许 breakaway 则降级并大声告警)
      (2026-10-05 062 §一: ⒜ breakaway 被拒 => 派已注册之计划任务 ⒝ 拉起(真脱离); ⒝ 回程以派遣标记认亲(免环))
-    ; stdout/stderr 追加 logs\\\\gateway_5102_console.log
+    ; stdout/stderr 追加 logs\\gateway_<端口>_console.log（名随端口 · pm_1453 §三.4）
   4. 用 python -u 起 (块缓冲会让 console 日志假零)
   5. PID 记 logs\\\\win_pa.pid (停时不靠 netstat)
   6. 起/查前 os.chdir(ROOT) -- 配置按 CWD 解析; 从别处起 ⇒ [未配置 ⇒ 拒启] (2026-10-05 事故)
@@ -33,7 +33,6 @@ PIDFILE = os.path.join(ROOT, 'logs', 'win_pa.pid')
 STOPPED = os.path.join(ROOT, 'logs', 'win_pa.stopped.json')   # ⭐ 058 §一.4：停刻之痕（起服窗以时间记）
 LIFELOG = os.path.join(ROOT, 'logs', 'win_pa_life.jsonl')
 PREFLIGHT = os.path.join(ROOT, 'scripts', 'win_pa', 'preflight_start.py')
-CONSOLE = os.path.join(ROOT, 'logs', 'gateway_5102_console.log')
 APP = 'agent_gateway_enhanced.py'
 FLAGS = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
 BREAKAWAY = getattr(subprocess, 'CREATE_BREAKAWAY_FROM_JOB', 0x01000000)   # ⭐ 061 §一.3
@@ -45,6 +44,13 @@ def gateway_port():
     sys.path.insert(0, ROOT)
     from core.lib.port_config import gateway_port as _gp
     return int(_gp())
+
+
+def console_path():
+    u"""⭐ pm_1453 §三.4：console 之名**随端口** —— 旧码硬编 `gateway_5102_console.log`
+    ⇒ 端口改后**名实不符**（本刻 `5103` 之日志仍旧名 · 老板照拄必惑）。
+    惰性（⛔ 于 import 期求端口：真源未配 ⇒ `fail-loud` 会炸 import）。"""
+    return os.path.join(ROOT, 'logs', 'gateway_%d_console.log' % gateway_port())
 
 
 def tcp_open(port, host='127.0.0.1', timeout=1.5):
@@ -256,7 +262,7 @@ def start_via_task():
             except Exception:
                 pass
         time.sleep(1.0)
-    print('[FAIL] 已派遣但 120 s 内 /health 未通 —— 查 logs' + chr(92) + 'gateway_5102_console.log')
+    print('[FAIL] 已派遣但 120 s 内 /health 未通 —— 查 logs' + chr(92) + ('gateway_%d_console.log' % _port))
     return 1
 
 
@@ -282,7 +288,7 @@ def cmd_start():
         print('[STOP] port %d already answers TCP -- not starting a second one.' % port)
         print('       first look at  paseo-pm\\\\_端口归属登记_v1.md  and agree who owns it.')
         return 2
-    lf = open(CONSOLE, 'ab', buffering=0)
+    lf = open(console_path(), 'ab', buffering=0)
     lf.write(('=== nowindow start ' + time.strftime('%Y-%m-%d %H:%M:%S') + ' ===' + chr(10)).encode('utf-8'))
     _argv = [sys.executable, '-X', 'utf8', '-u', APP]
     _kw = dict(cwd=ROOT, stdout=lf, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
@@ -301,7 +307,7 @@ def cmd_start():
     open(PIDFILE, 'w', encoding='ascii').write(str(p.pid))
     print('[OK] started pid=%d (no window) at %s  detach=%s'
           % (p.pid, time.strftime('%Y-%m-%d %H:%M:%S'), _detach))
-    print('[OK] console log: %s' % CONSOLE)
+    print('[OK] console log: %s' % console_path())
     print('[OK] boot takes ~30s; probes fail before that')
     # ⭐ 058 §一.4（裁）：起服成本以**时间**记 —— 「不可用窗」＝ 停刻 → 起刻（钱面 0 ／ 用户面 0）。
     _gap_s = None

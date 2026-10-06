@@ -8,7 +8,7 @@ r"""PM-011 · N2（2026-09-30 · CW b2a5182）：`POST /v9/pa/caliber/check` **�
       – 裸 Flask（无全局错误处理器）⇒ `text/html` · **265 B** · Werkzeug 通用页；
       – **活服务同链**（`core\lib\error_handler.py` `errorhandler(Exception)`）⇒ `application/json` · **68 B** ·
         `{"error":"Internal server error","status_code":500,"success":false}`。
-    ⭐ 内部文本（traceback）**落在服务端日志**（`logs\gateway_5102_console.log`），⛔ 不回客户端。
+    ⭐ 内部文本（traceback）**落在服务端日志**（`logs\gateway_<端口>_console.log`），⛔ 不回客户端。
     但它照样把「**你给错了形状**」说成「**服务器出错了**」—— 与含糊话术同族。
   · **加重**：改前还有**两处假绿**（形状坏，却回 `{"ok":true,"hit_count":0}`）：
     `body=[]`（JSON 数组 ⇒ `[] or {}` 吞成 `{}`）／ `pages` 是 falsy 非列表（`""`／`0` ⇒ `or []` 吞成 `[]`）。
