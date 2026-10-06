@@ -10,7 +10,7 @@ Rules (PM 034 Sec-6 / credentials-as-boolean):
 """
 import os
 
-REGISTRY_VERSION = "2026-10-06.1"   # ★ pm_1380 §一：enabled 自 env 派生（⛔ 硬编）＋ 屏上附源 ⇒ +1
+REGISTRY_VERSION = "2026-10-06.2"   # ⭐ pm_1447 §二.2：deepseek 正名 ⇒ deepseek-flash（旧名 ＝ 别名）；⭐ pm_1380 §一：enabled 自 env 派生（⛔ 硬编）＋ 屏上附源
 
 PROVIDERS = {
     "local:ollama": {
@@ -33,9 +33,11 @@ PROVIDERS = {
         "base_url": "https://api.deepseek.com", "base_url_env": "DEEPSEEK_ENDPOINT",
         "base_url_wired": False,
         "base_url_note": "P0 唯显示 · 半真（env DEEPSEEK_ENDPOINT 已接 core/lib/llm_client.py:582 ／ 注册表 base_url 未读 ⇒ 候 P2 二分）",
+        # ⭐ pm_1447 §二.2 正名：实名 ＝ `deepseek-flash`（GET /models 之实名 · 2026-10-06 器取）；
+        #    旧名 `deepseek-v4-flash` 仍为**可通之别名**（⛔ 径删 —— 屏 ／ 旧件仍引之）。
         "key_env": "DEEPSEEK_API_KEY", "command": None,
         "models": [
-            {"id": "deepseek-v4-flash", "label": "DeepSeek V4 Flash", "isDefault": True, "ctx": 65536},
+            {"id": "deepseek-flash", "label": "DeepSeek V4 Flash", "isDefault": True, "ctx": 65536},
             {"id": "deepseek-v4-pro", "label": "DeepSeek V4 Pro", "isDefault": False, "ctx": 65536},
         ],
         "params": {}, "enabled": True,   # 默认（⛔ 真源 · 真源 ＝ env CLAWSJOY_PA_PROVIDERS_DISABLED）

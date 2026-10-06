@@ -15,7 +15,7 @@ providers:
   # ⭐ 新增
   deepseek:
     endpoint: https://api.deepseek.com
-    model: deepseek-v4-flash
+    model: deepseek-flash
     api_key: ${DEEPSEEK_API_KEY}
 
   openai:
@@ -26,7 +26,7 @@ providers:
 routing:
   code: deepseek-coder:6.7b
   math: qwen2.5:7b-instruct-q4_0-gpu
-  creative: deepseek:deepseek-v4-flash    # ← 改为 DeepSeek
+  creative: deepseek:deepseek-flash    # ← 改为 DeepSeek
   simple: qwen2.5:7b-instruct-q4_0-gpu
   english: llama3.2:3b
   embedding: nomic-embed-text
