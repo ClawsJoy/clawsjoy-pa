@@ -9,6 +9,10 @@ u"""(甲′) Win-PA 一键安装器 —— 净机「装得上」（承 pm_1384 �
   ⓔ 系统动作（计划任务之注册）⛔ 缺省做 —— 须显式 --register-tasks（⛔ 提权／⛔ 默默改机）
   ⓕ 离线（承 pm_1386 §二.2）：--offline ⇒ 闸「离线包 wheel」＋ `pip install --no-index
      --find-links=<wheel>`（⛔ 现场拉网）；真装依赖须显式 --go --pip-install（⛔ 缺省动机）
+  ⓗ 库根（乙 · pm_1500 §一）：**问一次目录** ⇒ `setx PA_VAULT_DIR`（**用户级** · 与既有三键同形）
+     —— 未接 ⇒ 检索面为空 ⇒ **答由模型出**；所择之径须**在 ∧ 可写**（⛔ 静默收）。
+     ⚠ ⛔ 写死开发机之径（承洁闸之戒）；「跳过」支常在（⛔ 强制）。
+     ⚠ 该键**唯新壳**方生效（起器承其父之 env）⇒ 须**关窗 · 重开**再起服。
 
 前置闸（**显形** · 人话之因 ＋ 修之门；⛔ 静默过）：
   1. Python 版（>= 3.10 · 承 pyproject requires-python）
@@ -23,6 +27,8 @@ u"""(甲′) Win-PA 一键安装器 —— 净机「装得上」（承 pm_1384 �
   python -X utf8 scripts\\win_pa\\install_win_pa.py                          # 干跑（缺省）
   python -X utf8 scripts\\win_pa\\install_win_pa.py --go                       # 真立目录
   python -X utf8 scripts\\win_pa\\install_win_pa.py --register-tasks --go       # 并注册二任务（须提权）
+  python -X utf8 scripts\\win_pa\\install_win_pa.py --vault-dir 〈笔记目录〉 --go   # 乙：库根（用户级 setx）
+  python -X utf8 scripts\\win_pa\\install_win_pa.py --skip-vault --go          # 跳过库根
   python -X utf8 scripts\\win_pa\\install_win_pa.py --json
   python -X utf8 scripts\\win_pa\\install_win_pa.py --self-test
 退出码：0 ＝ 正常（含干跑 ／ 幂等 all no-op）｜ 2 ＝ 前置不足 ∨ 立目录失败 ｜ 3 ＝ 入口错
@@ -56,6 +62,9 @@ DEPS = ("flask", "yaml")
 PY_MIN = (3, 10)
 VRAM_MIN_MIB = 4096          # 硬闸（低于 ⇒ ⛔ 本机模型路不可用）
 VRAM_RECOMMEND_MIB = 8192    # 荐（承 pm_1382 §二.5：荐 >= 8 GB；唯 6 GB ⇒ 用小模型）
+#: ⭐ pm_1500 §一（乙）：库根（知识库目录）之 env 名 —— 与 `core.lib.paths` 同名（一处定形）。
+#: ⚠ 缺 ⇒ `vault_root()` 未接 ⇒ 面减 ⇒ 切问落回（**答由模型出**）。
+VAULT_ENV = "PA_VAULT_DIR"
 
 
 def kb_subdirs():
@@ -239,6 +248,63 @@ def _is_registered(task):
     return r.returncode == 0
 
 
+def _env_user_get(name):
+    u"""用户级 env（`HKCU\\Environment`）之现值 —— **只读**（`reg query`）。⛔ 例外外溢。"""
+    try:
+        r = subprocess.run(["reg", "query", "HKCU" + BS + "Environment", "/v", name],
+                           capture_output=True)
+    except Exception:
+        return None
+    if r.returncode != 0:
+        return None
+    try:
+        _t = (r.stdout or b"").decode("utf-8", "replace")
+    except Exception:
+        return None
+    for _ln in _t.splitlines():
+        _p = _ln.split()
+        if len(_p) >= 3 and _p[0].lower() == name.lower() and _p[1].upper().startswith("REG_"):
+            return u" ".join(_p[2:]) or None
+    return None
+
+
+def check_vault_dir(path):
+    u"""所择之径之校验（**在 ∧ 可写**）⇒ (ok, why)。⛔ 静默收（承 pm_1500 §一.1 要Ⱳ）。"""
+    p = (path or u"").strip().strip(chr(34))
+    if not p:
+        return False, u"空"
+    if not os.path.isdir(p):
+        return False, u"⛔ 在（目录 ⛔ 得）：%s" % p
+    if not os.access(p, os.W_OK):
+        return False, u"⛔ 可写：%s" % p
+    return True, u"在 ∧ 可写"
+
+
+def vault_item(vault_dir=None):
+    u"""库根之逐项（乙 · pm_1500 §一）—— 未给 ⇒ 「未接」（⛔ 静默收 · 其果须明书）。"""
+    it = {"item": "env", "name": VAULT_ENV, "value": None, "ok": True, "why": None,
+          "current": _env_user_get(VAULT_ENV)}
+    if not vault_dir:
+        it["note"] = (u"未接（选目录）：未指定 ⇒ 检索面为空 ⇒ "
+                      u"**答由模型出**（⛔ 病 · 可知之事）")
+        return it
+    _ok, _why = check_vault_dir(vault_dir)
+    it["ok"], it["why"] = _ok, _why
+    if _ok:
+        it["value"] = (vault_dir or u"").strip().strip(chr(34))
+    else:
+        it["note"] = (u"⛔ 所择之径 %s ⇒ ⛔ 设（⛔ 静默收）· "
+                      u"修 ∨ 以 `--skip-vault` 跳过" % _why)
+    return it
+
+
+def _apply_vault(value):
+    u"""设用户级 `PA_VAULT_DIR`（`setx`）⇒ (rc, line)。caller 已校验。"""
+    r = subprocess.run(["setx", VAULT_ENV, value], capture_output=True)
+    return (0 if r.returncode == 0 else 2), \
+        u"  [env] %s ⇒ %s（用户级 · rc=%s）" % (VAULT_ENV, value, r.returncode)
+
+
 def dir_items():
     u"""立目录之逐项（含内置知识库之骨架 · 名自 note 内核 · pm_1442 §二.2）。"""
     subs, _err = kb_subdirs()
@@ -266,8 +332,9 @@ def task_items():
     ]
 
 
-def plan(offline=False, wheel_dir=None):
-    return {"preflight": preflight_gates(offline, wheel_dir), "dirs": dir_items(), "tasks": task_items()}
+def plan(offline=False, wheel_dir=None, vault_dir=None):
+    return {"preflight": preflight_gates(offline, wheel_dir), "dirs": dir_items(),
+            "tasks": task_items(), "vault": vault_item(vault_dir)}
 
 
 def render_and_maybe_apply(p, dry, register_tasks=False):
@@ -281,6 +348,10 @@ def render_and_maybe_apply(p, dry, register_tasks=False):
     if bad:
         lines.append(u"[install] ⛔ 前置不足 %d 项 ⇒ **⛔ 装**（⛔ 装成可用 —— 承产品三禁）· 修之门见上" % len(bad))
         return 2, lines
+    _v = p.get("vault") or {}
+    if _v and not _v.get("ok", True):
+        lines.append(u"[install] ⛔ 库根之径不合（%s）⇒ **⛔ 装**（⛔ 静默收 —— 承 pm_1500 §一.1 要Ⱳ）" % _v.get("why"))
+        return 2, lines
     todo = [d for d in p.get("dirs", []) if not d["exists"]]
     lines.append(u"[install] 将动：立目录 %d 件（已在 %d ⇒ no-op）" % (len(todo), len(p.get("dirs", [])) - len(todo)))
     for d in p.get("dirs", []):
@@ -293,6 +364,15 @@ def render_and_maybe_apply(p, dry, register_tasks=False):
             lines.append(u"  %-26s %s" % (t["name"], u"在（no-op）" if t["registered"] else u"不在（将注册）"))
     else:
         lines.append(u"[install] 计划任务：⛔ 本器 ⛔ 注册（**系统动作** ⇒ 须显式 --register-tasks；缺省 ⛔ 改机）")
+    if _v.get("value"):
+        lines.append(u"[install] 库根：将设 %s ＝ %s（**用户级** · setx · 与既有三键同形）"
+                     % (_v["name"], _v["value"]))
+        if _v.get("current"):
+            lines.append(u"  （旧值：%s）" % _v["current"])
+    else:
+        lines.append(u"[install] 库根：未接（选目录）⇒ 检索面为空 ⇒ "
+                     u"**答由模型出**（⛔ 病 · 可知之事）")
+    lines.append(u"  ⭐ 问一次目录：--vault-dir 〈路径〉（非交互）∨ 交互时当场问 ∨ --skip-vault 跳过")
     lines.append(u"[install] 组织版（可选）三键 —— 面之数由三键定（缺则面减 · ⛔ 静默）：① PA_ORG_FACES=1（功能级开关 · 默认关）② PA_WS_ROOT=〈工作区根〉 ③ PA_VAULT_DIR=〈知识库根〉 ⇒ 首启引导（GET /v9/pa/first_run · 键「面之源」）逐条显其「今」")
     if dry:
         lines.append(u"[install] 干跑（⛔ 未动）—— --go 方真立目录")
@@ -316,6 +396,15 @@ def render_and_maybe_apply(p, dry, register_tasks=False):
             lines.append(u"  [task] %s -> rc=%s" % (t["name"], r.returncode))
             if r.returncode != 0:
                 rc = 2
+    if _v.get("value"):
+        _rc_v, _ln_v = _apply_vault(_v["value"])
+        lines.append(_ln_v)
+        if _rc_v:
+            rc = 2
+        else:
+            lines.append(u"[install] ⚠ 该键**唯新壳**方生效（起器承其父之 env）"
+                         u"⇒ **关掉本窗 · 重开一个**再起服（第四节）"
+                         u" · 撤：uninstall_win_pa.py --go")
     left = [d["path"] for d in dir_items() if not d["exists"]]
     lines.append(u"[install] 立毕：仍缺 %s ／ 后三步：① 起服 python -X utf8 scripts\\win_pa\\pa_nowindow.py start"
                  u" ② 首启引导（GET /v9/pa/first_run）③ 卸载 python -X utf8 scripts\\win_pa\\uninstall_win_pa.py --go"
@@ -366,10 +455,64 @@ def self_test():
         fails.append(u"反控 5：源含起服调用（⛔ 起停）")
     if _re.search(r"(subprocess\.run|Popen)\([^)]*(git\"|\"push)", src):
         fails.append(u"反控 5：源含平台动作（⛔ push）")
-    print(u"[self-test] %s" % (u"PASS（5 反控）" if not fails else u"FAIL"))
+    # 反控 6（pm_1500 §一 乙）：库根 —— 校（在 ∧ 可写）· 跳过支在 · ⛔ 写死开发机之径
+    _ok_bad, _ = check_vault_dir(os.path.join(ROOT, "___nope___"))
+    if _ok_bad:
+        fails.append(u"反控 6：⛔ 在之径竟判「可用」")
+    _ok_here, _why_here = check_vault_dir(ROOT)
+    if not _ok_here:
+        fails.append(u"反控 6：在 ∧ 可写之径竟判「⛔ 可用」（%s）" % _why_here)
+    _vi = vault_item(None)
+    if _vi.get("value") is not None or u"未接" not in (_vi.get("note") or u""):
+        fails.append(u"反控 6：跳过支未明书「未接」")
+    _vb = vault_item(os.path.join(ROOT, "___nope___"))
+    if _vb.get("ok") or _vb.get("value") is not None:
+        fails.append(u"反控 6：⛔ 在之径竟入将设之值（⛔ 静默收）")
+    if (_va := vault_item(ROOT)) and not _va.get("ok"):
+        fails.append(u"反控 6：真在之径竟判不合（%s）" % _va.get("why"))
+    for _dp in (u"D:" + BS + u"paseo-workspace", u"D:" + BS + u"Obsidian"):
+        if _dp in src:
+            fails.append(u"反控 6：源含开发机之径（⛔ 写死）")
+            break
+    # 反控 7：库根之早返与否 —— 干跑 ⇒ ⛔ 设（以合法值喂之）
+    _rc7, _l7 = render_and_maybe_apply({"preflight": good, "dirs": [], "tasks": [],
+                                        "vault": vault_item(ROOT)}, True)
+    if _rc7 != 0:
+        fails.append(u"反控 7：干跑 rc=%s" % _rc7)
+    if any(u"[env]" in x for x in _l7):
+        fails.append(u"反控 7：干跑竟设键（⛔ 动机）")
+    if not any(u"将设" in x for x in _l7):
+        fails.append(u"反控 7：未印「将设」")
+    _rc8, _l8 = render_and_maybe_apply({"preflight": good, "dirs": [], "tasks": [],
+                                        "vault": vault_item(os.path.join(ROOT, "___nope___"))}, True)
+    if _rc8 != 2:
+        fails.append(u"反控 7：库根之径不合 rc=%s（应 2）" % _rc8)
+    print(u"[self-test] %s" % (u"PASS（7 反控）" if not fails else u"FAIL"))
     for f in fails:
         print(u"  [FAIL] %s" % f)
     return 0 if not fails else 2
+
+
+def _resolve_vault_dir(args, dry, as_json):
+    u"""乙（pm_1500 §一）：库根之取 —— `--vault-dir` ⇒ **问一次**（唯交互 ∧ --go）⇒ 跳过。
+
+    返回 `(vault_dir ∨ None, how)`。⛔ 写死开发机之径（承洁闸之戒）· ⛔ 静默收。
+    """
+    for _i, _a in enumerate(args):
+        if _a == "--vault-dir" and _i + 1 < len(args):
+            return args[_i + 1], u"--vault-dir"
+    if "--skip-vault" in args or "--no-vault" in args:
+        return None, u"--skip-vault"
+    if dry or as_json or not sys.stdin.isatty():
+        return None, u"未问（干跑 ∨ --json ∨ 非交互）"
+    print(u"[install] 问一次：请给「笔记库目录」（把这台机器上的资料接进检索面之根）。")
+    print(u"[install]   照抄一个**已存在**的文件夹全路径（例：D:" + BS + "ClawsJoy" + BS + "笔记）。")
+    print(u"[install]   直接回车 ⇒ 跳过（⇒ 检索面为空 ⇒ 答由模型出·⛔ 病 · 可知之事）。")
+    try:
+        _ans = (input(u"[install] 笔记库目录（回车 ＝ 跳过）：") or u"").strip()
+    except Exception:
+        _ans = u""
+    return (_ans or None), (u"问一次（交互）" if _ans else u"问一次 ⇒ 跳过")
 
 
 def main(argv):
@@ -387,6 +530,7 @@ def main(argv):
     for _i, _a in enumerate(args):
         if _a == "--wheel-dir" and _i + 1 < len(args):
             wheel_dir = args[_i + 1]
+    _vault_dir, _vault_how = _resolve_vault_dir(args, dry, "--json" in args)
     if pip_install and "--json" in args:
         print(u"[install] \u26d4 --pip-install \u26d4 \u914d --json\uff08\u7eaf JSON \u987b\u4fdd\uff09")
         return 3
@@ -406,14 +550,14 @@ def main(argv):
 
         _buf = _Sink()
         with _cl.redirect_stdout(_buf):
-            p = plan(offline, wheel_dir)
+            p = plan(offline, wheel_dir, _vault_dir)
             rc, lines = render_and_maybe_apply(p, dry, register_tasks)
         _chatter = _buf.getvalue()
         print(json.dumps({"version": VERSION, "dry_run": dry, "register_tasks": register_tasks,
                           "rc": rc, "plan": p, "lines": lines, "杂记": _chatter},
                          ensure_ascii=False, indent=2))
     else:
-        p = plan(offline, wheel_dir)
+        p = plan(offline, wheel_dir, _vault_dir)
         rc, lines = render_and_maybe_apply(p, dry, register_tasks)
         for x in lines:
             print(x)
