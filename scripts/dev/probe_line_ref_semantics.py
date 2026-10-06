@@ -140,13 +140,13 @@ def _self_test():
             u"# 头\n\ndef other():        # 1:2\n    return 1\n\ndef resolve_paths():  # 5\n    return {'render': 1}\n")
         # 引处之三例：准（锚 `resolve_paths` 在段内）／疑漂（锚 `zzz_missing` ⛔ 在）／无法判（⛔ 反引号）
         io.open(os.path.join(d, "c.py"), "w", encoding="utf-8", newline="\n").write(
-            u"# 见 t.py:5 之 `resolve_paths()`\n" + u"\n" * 8 +
-            u"# 见 t.py:5 之 `zzz_missing()`\n" + u"\n" * 8 +
-            u"# 见 t.py:5（无反引号之引）\n")
+            u"# 见 t.py:%d 之 `resolve_paths()`\n" % 5 + u"\n" * 8 +
+            u"# 见 t.py:%d 之 `zzz_missing()`\n" % 5 + u"\n" * 8 +
+            u"# 见 t.py:%d（无反引号之引）\n" % 5)
         base = {"tgt": "t.py"}
-        r1 = judge_row(d, dict(base, cite="c.py", at=1, ref="t.py:5"))
-        r2 = judge_row(d, dict(base, cite="c.py", at=10, ref="t.py:5"))
-        r3 = judge_row(d, dict(base, cite="c.py", at=19, ref="t.py:5"))
+        r1 = judge_row(d, dict(base, cite="c.py", at=1, ref="t.py:%d" % 5))
+        r2 = judge_row(d, dict(base, cite="c.py", at=10, ref="t.py:%d" % 5))
+        r3 = judge_row(d, dict(base, cite="c.py", at=19, ref="t.py:%d" % 5))
         rep(u"① 正控（已知准 ⇒ 判「准」· 防器死）", r1["verdict"], V_OK)
         rep(u"② 反控（已知漂 ⇒ 判「疑漂」· 有齿）", r2["verdict"], V_DRIFT)
         rep(u"③ 无法判（⛔ 反引号 ⇒ 单列 · ⛔ 计红 ∧ ⛔ 计绿）", r3["verdict"], V_NA)
@@ -154,8 +154,10 @@ def _self_test():
         bad = [(V_OK if x["anchors"] else V_NA) for x in (r1, r2)]
         rep(u"④ 坏口径对照（唯判 S 非空 ⇒ 准 ⇒ 对已知漂**放行**）", bad, [V_OK, V_OK])
         rep(u"④b 本条 ⇒ 对已知漂**⛔ 放行**（有齿）", [r1["verdict"], r2["verdict"]], [V_OK, V_DRIFT])
-        rep(u"⑤ 锚之抽（`core/pa/roster.py:212` ⇒ `roster`）", sorted(anchors_of(u"引 `core/pa/roster.py:212` 之 `load()`")), sorted([u"roster", u"load"]))
-        rep(u"⑥ ⛔ 反引号之引 ⇒ S ＝ ∅（无据 ⇒ 判「无法判」）", sorted(anchors_of(u'引 "core/lib/paths.py:97" 而已')), [])
+        # ⚠ 夹具之「行号」以 `%d` **占位**（—— 一处字面即为本器之真引 ⇒ 必自命中·假据）
+        rep(u"⑤ 锚之抽（`core/pa/roster.py:%d` ⇒ `roster`）" % 212,
+            sorted(anchors_of(u"引 `core/pa/roster.py:%d` 之 `load()`" % 212)), sorted([u"roster", u"load"]))
+        rep(u"⑥ ⛔ 反引号之引 ⇒ S ＝ ∅（无据 ⇒ 判「无法判」）", sorted(anchors_of(u'引 "core/lib/paths.py:%d" 而已' % 97)), [])
     finally:
         shutil.rmtree(d, ignore_errors=True)
     print(u"  => self-test %s（%d/%d）" % (u"OK" if ok == tot else u"FAIL", ok, tot))
