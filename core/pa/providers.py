@@ -10,7 +10,7 @@ Rules (PM 034 Sec-6 / credentials-as-boolean):
 """
 import os
 
-REGISTRY_VERSION = "2026-10-06.2"   # ⭐ pm_1447 §二.2：deepseek 正名 ⇒ deepseek-flash（旧名 ＝ 别名）；⭐ pm_1380 §一：enabled 自 env 派生（⛔ 硬编）＋ 屏上附源
+REGISTRY_VERSION = "2026-10-06.3"   # ⭐ pm_1447 §二.2：deepseek 正名 ⇒ deepseek-flash（旧名 ＝ 别名）；⭐ pm_1380 §一：enabled 自 env 派生（⛔ 硬编）＋ 屏上附源
 
 PROVIDERS = {
     "local:ollama": {
@@ -161,6 +161,94 @@ def resolve_model(name):
     return None
 
 
+def _tcp_open(host, port, timeout=0.25):
+    u"""本机端口可达？—— **唯本机**之探（⛔ 发模型请求 · 承本模块「只读」之界）。"""
+    import socket as _sock
+    try:
+        _c = _sock.socket()
+        _c.settimeout(float(timeout))
+        try:
+            return _c.connect_ex((str(host), int(port))) == 0
+        finally:
+            _c.close()
+    except Exception:
+        return False
+
+
+def _host_port(base_url):
+    u"""`http://127.0.0.1:11434` ⇒ `('127.0.0.1', 11434)`；⛔ 解 ⇒ `(None, None)`。"""
+    from urllib.parse import urlsplit
+    try:
+        _u = urlsplit(str(base_url or ""))
+        if not _u.hostname:
+            return None, None
+        return _u.hostname, (_u.port or (443 if _u.scheme == "https" else 80))
+    except Exception:
+        return None, None
+
+
+#: 可用态之辞表（**一处定形** · 逐字 · 承 pm_1464 §二.1）
+AVAIL_STATES = (u"在", u"空", u"未接", u"钥已配", u"未配钥", u"停用")
+
+
+def available_state(pid):
+    u"""可用之态（**一处定形** · 逐字）⇒ `(态, 由)`。
+
+    值（唯 `AVAIL_STATES` 之一 · **⛔ 布尔** —— 一名蔽二态 · 承 pm_1380 §一）：
+      「在」      本机：端口通 ∧ ≥ 1 模型（**探活之实** · ⛔ 据注册表之自称）
+      「空」      本机：通而 0 模型（**空 ≠ 缺** · 承既有之律）
+      「未接」    本机：端口 ⛔ 通 ⇒ 此机 ⛔ 有此后端（**净机无 Ollama 即此态**）
+      「钥已配」  远端：钥在（⛔ 本层发外呼 ⇒ **探活未测** · 承只读之界）
+      「未配钥」  远端：钥 ⛔ 在
+      「停用」    `enabled=False`（其源见 `enabled_src`）
+    """
+    _p = PROVIDERS.get(pid) or {}
+    _en, _en_src = is_enabled(pid)
+    if not _en:
+        return AVAIL_STATES[5], str(_en_src)
+    if provider_kind(pid) == "local":
+        _h, _port = _host_port(_p.get("base_url"))
+        if not _h:
+            return AVAIL_STATES[2], u"base_url ⛔ 解 ⇒ 无据判（⛔ 断）"
+        if not _tcp_open(_h, _port):
+            return AVAIL_STATES[2], u"%s:%s ⛔ 通 ⇒ 此机 ⛔ 有此后端（净机无 Ollama 即此态）" % (_h, _port)
+        _n = len([m for m in (_p.get("models") or []) if m.get("id")])
+        if _n:
+            return AVAIL_STATES[0], u"%s:%s 通 ∧ %d 个模型" % (_h, _port, _n)
+        return AVAIL_STATES[1], u"%s:%s 通而 0 模型（空 ≠ 缺）" % (_h, _port)
+    if key_state(pid) == "configured":
+        return AVAIL_STATES[3], u"密钥在（⛔ 本层不发外呼 ⇒ 探活未测）"
+    return AVAIL_STATES[4], u"密钥 ⛔ 在（key_env=%s）" % (_p.get("key_env") or "—")
+
+
+def models_table(prov_items):
+    u"""可选模型之**表**（一行一模型 · 前端出选单之单源 · pm_1464 §一）。
+
+    **一处出**：自 `providers` 之表取（⛔ 重算 · `kind` 与 `available_state` 皆同源）
+    ⇒ 行之 `id` ≡ 注册表之实名 ≡ 回执 `route.model` ≡ `src_label` 之 model（**说一用一**）。
+    """
+    out = []
+    for _it in (prov_items or []):
+        for _m in (_it.get("models") or []):
+            if not _m.get("id"):
+                continue
+            out.append({
+                "id": _m["id"], "label": _m.get("label") or _m["id"],
+                "ctx": _m.get("ctx"), "isDefault": bool(_m.get("isDefault")),
+                "aliases": list(_m.get("aliases") or []),
+                "provider": str(_it.get("id") or "").split(":", 1)[-1],
+                "provider_id": _it.get("id"),
+                "kind": _it.get("kind"),
+                "enabled": _it.get("enabled"),
+                "enabled_src": _it.get("enabled_src"),
+                "key_env": _it.get("key_env"), "key_state": _it.get("key_state"),
+                "key_configured": _it.get("key_configured"),
+                "可用": _it.get("可用"), "可用之由": _it.get("可用之由"),
+                "来源": "core/pa/providers.py（注册表）",
+            })
+    return out
+
+
 def public_view():
     """Read-only screen view: no values, boolean only, models[] per provider."""
     items = []
@@ -168,8 +256,12 @@ def public_view():
         p = PROVIDERS[pid]
         st = key_state(pid)
         en, en_src = is_enabled(pid)
+        _av, _av_why = available_state(pid)   # ⭐ pm_1464 §二.1：可用之态（一处定形 · 逐字）
         items.append({
-            "id": p["id"], "label": p["label"], "kind": p["kind"],
+            "id": p["id"], "label": p["label"],
+            # ⭐ pm_1462 §二.1（一处定形）：旧取注册表之 `p["kind"]` 字面
+            #   ⇒ 改走 `provider_kind`（与 `route_kind` 同源）—— ⛔ 二处各算。
+            "kind": provider_kind(pid),
             "base_url": p.get("base_url", ""), "base_url_env": p.get("base_url_env") or "",
             "key_env": p.get("key_env") or "", "key_state": st,
             "key_configured": (st == "configured"),
@@ -178,18 +270,39 @@ def public_view():
             "enabled_src": en_src,
             "base_url_wired": bool(p.get("base_url_wired")),
             "base_url_note": p.get("base_url_note", ""),
+            # ⭐ pm_1464 §二.1（唯加键）：可用之态 ＋ 其由（**逐字** · ⛔ 布尔）
+            "可用": _av, "可用之由": _av_why,
         })
     return {"providers": items, "default": dict(DEFAULT_MODEL),
+            # ⭐ pm_1464 §一（老板已准「从后端出表」）：一行一模型 · 唐 `kind` 与可用态（唯加键）
+            "models_table": models_table(items),
             # ⭐ P2 ③：前端取名之**单源**（⛔ 前端硬编 · pm_1449 §二.1④）
             "known_models": list(known_models()), "model_aliases": model_aliases(),
             "registry_version": REGISTRY_VERSION, "source": "core/pa/providers.py"}
+
+
+def provider_kind(pid):
+    u"""供应商 ／ 走径之 `kind`（`local` ／ `remote`）—— **一处定形**（pm_1462 §二.1）。
+
+    真源 ＝ `PROVIDER_KIND`（short-id 之表）。`pid` 收三种形：
+      `ollama`（走径之短名 · `LLMClient` 所出）／ `local:ollama`（注册键）。
+    未收于表 ⇒ 回注册表之 `kind` 字面（⛔ 断 —— 新供应商须先入 `PROVIDER_KIND`）。
+    """
+    _s = str(pid or "").strip().rstrip(":")
+    if not _s:
+        return ""
+    _short = _s.split(":", 1)[1] if ":" in _s else _s
+    _k = PROVIDER_KIND.get(_short)
+    if _k:
+        return _k
+    return str((PROVIDERS.get(_s) or PROVIDERS.get(_short) or {}).get("kind") or "unknown")
 
 
 def src_label(route):
     """Route label: 'src: <kind>:<model>' derived from the ACTUAL route (never guessed)."""
     if not isinstance(route, dict) or not route.get("provider"):
         return ""
-    return "src: %s:%s" % (PROVIDER_KIND.get(str(route.get("provider")), "unknown"),
+    return "src: %s:%s" % (provider_kind(route.get("provider")) or "unknown",
                            route.get("model") or "?")
 
 
@@ -205,7 +318,7 @@ def route_kind(route):
     """
     if not isinstance(route, dict) or not route.get("provider"):
         return ""
-    return PROVIDER_KIND.get(str(route.get("provider")), "unknown")
+    return provider_kind(route.get("provider"))
 
 
 # ---- fallback human note (PM 037 §A.2 ／ 034 §六) ----
