@@ -240,6 +240,21 @@ async function runAgentLoop(messages) {
         return;
       }
 
+      // 批191 · 修（承 pm_1402 §三）：seed 门**失败**（entry.py:99 `status:"seed_failed"`）——
+      //   后端在 ROUND 前短路，载荷**无 `d.data`** ⇒ 若落到下方 `d.data.choices[0]` 即 TypeError。
+      //   故须先拦并**显其因**（⛔ 静默 · 承四态「缺则显因」）。
+      if (d.status === 'seed_failed') {
+        agentLog('⛔ ' + (d.message || '会话 sandbox seed 失败（查 V9_SEED_SOURCE / 磁盘）'), '#f85149');
+        return;
+      }
+
+      // seed 门「审批回执豁免」（entry.py:121 `status:"approval_exempt"`）——
+      //   回执是同一 run 的延续 ⇒ ⛔ 当错误 · ⛔ 静默（如该值真达前端，照实记一行后停，⛔ 落 `d.data` 而崩）。
+      if (d.status === 'approval_exempt') {
+        agentLog('ℹ️ seed 门豁免（审批回执延续）', '#8b949e');
+        return;
+      }
+
       // 批189 · #6：PA 单线程 ⇒ 后端只允许一个活动 run（并发第二发返回 busy）
       if (d.status === 'busy') {
         agentLog('⏳ ' + (d.reason || '已有任务正在执行（PA 单线程）'), '#d2991d');
