@@ -89,3 +89,26 @@ def test_nokb_early_return_new_keys():
     assert r.get(u"no_kb_root") is True
     assert u"searched_scans" in r and u"searched_roles" in r
     assert r[u"searched"] == 0
+
+# ---------- 守一（pm_1571 §二.2）：剔之判**唯对件名** · ⛔ 按路径之任一段 ----------
+
+def test_prefix_family_judges_basename_not_dirname(tmp_path):
+    u"""守一：**目录名**合族 ⇒ ⛔ 剔其子树（其内真知识须留）；**件名**合族 ⇒ 剔。"""
+    d = tmp_path / u"ws"
+    (d / u"方案_知识目录").mkdir(parents=True)
+    (d / u"方案_知识目录" / u"真知识.md").write_text(u"x\n", encoding="utf-8")
+    (d / u"方案_件.md").write_text(u"y\n", encoding="utf-8")
+    names = {p.name for p in GR._face_files(d, (u"*.md",))}
+    assert names == {u"真知识.md"}, names
+
+
+# ---------- 守二（pm_1571 §二.2）：族表一处定形 ∧ **钉其内容** ----------
+
+def test_prefix_family_pinned_single_source():
+    u"""守二：新增族 ⇒ 本齿**红** ⇒ 须明书 ＋ 报 PM（⛔ 静增 · 免「面之量」不可回指）。"""
+    assert GR.PA_FACES_SKIP_PREFIX == (
+        u"作废_", u"回执_", u"作战单_", u"发表_", u"投递_", u"派单_", u"请求_", u"申请_",
+        u"讲解_", u"对表_", u"点选表_", u"素材_", u"方案_", u"设计方案_", u"外采集_",
+        u"外线风险登记_"), GR.PA_FACES_SKIP_PREFIX
+    assert len(GR.PA_FACES_SKIP_PREFIX) == 16, len(GR.PA_FACES_SKIP_PREFIX)
+    assert u"ptmp*" in GR.PA_FACES_SKIP
