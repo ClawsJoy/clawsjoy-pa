@@ -58,6 +58,21 @@ def _take(gen, n):
     return out
 
 
+def _take_until(gen, needle, timeout_s):
+    """收 chunk 直到命中 needle ∨ **超时**（⭐ PM 1379 §二 裁一）。
+
+    ⛔ 不无界等：卡（死等）之测 **>** 红之测 —— 挂死 ⇒ 全批之信尽失 ∧ 断因无从；
+    有界 ⇒ 速红且点名「未见终态」。
+    """
+    out = []
+    t0 = time.time()
+    for chunk in gen:
+        out.append(chunk)
+        if needle in chunk or (time.time() - t0) > timeout_s:
+            break
+    return out
+
+
 def _wire(monkeypatch, calls, stall_ms, tmp_path=None):
     # ⛔ 不让本门往**生产台账** data\v9\turns.db 写行 —— 那份台账是 PM/DS 的取证面，
     #    测试往里写行会污染读数（自陈：加此隔离前，本门在生产台账里留了 4 行）。
@@ -68,13 +83,30 @@ def _wire(monkeypatch, calls, stall_ms, tmp_path=None):
     monkeypatch.delenv("V9_TURN_STALL_MS", raising=False)
     monkeypatch.setattr(ss, "_load_v9_execution_policy", _policy(1500000, stall_ms))
     monkeypatch.setattr(ss, "request_cancel", lambda sid: calls.__setitem__("cancel", calls["cancel"] + 1))
+    # ⭐ PM 1379 §二（裁一）：本门须**自证 patch 已生效** —— 由：M1 现场之「卡」是**死等**，
+    #   裁一把它变「速红」；而要能速红，先须能**区分**「本身就没生效」∨「生效了而逻辑不发」。
+    #   ⚠ 「setattr 成功」⟷「消费者取到」是**二事**：`bridge_call._turn_stall_ms()` 是**晚绑**
+    #     （调用点才 `from core.gateway.shared_state import …` ⇒ 按 `sys.modules` 取物）
+    #     ⇒ 唯「对象同一 ∧ 值可取」方为生效。若某前序例换了 `sys.modules` 之对象
+    #     （或留下未还原之原始函数），本处将**当场速红**，⛔ 不到死等那一步。
+    _sm = sys.modules.get("core.gateway.shared_state")
+    assert _sm is ss, "patch 未生效：sys.modules 之 shared_state 非本处 setattr 之对象（晚绑 import 将取未 patch 者 ⇒ 死等）"
+    _eb = (ss._load_v9_execution_policy() or {}).get("execution_budget", {}) or {}
+    assert _eb.get("turn_timeout_ms") == 1500000, "patch 未生效：turn_timeout_ms 非本门之值"
+    assert _eb.get("turn_stall_ms") == stall_ms, "patch 未生效：turn_stall_ms 非本门之值"
 
 
 def test_t1_stall_emits_terminal_error(monkeypatch, tmp_path):
-    """停滞 ⇒ 必须发出 machine-readable 终态（error + [DONE]），并置取消标志。"""
+    """停滞 ⇒ 必须发出 machine-readable 终态（error + [DONE]），并置取消标志。
+
+    ⭐ PM 1379 §二（裁一）：收流改为**有界**（`_take_until((…), "[DONE]", 60s)`）——
+       正常为 ≈ 5s（首个静默周期）；若 60s 不见终态 ⇒ **速红**且点名
+       「未见 turn_stall 终态」，⛔ 不再死等 25 分钟（卡 ⇒ 全批之信尽失）。
+    """
     calls = {"cancel": 0}
     _wire(monkeypatch, calls, 1, tmp_path)  # 阈值 1ms ⇒ 首个 5s 静默周期即应判停滞
-    out = list(_mk("s_pm011_stall", _hung))
+    gen = _mk("s_pm011_stall", _hung)
+    out = _take_until(gen, "[DONE]", 60.0)
     joined = "".join(out)
     assert '"type": "error"' in joined, joined[:400]
     assert '"stage": "turn_stall"' in joined, joined[:400]
@@ -83,6 +115,7 @@ def test_t1_stall_emits_terminal_error(monkeypatch, tmp_path):
     assert "[DONE]" in joined, "终态之后必须关流"
     assert joined.index('"stage": "turn_stall"') < joined.index("[DONE]")
     assert calls["cancel"] >= 1, "停滞必须置取消标志（后台 worker 才会在下个检查点退出）"
+    gen.close()
 
 
 def test_t2_反例门_机制禁用则无终态(monkeypatch, tmp_path):
