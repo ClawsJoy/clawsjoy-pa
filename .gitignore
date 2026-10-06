@@ -4,7 +4,14 @@ logs/
 data/
 __pycache__/
 *.pyc
-memory/
+# ⭐ 锚位（承 pm_1419 §二.2）：裸名 `memory/` 亦中 `engine/memory/`（产品源码 · engine/__init__.py:25 活 import）∧ `localmind/src/memory/` ⇒ 误伤
+# 本式维根之 `memory/`；余者以显式式列之（⛔ `!` 白名单 —— 承 pm_1417 §二 之择）
+/memory/
+config/memory/
+config/clawsjoy/memory/
+config/v5/memory/
+experiments/youtube_series/workspace/memory/
+localmind/src/memory/
 backups/
 models/
 client/
@@ -23,7 +30,6 @@ data.vector_kb/
 *.mp3
 *.mp4
 exports/
-memory/
 old/
 tools/archive/
 *.bin
