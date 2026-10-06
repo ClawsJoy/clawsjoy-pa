@@ -188,16 +188,67 @@ def probe_vector_db(kb_dir, src=u''):
         if con is not None:
             con.close()
 
+
+OLLAMA_FIX_DOOR = (
+    u'装 Ollama ∨ 起 `ollama serve` ∨ 拉权重（`ollama pull <模型>`）∨ 指远端（P2 · 未接）'
+)
+
+
+def classify_ollama(tcp_ok, model_count, tags_err=None, first_model=None):
+    u'''⭐ 纯函数（⛔ 无网络依赖 ⇒ 可自测）：由「TCP 状 ＋ 权重数」定**三态**。
+
+    ⭐ 承 PM 1369 §三.2「ollama 项 ⛔ 只退 rc」之病 —— 本器须把「因 ＋ 修之门」说成
+    **人话**，⛔ 装成可用（承产品三禁）。三态：
+      ⒜ 未接（TCP 无应答）        ⇒ FAIL：点名「⛔ 未接」＋ 修之门
+      ⒝ 在而**无权重**（models=0）⇒ FAIL：「在」⟷「可用」**⛔ 一事** ＋ 修之门
+      ⒞ 在且有权重（models>=1）   ⇒ PASS：点名 `models=N`（首模型）
+    ⚠ 一手之据（2026-10-06 07:52 · 本机）：TCP 应答 ∧ `models=3` ⇒ 旧稿之
+      「在（TCP 应答）」一名 = **三名蔽作一名**（未接 ／ 无权重 ／ 可用）。
+
+    返回 (ok, reason, note) —— 与 `collect()` 之三元组同形。
+    '''
+    if not tcp_ok:
+        return (
+            False,
+            u'⛔ 未接：ollama %s:%d 无应答 ⇒ 本机模型路不可用 ｜ 修之门：%s'
+            % (HOST, OLLAMA_PORT, OLLAMA_FIX_DOOR),
+            u'',
+        )
+    if tags_err is not None:
+        return (
+            False,
+            u'⛔ 不可达：TCP 应答 ⇐ 而 `/api/tags` 读不到（%s）⇒ 无从判「有无权重」 ｜ 修之门：%s'
+            % (tags_err, OLLAMA_FIX_DOOR),
+            u'',
+        )
+    if int(model_count or 0) <= 0:
+        return (
+            False,
+            u'⛔ 在 · 无权重：%s:%d 在（TCP 应答）而 `models=0` ⇒ 本机模型路 ⛔ 可用 ｜ 修之门：%s'
+            % (HOST, OLLAMA_PORT, OLLAMA_FIX_DOOR),
+            u'models=0',
+        )
+    _note = u'models=%d' % int(model_count)
+    if first_model:
+        _note += u'（首 %s）' % first_model
+    return True, u'在（TCP 应答 ∧ models>0）', _note
+
+
 def probe_ollama():
+    u'''⭐ 三态探活（承 PM 1369 §三.2）：⛔ 只退 rc；须出「人话之因 ＋ 修之门」。
+
+    ⚠ 「端口开」⟷「有权重」**⛔ 一事**；「无权重」⇒ FAIL（本机模型路不可用），
+      仍**分栏**报因 ⇒ 后人可辨「未接」↔「无权重」↔「可用」。
+    '''
     if not tcp_open(OLLAMA_PORT):
-        return False, u'ollama 未起（%s:%d 不应答）⇒ 本机模型路不可用' % (HOST, OLLAMA_PORT), u''
-    note = u''
+        return classify_ollama(False, None)
     try:
         with urllib.request.urlopen('http://%s:%d/api/tags' % (HOST, OLLAMA_PORT), timeout=3) as r:
-            note = u'models=%d' % len((json.loads(r.read().decode('utf-8')) or {}).get('models', []))
+            _ms = (json.loads(r.read().decode('utf-8')) or {}).get('models', []) or []
+        _first = (_ms[0] or {}).get('name') if _ms else None
+        return classify_ollama(True, len(_ms), None, _first)
     except Exception as e:
-        note = u'/api/tags 读不到（%s）' % type(e).__name__
-    return True, u'在（TCP 应答）', note
+        return classify_ollama(True, None, type(e).__name__)
 
 
 def collect(root):
@@ -255,7 +306,20 @@ def selftest():
     say(_free[0] is True and u'可绑' in _free[1], u'反例：空端口 ⇒ 判「可绑」')
     case(u'反例：向量库 readonly ⇒ 判红', 2,
          ok6[:3] + [(u'向量库可写', classify_db_error(ro) + (u'',))] + ok6[4:])
-    case(u'反例：ollama 未起 ⇒ 判红', 2, ok6[:4] + [(u'ollama', (False, u'ollama 未起', u''))] + ok6[5:])
+    case(u'正控：ollama 未接 ⇒ 判红', 2, ok6[:4] + [(u'ollama', classify_ollama(False, None))] + ok6[5:])
+    # ⭐ 承 PM 1369 §三.2：ollama 三态须**分栏**（⛔ 只退 rc · ⛔ 装成可用）
+    _oa = classify_ollama(False, None)
+    say(_oa[0] is False and (u'⛔ 未接' in _oa[1]) and (u'装 Ollama' in _oa[1]),
+        u'正控：ollama 未接 ⇒ 判红 ＋ 人话之因 ＋ 修之门（点名装 Ollama）')
+    _ob = classify_ollama(True, 0)
+    say(_ob[0] is False and (u'无权重' in _ob[1]) and (u'ollama pull' in _ob[1]),
+        u'正控：端口开而 models=0 ⇒ 判红（「在」⟷「可用」⛔ 一事）＋ 点名拉权重')
+    _oc = classify_ollama(True, 3, None, u'qwen2.5:7b')
+    say(_oc[0] is True and (u'models=3' in _oc[2]) and (u'qwen2.5:7b' in _oc[2]),
+        u'反例：在且有权重 ⇒ 过（models=3 ∧ 点名首模型）')
+    _od = classify_ollama(True, None, u'HTTPError')
+    say(_od[0] is False and (u'不可达' in _od[1]),
+        u'正控：/api/tags 读不到 ⇒ 判红（⛔ 当「在」）')
     case(u'正控：库 locked（网关在跑）⇒ 报而 ⛔ 判 FAIL', 0,
          ok6[:3] + [(u'向量库可写', classify_db_error(lk) + (u'',))] + ok6[4:])
     say(u'端口占用' in classify_port_error(lk), u'正控：端口占用之因含「端口占用」∧ 人话')
