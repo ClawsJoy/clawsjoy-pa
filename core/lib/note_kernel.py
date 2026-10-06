@@ -64,6 +64,11 @@ STATE_EXISTS = "已存在"
 STATE_BADREL = "非法相对径"
 STATE_BADARG = "参数⛔合"
 
+#: 态之**机器码**（一处定形 · 承 pm_1503 §一）—— 前端唯渲 · ⛔ 比字面哨符
+STATE_CODE_NO_ROOT = "no_root"
+STATE_CODE_EMPTY = "empty"
+STATE_CODE_OK = "ok"
+
 
 def now_ts():
     return time.strftime("%Y-%m-%d %H:%M:%S")
@@ -298,6 +303,23 @@ def face_list(root=None, sub=None, limit=MAX_LIST):
     return {"ok": True, "state": STATE_OK, "why": "列 %d 件（库 %s）" % (len(items), src),
             "root": str(r), "src": src, "total": len(items),
             "truncated": len(items) > _lim, "items": items[:_lim]}
+
+
+def face_state_code(root=None):
+    u"""态之**机器码**（一处定形 · 承 pm_1503 §一）：``no_root`` ／ ``empty`` ／ ``ok``。
+
+    ⚠ 唯自 `face_list()` 之 `state` 映射（⛔ 另立判据 · ⛔ 二处各判）：
+      `STATE_NO_ROOT` ／ `STATE_MISSING`（根 ⛔ 得 ∨ 根 ⛔ 在 ⇒ 亦「不可用」）⇒ ``no_root``；
+      `STATE_EMPTY` ⇒ ``empty``；余（``STATE_OK``）⇒ ``ok``。
+
+    ⚠ 传 ``root=None`` ⇒ 自 `kroot_state()`（四序）；⚠ ⛔ 传 `""`（`Path("")` ⇒ `.`）。
+    """
+    _st = (face_list(root=root) or {}).get("state")
+    if _st == STATE_EMPTY:
+        return STATE_CODE_EMPTY
+    if _st == STATE_OK:
+        return STATE_CODE_OK
+    return STATE_CODE_NO_ROOT          # STATE_NO_ROOT ／ STATE_MISSING （根 ⛔ 得 ／ ⛔ 在）
 
 
 def face_read(rel, root=None):

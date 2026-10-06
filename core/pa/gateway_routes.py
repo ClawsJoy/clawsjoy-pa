@@ -980,7 +980,9 @@ def _src_face_readout():
 
 
 # ============================== ⭐ 首启引导（承 pm_1384 §三.3）==============================
-PA_FIRST_RUN_VERSION = "2026-10-06.3"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+PA_FIRST_RUN_VERSION = "2026-10-06.4"   # ⭐ 判成之形变 ⇒ 必 +1（承 PA_UI_FACES_VERSION 之律）
+#  ⭐ .4：「面之源」逐键增「态」（**机器码** `no_root` ／ `empty` ／ `ok` · pm_1503 §一）——
+#           一处定形（唯问 `core/lib/note_kernel.py::face_state_code()`）⇒ 前端唯渲、⛔ 比字面哨符。
 #  ⭐ .2：「面之源」三键（pm_1417 §三.3 · 面之数由三键定 ⇒ 用户须能知）
 #  ⭐ .3：「本机配置」显形（pm_1453 §一 之裁 · 本席一手逮得）——
 #           `config/.env` ／ `config/secrets.yaml` 在**包内必无** ⇒ 「缺」＝**常形**
@@ -1151,33 +1153,47 @@ def _first_run_readout():
          "据": u"「缺」列 %d 项" % len(out["缺"])},
     ]
     _org, _ws, _vr = False, None, None
-    _wssrc, _vsrc = u"未核", u"未核"
+    _wssrc, _vsrc, _vcode = u"未核", u"未核", u"no_root"
     try:
         from core.lib import paths as _P
         _org, _ws, _vr = bool(_P.org_enabled()), _P.ws_root(), _P.vault_root()
         # ⭐ pm_1502 §一.3：「源」须**同源**（唯自 `core/lib/paths.py` 之 src 器出 · ⛔ 二处各判）
         _wssrc = _P.ws_root_src()[1]
         _vsrc = _P.vault_root_src()[1]
+        # ⭐ pm_1503 §一：「态」＝**机器码**（一处定形 · ⛔ 另立判据）
+        #   唯问 `note_kernel.face_state_code()`（内即 `face_list().state` 之一处）。
+        from core.lib.note_kernel import face_state_code as _fsc
+        _vcode = _fsc(root=(str(_vr) if _vr else None))
     except Exception as _e:
         out["缺"].append({"项": u"面之源（三键）", "因": u"%s: %s" % (type(_e).__name__, str(_e)[:120])})
     # ⭐ pm_1502 §一.3 ／ §一.4：每键增「源」（env ／ 配置 ／ 内置空库）⇒ 今 ／ 义 二形须合。
     out["面之源"] = {
-        "口径": u"「面之数」由三键定 —— 缺则面减（照实 · ⛔ 静默）· 每键附「源」（今之值所自出）",
+        "口径": u"「面之数」由三键定 —— 缺则面减（照实 · ⛔ 静默）· 每键附「源」（今之值所自出）"
+                u"＋「态」（**机器码** · 前端唯渲 · ⛔ 比字面哨符）",
+        "态域": u"no_root（该键之根 ⛔ 得 ∨ ⛔ 在 ⇒ 「未接」）／ empty（根在而**约定六面**无件"
+                 u" ⇒ 空库之貌 · **⛔ 病**）／ ok（根在而约定六面有件）；逐键之现域见各「态」",
         "键": [
             {"键": "PA_ORG_FACES",
              "义": u"组织版开关（功能级 · 默认关）—— 开 ⇒ 并入组织面；关 ⇒ 唯产品面「死件账」",
              "今": (u"开" if _org else u"关（默认）"),
-             "源": u"env:PA_ORG_FACES（功能级开关 · 默认关）"},
+             "源": u"env:PA_ORG_FACES（功能级开关 · 默认关）",
+             "态": (u"ok" if _org else u"empty")},
             {"键": "PA_WS_ROOT",
              "义": u"工作区根（产品级）—— 组织面之根；缺 ⇒ 组织面 ⛔ 入表",
              "今": (_ws or u"未接"),
-             "源": _wssrc},
+             "源": _wssrc,
+             "态": (u"ok" if _ws else u"no_root")},
             {"键": "PA_VAULT_DIR",
              "义": u"知识库根（用户自选；亦可指配置 paths.vault_root；皆无 ⇒ 用内置空库 "
                    u"<data_root>/kb）—— 唯四序皆无 ⇒ 显「未接（选目录）」；内置空库在 ⇒"
-                   u"「今」为其径 ∧ 「源」明书其自内置空库（⛔ 混同「未接」）",
-             "今": (str(_vr) if _vr else u"未接"),
-             "源": _vsrc},
+                   u"「今」为其径 ∧ 「源」明书其自内置空库（⛔ 混同「未接」）；"
+                   u"「态」＝ no_root ／ empty ／ ok（**今随态**：no_root ⇒ 今 ＝「未接」）；"
+                   u"empty ／ ok 按**内核约定六面**（notes ／ sop ／ reviews ／ inbox ／ "
+                   u"drafts ／ assets）之件数计（⛔ 与 PA 检索面「收件箱 ／ 知识库」同约 —— "
+                   u"二者之别见报）",
+             "今": (str(_vr) if (_vr and _vcode != u"no_root") else u"未接"),
+             "源": _vsrc,
+             "态": _vcode},
         ],
     }
     return out
