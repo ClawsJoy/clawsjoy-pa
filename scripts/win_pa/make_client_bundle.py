@@ -76,7 +76,10 @@ PAT_UNC = re.compile(r"(?<![\\\w])\\\\[A-Za-z0-9_.\-]+\\")
 PAT_HOME = re.compile(r"(?<![A-Za-z0-9])/home/[A-Za-z0-9_.\-]+/")
 ORG_MARKS = (u"Obsidian/ClawsJoy", u"Obsidian\\ClawsJoy", u"paseo-workspace", u"paseo-home",
              u"npm-global", u"codex-home", u"内容工坊", u"_tools", u"_auto",
-             u"_交付", u"_老板", u"写小说专栏", u"\\dsh", u"/dsh")
+             u"_交付", u"_老板", u"写小说专栏", u"\\dsh", u"/dsh",
+             # ⭐ pm_1468 §二.2：**开发机之仓根**（二树）—— 旧表漏之 ⇒ 洁闸盲区；
+             #    「组织物」之一；⛔ 那二路径在客户机 ⛔ 在 ⇒ 入包 即 坏。
+             u"clawsjoy_v9", u"clawsjoy_build")
 #: 「开发机活径」之标（Windows 用户目录 —— 承 pm_1396 §二.5 之「今 29 ＋ 2」之 2）
 #  ⚠ 以「拼」造之（⛔ 字面）—— 否则本器之**自身源**亦中其式 ⇒ 「器自指」之假红。
 DEV_MARKS = (u"C:" + u"/Users/", u"C:" + BS + u"Users" + BS, u"/mnt/c/" + u"Users/")
@@ -429,6 +432,15 @@ def self_test():
         'V = "D:' + BS + 'other' + BS + 'x"' + chr(10))
     say(len(live_offenders(os.path.join(t, "pl"), ["core/pa/e.py"])) == 0,
         u"反控：寻常盘符径（⛔ 组织物 ∧ ⛔ 开发机）⇒ ⛔ 判红")
+    io.open(os.path.join(pd, "f.py"), "w", encoding="utf-8").write(
+        'W = "D:' + BS + 'clawsjoy_v9' + BS + 'core' + BS + 'x.py"' + chr(10))
+    _lv = live_org_paths(os.path.join(t, "pl"), ["core/pa/f.py"])
+    say(len(_lv) == 1 and _lv[0]["组织物"],
+        u"正控：开发机之**仓根**（clawsjoy_v9）必速 ／ 判「组织物」（pm_1468 §二.2 之盲区）")
+    io.open(os.path.join(pd, "g.py"), "w", encoding="utf-8").write(
+        'X = "D:' + BS + 'clawsjoy_lab' + BS + 'y.py"' + chr(10))
+    say(len(live_org_paths(os.path.join(t, "pl"), ["core/pa/g.py"])) == 0,
+        u"反控：同前缀异尾（clawsjoy_lab）⇒ ⛔ 判红（⛔ 宽于其分）")
     say(len(required_dists()) >= 10 and "chromadb" in [_norm(d) for d in required_dists()],
         u"正控：真源之必需节含 chromadb（⚠ 若红 ⇒ 本机 requirements.txt 已漂）")
     _git = shutil.which("git")
