@@ -93,6 +93,9 @@ const document = {
   createElement: function(t){ return { id: '', style: {}, textContent: '', parentNode: null }; }
 };
 %s
+let VIA = null;   /* pm_1504 §二：曝 paModelResolve 之 via（判「落默认之迹」· ⛔ 唯值比） */
+const _paResolve0 = paModelResolve;
+paModelResolve = function(rows, amap, want){ const r = _paResolve0(rows, amap, want); VIA = r.via; return r; };
 const WANT = %s, PAYLOAD = %s;
 (async function(){
   LS['pa_cfg'] = JSON.stringify({chan: 'x', model: WANT, appr: 'y', vault: true});
@@ -100,7 +103,7 @@ const WANT = %s, PAYLOAD = %s;
   await paModelFill(WANT);
   const opts = (SEL.innerHTML.match(/value="[^"]*"/g) || []).map(function(s){ return s.slice(7, -1); });
   console.log(JSON.stringify({sel: SEL.value, note: (NOTE ? NOTE.textContent : null),
-    stored: JSON.parse(LS['pa_cfg']).model, disabled: SEL.disabled, opts: opts}));
+    stored: JSON.parse(LS['pa_cfg']).model, disabled: SEL.disabled, opts: opts, via: VIA}));
 })();
 """
 
@@ -186,12 +189,25 @@ def test_A6_归一只认后端所给之键值():
 # ============================ A7 齿 ============================
 
 def test_A7_齿_去归一则旧病重现():
+    # 齿之的（pm_1504 §二）：⛔ 判「值 ⛔ 等」—— 默认已易为**云端实名**（pm_1471 ／ 1477 之裁）
+    #   ⇒ 挖去归一后所落之默认**其值即实名** ⇒ 旧断言 `sel != REAL` 失据（值可同 ⇒ 判须另立）。
+    #   改判**「落默认之迹」**：via（paModelResolve 之出）＋ 注 ＋ 存底 —— 三者共证（⛔ 以「值之异」为唯一据）。
+    dft = str((_payload().get("default") or {}).get("model") or "")
     blk = _block()
     head = u"function paModelAliasMap(rows, d){"
     assert head in blk
     mutant = blk.replace(head, head + u"\n  return {};", 1)
-    out = _run(ALIAS, block=mutant)
-    assert out["sel"] != REAL, u"齿失效：挖掉归一，别名竟仍被选中 ⇒ %r" % out["sel"]
-    # 挖掉归一 ⇒ 别名被当「未知名」（→ 显形支）—— 即 老板之病：选 ⛔ 得守，默认代之。
-    assert ALIAS in (out["note"] or u""), u"齿失效：挖掉归一，其词 ⛔ 名此名：%r" % out["note"]
-    assert out["stored"] == ALIAS, u"齿失效：挖掉归一，存底竟已改：%r" % out["stored"]
+    live = _run(ALIAS)                    # 活件（归一在）：别名 ⇒ 归正
+    dead = _run(ALIAS, block=mutant)      # 挖归一：别名 ⇒ 未知名 ⇒ 按默认 ＋ 显形
+    # 证一 · 活件之迹：via='alias' ＋ 归正之注 ＋ 存底回写实名。
+    assert live["via"] == u"alias", u"有归一则 via 须为 alias：%r" % live
+    assert u"已归正为" in (live["note"] or u""), live["note"]
+    assert live["sel"] == REAL and live["stored"] == REAL, live
+    # 证二 · 挖归一之迹：via=''（落默认）＋ 未知名之注（含其名）＋ 存底 ⛔ 改（未知名 ⛔ 回写）。
+    assert dead["via"] == u"", u"挖归一 ⇒ via 须空（落默认之迹 · ⛔ 值之异）：%r" % dead
+    assert u"⛔ 含此名" in (dead["note"] or u""), dead["note"]
+    assert ALIAS in (dead["note"] or u""), u"未知名须显其名：%r" % dead["note"]
+    assert dead["stored"] == ALIAS, u"挖归一 ⇒ 存底 ⛔ 得改：%r" % dead["stored"]
+    # 其的（明书）：未知名 ⇒ **按默认** ＋ 显形 —— ⛔ 以「值之异」为唯一据（值可同 · 今即同）。
+    assert dead["sel"] == dft, u"未知名 ⇒ 须按默认（%r）：%r" % (dft, dead["sel"])
+    assert dead["note"] != live["note"], u"二路之迹须别：%r" % dead["note"]
