@@ -5,7 +5,7 @@
 | 组件 | 用途 | 配置位置 |
 |------|------|---------|
 | Python 3.13 | 运行环境 | `.venv/` |
-| Flask | 网关框架 | `agent_gateway_enhanced.py:5002` |
+| Flask | 网关框架 | `agent_gateway_enhanced.py` 之 `app = Flask(__name__)` |
 | PostgreSQL | SAG 知识图谱 + 平台数据 | `localhost:5432` |
 | Ollama | 本地 LLM 推理 | `localhost:11434` |
 | DeepSeek API | 云端 LLM 推理 | `.env` 中 DEEPSEEK_API_KEY |
