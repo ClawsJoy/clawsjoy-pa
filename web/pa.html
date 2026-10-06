@@ -351,6 +351,12 @@
     b.appendChild(el('div','margin-top:6px','• 模型之路：'+esc(q(SAID[m['态']]||m['态']))+' <span style="opacity:.62">［'+esc(m['因']||'')+'］</span>'));
     var dir=d['数据目录']||{};
     b.appendChild(el('div','margin-top:2px','• 数据目录：'+esc(dir['值']||'（未接）')+' <span style="opacity:.62">［'+esc(dir['源']||'')+'］</span>'));
+    var fs=d['面之源'];
+    if(fs&&fs['键']&&fs['键'].length){
+      var ll='• 面之源（面数由三键定 · ⛔ 静默）：';
+      for(var j=0;j<fs['键'].length;j++){var kk=fs['键'][j];ll+=esc(kk['键'])+'＝'+esc(kk['今'])+(j<fs['键'].length-1?'；':'');}
+      b.appendChild(el('div','margin-top:2px',ll+' <span style="opacity:.62">［'+esc(fs['口径']||'')+'］</span>'));
+    }
     var miss=(d['缺']||[]);
     if(miss.length){
       var mm='• 还没接上的：';
