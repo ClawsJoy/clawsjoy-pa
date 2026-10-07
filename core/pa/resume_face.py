@@ -310,6 +310,60 @@ def readonly_manifest(root=None):
             "src": "本模块两读（唯读）· 面 ＝ " + " ／ ".join(sorted(a))}
 
 
+# ------------------------------ 「今日」行 3 之开机源（轻读） ------------------------------
+def root_for_data_dir(dd):
+    u"""由**数据目录**推**仓根**（`<root>/data/v9/pa` ⇒ `<root>`）—— 「今日」接之所用。
+
+    ⛔ 合此形（相对者按 `REPO_ROOT` 解）⇒ `None`（调用者照实标「未推得」· ⛔ 猜）。
+    """
+    if not dd:
+        return None
+    try:
+        p = Path(str(dd)).expanduser()
+        if not p.is_absolute():
+            p = REPO_ROOT / p
+        p = Path(os.path.normpath(str(p)))
+    except Exception:
+        return None
+    if p.name == "pa" and p.parent.name == "v9" and p.parent.parent.name == "data":
+        return str(p.parent.parent.parent)
+    return None
+
+
+def boot_summary(root=None):
+    u"""「今日」行 3 之「**开机**」之源 —— **轻读**（⛔ 起进程 ／ ⛔ 触信通轮询）。
+
+    与 `build_resume` **同源**（水印 ／ 台账 ／ `inbox` ／ 未竟）⇒ 一处定形（⛔ 另判一套）；
+    ⚠ 信通未读须起进程（`xt_unread`）⇒ **唯** `build_resume` 走 —— 本件 **⛔ 涉**（免热路起进程）。
+    """
+    P = paths(root)
+    wm = watermark(root)
+    logs, log_meta = boot_log_tail(root, 1)
+    last = logs[-1] if logs else {}
+    ib, ib_done, ib_meta = inbox_now(root)
+    led, led_meta = ledger_unfinished(root)
+    dsp, dsp_meta = dispatch_unfinished(root)
+    ran = bool(logs)
+    照实 = []
+    if not ran:
+        照实.append(u"无台账（⛔ 未跑过 boot_resume.py）⇒ 「攒件数 ／ 续办数」之 0 乃**未跑**，⛔ 非「无攒件」")
+    return {
+        "ok": True, "at": _now(), "源": u"GET /v9/pa/resume（**同源 · 轻读**）",
+        "跑过": ran,
+        "末次开机": last.get("boot_at"),
+        "攒件数": last.get("gathered"), "续办数": last.get("resumed"),
+        "失败件": list(last.get("failed") or []),
+        "未竟_n": len(led) + len(dsp),
+        "现况攒件_n": len(ib), "现况攒件": [x["id"] for x in ib][:50],
+        "攒件箱收走_n": ib_done,
+        "水印之态": wm.get("state"),
+        "数之出": {"攒件数 ／ 续办数 ／ 失败件": u"末次开机账（boot_log.jsonl 末行 · 跑器自落）⇒ **照录**",
+                 "现况攒件_n": u"本面**读盘** inbox（⛔ 入 _done ／ ⛔ 以 _ 起者）—— **现况**，⛔ 末次账"},
+        "径": {"水印": P["watermark"], "台账": P["boot_log"], "攒件箱": P["inbox"],
+              "ledger": str(led_meta.get("path")), "dispatch": str(dsp_meta.get("path"))},
+        "照实": 照实,
+    }
+
 # ------------------------------ 面 ------------------------------
 def build_resume(root=None, route_code_sha16=None):
     P = paths(root)

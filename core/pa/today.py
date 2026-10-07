@@ -199,6 +199,23 @@ def _row_waiting(pa, data_dir, uid, sid):
     except Exception as e:
         sources.append({'面': u'GET /v9/pa/threads', '径': u'data/v9/pa/threads_<uid>.json',
                         '读数': None, '因': u'%s: %s' % (type(e).__name__, e)})
+    # (d) 开机（末次开机之攒件）—— 真源与 GET /v9/pa/resume **同一处**（⛔ 另判一套）
+    try:
+        from core.pa import resume_face as _RF
+        _bs = _RF.boot_summary(root=_RF.root_for_data_dir(data_dir))
+        for _cid in list(_bs.get(u'现况攒件') or [])[:MAX_ITEMS]:
+            items.append({'类': u'开机攒件', 'id': _cid})
+        _src = {'面': u'GET /v9/pa/resume（末次开机之攒件）',
+                '径': (_bs.get(u'径') or {}).get(u'攒件箱'), '读数': _bs.get(u'现况攒件_n'),
+                '末次开机': _bs.get(u'末次开机'),
+                '攒件数_末次账': _bs.get(u'攒件数'), '续办数_末次账': _bs.get(u'续办数')}
+        if not _bs.get(u'跑过'):
+            _src['因'] = u'未跑（⛔ 未跑过 boot_resume ⇒ ⛔ 以 0 充「无攒件」）'
+        sources.append(_src)
+    except Exception as e:
+        sources.append({'面': u'GET /v9/pa/resume（末次开机之攒件）',
+                        '径': u'data/v9/pa/inbox',
+                        '读数': None, '因': u'%s: %s' % (type(e).__name__, e)})
     return _row(3, u'在等的', u'手上没有在等的事', sources,
                 [{'标': u'看进度', '端': u'#faceTabs（任务面）'}], items)
 
