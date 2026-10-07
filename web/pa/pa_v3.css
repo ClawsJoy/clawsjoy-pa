@@ -268,6 +268,11 @@ details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(-
   border-radius:8px;font:600 12.5px inherit;padding:6px 18px;cursor:pointer}
 #paFeedback .fb-send[disabled]{opacity:.5;cursor:not-allowed}
 #paFeedback .fb-state{color:var(--sub);min-width:0;flex:1;line-height:1.6}
+#paFeedback .fb-dir{border:1px solid var(--border);background:rgba(88,166,255,.10);color:var(--text);
+  border-radius:999px;font:600 12px inherit;padding:4px 12px;cursor:pointer}
+#paFeedback .fb-dir[disabled]{opacity:.5;cursor:not-allowed}
+#paFeedback .fb-dir-state{color:var(--sub);min-width:0;flex:1;line-height:1.6;overflow:hidden;
+  text-overflow:ellipsis}
 #paFeedback .fb-items{margin:0 11px 12px;font-size:11.5px;color:var(--sub);
   border-top:1px solid var(--border);padding-top:8px;line-height:1.7}
 #paFeedback .fb-item{border:1px solid var(--border);border-radius:7px;padding:4px 8px;margin-top:6px;
@@ -277,4 +282,21 @@ details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(-
   color:var(--amber);border-radius:8px;padding:7px 10px;font-size:12px;line-height:1.6}
 #paFeedback .fb-reply[hidden]{display:none}
 #paFeedback #paFbNotice{margin:0 11px 8px;color:var(--amber);background:rgba(210,153,29,.10);
+  border:1px solid rgba(210,153,29,.30);border-radius:8px;padding:6px 10px;font-size:11.5px;line-height:1.6}
+
+/* —— 密钥（完善态判⒊ · pm_1652 令一）（CW b2a5182 · 2026-10-07 · 承 TD `50663ef` 之端）——
+   唯外框 ／ 配色（变量逐字沿用 :root · ⛔ 另立主题）｜界面唯布尔（⛔ 值 · ⛔ 掩码）⇒ 唯择单 ＋ 密码框 ＋ 二动。 */
+#paKeys .ks-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 11px 8px;
+  font-size:11.5px;color:var(--sub)}
+#paKeys .ks-sel,#paKeys .ks-in{background:var(--bg);color:var(--text);border:1px solid var(--border);
+  border-radius:8px;font:12.5px/1.6 inherit;padding:6px 9px}
+#paKeys .ks-sel{min-width:220px;max-width:100%}
+#paKeys .ks-in{flex:1;min-width:240px;font-family:ui-monospace,Consolas,monospace}
+#paKeys .ks-state{color:var(--sub)}
+#paKeys .ks-btn{border:1px solid var(--border);background:rgba(88,166,255,.14);color:var(--text);
+  border-radius:8px;font:600 12.5px inherit;padding:6px 16px;cursor:pointer}
+#paKeys .ks-btn[disabled]{opacity:.5;cursor:not-allowed}
+#paKeys .ks-clear{background:rgba(248,81,73,.14)}
+#paKeys .ks-msg{flex:1;min-width:0;line-height:1.6;color:var(--sub)}
+#paKeys #paKeyNotice{margin:0 11px 8px;color:var(--amber);background:rgba(210,153,29,.10);
   border:1px solid rgba(210,153,29,.30);border-radius:8px;padding:6px 10px;font-size:11.5px;line-height:1.6}

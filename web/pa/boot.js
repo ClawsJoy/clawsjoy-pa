@@ -53,5 +53,6 @@ function paCollapseToSingleThread(){
   _boot("probeConn", PA_FACES.guard("status", probeConn));
   _boot("paLoadUiState", PA_FACES.guard("status", paLoadUiState));   /* 裁② · pm_990 §三：界面态快照只读上屏 */
   _boot("paLoadPesBlocks", PA_FACES.guard("cards", paLoadPesBlocks));   /* M2-A Step 3.1：阻断卡接只读投影（空库时静默，不渲染假卡） */
+  _boot("paKeyInit", PA_FACES.guard("keys", paKeyInit));   /* pm_1652 令一（密钥面）：页面首载领令牌（唯 Cookie · ⛔ 值）＋ 读名册（唯 /v9/pa/providers） */
   setInterval(probeConn, 15000);
 })();

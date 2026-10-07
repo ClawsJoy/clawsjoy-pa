@@ -316,9 +316,24 @@
    "open": true,
    "private": false,
    "dom": [
-    "#paFeedback"
+    "#paFeedback",
+    "#paFbOpenDir",
+    "#paFbDirState"
    ],
    "boot": []
+  },
+  {
+   "id": "keys",
+   "title": "密钥（模型供应商 · 唯落本机）",
+   "file": "faces/keys.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paKeys"
+   ],
+   "boot": [
+    "paKeyInit"
+   ]
   }
  ]
 }

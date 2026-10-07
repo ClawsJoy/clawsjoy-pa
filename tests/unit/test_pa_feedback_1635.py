@@ -316,5 +316,6 @@ def test_F14_页之骨与面册与一步可达():
     fb = [f for f in man["faces"] if f.get("id") == "feedback"]
     assert len(fb) == 1, u"面册须有本面之条（唯 1）"
     assert fb[0]["file"] == "faces/feedback.js", fb[0]
-    assert fb[0]["dom"] == ["#paFeedback"], fb[0]
+    # pm_1657 §二.2：壳之桥之页内侧（开「落点目录」）⇒ 其钮 ＋ 其态行亦归本面之 dom（⛔ 则关面时 ⛔ 收起）。
+    assert fb[0]["dom"] == ["#paFeedback", "#paFbOpenDir", "#paFbDirState"], fb[0]
     assert fb[0].get("open") is True, fb[0]

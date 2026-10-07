@@ -10,6 +10,13 @@
        ＋ pm_1641 §一.3「面唯读 `/health`」）；
      动 ⇒ `POST /v9/pa/feedback`（收件）／ `GET /v9/pa/feedback`（取件之列）／ `GET /v9/pa/feedback/<id>`（详）。
    ⭐ 铁律：**本面 ⛔ 任何出站之件**（所发唯本机之端 —— 其证 ＝ 验收⒉ 之「真浏览器网络录」＋ 结构齿）。
+   ⭐⭐ **壳之桥**（pm_1657 §二.2 · **一处定形**）：开「落点目录」⇒ 唯调 `window.paShell.openFeedbackDir()` ——
+      **名** ＝ `window.paShell.openFeedbackDir`｜**参** ＝ **无**（径由**壳**自算 ⇒ 守「桥 ⛔ 触他径」）｜
+      **返** ＝ `Promise<{ok:true, path} | {ok:false, code, message}>`（`code ：: E_NO_DIR ／ E_OPEN ／ E_SHELL`）｜
+      **失败之面** ＝ **⛔ 静默** —— 明书「⛔ 开得（<因>）⇒ 去处：自行打开 <落点之径>」（承「凡面之支须能真达」）。
+      ⚠ **其取 ⇒ preload 暴露**（⛔ 后端出端）：其能 ＝ 「开**我这一台**之目录」—— 唯「页与落点同机」时成立；
+      若由后端开窗 ⇒ 于「局域网内测（他人之浏览器）」会在**服务机**上弹窗（⛔ 用户所要）∧ 增攻击面。
+      ⚠ **附件 ⇒ ⛔ 须桥**：`<input type=file>` 于 Electron 渲染器内即调**系统原生对话框** ⇒ 一途通二处。
    ⚠ ⛔ 触 `core/**`（TD 之域）∧ ⛔ `localStorage` 之态（承 pm_1617 令五：⛔ 前端缓存之假态）。 */
 const PA_FB_READ = '/health';
 const PA_FB_SEND = '/v9/pa/feedback';
@@ -25,6 +32,9 @@ const PA_FB_BANNER_FAIL_MS = 30000;
 /* 逐项勾选之人话（⛔ 在表 ⇒ **照实显原值** —— 承「界面态显真读数」· ⛔ 造相）。
    ⚠ 其项（`health` ／ `logs` ／ `env` ／ `diag`）之真源 ＝ 后端 `consent_buses`（⛔ 此处自造其项）。 */
 const PA_FB_BUS = {health: '健康读数', logs: '日志尾', env: '环境摘要', diag: '诊断包'};
+/* ⭐⭐ **壳之桥之名**（**一处定形** · pm_1657 §二.2）：其字面唯此处一处（结构齿守之）。
+   其义：开「落点目录」（`<装根>/data/pa/feedback`）—— 唯 Electron 壳之 `preload` 暴露；⛔ 参 ⇒ ⛔ 触他径。 */
+const PA_SHELL_BRIDGE = 'openFeedbackDir';
 
 function paFbEsc(s){
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -59,6 +69,53 @@ function paFbNoticeText(t){
   if(!t || t.state !== 'ok') return '留言板未答：后端未给落点之声明（⛔ 自撰 —— 候后端）';
   if(t.notice) return t.notice;
   return '后端未给「内容出机 ∨ 不出机」之明书 —— ⛔ 自撰（故停发：候后端）';
+}
+
+/* ---- 壳之桥（**一处定形** · pm_1657 §二.2）：见件首之约（名 ／ 参 ／ 返 ／ 失败之面） ---- */
+function paFbShell(){
+  try{
+    const s = window.paShell;
+    if(s && typeof s[PA_SHELL_BRIDGE] === 'function') return s;
+  }catch(e){}
+  return null;
+}
+/* 一处定形（纯函 · ⛔ DOM）：开目录之态 ⇒ 人话。`res` ＝ 后端之 `feedback`（取 `resolved_dir` ／ `dir`）；
+   `hasBridge` ＝ 有桥否；`st` ＝ 末次之果（`{state:'opening'|'ok'|'fail', path, code, message}`）。 */
+function paFbDirText(res, hasBridge, st){
+  const dir = (res && (res.resolved_dir || res.dir)) ? String(res.resolved_dir || res.dir) : '';
+  const outlet = ' ⇒ 去处：自行打开 ' + (dir ? dir : '（后端未给落点之径）');
+  if(!hasBridge) return '此壳 ⛔ 供此能（唯 Electron 壳内有 window.paShell）' + outlet;
+  if(!st || !st.state) return '打开落点目录' + (dir ? ('（' + dir + '）') : '（径由壳自算）');
+  if(st.state === 'opening') return '正在打开落点目录…';
+  if(st.state === 'ok'){
+    const p = st.path ? String(st.path) : '';
+    if(p && dir && p !== dir) return '已开：' + p + '（⚠ 与后端之落点径 ⛔ 同：' + dir + '）';
+    return '已开：' + (p || dir || '（壳未回径）');
+  }
+  return '⛔ 开得（' + (st.code || 'E_SHELL') + (st.message ? (' ' + String(st.message)) : '') + '）' + outlet;
+}
+function paFbDirEnabled(res, hasBridge, st){
+  if(!hasBridge) return false;
+  return !(st && st.state === 'opening');
+}
+/* 点 ⇒ 调桥（**唯此一处**调 · ⛔ 传径 ⇒ 承「桥 ⛔ 触他径」）；其果唯落 `paFbRun.dir` ⇒ `paFbRender` 出人话。 */
+function paFbOpenDirClick(){
+  const sh = paFbShell();
+  if(!sh){ paFbRun.dir = {state: 'fail', code: 'E_NO_BRIDGE', message: ''}; paFbRender(); return; }
+  paFbRun.dir = {state: 'opening'}; paFbRender();
+  let pr = null;
+  try{ pr = sh[PA_SHELL_BRIDGE](); }
+  catch(e){ paFbRun.dir = {state: 'fail', code: 'E_SHELL', message: String((e && e.message) || e)};
+            paFbRender(); return; }
+  Promise.resolve(pr).then(function(r){
+    if(r && r.ok){ paFbRun.dir = {state: 'ok', path: (r.path == null ? '' : String(r.path))}; }
+    else{ paFbRun.dir = {state: 'fail', code: (r && r.code) ? String(r.code) : 'E_SHELL',
+                         message: (r && r.message) ? String(r.message) : ''}; }
+    paFbRender();
+  }, function(e){
+    paFbRun.dir = {state: 'fail', code: 'E_SHELL', message: String((e && e.message) || e)};
+    paFbRender();
+  });
 }
 
 /* ⭐ **一处定形**（**可发之判**）：读数 ⇒ `notice`（⛔ 无 ⇒ 停发 · 因 ⛔ 知是否出机）∧
@@ -123,7 +180,7 @@ function paFbSendText(st, t){
 /* ---- 以下：态 ＋ 渲 ＋ 取数（**唯此处**写 `#paFeedback` 之内；幂等：⛔ 加节点 · 唯改文本 ／ 值 ／ 属性） ---- */
 const paFbRun = {started: false, t: null, items: [], sel: null, send: null,
                  agreed: false, consent: {}, files: [], busy: false, poll: null, http: null,
-                 bannerT: null, autoPicked: false};
+                 bannerT: null, autoPicked: false, dir: null};
 
 function paFbEl(id){ return document.getElementById(id); }
 
@@ -182,6 +239,17 @@ function paFbRender(){
       ? ('附件 ' + fs.length + ' 件：' + fs.map(function(f){ return String(f.name); }).join(' ／ '))
       : '（无附件）';
   }
+  /* 壳之桥（开「落点目录」· pm_1657 §二.2）：其辞唯 `paFbDirText` 一处（⛔ 二处各写）——
+     **⛔ 桥 ⇒ 禁 ＋ 明书「此壳 ⛔ 供此能」＋ 现示径**（⛔ 静默 · 承「凡面之支须能真达」）。 */
+  const hb = !!paFbShell();
+  const dt = paFbDirText(t, hb, paFbRun.dir);
+  const od = paFbEl('paFbOpenDir');
+  if(od){
+    od.disabled = !paFbDirEnabled(t, hb, paFbRun.dir);
+    if(od.getAttribute('title') !== dt) od.setAttribute('title', dt);
+  }
+  const ds = paFbEl('paFbDirState');
+  if(ds && ds.textContent !== dt) ds.textContent = dt;
   const g = paFbGate(t, paFbRun.agreed, paFbRun.busy, paFbFormFromDom());
   const st = paFbEl('paFbState');
   if(st) st.textContent = paFbRun.send ? paFbSendText(paFbRun.send, t) : (g.ok ? '' : g.why);
@@ -361,6 +429,8 @@ function paFbBoot(){
   });
   const bx = paFbEl('paFbBuses');
   if(bx) bx.addEventListener('change', function(){ paFbRun.consent = paFbConsentFromDom(); paFbRender(); });
+  const odb = paFbEl('paFbOpenDir');
+  if(odb) odb.addEventListener('click', paFbOpenDirClick);
   const ag = paFbEl('paFbAgree');
   if(ag) ag.addEventListener('change', function(){ paFbRun.agreed = !!ag.checked; paFbRender(); });
   const it = paFbEl('paFbItems');
@@ -381,6 +451,9 @@ try{
   window.paFbOpenItem = paFbOpenItem; window.paFbBoot = paFbBoot; window.paFbRun = paFbRun;
   window.paFbBannerView = paFbBannerView; window.paFbFeedBanner = paFbFeedBanner;
   window.paFbFormFromDom = paFbFormFromDom; window.paFbOpen = paFbOpen;
+  window.paFbShell = paFbShell; window.paFbDirText = paFbDirText;
+  window.paFbDirEnabled = paFbDirEnabled; window.paFbOpenDirClick = paFbOpenDirClick;
+  window.PA_SHELL_BRIDGE = PA_SHELL_BRIDGE;
 }catch(e){}
 if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', paFbBoot); }
 else { paFbBoot(); }

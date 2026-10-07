@@ -15,10 +15,10 @@ u"""pm_1621 四条 之齿（CW b2a5182 · 2026-10-07）—— 更新环节之可
   U8 反控（失败而无回滚之标）⇒ 明书「回滚之状未给」（⛔ 冒「已回滚」）。
   U9 反控（失败而 rolled_back=false）⇒ 明书「未回滚」。
   U10 正控（有新版）⇒ 版本号 ＋ 大小之估。
-  U11 正控（已是最新）。
+  U11 正控（已是最新 · **唯后端自书 `note === '已是最新'`** —— 承 TD_1644 §三.1 ⒞）。
   U12 反控（端未答）⇒ 明书「更新面未答」＋「⛔ 不等于已是最新」（⛔ 静默 ∧ ⛔ 充知）。
   U13 反控（缺 `available` 键）⇒ ⛔ 充「已是最新」。
-  U14 反控（唯 `last_error` 有原始异常）⇒ ⛔ 入屏 ∧ ⛔ 当失败。
+  U14 反控（唯 `last_error` 有原始异常）⇒ ⛔ 入屏 ∧ ⛔ 当失败（第四态 `unchecked`）。
   U15 正控（pm_1633 裁 ⒝ · `measured ∧ ⛔ total`）⇒ 显「已下 X MB」∧「总长不可量」。
   U16 反控（pm_1633 裁 ⒝）：有 `total` ⇒ 按字节之条（⛔ 含「总长不可量」）；
       无 `done` ⇒ 面 **⛔ 书「已下」**。
@@ -26,6 +26,11 @@ u"""pm_1621 四条 之齿（CW b2a5182 · 2026-10-07）—— 更新环节之可
       之报）⇒ 唯走 ⒝ 之回落（「已下 X MB ＋ 前端之辞」）∧ 其辞 **⛔ 在 `update.js` 自书**（一处定形）。
   U18 pm_1641 裁 ①（端名之对齐 · 一处）：版之真源 ⇒ `/health.build.version`（装根之版）优先 ∧
       缺 ⇒ 回落 `/health.version`（进程之版）；⛔ 引 `/v9/pa/*`（**读一处 · 动分端**）。
+  U19 ⭐⭐ 键之对齐（**承 TD_1644 §三.1** · 2026-10-07 落 · pm_1641 §一.3「唯改其读键」）：
+      `current_version` ／ `latest_version` ／ `size_bytes`（**清单之真数** · ⛔ 硬编）—— 真跑 `avail` ／ `latest` ／ `done`。
+  U20 ⭐⭐ **反控（假报 · 真活端 2026-10-07 所逮）**：`available === false` ∧ `note` ＝「取清单 ⛔ 得：…」
+      （**取不得** · TD_1644 §三.3）⇒ 面 **⛔ 书「已是最新」** ∧ **照书后端之 `note`**（第四态 `unchecked`）
+      ∧ 机器辞（`note_why` ／ `last_error`）**⛔ 入屏**；**正控**：「未接（甲-P0）」⇒ 亦 `unchecked` 且照书其辞。
   M1–M5 **一幅横幅**（令四 · ⛔ 二套面）：更新进行中 ／ 更新失败 ／ 更新完成 ⇒ 皆占横幅；
      更新之「有新版 ／ 已是最新 ／ 未答」⇒ **⛔ 占**横幅（令一之版本归顶栏版行）。
   S1 一处定形：`paPrepMerge` 唯 1 处 ∧ 横幅之渲唯 `startup.js` 一处（update.js ⛔ 自渲）。
@@ -114,22 +119,24 @@ def _harness() -> str:
     ]
     cases = u"""
 const UC = [
- ["dl_bar",   {state:"running", phase:"downloading", done_bytes:262144, total_bytes:629145, eta_s:8.2, current:"1.0.0", latest:"1.0.1"}, {elapsed_s:3}],
+ ["dl_bar",   {state:"running", phase:"downloading", done_bytes:262144, total_bytes:629145, eta_s:8.2, current_version:"1.0.0", latest_version:"1.0.1"}, {elapsed_s:3}],
  ["verify",   {state:"running", phase:"verifying", files_done:3, files_total:12, since_s:5}, {elapsed_s:9}],
  ["backup",   {state:"running", phase:"backing_up", since_s:2}, {elapsed_s:2}],
  ["replace",  {state:"running", phase:"replacing", since_s:1}, {elapsed_s:1}],
  ["restart",  {state:"restart"}, {elapsed_s:1}],
- ["done",     {state:"done", current:"1.0.0", latest:"1.0.1"}, {elapsed_s:1}],
+ ["done",     {state:"done", current_version:"1.0.0", latest_version:"1.0.1"}, {elapsed_s:1}],
  ["fail_roll",{state:"failed", error:"校验不符（第 3 件 sha256 不合）", rolled_back:true, rollback_to:"1.0.0"}, {elapsed_s:1}],
  ["fail_nor", {state:"failed", error:"下载失败（网络中断）"}, {elapsed_s:1}],
  ["fail_nofb",{state:"failed", error:"下载失败（网络中断）", rolled_back:false}, {elapsed_s:1}],
- ["avail",    {state:"idle", available:true, current:"1.0.0", latest:"1.0.1", total_bytes:629145, files_total:12}, {elapsed_s:1}],
- ["latest",   {state:"idle", available:false, current:"1.0.1"}, {elapsed_s:1}],
+ ["avail",    {state:"idle", available:true, current_version:"1.0.0", latest_version:"1.0.1", size_bytes:629145, files_total:12}, {elapsed_s:1}],
+ ["latest",   {state:"idle", available:false, current_version:"1.0.1", latest_version:"1.0.1", note:"已是最新"}, {elapsed_s:1}],
  ["noans",    null, {http_status:404, elapsed_s:1}],
- ["noavail",  {state:"idle", current:"1.0.0"}, {elapsed_s:1}],
- ["rawonly",  {state:"idle", available:false, current:"1.0.0", last_error:"Traceback (most recent call last)"}, {elapsed_s:1}],
+ ["noavail",  {state:"idle", current_version:"1.0.0"}, {elapsed_s:1}],
+ ["rawonly",  {state:"idle", available:false, current_version:"1.0.0", last_error:"Traceback (most recent call last)"}, {elapsed_s:1}],
  ["oddphase", {state:"running", phase:"weird_step", since_s:4}, {elapsed_s:4}]
  ,["dl_meas_nototal", {state:"running", phase:"downloading", done_bytes:314572, total_bytes:null, since_s:5}, {elapsed_s:5}]
+ ,["srcfail",  {available:false, channel:"internal", checked_at:"2026-10-07T13:44:00+0800", current_version:null, files:0, latest_version:null, manifest_url:"http://192.168.3.11:8800/update_manifest.json", note:"\u53d6\u6e05\u5355 \u26d4 \u5f97\uff1ahttp://192.168.3.11:8800/update_manifest.json", note_why:"HTTPError", size_bytes:0}, {elapsed_s:1}]
+ ,["uncheck_nr",{available:false, channel:"internal", current_version:null, latest_version:null, note:"\u672a\u63a5\uff08\u7532-P0\uff09", size_bytes:0}, {elapsed_s:1}]
 ];
 const MC = [
  ["m_running",  {status:"starting", startup:{ready:false, status:"硬件检测"}}, {elapsed_s:5}, {state:"running", phase:"downloading", done_bytes:1, total_bytes:2}],
@@ -143,8 +150,9 @@ const MC = [
 const out = {u:{}, m:{}};
 for (const c of UC) { out.u[c[0]] = paUpdView(c[1], c[2]); }
 for (const c of MC) { out.m[c[0]] = paPrepMerge(paPrepView(c[1], c[2]), paUpdView(c[3], c[2])); }
-out.ver = {avail: paUpdVerText(paUpdView({state:"idle", available:true, current:"1.0.0", latest:"1.0.1", total_bytes:629145}, {})),
-           latest: paUpdVerText(paUpdView({state:"idle", available:false, current:"1.0.1"}, {})),
+out.ver = {avail: paUpdVerText(paUpdView({state:"idle", available:true, current_version:"1.0.0", latest_version:"1.0.1", size_bytes:629145}, {})),
+           latest: paUpdVerText(paUpdView({state:"idle", available:false, current_version:"1.0.1", note:"\u5df2\u662f\u6700\u65b0"}, {})),
+           unchecked: paUpdVerText(paUpdView({state:"idle", available:false, current_version:"1.0.1", note:"\u53d6\u6e05\u5355 \u26d4 \u5f97\uff1ahttp://x/update_manifest.json"}, {})),
            noans: paUpdVerText(paUpdView(null, {http_status:404}))};
 out.cur = {};
 for (const c of [["build_ver",    {version:"1.0.0", build:{available:true, version:"1.2.3"}}],
@@ -275,7 +283,7 @@ def test_U13_缺available键须不充已最新():
 
 def test_U14_原始异常须不入屏():
     v = _v()["u"]["rawonly"]
-    assert v["state"] == "latest", v
+    assert v["state"] == "unchecked", v
     assert u"Traceback" not in v["text"] and u"Traceback" not in v["note"], v
 
 
@@ -316,6 +324,8 @@ def test_ver_版行三态():
     v = _v()["ver"]
     assert u"版本 1.0.0" in v["avail"] and u"有新版 1.0.1" in v["avail"], v
     assert u"版本 1.0.1" in v["latest"] and u"已是最新" in v["latest"], v
+    assert u"版本 1.0.1" in v["unchecked"] and u"取清单" in v["unchecked"], v
+    assert u"已是最新" not in v["unchecked"], u"取不得 ⇒ ⛔ 冒「已是最新」"
     assert u"更新面未答" in v["noans"], v
 
 
@@ -380,8 +390,40 @@ def test_U17_裁去重_更新面走回落且其辞惟startup一处():
     src = _read(UJ)
     src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
     assert u"总长不可量" not in src, u"其辞 ⛔ 二处各写（唯 `startup.js` 之 `paPrepMeasuredNote`）"
-    assert u"paPrepMeasuredNote(v.done, v.total)" in src, \
+    assert u"paPrepMeasuredNote(v.done, v.prog_total)" in src, \
         u"本面唯传读数（字段名候 TD 1620 之报 ⇒ 唯改此行一处加第三参）"
+
+
+# ---------- U19 ～ U20：键之对齐（TD_1644 §三）＋ 反控「取不得 ⛔ 充已是最新」 ----------
+
+
+def test_U19_裁TD1644_键之对齐():
+    u = _v()["u"]
+    v = u["avail"]
+    assert v["state"] == "available", v
+    assert u"有新版 1.0.1" in v["text"] and u"当前 1.0.0" in v["text"], v["text"]
+    assert u"约 0.6 MB" in v["text"], u"`size_bytes`（清单之真数）须出 · 得 " + v["text"]
+    assert u["latest"]["state"] == "latest" and u"已是最新" in u["latest"]["text"], u["latest"]
+    assert u"已升至 1.0.1" in u["done"]["text"], u["done"]["text"]
+    t = _read(UJ)
+    assert u"o.current_version" in t and u"o.latest_version" in t and u"o.size_bytes" in t, \
+        u"读键须逐字取 TD_1644 §三.1"
+    # ⛔ **旧拟名**（`o.current` ／ `o.latest` · 臆造）—— 判以**词界**（`\b`）：`o.current_version` **不在**其列。
+    assert not re.search(r"o\.current\b", t), u"⛔ 留旧拟名（臆造）`o.current`"
+    assert not re.search(r"o\.latest\b", t), u"⛔ 留旧拟名（臆造）`o.latest`"
+
+
+def test_U20_反控_取不得须不充已是最新且照书后端之辞():
+    u = _v()["u"]
+    v = u["srcfail"]
+    assert v["state"] == "unchecked", v
+    assert u"已是最新" not in v["text"], u"取不得 ⛔ 充「已是最新」（假报 · 真活端所逮）—— 得 " + v["text"]
+    assert u"取清单 \u26d4 得" in v["text"], u"须**照书后端之 `note`** —— 得 " + v["text"]
+    assert u"HTTPError" not in v["text"] and u"note_why" not in v["text"], u"机器辞 ⛔ 入用户面"
+    assert OUTLET in v["note"], v["note"]
+    n = u["uncheck_nr"]
+    assert n["state"] == "unchecked" and u"未接（甲-P0）" in n["text"], n
+    assert u"已是最新" not in n["text"], n
 
 
 # ---------- U18：pm_1641 裁 ①（端名之对齐 · 读一处 · 动分端） ----------

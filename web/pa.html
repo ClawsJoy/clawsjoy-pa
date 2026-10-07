@@ -32,6 +32,7 @@
     <span class="verrow" id="paVerRow" title="版本 ＋ 更新之态：真源 GET /health 之 version ＋ 更新端（候 TD 1620 定名）· 前端唯显示 ⇒ ⛔ 自算">版本 —（读后端 /health）</span>
   </div>
   <div class="top-right">
+    <span class="chip" id="paKeyBtn" onclick="paKeyOpen()" title="密钥（模型供应商 · 唯落本机）：填 ／ 换 ／ 清 —— 值 ⛔ 上屏 ／ ⛔ 掩码 ／ ⛔ 入日志 ／ ⛔ 出机">🔑 密钥</span>
     <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · ⛔ 出机）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
     <span class="chip" id="paMoreBtn" onclick="paMore(true)" title="更多：轨迹 ／ 产出 ／ 文件 ／ 模式 ／ 常驻 ／ 系统 ／ 设置 ／ 私面（各一步可达）">更多 ▾</span>
     <span class="chip" id="drawerRightBtn" onclick="paSettings()" title="设置（老板 ／ 配置 ／ 建档）">⚙ 设置</span>
@@ -145,7 +146,7 @@
       </section>
 
       </details>
-      <details class="mgrp" id="paMoreGrpSet"><summary>③ 设 · 留言 ／ 关于 ／ 系统 ／ 设置 ／ 私面</summary>
+      <details class="mgrp" id="paMoreGrpSet"><summary>③ 设 · 留言 ／ 密钥 ／ 关于 ／ 系统 ／ 设置 ／ 私面</summary>
       <!-- ⭐ 留言板（丙-P0 之面 · 内测形）（CW b2a5182 · 2026-10-07 · pm_1635 五令 ＋ pm_1641 §二 · 承 TD_1634 ／ 1639 之端）：
            ⒜ 常驻明书 ⇒ **唯取后端 `notice`**（⛔ 前端自撰其辞）；⒝ 逐项勾选 ⇒ **唯取后端 `consent_buses`** ∧
               **默认全关**（⛔ 一个「全选」之便键）；⒞ **⛔ 书「在线客服」四字**（内测期 ⛔ 有）；
@@ -154,6 +155,11 @@
            动唯 `POST ／ GET /v9/pa/feedback`（**本机之落点 · ⛔ 出站** —— 其证 ＝ 验收⒉ 之网络录 ＋ 结构齿）。
            ⭐ 三面（起服 ／ 更新 ／ 反馈）之「成 ／ 败」唯经**一幅横幅**（`#paPrep` · 其渲唯 `startup.js` 一处）
               ⇒ 本面 ⛔ 自渲横幅（⛔ 三横幅 · 承 pm_1635 §一.3）。
+           ⭐⭐ 壳之桥（pm_1657 §二.2）：**「打开落点目录」之页内侧**（`#paFbOpenDir`）——
+              唯调壳之 `window.paShell.openFeedbackDir()`（**⛔ 参** · 径由壳自算 ⇒ 桥 ⛔ 触他径）；
+              **⛔ 桥**（浏览器 ／ 旧壳）⇒ 其钮禁 ＋ 明书「此壳 ⛔ 供此能」＋ 现示落点之径（⛔ 静默）。
+              ⚠ **附件 ⇒ ⛔ 须桥**：`<input type=file>`（`#paFbFiles`）于 Electron 渲染器内**即调系统原生对话框**
+              （Chromium 之内建）⇒ **一途通二处**（⛔ 二源 · 承 pm_1657 §二.2 之「回落 ∨ 并存」之问）。
            ⛔ 载绝对径 ／ ⛔ 起停。 -->
       <section class="msec" id="paFeedback">
         <h6>留言板（内测 · ⛔ 出机）</h6>
@@ -167,6 +173,10 @@
             <label class="fb-file">＋ 附件<input type="file" id="paFbFiles" multiple accept="image/*,.txt,.log,.json"></label>
             <span class="fb-att" id="paFbAttList">（无附件）</span>
           </div>
+          <div class="fb-row">
+            <button class="fb-dir" id="paFbOpenDir" title="打开落点目录（唯 Electron 壳内之 window.paShell · 径由壳自算）">打开落点目录</button>
+            <span class="fb-dir-state" id="paFbDirState" role="status" aria-live="polite"></span>
+          </div>
           <div class="fb-row" id="paFbAgreeWrap" hidden>
             <input type="checkbox" id="paFbAgree"><label id="paFbAgreeLb" for="paFbAgree"></label>
           </div>
@@ -176,6 +186,32 @@
           </div>
         </div>
         <div class="fb-items" id="paFbItems" role="status" aria-live="polite">我之收件：读数中…</div>
+      </section>
+
+      <!-- ⭐ 密钥（完善态判⒊ · pm_1652 令一）（CW b2a5182 · 2026-10-07 · 承 TD `50663ef` 之端 · pm_1652 §一.2 守四）：
+           ⒜ 领令牌 `GET /v9/pa/providers/key/token`（唯本机 · 唯 Cookie 下 · JS 读之不得 · ⛔ 入回体）；
+           ⒝ 落 ／ 清 `POST /v9/pa/providers/key`（`key` 空 ／ `null` ⇒ 清）—— 回执唯布尔 ＋ 面之辞（⛔ 值）；
+           ⒞ 读数 `GET /v9/pa/providers`（既有端 · 只读 ⇒ 界面之态之唯一源 · 承「读一处 · 动分端」）。
+           ⭐ 守：唯落本机唯一处（后端之 config/.env）∧ 界面唯布尔（连掩码之首尾亦 ⛔ —— ⛔ `sk-****`）∧
+             ⛔ 值入屏 ／ 入 console ／ 入 localStorage ／ 入报错之文 ∧ 令牌唯 Cookie 走（⛔ 入 JS 之仓）。
+           ⚠ 「⛔ 回显」之实 ＝ 原生 password 框（其掩唯浏览器之能 · ⛔ 本面自造其掩）＋ 发毕即清框。
+           ⛔ 触 core/**（TD 之域）∧ ⛔ 起停 ∧ ⛔ 出机（唯环回之端）。 -->
+      <section class="msec" id="paKeys">
+        <h6>密钥（模型供应商 · 唯落本机）</h6>
+        <p class="mnote" id="paKeyNotice" role="status" aria-live="polite">密钥之去处明书：读数中…</p>
+        <div class="ks-row">
+          <select class="ks-sel" id="paKeyProv" onchange="paKeyPick(this.value)" title="供应商（唯取后端 GET /v9/pa/providers · ⛔ 前端自造其项）"></select>
+          <span class="ks-state" id="paKeyNow" role="status" aria-live="polite">态 —（未选）</span>
+        </div>
+        <div class="ks-row">
+          <input class="ks-in" type="password" id="paKeyVal" autocomplete="off" spellcheck="false"
+                 placeholder="粘贴密钥 —— ⛔ 回显 ／ ⛔ 掩码（连首尾亦 ⛔）／ ⛔ 入日志">
+        </div>
+        <div class="ks-row">
+          <button class="ks-btn" id="paKeySet" onclick="paKeySend(false)" title="填 ／ 换 ⇒ POST /v9/pa/providers/key">填</button>
+          <button class="ks-btn ks-clear" id="paKeyClear" onclick="paKeySend(true)" title="清 ⇒ 二次确认 ∧ POST（key: null）">清</button>
+          <span class="ks-msg" id="paKeyMsg" role="status" aria-live="polite"></span>
+        </div>
       </section>
 
       <section class="msec" id="paMoreAbout"><h6>关于 PA（自述 · 九问九答 · 逐条带源）</h6>
@@ -377,6 +413,7 @@
 <script src="pa/faces/startup.js"></script>
 <script src="pa/faces/update.js"></script>
 <script src="pa/faces/feedback.js"></script>
+<script src="pa/faces/keys.js"></script>
 <!-- ⭐ 首启引导（净机之「第一屏」· M1 余件之三 · 承 pm_1384 §三.3）：
      ⒜ 数据在本机（**人话** · ⛔ 行话）⒝ 模型三态 ＋ 修之门 ⒞ 数据目录 ⒟ ⛔ 静默（缺则显因）。
      读数源 ＝ GET /v9/pa/first_run（**只读**）；⛔ 后端 ⛔ 在答 ⇒ 明书「没读成」（⛔ 装成「已就绪」）。

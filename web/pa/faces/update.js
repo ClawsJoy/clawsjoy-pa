@@ -5,11 +5,16 @@
    ⭐ **取数（一处）**：唯读 `/health`（既有端 · 与 `startup.js` 同源 ⇒ 一处取数）之 `update` 键 ——
       ⛔ 引未挂之 `/v9/pa/*`：面册闸（`tests/unit/test_pa_ui_faces.py`）以「面之源里所引 `/v9/pa/*` 须**已挂**」为判，
       旧稿书整字面 `'/v9/pa/update'` ⇒ 该端**今未挂** ⇒ 闸判「悬」为真（此面之依赖今未足）⇒ 本件唯依赖既有之端。
-   ⚠ **端名与字段之逐字 ⇒ 候 TD `1620` 之报 ⇒ 唯改 `PA_UPD_SRC` ／ `paUpdFetch` 一处对齐**（pm_1621 §一.2）。
-     所读字段（**与 `1616` 之进度读数同辞** —— 承 pm_1620 §二.3「更新环节共用 · 一处定形」）：
-       `state`（idle ／ running ／ done ／ failed）｜`phase`（见 `PA_UPD_PHASE` 之键）｜
-       `done_bytes` ／ `total_bytes` ／ `eta_s` ／ `since_s`｜`current` ／ `latest` ／ `available`｜
-       `files_done` ／ `files_total`｜`error`（**人话** · ⛔ 原始异常 —— 原始因入机器字段 `last_error`，本件 ⛔ 读）。
+   ⭐⭐ **端名与字段之逐字 ⇒ 已对齐 `TD_1644 §三.1`**（2026-10-07 落 · 承 pm_1621 §一.2「字段 ⛔ 自造」／
+      pm_1641 §一.3「唯改其读键」）：读（**逐字**）`available`｜`current_version`｜`latest_version`｜
+      `size_bytes`（**清单之真数** —— TD §三.3「⛔ 硬编」）｜`note`（**后端之辞**：三态之「已是最新」／
+      「未接」／「取不得」**皆由 `note` 之逐字承** ⇒ 本面 **照书** · ⛔ 自造其由 —— 承 pm_1638 之裁）｜
+      `channel` ／ `checked_at` ／ `manifest_url`（**候裁**：本面今 ⛔ 显 —— ⛔ 擅自加辞）。
+     ⚠ **进度之诸键**（`state` ／ `phase` ／ `done_bytes` ／ `total_bytes` ／ `eta_s` ／ `since_s` ／
+      `files_done` ／ `files_total` ／ `rolled_back` ／ `rollback_to`）⇒ **TD 之今版 `update` 键 ⛔ 给**
+      （其器随甲-P0 落 · 承 TD_1644 §三.4）⇒ 此诸支今 **⛔ 可达**（**照实报 · ⛔ 擅删** —— 乃 pm_1621 令二之的）
+      ⇒ 候甲-P0 之器落 ⇒ 其支自达。
+     `error`（**人话** · ⛔ 原始异常 —— 原始因入机器字段 `last_error` ／ `note_why` ⇒ 本件 ⛔ 读）。
    ⛔ 本件 ⛔ 触 `core/**`（TD 之域）∧ ⛔ 自渲 `#paPrep`（其渲唯 `startup.js` 一处 · 承「⛔ 二套面」）。
    ⛔ 本件 ⛔ 起停 ／ ⛔ 执行更新（发起归后端之「更新」入口 · 本件唯**显示**）。 */
 
@@ -38,16 +43,18 @@ const PA_UPD_OUTLET = '去处：装根之「更新」入口重试 ∨ 看服务�
 
 /* ⭐ **一处定形**（纯函数 · ⛔ DOM）：更新端之回 ＋ 本地之钟 ⇒ 面之态。
    `u` ＝ 端之 JSON（未答 ⇒ null）；`ctx` ＝ {elapsed_s, http_status, health_version}。
-   回 {state, phase, text, note, can_bar, pct, done, total, eta_s, since_s, since_src,
-       current, latest, available, files_done, files_total, rolled_back, src}
-   （`state` ∈ unanswered ／ latest ／ available ／ running ／ restart ／ done ／ failed）。 */
+   回 {state, phase, text, note, bnote, can_bar, pct, done, total, prog_total, eta_s, since_s,
+       since_src, current, latest, available, files_done, files_total, rolled_back, src}
+   （`state` ∈ unanswered ／ latest ／ unchecked ／ available ／ running ／ restart ／ done ／ failed；
+     ⭐ `unchecked` ＝ 「`available === false` 而**后端未自书「已是最新」**」之第四态 ——
+     其字面 **照书后端之 `note`**（如「取清单 ⛔ 得：…」／「未接（甲-P0）」）· ⛔ 冒「已是最新」。） */
 function paUpdView(u, ctx){
   const c  = (ctx && typeof ctx === 'object') ? ctx : {};
   const o  = (u && typeof u === 'object') ? u : null;
   const el = paPrepNum(c.elapsed_s);
   const elR = (el == null) ? null : Math.max(0, Math.round(el));
-  const v = {state:'unanswered', phase:'', text:'', note:'', can_bar:false, pct:null,
-             done:null, total:null, eta_s:null, since_s:null, since_src:'',
+  const v = {state:'unanswered', phase:'', text:'', note:'', bnote:'', can_bar:false, pct:null,
+             done:null, total:null, prog_total:null, eta_s:null, since_s:null, since_src:'',
              current:'', latest:'', available:null, files_done:null, files_total:null,
              rolled_back:null, src:PA_UPD_SRC};
   if(!o){
@@ -58,10 +65,14 @@ function paUpdView(u, ctx){
   const ss = function(x){ return (x == null) ? '' : String(x).trim(); };
   const bak = paPrepNum(o.since_s);
   v.phase = ss(o.phase);
-  v.current = ss(o.current) || ss(c.health_version);
-  v.latest = ss(o.latest);
+  /* ⭐ 键名 ⇒ **逐字取 `TD_1644 §三.1`**（一处对齐 · 见件首）—— ⛔ 旧拟名 `current` ／ `latest`（**臆造**）。 */
+  v.current = ss(o.current_version) || ss(c.health_version);
+  v.latest = ss(o.latest_version);
   v.available = (typeof o.available === 'boolean') ? o.available : null;
-  v.done = paPrepNum(o.done_bytes); v.total = paPrepNum(o.total_bytes);
+  v.bnote = ss(o.note);                       /* 后端之辞（**照书** · ⛔ 自造 —— 承 pm_1638 之裁） */
+  const sz = paPrepNum(o.size_bytes);         /* 清单之真数（TD §三.3：⛔ 硬编「0.6 MB」） */
+  v.total = (sz != null && sz > 0) ? sz : null;
+  v.done = paPrepNum(o.done_bytes); v.prog_total = paPrepNum(o.total_bytes);
   v.eta_s = paPrepNum(o.eta_s);
   v.files_done = paPrepNum(o.files_done); v.files_total = paPrepNum(o.files_total);
   v.rolled_back = (typeof o.rolled_back === 'boolean') ? o.rolled_back : null;
@@ -86,12 +97,12 @@ function paUpdView(u, ctx){
     /* ⭐ pm_1633 裁 ⒝（一处定形 · 与 `startup.js` 共本函）：`measured ∧ ⛔ total` ⇒ 显「已下 X MB（总长不可量）」。
        ⚠ pm_1638 裁（去重）：**其辞唯 `startup.js` 一处** —— 本面 **⛔ 传 `note`**（更新回之字段名
           候 TD `1620` 之报 ⇒ 唯改本行一处加第三参 ⇒ 承 pm_1621 §一.2「字段 ⛔ 自造」）⇒ 本面走 ⒝ 之回落。 */
-    const mn = paPrepMeasuredNote(v.done, v.total);
+    const mn = paPrepMeasuredNote(v.done, v.prog_total);
     let t = '正在更新…（' + ph;
-    if(v.total != null && v.total > 0 && v.done != null){
+    if(v.prog_total != null && v.prog_total > 0 && v.done != null){
       v.can_bar = true;
-      v.pct = Math.max(0, Math.min(100, Math.floor((v.done / v.total) * 100)));
-      t += ' · 已下 ' + paPrepMB(v.done) + ' / ' + paPrepMB(v.total) + '（' + v.pct + '%）';
+      v.pct = Math.max(0, Math.min(100, Math.floor((v.done / v.prog_total) * 100)));
+      t += ' · 已下 ' + paPrepMB(v.done) + ' / ' + paPrepMB(v.prog_total) + '（' + v.pct + '%）';
       if(v.eta_s != null) t += ' · 约还需 ' + Math.round(v.eta_s) + ' 秒';
       else if(v.since_s != null) t += ' · 已等 ' + v.since_s + ' 秒';
     } else if(v.files_total != null && v.files_total > 0 && v.files_done != null){
@@ -130,8 +141,18 @@ function paUpdView(u, ctx){
     return v;
   }
   if(v.available === false){
-    v.state = 'latest';
-    v.text = '已是最新' + (v.current ? ('（当前 ' + v.current + '）') : '');
+    /* ⭐⭐ **⛔ 以 `available === false` 充「已是最新」**（承「未知 ⛔ 充知」· pm_1629 之守）。
+       `false` 有**二义**（TD_1644 §三.1 ⒜⒞ ＋ §三.3）：**已是最新**（其 `note` 逐字书之）∨
+       **取不得 ／ 未接**（`note` 照实，如今之「取清单 ⛔ 得：<url>」）⇒ 唯后端**自书**「已是最新」
+       方书之；否则 **照书后端之 `note`**（⛔ 前端自造 ／ ⛔ 冒「已是最新」—— 此即 2026-10-07 真活端所逮之 **假报**）。 */
+    if(v.bnote === '已是最新'){
+      v.state = 'latest';
+      v.text = '已是最新' + (v.current ? ('（当前 ' + v.current + '）') : '');
+      return v;
+    }
+    v.state = 'unchecked';
+    v.text = v.bnote ? v.bnote : '更新读数 ⛔ 得（后端 ⛔ 给因）';
+    v.note = '⛔ 非「已是最新」（承「未知 ⛔ 充知」）｜' + PA_UPD_OUTLET;
     return v;
   }
   v.state = 'unanswered';
@@ -164,6 +185,7 @@ function paUpdVerText(v){
   if(st === 'available') t += ' · ⬆ 有新版 ' + (v.latest || '（版本号未给）')
     + (v.total != null ? ('（约 ' + paPrepMB(v.total) + '）') : '');
   else if(st === 'latest') t += ' · 已是最新';
+  else if(st === 'unchecked') t += ' · ' + ((v && v.bnote) ? v.bnote : '更新读数 ⛔ 得');
   else if(st === 'running') t += ' · 更新中（' + (PA_UPD_PHASE[v.phase] || v.phase || '进行中') + '）';
   else if(st === 'restart') t += ' · 待重启生效';
   else if(st === 'done') t += ' · 已更新至 ' + (v.latest || cur);
@@ -202,7 +224,7 @@ async function paUpdFetch(){
     st = (r && r.status) ? r.status : 0;
     if(r && r.ok){ try{ h = await r.json(); }catch(e){ h = null; } }
   }catch(e){ st = 0; h = null; }
-  /* ⛔ 充知：`/health` 无 `update` 键（今之后端即此）⇒ 面书「未答」（⛔ 不等于「已是最新」）。 */
+  /* ⛔ 充知：`/health` 无 `update` 键（**TD 之今版已挂此键** ⇒ 此支唯备于旧后端）⇒ 面书「未答」（⛔ 不等于「已是最新」）。 */
   u = (h && h.update && typeof h.update === 'object') ? h.update : null;
   paUpdRun.h = h; paUpdRun.u = u; paUpdRun.http = u ? null : (st || null);
   const v = paUpdApply();
