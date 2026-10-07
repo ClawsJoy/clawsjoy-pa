@@ -43,8 +43,14 @@ STOPPER = os.path.join(u"scripts", u"win_pa", u"pa_nowindow.py")
 #: ⛔ 动之「点名」（**一处定形** —— 双保险 ∧ ⛔ 静默 · 与 `make_update.py:NEVER` 同族）
 NEVER = (u"config/.env", u"config/secrets.yaml", u"scripts/win_pa/ClawsJoyPA_PA_Boot.xml")
 NEVER_PREFIX = (u"data/", u"logs/", u".git/")
-#: 起服之待（秒）—— 探 `/health` 之窗（门先开 ⇒ 秒级可答）
-HEALTH_WAIT_S = 40.0
+#: 起服之待（秒）—— 探 `/health` 之窗。⭐ **与壳同窗**（`shell/main.js` 之 `waitHealth(120000)`）：
+#:   昔 `40 s` ⟷ 壳 `120 s` ⇒ 慢起（向量库 ／ 杀软扫新件 ／ 冷盘）必判败而回滚，而服或旋起
+#:   ⇒「一直失败」之形（pm_1715 §三.1⒜）。一处定形（⛔ 二处之窗各异）。
+HEALTH_WAIT_S = 120.0
+#: 探中之心跳（秒）—— 每此久印一行「已 N s ／ 窗 M s」（承「凡等待必有进度 ＋ 时长」· ⛔ 刷屏）
+PROBE_TICK_S = 10.0
+#: 回滚后「验旧版之服已重起」之短窗（秒）—— pm_1713 §二.2（唯「探得」方称「回」）
+RESTART_WAIT_S = 12.0
 
 
 def _add_core(root):
@@ -166,12 +172,17 @@ def verify_all(man, staged):
 
 
 def ctl(root, act, timeout=180):
-    u"""起停（**唯引装根之器** —— ⛔ 本器另写一套）⇒ `(rc | None, out)`；⛔ 在 ⇒ `(None, 因)`。"""
+    u"""起停（**唯引装根之器** —— ⛔ 本器另写一套）⇒ `(rc | None, out)`；⛔ 在 ⇒ `(None, 因)`。
+
+    ⭐ **与「根」绑定**（承规七 · pm_1712 §三.3⒜）：以 `cwd=root` 起 —— 器之配置 ／ 数据仓
+      皆按 CWD 解；若随调用者之 CWD（壳 ／ 器 ／ 他处）⇒ 解到别处 ⇒ 起而 ⛔ 听本根之端口。
+    """
     p = os.path.join(root, STOPPER)
     if not os.path.isfile(p):
         return None, u"未见 %s（⛔ 起停 ⇒ 报「停而可换」之支）" % STOPPER
     try:
         r = subprocess.run([sys.executable, u"-X", u"utf8", u"-B", p, act],
+                           cwd=(root or None),
                            capture_output=True, text=True, encoding=u"utf-8",
                            errors=u"replace", timeout=timeout)
     except Exception as e:                                    # noqa: BLE001 — 照实报因
@@ -296,8 +307,12 @@ def probe_health(root, port=None, wait_s=HEALTH_WAIT_S):
     url = u"http://127.0.0.1:%s/health" % port
     want = os.path.normcase(os.path.join(root, u"version.json"))
     t0 = time.time()
-    rows = [u"[..] 探 %s（窗 %.0f s）" % (url, wait_s)]
+    # ⭐ pm_1715 §三.1⒜：**首行先印**（⛔ 静默等 · 其后每 `PROBE_TICK_S` 一行心跳）——
+    #   故首行 ⛔ 入 `rows`（⛔ 二次印 · 免 「一事二声」）。
+    print(u"[..] 探 %s（窗 %.0f s）" % (url, wait_s), flush=True)
+    rows = []
     last = u""
+    nxt = t0 + PROBE_TICK_S
     while time.time() - t0 < wait_s:
         try:
             with urllib.request.urlopen(url, timeout=5.0) as r:
@@ -312,6 +327,11 @@ def probe_health(root, port=None, wait_s=HEALTH_WAIT_S):
             return True, rows
         except Exception as e:                                # noqa: BLE001 — 续试
             last = u"%s: %s" % (type(e).__name__, e)
+            now = time.time()
+            if now >= nxt:                                # ⭐ 心跳：⛔ 静默等（承「凡等待必有进度 ＋ 时长」）
+                print(u"[..] 探 %s 已 %.0f s ／ 窗 %.0f s（末：%s）"
+                      % (url, now - t0, wait_s, last[:60]), flush=True)
+                nxt = now + PROBE_TICK_S
             time.sleep(1.5)
     rows.append(u"[FAIL] /health ⛔ 达（%.1f s）｜%s ⇒ 去处：看 logs\\gateway_%s_console.log"
                 % (time.time() - t0, last, port))
@@ -397,13 +417,26 @@ def run(a):
         return 2
     if not a.no_restart:
         rc, out = ctl(root, u"start")
-        say(9, 10, u"重启：%s" % (u"成" if rc == 0 else u"⚠ rc=%s（%s）" % (rc, out[:80])))
+        # ⭐ pm_1712 §三.3⒞（「重启：成」之假绿）：起令之 rc ⛔ 为「服已起」之据 ——
+        #   唯其下之探活（`probe_health`）方是；故此处 ⛔ 称「成」。
+        say(9, 10, u"起服令 rc=%s%s ⇒ 待探活（⛔ 以 rc 0 称「起」）"
+            % (rc, u"" if rc == 0 else u"（%s）" % out[:80]))
         ok, rows = probe_health(root)
         print(u"\n".join(rows))
         if not ok:
             rows = rollback(root, rec, [])
             print(u"\n".join(rows))
-            print(u"[FAIL] 起服之正控 ⛔ 过 ⇒ **已回滚至 `%s`**" % (cur or u"原态"))
+            print(u"[FAIL] 起服之正控 ⛔ 过（起令 rc=%s）⇒ **已回滚至 `%s`**" % (rc, cur or u"原态"))
+            # ⭐ pm_1713 §二.2（探败之支 ⛔ 重起 ⇒ 服留「停」之态 · 老板之面必断）：
+            #   回滚毕 ⇒ 以旧版之树再起重服 —— 唯「探得」方称「回」；⛔ 留「停」而不言。
+            rc2, out2 = ctl(root, u"start")
+            ok2, rows2 = probe_health(root, wait_s=RESTART_WAIT_S)
+            print(u"\n".join(rows2))
+            if ok2:
+                print(u"[回滚] 服已重起（旧版之树 · 探得）⇒ 面可续用")
+            else:
+                print(u"[⚠] 回滚后之服 ⛔ 答探活（起令 rc=%s）⇒ 服今在「停」之态；"
+                      u"去处：看 %s ∨ 关窗重开 ClawsJoy PA" % (rc2, os.path.join(root, u"logs")))
             return 2
     try:
         from core.lib import update_check as UC
