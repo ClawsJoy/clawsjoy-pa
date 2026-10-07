@@ -44,16 +44,21 @@ const PA_PREP_ICON = {starting:'⏳', running:'⏳', restart:'🔁', done:'✅',
 
 function paPrepNum(v){ return (typeof v === 'number' && isFinite(v)) ? v : null; }
 function paPrepMB(n){ return (Math.round((n / 1048576) * 10) / 10) + ' MB'; }
-/* ⭐ pm_1633 裁 ⒝（**一处定形** · ⛔ 二处各写）：`measured`（缓存件已见）而「总长」缺 ⇒ 辞
-   「已下 X MB（总长不可量 —— 后端未给）」—— ⛔ 造数（⛔ 硬编 `79 MB`）∧ ⛔ 以 % 充字节。
+/* ⭐ pm_1633 裁 ⒝ ＋ pm_1638 裁（**去重**）（**一处定形** · ⛔ 二处各写）：`measured`（缓存件已见）
+   而「总长」缺 ⇒ **读数归前端 ∧ 「由」归后端**（⛔ 二音 ∧ ⛔ 无声）：
+     ⒜ `note` 非空 ⇒ 本函出「已下 X MB · <note 之逐字>」（后端之辞照实并列 —— 前端 ⛔ 再造其由）；
+     ⒝ `note` 空（后端未给 ⇒ 回落）⇒ 本函补**前端之辞**（读数 ＋ 其由 —— 见下行之字面）。
    `total` 有（> 0）⇒ 返 ''（**其处自显「X / Y（%）」之条** —— 承 `1617` 令一）。
-   ⚠ 语源 ＝ 后端 `download.note` 之族（`boot_progress.download_face` 之 `measured ∧ ⛔ total ⇒ note 空`）——
-      **已量者须显** ⇒ 由本函补；⛔ 盖其后端之 `note`（**照实并列**）。 */
-function paPrepMeasuredNote(done, total){
+   ⛔ 造数（⛔ 硬编 `79 MB`）∧ ⛔ 以 % 充字节。
+   ⚠ 已用 `note` ⇒ 调用处 ⛔ 再并列（`dln && !mn` —— 防二音）；`measured=false` 之由（`note` 非空
+      而 ⛔ 本函所辖）⇒ 仍由调用处照实并列。 */
+function paPrepMeasuredNote(done, total, note){
   const d = paPrepNum(done);
   if(d == null) return '';
   const t = paPrepNum(total);
   if(t != null && t > 0) return '';
+  const n = (note == null) ? '' : String(note).trim();
+  if(n) return '已下 ' + paPrepMB(d) + ' · ' + n;
   return '已下 ' + paPrepMB(d) + '（总长不可量 —— 后端未给）';
 }
 function paPrepEl(){ return document.getElementById('paPrep'); }
@@ -130,13 +135,14 @@ function paPrepView(h, ctx){
       if(dN != null && tN) t2 += ' · 步 ' + dN + '/' + tN;
     } else {
       const _pr2 = paPrepNum(bt.progress);
-      const mn = paPrepMeasuredNote(done, total);
+      const dln = (dl && dl.note) ? String(dl.note) : '';
+      const mn = paPrepMeasuredNote(done, total, dln);
       if(mn) t2 += ' · ' + mn;
       if(_pr2 != null){ v.can_bar = true; v.pct = Math.max(0, Math.min(100, Math.round(_pr2))); }
       if(dN != null && tN) t2 += ' · 步 ' + dN + '/' + tN + ((v.pct == null) ? '' : ('（' + v.pct + '%）'));
       else if(_pr2 != null) t2 += ' · 后端步进度 ' + Math.round(_pr2) + '%（⛔ 字节不可量 —— 后端未给 done ／ total' + (mn ? ' · 已下者见上' : '') + '）';
       if(_e2) t2 += ' · ' + _e2;
-      if(dl && dl.note) t2 += ' · ' + String(dl.note);
+      if(dln && !mn) t2 += ' · ' + dln;   /* 唯本函 ⛔ 用者（measured=false 之由等）照实并列 —— ⛔ 二音 */
       if(v.pct == null && !_e2 && !mn) t2 += ' · 进度不可量（后端未给 done ／ total ／ 已耗）';
     }
     v.text = t2 + '）';

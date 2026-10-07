@@ -22,6 +22,10 @@ u"""pm_1621 四条 之齿（CW b2a5182 · 2026-10-07）—— 更新环节之可
   U15 正控（pm_1633 裁 ⒝ · `measured ∧ ⛔ total`）⇒ 显「已下 X MB」∧「总长不可量」。
   U16 反控（pm_1633 裁 ⒝）：有 `total` ⇒ 按字节之条（⛔ 含「总长不可量」）；
       无 `done` ⇒ 面 **⛔ 书「已下」**。
+  U17 pm_1638 裁（去重 · 与 `startup.js` 共本函）：本面今 **⛔ 传 `note`**（更新回之字段名候 TD `1620`
+      之报）⇒ 唯走 ⒝ 之回落（「已下 X MB ＋ 前端之辞」）∧ 其辞 **⛔ 在 `update.js` 自书**（一处定形）。
+  U18 pm_1641 裁 ①（端名之对齐 · 一处）：版之真源 ⇒ `/health.build.version`（装根之版）优先 ∧
+      缺 ⇒ 回落 `/health.version`（进程之版）；⛔ 引 `/v9/pa/*`（**读一处 · 动分端**）。
   M1–M5 **一幅横幅**（令四 · ⛔ 二套面）：更新进行中 ／ 更新失败 ／ 更新完成 ⇒ 皆占横幅；
      更新之「有新版 ／ 已是最新 ／ 未答」⇒ **⛔ 占**横幅（令一之版本归顶栏版行）。
   S1 一处定形：`paPrepMerge` 唯 1 处 ∧ 横幅之渲唯 `startup.js` 一处（update.js ⛔ 自渲）。
@@ -105,6 +109,7 @@ def _harness() -> str:
         _decl(t, u"const PA_UPD_BUSY_MS"), _block(t, u"const PA_UPD_PHASE = {", u"};"),
         _decl(t, u"const PA_UPD_OUTLET"), _fn(t, u"paUpdView"), _fn(t, u"paUpdCurFromHealth"),
         _fn(t, u"paUpdVerText"),
+        _decl(t, u"const paUpdRun"),
         u"const paPrepRun = {h: null};",
     ]
     cases = u"""
@@ -141,6 +146,15 @@ for (const c of MC) { out.m[c[0]] = paPrepMerge(paPrepView(c[1], c[2]), paUpdVie
 out.ver = {avail: paUpdVerText(paUpdView({state:"idle", available:true, current:"1.0.0", latest:"1.0.1", total_bytes:629145}, {})),
            latest: paUpdVerText(paUpdView({state:"idle", available:false, current:"1.0.1"}, {})),
            noans: paUpdVerText(paUpdView(null, {http_status:404}))};
+out.cur = {};
+for (const c of [["build_ver",    {version:"1.0.0", build:{available:true, version:"1.2.3"}}],
+                 ["build_nover",  {version:"1.0.0", build:{available:false, version:null}}],
+                 ["build_absent", {version:"1.0.0"}],
+                 ["both_absent",  {}]]) {
+  paUpdRun.h = c[1];
+  out.cur[c[0]] = paUpdCurFromHealth();
+}
+paUpdRun.h = null;
 console.log(JSON.stringify(out));
 """
     return "\n".join(parts) + cases
@@ -354,3 +368,30 @@ def test_U16_裁B_反控_有总长则按字节条_未量则不书已下():
     assert u"已下 0.3 MB / 0.6 MB" in bar["text"], bar["text"]
     backup = _v()["u"]["backup"]
     assert u"已下" not in backup["text"], backup["text"]
+
+
+# ---------- U17：pm_1638 裁（去重 · 「由」归后端 note ／ 其辞唯 `startup.js` 一处） ----------
+
+def test_U17_裁去重_更新面走回落且其辞惟startup一处():
+    v = _v()["u"]["dl_meas_nototal"]
+    assert v["state"] == "running", v
+    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"（总长不可量 —— 后端未给）" in v["text"], u"后端 ⛔ 给 note ⇒ 前端补（回落）"
+    src = _read(UJ)
+    src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
+    assert u"总长不可量" not in src, u"其辞 ⛔ 二处各写（唯 `startup.js` 之 `paPrepMeasuredNote`）"
+    assert u"paPrepMeasuredNote(v.done, v.total)" in src, \
+        u"本面唯传读数（字段名候 TD 1620 之报 ⇒ 唯改此行一处加第三参）"
+
+
+# ---------- U18：pm_1641 裁 ①（端名之对齐 · 读一处 · 动分端） ----------
+
+def test_U18_版之真源_health_build优先且缺则回落():
+    c = _v()["cur"]
+    assert c["build_ver"] == "1.2.3", u"`/health.build.version` 有 ⇒ 用之（装根之版 · 真读数）"
+    assert c["build_nover"] == "1.0.0", u"`build` 无版号 ⇒ 回落 `/health.version`（进程之版）"
+    assert c["build_absent"] == "1.0.0", u"无 `build` 键 ⇒ 回落 `/health.version`"
+    assert c["both_absent"] == "", u"皆缺 ⇒ 空（⛔ 造 —— 承「未知 ⛔ 充知」）"
+    src = re.sub(r"/\*.*?\*/", "", _read(UJ), flags=re.S)
+    assert u"/v9/pa/" not in src, u"面之读数 ⛔ 引 `/v9/pa/*`（唯「动」—— 承 pm_1641 裁 ①）"
+    assert u"'/health'" in src, u"读数之端唯 `/health`"

@@ -26,8 +26,14 @@ u"""pm_1617 令一 ／ 令二 ／ 令四 ／ 令五 之齿（CW b2a5182 · 2026-
   L22 一处定形（结构）：`boot` 唯 `paPrepView` 读（⛔ 渲点 ／ ⛔ 合一之判）。
   L23 正控（pm_1633 裁 ⒝）：`download.measured=true` ∧ `total_bytes=null` ∧ `done_bytes=0.3 MB` ⇒
       面须**显「已下 0.3 MB」**∧ 含「总长不可量」∧ 含「后端未给」（⛔ 静默略去已量之真读数 ∧ ⛔ 造数）。
-  L24 反控（pm_1633 裁 ⒝）：`total_bytes` 有 ⇒ 面为「按字节之条」（**⛔ 含「总长不可量」**）；
-      `measured=false`（done 为 null）⇒ 面 **⛔ 书「已下」**。
+ L24 反控（pm_1633 裁 ⒝）：`total_bytes` 有 ⇒ 面为「按字节之条」（**⛔ 含「总长不可量」**）；
+     `measured=false`（done 为 null）⇒ 面 **⛔ 书「已下」**。
+ L25 正控（pm_1638 裁 · 去重 · ⒜）：`measured ∧ ⛔total` 而**后端给 `note`** ⇒ 面含**后端 note 之逐字**
+      且 **⛔ 含前端之回落辞**（`（总长不可量 —— 后端未给）`）—— **⛔ 二音**。
+ L25b 反控（pm_1638 裁 · 去重 · ⒜）：后端之 `note` 为**他辞** ⇒ 面**照实**其辞 ∧ **⛔ 冒「后端未给」**。
+ L26 反控（pm_1638 裁 · 去重 · ⒝）：后端 **⛔ 给 `note`**（空）⇒ 前端**补书**其由（回落 · ⛔ 无声）。
+ L27 反控（pm_1638 裁 · 去重 · ⒞）：`total` 有 ⇒ 面为「X ／ Y（%）」之条 ∧ **⛔ 涉「不可量」**。
+ L28 一处定形（结构）：回落辞**源中唯 1 处**（本函之内）∧ `update.js` **⛔ 自书其辞**。
 
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_startup_prep_1617.py -q
@@ -124,6 +130,8 @@ const CASES = [
  ["boot_ready",  {status:"healthy", boot:{state:"ready", phase:"ready", since_s:41.0, phase_since_s:1.0, phases_done:7, phases_total:7, progress:100, failed:null, download:{measured:true, done_bytes:83152000, total_bytes:83152000, frac:1.0, eta_s:null, note:"已毕（缓存件齐）"}}}, {elapsed_s:3}],
  ["boot_odd",    {status:"starting", boot:{state:"starting", phase:"weird_phase", since_s:1.0, phase_since_s:1.0, phases_done:0, phases_total:0, progress:0, failed:null, download:{measured:false, done_bytes:null, total_bytes:null, frac:null, eta_s:null, note:""}}}, {elapsed_s:1}],
  ["boot_meas_nototal", {status:"starting", boot:{state:"starting", phase:"vector_model_download", since_s:23.4, phase_since_s:20.1, phases_done:4, phases_total:7, progress:57, failed:null, download:{measured:true, done_bytes:314572, total_bytes:null, frac:null, eta_s:null, note:""}}}, {elapsed_s:9}],
+ ["boot_meas_nototal_note", {status:"starting", boot:{state:"starting", phase:"vector_model_download", since_s:23.4, phase_since_s:20.1, phases_done:4, phases_total:7, progress:57, failed:null, download:{measured:true, done_bytes:314572, total_bytes:null, frac:null, eta_s:null, note:"总长不可量（后端未给）"}}}, {elapsed_s:9}],
+ ["boot_meas_nototal_note2", {status:"starting", boot:{state:"starting", phase:"vector_model_download", since_s:23.4, phase_since_s:20.1, phases_done:4, phases_total:7, progress:57, failed:null, download:{measured:true, done_bytes:314572, total_bytes:null, frac:null, eta_s:null, note:"总长不可量（HEAD 探不得）"}}}, {elapsed_s:9}],
  ["absent",      undefined, undefined]
 ];
 const out = {};
@@ -341,3 +349,50 @@ def test_L24_裁B_反控_有总长则按字节条_未量则不书已下():
     steps = _v()["boot_steps"]
     assert u"已下" not in steps["text"], steps["text"]
     assert u"总长不可量" not in steps["text"], steps["text"]
+
+
+# ---------- L25 ～ L28：去重（pm_1638 裁 · 「由」归后端 note ／ 「读数」归前端 · 一处定形） ----------
+
+FALLBACK = u"（总长不可量 —— 后端未给）"
+
+
+def test_L25_裁去重_后端有note则前端不再书其由():
+    v = _v()["boot_meas_nototal_note"]
+    assert v["state"] == "starting", v
+    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"总长不可量（后端未给）" in v["text"], u"后端 note 之逐字须照实入屏"
+    assert FALLBACK not in v["text"], u"⛔ 二音：后端已给其由 ⇒ 前端 ⛔ 再造"
+
+
+def test_L25b_裁去重_后端之他辞亦照实且不冒后端未给():
+    v = _v()["boot_meas_nototal_note2"]
+    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"总长不可量（HEAD 探不得）" in v["text"], v["text"]
+    assert u"后端未给" not in v["text"], u"⛔ 冒「后端未给」（后端已给其辞 —— 承「未知 ⛔ 充知」）"
+    assert FALLBACK not in v["text"], v["text"]
+
+
+def test_L26_裁去重_后端未给note则前端补书其由():
+    v = _v()["boot_meas_nototal"]
+    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert FALLBACK in v["text"], u"回落：后端 ⛔ 给其由 ⇒ 前端须补（⛔ 无声）"
+
+
+def test_L27_裁去重_有总长则按字节条且不涉不可量():
+    bar = _v()["boot_bar"]
+    assert u"已下 11.8 MB / 79.3 MB（14%）" in bar["text"], bar["text"]
+    assert u"不可量" not in bar["text"], bar["text"]
+
+
+def test_L28_一处定形_回落辞唯源中一处且更新面不自书():
+    s = _src()
+    assert s.count(FALLBACK) == 1, u"回落辞须唯 1 处（一处定形）"
+    assert _fn(s, u"paPrepMeasuredNote").count(FALLBACK) == 1, u"其辞须在本函之内"
+    uj = io.open(str(ROOT / "web" / "pa" / "faces" / "update.js"), encoding="utf-8").read()
+    while u"/*" in uj and u"*/" in uj:            # 剔注（注里述其病 ⛔ 算「自书」）
+        a = uj.find(u"/*")
+        b = uj.find(u"*/", a)
+        if b < 0:
+            break
+        uj = uj[:a] + uj[b + 2:]
+    assert u"总长不可量" not in uj, u"更新面 ⛔ 自书其辞（一处定形 · 二面共本函）"

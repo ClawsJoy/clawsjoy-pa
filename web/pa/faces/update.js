@@ -83,7 +83,9 @@ function paUpdView(u, ctx){
   if(busy){
     v.state = 'running';
     const ph = PA_UPD_PHASE[v.phase] || (v.phase ? ('当前步骤：' + v.phase) : '正在更新（后端未给步骤）');
-    /* ⭐ pm_1633 裁 ⒝（一处定形 · 与 `startup.js` 共本函）：`measured ∧ ⛔ total` ⇒ 显「已下 X MB（总长不可量）」 */
+    /* ⭐ pm_1633 裁 ⒝（一处定形 · 与 `startup.js` 共本函）：`measured ∧ ⛔ total` ⇒ 显「已下 X MB（总长不可量）」。
+       ⚠ pm_1638 裁（去重）：**其辞唯 `startup.js` 一处** —— 本面 **⛔ 传 `note`**（更新回之字段名
+          候 TD `1620` 之报 ⇒ 唯改本行一处加第三参 ⇒ 承 pm_1621 §一.2「字段 ⛔ 自造」）⇒ 本面走 ⒝ 之回落。 */
     const mn = paPrepMeasuredNote(v.done, v.total);
     let t = '正在更新…（' + ph;
     if(v.total != null && v.total > 0 && v.done != null){
@@ -141,11 +143,17 @@ function paUpdView(u, ctx){
 
 /* 顶栏之版行（令一 · 常显 · ⛔ 占横幅）：当前版本之真源 ＝ `/health.version`（⛔ 前端写死）。 */
 function paUpdCurFromHealth(){
-  /* 版本之真源 ＝ `/health.version`（⛔ 前端写死）：先取本件之末回，缺 ⇒ 取 `startup.js` 之末回。 */
+  /* 版本之真源（**一处** · pm_1641 裁 ①「读一处（`/health`）· 动分端（`/v9/pa/*`）」）：
+     ⒜ `/health.build.version`（装根之版 —— 装时方生）⇒ 有则用之；
+     ⒝ 缺（装前 ／ 旧包 ⇒ `build.available=false`）⇒ 回落 `/health.version`（进程之版）。
+     ⛔ 前端写死 ∧ ⛔ 引 `/v9/pa/*`（机器 ／ 运维之端 —— ⛔ 供面）。先取本件之末回，缺 ⇒ 取 `startup.js` 之末回。 */
   try{
     const h = (paUpdRun && paUpdRun.h) ? paUpdRun.h
             : ((typeof paPrepRun !== 'undefined') ? paPrepRun.h : null);
-    return (h && h.version) ? String(h.version) : '';
+    if(!h) return '';
+    const bv = (h.build && h.build.version) ? String(h.build.version).trim() : '';
+    if(bv) return bv;
+    return h.version ? String(h.version) : '';
   }catch(e){ return ''; }
 }
 function paUpdVerText(v){
