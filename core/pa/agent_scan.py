@@ -364,7 +364,14 @@ def save_seat_roster(seats=None, roster_mod=None):
     if seats is None:
         seats, err, sha = seats_from_paseo()
     if roster_mod is None:
-        from core.pa import roster as roster_mod
+        # ⚠ pm_1848 §四.4（一手之器病）：⛔ 直写 `from core.pa import roster as roster_mod`
+        #   —— 「import 绑定」与**参数名**同名 ∧ 其前已有该名之 Load ⇒ 触发
+        #   `tests/unit/test_no_shadowing_imports` 之「先用后绑定」判据（红）。
+        #   运行**无** UnboundLocalError（参数调时已绑）⇒ 系器之过宽；然「一名二义」
+        #   （参数 ＝ 注入位 ／ import ＝ 真源）确为面之瑕 ⇒ **治在改码**（另立 `_roster`），
+        #   ⛔ 治在松闸（承「⛔ 改面以就器」：此处 ⛔ 改器以就码）。
+        from core.pa import roster as _roster
+        roster_mod = _roster
     at = time.strftime("%Y-%m-%d %H:%M:%S")
     doc = {"at": at, "source": SEAT_SOURCE, "source_sha16": sha,
            "scan_version": SCAN_VERSION, "count": len(seats),
@@ -395,7 +402,9 @@ def _merge_existing(old, new):
 def scan_and_upsert(roster_mod=None):
     """扫描 ⇒ 灌**既有** roster.upsert（⛔ 另立表）；既有卡 ⇒ **只增不减**。"""
     if roster_mod is None:
-        from core.pa import roster as roster_mod
+        # ⚠ 同上（pm_1848 §四.4）：⛔ 以 import 覆绑参数名 ⇒ 另立 `_roster`。
+        from core.pa import roster as _roster
+        roster_mod = _roster
     out = scan_cards()
     getter = getattr(roster_mod, "get", None)
     results, modes = [], {}

@@ -142,3 +142,52 @@ def test_scanner_ignores_comprehension_variables():
     finally:
         os.unlink(p)
     assert not bad, bad
+
+
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def test_scanner_flags_parameter_rebound_by_local_import():
+    """口径齿（有意保守 · pm_1848 §四.4）：**参数名**被函数内 import 覆绑 ⇒ 亦红。
+
+    由（一手所逮）：core/pa/agent_scan.py:366,397 走此形 —— 参数 roster_mod 调时已绑
+    ⇒ 运行 **无** UnboundLocalError ⇒ 就「先用后绑定」之原旨论，系**器之过宽**。
+    然「一名二义」（参数 ＝ 注入位 ／ import ＝ 真源）确为面之瑕 ⇒ 本判据**有意**保其严格，
+    治在**改码**（另立 _roster 再赋），⛔ 治在松闸 —— 否则本形之新例将静默溜过。
+    """
+    code = ("def f(x=None):\n"
+            "    if x is None:\n"
+            "        from m import y as x\n"
+            "    return x\n")
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as fh:
+        fh.write(code)
+        fp = fh.name
+    try:
+        bad = scan_file(fp)
+    finally:
+        os.unlink(fp)
+    assert any(b[2] == "x" for b in bad), bad
+
+
+def test_agent_scan_face_has_no_offenders():
+    """面之齿（pm_1848 §四.4）：core/pa/agent_scan.py 须**零**违（改码后之留痕）。"""
+    fp = os.path.join(_REPO, "core", "pa", "agent_scan.py")
+    bad = scan_file(fp)
+    assert not bad, bad
+
+
+def test_scanner_accepts_distinct_local_alias():
+    """正控（治之形）：另立 _roster 再赋 ⇒ **不**红（即本批之改法）。"""
+    code = ("def f(x=None):\n"
+            "    if x is None:\n"
+            "        from m import y as _y\n"
+            "        x = _y\n"
+            "    return x\n")
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as fh:
+        fh.write(code)
+        fp = fh.name
+    try:
+        bad = scan_file(fp)
+    finally:
+        os.unlink(fp)
+    assert not bad, bad
