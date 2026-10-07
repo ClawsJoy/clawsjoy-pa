@@ -67,6 +67,19 @@ def git(root, *args, binary=False):
         (r.stderr or b"").decode(u"utf-8", u"replace")
 
 
+def blob(root, rev, path):
+    u"""某 rev 之件 ⇒ **检出之形**（施 `.gitattributes` 之钉 · ⛔ 裸 blob）。
+
+    ⚠ 由（一手之实 · 2026-10-07）：`*.cmd text eol=crlf` ⇒ **仓内 LF ∧ 检出 CRLF**；
+      装器之载荷自 `git archive`（**同施钉** ⇒ `4352 B`）⇒ 若增量取裸 blob（`4260 B`）
+      ⇒ **同物异印**（同一版之同一件随路而异）⇒ 违「一处定形」∧「凡搬增量 ⇒ 逐件全数核」。
+      故**与 `git archive` 同源**：`cat-file --filters` ＋ `-c core.autocrlf=false`
+      （**唯凭 attributes** · ⛔ 赖各机之 `core.autocrlf`）。
+    """
+    return git(root, u"-c", u"core.autocrlf=false", u"cat-file", u"--filters",
+               u"%s:%s" % (rev, path), binary=True)
+
+
 def changed(root, base, new):
     u"""二 rev 之改（**⛔ 认重命名** —— 一律拆为 `del` ＋ `add`）⇒ `[(status, posix path)]`。"""
     # ⚠ `core.quotepath` 默认真 ⇒ 非 ASCII 之名被 **八进制之转义**（`"scripts/\345\207..."`
@@ -177,7 +190,7 @@ def pkg_version(root):
 
 
 def _version_py_at(root, rev):
-    rc, raw = git(root, u"show", u"%s:core/lib/version.py" % rev, binary=True)
+    rc, raw = blob(root, rev, u"core/lib/version.py")
     if rc != 0 or not raw:
         return None
     for ln in raw.decode(u"utf-8", u"replace").splitlines():
@@ -241,7 +254,7 @@ def plan(root, base, new, version, base_version, channel, out, allow_big=False):
         if st == u"D":
             files.append({"path": rel, "sha256": u"", "size": 0, "mode": u"del"})
             continue
-        rc, raw = git(root, u"show", u"%s:%s" % (new, rel), binary=True)
+        rc, raw = blob(root, new, rel)
         if rc != 0:
             return 2, rows + [u"[FAIL] 取件败：%s@%s" % (rel, new)], None
         files.append({"path": rel, "sha256": hashlib.sha256(raw).hexdigest(),
@@ -287,7 +300,7 @@ def build(root, man, out, new, base=None):
             raw = vraw
             rc = 0
         else:
-            rc, raw = git(root, u"show", u"%s:%s" % (new, e["path"]), binary=True)
+            rc, raw = blob(root, new, e["path"])
         if rc != 0 or hashlib.sha256(raw).hexdigest() != e["sha256"] or len(raw) != e["size"]:
             return 2, rows + [u"[FAIL] 件之印 ⛔ 合：%s（回读自校）" % e["path"]]
         dst = os.path.join(out, e["path"].replace(u"/", os.sep))
