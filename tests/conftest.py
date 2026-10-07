@@ -131,3 +131,64 @@ def _warm_tiktoken():
 def auth_headers():
     """返回认证头（本地测试无真实认证，返回空 dict）"""
     return {}
+
+
+# ⑯(2026-10-08 · 9.0.10 序隔离) 会话级「态」逐件还原 —— 使「全跑 ＝ 单跑之和」。
+# 归因(一手 · 两轮全跑之差): 全跑 9 条「全跑红 ／ 单跑绿」= 二类**进程级共享态**残留 ——
+#   ⒜ core/gateway/precision_inject.py:201 `_cfg_roots` 为 functools.lru_cache(maxsize=1):
+#      首次调用者之 `_obsidian_cfg()`(读 config/v9/execution_policy.yaml)结果**钉死全会话**。
+#      全跑时先有**真配置**调用者(知识面/金丝雀用例) ⇒ 缓存 = 真根(`工作区/SOPs/SOPs` 向
+#      / `开发区/ComputerUse/Pitfalls`); 之后 tests/unit/test_precision_inject.py 之 `_iso`
+#      猴补 `_obsidian_cfg` 对 `_sops_rel`/`_pitfalls_rel`(走缓存)**无效** ⇒ 解析路径落
+#      tmp vault 之外 ⇒ 6 条 precision_inject ＋ 2 条知识面用例红(单跑时首调在猴补之后 ⇒ 绿)。
+#   ⒝ core/gateway/shared_state.py:646 `_preempt_requests`/`_preempt_starve` 为**进程级共享队列**:
+#      tests/unit/test_pm011_n11.py:261 经 `POST /v9/preempt`(路由缺省 `priority=5`/`requester=boss`)
+#      为 session `s1` 登记后**未 drain/clear** ⇒ 后继 tests/unit/test_workspace_guard_fixes.py:223
+#      的 `_execute_sandbox_tool("web_search", {}, "u1", "s1")` 被「prio 5 抢占」⇒ 1 条红。
+# 本 fixture 承 `_v9ctx_service_isolation` 之式: 把「会话级缓存/共享队列」当**隔离边界**,
+# 每用例前后还原到入口式样(⛔ 改断言 · ⛔ 关检查)。诊断用 kill-switch: `CJ_NO_ORDER_ISOLATION=1`。
+_ORDER_STATE = (
+    # (模块, 属性, 形): "lru" = functools 缓存(调 `.cache_clear()`)｜"dict" = 可变容器(调 `.clear()`)
+    ("core.gateway.precision_inject", "_cfg_roots", "lru"),
+    ("core.gateway.shared_state", "_preempt_requests", "dict"),
+    ("core.gateway.shared_state", "_preempt_starve", "dict"),
+)
+
+
+def _order_state_reset():
+    """把 `_ORDER_STATE` 所列之会话级态还原到入口式样。
+
+    ⚠ 逐件**重解析**(⛔ 持对象引用): `shared_state.clear_preempt` 会**重绑**
+      `_preempt_starve` 之名 ⇒ 缓存下来的旧对象会失效(改了等于没改)。
+    ⚠ 只碰**已在 sys.modules 者**: 未用之模块 ⛔ 为清缓存而额外 import(副作用/开销)。
+    """
+    import importlib
+    import sys as _sys
+
+    for _mod, _attr, _kind in _ORDER_STATE:
+        if _mod not in _sys.modules:
+            continue
+        try:
+            _obj = getattr(importlib.import_module(_mod), _attr, None)
+            if _obj is None:
+                continue
+            if _kind == "lru":
+                _obj.cache_clear()
+            else:
+                _obj.clear()
+        except Exception:
+            continue
+
+
+@pytest.fixture(autouse=True)
+def _order_isolation():
+    """⑯ 序隔离: 每用例前/后还原会话级共享态 ⇒ 全跑 ＝ 单跑之和(⛔ 假红 ∧ ⛔ 假绿)。"""
+    if os.environ.get("CJ_NO_ORDER_ISOLATION") == "1":
+        yield
+        return
+    _order_state_reset()
+    try:
+        yield
+    finally:
+        # 后置亦还原: ⛔ 让本用例之残留(尤其失败/异常径)漏给下一件。
+        _order_state_reset()
