@@ -38,7 +38,17 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 RECORD_NAME = u"ClawsJoyPA-Update.record.json"
 #: ⛔ 入增量之「点名」（**一处定形** —— 双保险 ∧ ⛔ 静默）：密钥 ／ 本机态 ／ 用户数据。
 NEVER = (u"config/.env", u"config/secrets.yaml", u"scripts/win_pa/ClawsJoyPA_PA_Boot.xml")
-NEVER_PREFIX = (u"data/", u"logs/", u"dist/", u"tests/", u".git/", u"_share/")
+NEVER_PREFIX = (u"data/", u"logs/", u"dist/", u"tests/", u".git/", u"_share/",
+                # ⭐ pm_1656 §三.3：**静态大件** ⇒ 入 ⛔ 入增量
+                #   （彼二处 ⛔ 在运行之闭包 —— `sandbox_seed.SEED_EXCLUDE` 一手 ⇒
+                #    若一改而入 ⇒ **一条增量可至数百 MB**）
+                u"web/images/", u"web/mobile/")
+
+#: 增量之阈（**一处定形** · pm_1656 §三.3）：超 ⇒ 红（须 `--allow-big` 明书）。
+#: 其由：`web/images/` ／ `web/mobile/` 已入 `NEVER_PREFIX` ⇒ 常规增量 ≈ 1 MB 量级 ⇒
+#: 超此数 ⇒ 疑「大件误入」（**⛔ 静默**）。
+MAX_FILES = 400
+MAX_BYTES = 8 * 1024 * 1024
 
 
 def _add_core(root):
@@ -108,6 +118,23 @@ def never(rel):
     return u""
 
 
+def _totals(man):
+    u"""清单之合数（**一处出** —— 借 `update_manifest.totals` ⇒ ⛔ 本器另算）。"""
+    from core.lib import update_manifest as UM
+    return UM.totals(man)
+
+
+def _over_threshold(man):
+    u"""超阈之因（**一处定形** · pm_1656 §三.3）⇒ `[因]` ∨ `[]`（合）。"""
+    t = _totals(man)
+    over = []
+    if t[u"n"] > MAX_FILES:
+        over.append(u"件数 %d > 阈 %d" % (t[u"n"], MAX_FILES))
+    if t[u"bytes"] > MAX_BYTES:
+        over.append(u"字节 %d > 阈 %d" % (t[u"bytes"], MAX_BYTES))
+    return over
+
+
 def pkg_version(root):
     u"""产品之版号（**一处定形** · ⛔ 字面）：`pyproject.toml[project].version`（≡ `core/lib/version.py`）。"""
     p = os.path.join(root, u"pyproject.toml")
@@ -167,7 +194,7 @@ def version_payload(root, rev, man):
             "channel": man[u"channel"]}
 
 
-def plan(root, base, new, version, base_version, channel, out):
+def plan(root, base, new, version, base_version, channel, out, allow_big=False):
     u"""造之料（**⛔ 落盘**）⇒ `(rc, rows, manifest | None)`。"""
     rows = []
     if not os.path.isdir(os.path.join(root, u".git")):
@@ -216,6 +243,15 @@ def plan(root, base, new, version, base_version, channel, out):
                   "size": len(vraw),
                   "mode": u"mod" if _exists_at(root, base, u"version.json") else u"add"})
     files.sort(key=lambda e: e["path"])
+    over = _over_threshold(man)
+    if over:
+        msg = u"；".join(over)
+        if not allow_big:
+            return 2, rows + [
+                u"[FAIL] 增量超阈：%s" % msg,
+                u"       ⇒ 去处：核 `NEVER_PREFIX`（`web/images/` ／ `web/mobile/` ／ 大件之误入）"
+                u" ∨ 确知 ⇒ 明书 `--allow-big`"], None
+        rows.append(u"[WARN] 增量超阈（`--allow-big` 明书）：%s" % msg)
     return 0, rows, man
 
 
@@ -279,6 +315,8 @@ def self_test():
               bool(UM.bad_path(u"a\\b")), u"反控：`..` ／ 盘符 ／ 反斜杠 ⇒ 拒")
     ok &= say(never(u"config/.env") != u"" and never(u"tests/unit/a.py") != u"", u"正控：点名 ／ 前缀 ⇒ ⛔ 入")
     ok &= say(never(u"core/lib/x.py") == u"", u"反控：常件 ⇒ 合")
+    ok &= say(never(u"web/images/a.jpg") != u"" and never(u"web/mobile/vosk.bin") != u"",
+              u"正控（pm_1656 §三.3）：`web/images/` ／ `web/mobile/` ⇒ ⛔ 入（免一条增量数百 MB）")
     man = {"version": u"9.0.1", "base_version": u"9.0.0", "channel": u"internal",
            "built_at": u"2026-10-07T00:00:00+0800",
            "files": [{"path": u"core/a.py", "sha256": u"a" * 64, "size": 3, "mode": u"add"},
@@ -294,6 +332,12 @@ def self_test():
     t = UM.totals(man)
     ok &= say(t[u"n"] == 2 and t[u"add"] == 1 and t[u"del"] == 1 and t[u"bytes"] == 3,
                u"正控：自述之数（%r）" % t)
+    big = {"version": u"9.0.1", "base_version": u"9.0.0", "channel": u"internal",
+           "built_at": u"2026-10-07T00:00:00+0800",
+           "files": [{"path": u"core/x%d.py" % i, "sha256": u"a" * 64, "size": 16,
+                      "mode": u"add"} for i in range(MAX_FILES + 1)]}
+    ok &= say(_over_threshold(big) != [] and _over_threshold(man) == [],
+              u"正控 ／ 反控：超阈之判（%r）" % (_over_threshold(big)[:1],))
     return 0 if ok else 2
 
 
@@ -308,6 +352,8 @@ def main(argv=None):
     ap.add_argument(u"--channel", default=u"internal")
     ap.add_argument(u"--go", action="store_true")
     ap.add_argument(u"--json", action="store_true")
+    ap.add_argument(u"--allow-big", action="store_true",
+                    help=u"明书：许超阈之增量（否则超阈 ⇒ 红 · pm_1656 §三.3）")
     ap.add_argument(u"--self-test", action="store_true")
     a = ap.parse_args(argv)
     root = os.path.abspath(a.root)
@@ -326,7 +372,8 @@ def main(argv=None):
         print(u"[FAIL] base_version ⛔ 得（请 --base-version）")
         return 2
     out = a.out if os.path.isabs(a.out) else os.path.join(root, a.out)
-    rc, rows, man = plan(root, a.base, a.new, ver, bver, a.channel, out)
+    rc, rows, man = plan(root, a.base, a.new, ver, bver, a.channel, out,
+                         allow_big=a.allow_big)
     print(u"\n".join(rows))
     if rc != 0:
         return rc
