@@ -477,7 +477,25 @@ def copy_tree(src, dst):
     return n, b
 
 
-def check(payload, log):
+def stray_files(payload):
+    u"""载荷之内**混杂之件**（⛔ 纯树 ∪ runtime ∪ wheel 之份）：`__pycache__` ／ `.pyc`。
+
+    ⚠ 我一手之训（载荷之头一跑）：`pa_nowindow.py` ⇒ `preflight_start.py` 之子进程 **⛔ 带 `-B`**
+      ⇒ 首跑即把 `core/__pycache__/*.pyc` 写进**装根**（＝ 载荷之根）⇒ 载荷 ⛔ 再等于「纯树」。
+      ⇒ 此为**产品侧之实**（其修须动载荷之件 ⇒ 升版号 · 候 PM 裁）；本器唯**捕**之。
+    """
+    out = []
+    for dp, dns, fns in os.walk(payload):
+        rel = os.path.relpath(dp, payload).replace(os.sep, u"/")
+        if rel == u"runtime" or rel.startswith(u"runtime/"):
+            continue                                            # 自带运行时之 `.pyc` ＝ 其份（建时编译）
+        for fn in fns:
+            if fn.endswith(u".pyc"):
+                out.append((rel.strip(u".") + u"/" if rel != u"." else u"") + fn)
+    return sorted(out)
+
+
+def check(payload, log, allow_strays=False):
     u"""唯核既有之载荷（⛔ 动）⇒ (ok, info)。"""
     ok = True
     if not os.path.isdir(payload):
@@ -512,6 +530,14 @@ def check(payload, log):
     else:
         log(u"[核] 4b ⛔ 见装根 version.json ⇒ `/health.build.available` 必 false（照实 · **FAIL**）")
         ok = False
+    _st = stray_files(payload)
+    if _st:
+        log(u"[核] 4c 载荷之混杂（⛔ 纯树之份 · ‰ 首跑之器所落）：%d 件 ⇒ %s —— %s"
+            % (len(_st), u"**FAIL**" if not allow_strays else u"（--allow-strays · 唯报）",
+               u" ／ ".join(_st[:6])))
+        ok = ok and allow_strays
+    else:
+        log(u"[核] 4c 载荷之混杂：无 ✓（＝ 纯树 ∪ runtime ∪ wheel ∪ 二册）")
     n, b = dir_stats(payload)
     log(u"[核] 5 合：%d 件 ／ %s" % (n, mb(b)))
     for name, nn, bb in top_breakdown(payload):
@@ -528,7 +554,14 @@ def self_test():
     u"""齿：唯纯函 ＋ 小 tar（⛔ 动真盘之载荷 · ⛔ 触 5102）。"""
     t = tempfile.mkdtemp(prefix=u"pa_pl_st_")
     fails = []
-    say = lambda ok, s: (None if ok else fails.append(s), print(u"  %s %s" % (u"OK " if ok else u"FAIL", s)))[1]
+    n_hits = []
+
+    def say(ok, s):
+        u"""逐条报 ＋ 计（**⛔ 静默** —— 自测之数须可核）。"""
+        n_hits.append(1)
+        if not ok:
+            fails.append(s)
+        print(u"  %s %s" % (u"OK " if ok else u"FAIL", s))
 
     def w(rel, body=u"x"):
         p = os.path.join(t, rel.replace(u"/", os.sep))
@@ -597,6 +630,14 @@ def self_test():
         u"T7 清器之副作用：新出之二件 ⇒ 抹 ∧ 其空之父夹 ⇒ 抹 ∧ **原之件⛔ 动**")
     say(os.path.isdir(pd), u"T7b 反控：载荷之本夹 ⇒ ⛔ 抹")
 
+    # T8 混杂之捕（`__pycache__` ／ runtime 之份 ⛔ 捕）
+    w(u"pe2/core/__pycache__/a.cpython-312.pyc", u"x")
+    w(u"pe2/core/lib/version.py", u'__version__ = u"9.0.1"\n')
+    w(u"pe2/runtime/Lib/site-packages/x/__pycache__/y.cpython-312.pyc", u"x")
+    _s = stray_files(os.path.join(t, u"pe2"))
+    say(_s == [u"core/__pycache__/a.cpython-312.pyc"],
+        u"T8 混杂之捕：core 之 `.pyc` ⇒ 捕 ∧ **runtime 之 `.pyc` ⇒ ⛔ 捕**（其份）")
+
     # T5 删径之硬规
     for bad in (os.path.abspath(os.sep), os.path.abspath(ROOT)):
         try:
@@ -611,9 +652,9 @@ def self_test():
     say(find_runtime_src(pl, cands=()) == pl, u"T6b 运行时之源：显式有 ⇒ 取")
     say(find_runtime_src(pl, cands=(t,)) == pl, u"T6c 序取：显式先于候选")
     if fails:
-        print(u"[自测] **FAIL %d 条**" % len(fails))
+        print(u"[自测] **FAIL %d ／ %d 条**" % (len(fails), len(n_hits)))
         return 2
-    print(u"[自测] 皆过 ✓")
+    print(u"[自测] 皆过 ✓（%d/%d）" % (len(n_hits), len(n_hits)))
     rmtree_checked(t)
     return 0
 
@@ -633,6 +674,8 @@ def main(argv):
     ap.add_argument(u"--json", action=u"store_true")
     ap.add_argument(u"--stamp", default=u"")
     ap.add_argument(u"--force", action=u"store_true")
+    ap.add_argument(u"--allow-strays", action=u"store_true",
+                    help=u"核已跑过之根（其 `__pycache__` 唯报 ⛔ 判红）")
     ap.add_argument(u"--self-test", action=u"store_true")
     a = ap.parse_args(argv)
     if a.self_test:
@@ -644,7 +687,7 @@ def main(argv):
     out = os.path.abspath(a.out)
     log = (lambda s: None) if a.json else (lambda s: print(s))
     if a.check:
-        ok, info = check(out, log)
+        ok, info = check(out, log, allow_strays=a.allow_strays)
         if a.json:
             print(json.dumps(dict(info, ok=ok), ensure_ascii=False, indent=1))
         else:
