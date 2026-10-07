@@ -30,8 +30,8 @@ from core.lib import feedback_target as FT
 #: 件之 schema（**一处定形** · 面（web）唯读之 —— ⛔ 二处各写）
 SCHEMA = u"pa.feedback/1"
 
-#: 逐项勾选之项（**一处定形**）—— **默认全 ⛔ 勾**（承 pm_1634 §二.1 ＋ 红线四条「⛔ 默认带」）
-CONSENT_BUSES = (u"health", u"logs", u"env", u"diag")
+#: 逐项勾选之项（**一处定形** 在 `feedback_target` · 此处唯借 ⇒ ⛔ 二处各写）：**默认全 ⛔ 勾**。
+CONSENT_BUSES = FT.CONSENT_BUSES
 
 MAX_TITLE = 120
 MAX_BODY = 20000

@@ -43,10 +43,19 @@ def health():
         _build = _bi.report()
     except Exception as _e_build:                              # noqa: BLE001 — 照实报因
         _build = {"available": False, "note": "读数⛔ 得：%s" % str(_e_build)[:120]}
+    # ⭐ pm_1640 §一.2 之律（**读一处（/health）· 动分端（/v9/pa/*）**）：面之读数唯此端 ⇒
+    #   落点声明（留言板）亦在此（形唯自 `feedback_target.face()` 一处出 · ⛔ 二处各写）。
+    #   ⚠ 将来「更新之读数」（有新版 ／ 已是最新 ／ 大小 ／ 通道）⇒ 俟甲-P0 ⇒ 落 `update` 键（⛔ 新端）。
+    try:
+        from core.lib import feedback_target as _ft
+        _feedback = _ft.face()
+    except Exception as _e_fb:                                 # noqa: BLE001 — 照实报因
+        _feedback = {"mode": None, "outbound": None, "note": "读数⛔ 得：%s" % str(_e_fb)[:120]}
     return jsonify({
         "status": "healthy" if startup_manager.ready else "starting",
         "version": __version__,
         "build": _build,
+        "feedback": _feedback,
         "startup": startup_manager.status(),
         "hardware": hardware_probe.report(),
         "boot": _boot,

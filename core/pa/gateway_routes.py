@@ -4236,10 +4236,6 @@ def register_pa_routes(app, brain=None):
         from core.pa import feedback_store as _fs
         return _fs.root_of(None)
 
-    def _fed_consent():
-        from core.pa import feedback_store as _fs
-        return list(_fs.CONSENT_BUSES)
-
     def _fed_boot():
         from core.gateway.boot_progress import boot_progress
         return boot_progress.snapshot()
@@ -4261,13 +4257,11 @@ def register_pa_routes(app, brain=None):
 
     @bp.route("/v9/pa/feedback/target", methods=["GET"])
     def pa_feedback_target():
-        """落点之声明（**一处出** · 面据以书常驻提示 ∧ ⛔ 自撰）。"""
+        """落点之声明（**运维 ／ 机器之端** —— 承 pm_1640 §一.2 ／ §一.3：**面唯读 `/health`**）。
+        ⚠ 其形**唯自** `feedback_target.face()` 出（与 `/health.feedback` **同一处** ⇒ ⛔ 二处各写）。
+        """
         from core.lib import feedback_target as _ft
-        src = _ft.load()
-        return ok({"mode": src["mode"], "channel": src["channel"], "dir": src["dir"],
-                   "outbound": src["outbound"], "notice": _ft.notice(src),
-                   "resolved_dir": _ft.feedback_dir(None, src), "origin": src["origin"],
-                   "consent_buses": _fed_consent(), "note": src["note"]})
+        return ok(_ft.face())
 
     @bp.route("/v9/pa/feedback", methods=["POST"])
     def pa_feedback_submit():

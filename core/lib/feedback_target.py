@@ -40,6 +40,10 @@ ENV = {u"mode": u"PA_FEEDBACK_MODE", u"dir": u"PA_FEEDBACK_DIR",
 _DEFAULT = {u"mode": DEFAULT_MODE, u"dir": DEFAULT_DIR,
             u"channel": DEFAULT_CHANNEL, u"relay_url": DEFAULT_RELAY}
 
+#: 逐项勾选之项（**一处定形** —— `feedback_store` 唯借此处 · ⛔ 二处各写）：
+#: **默认全 ⛔ 勾**（承 pm_1634 §二.1 ＋ 红线四条「⛔ 默认带」）。
+CONSENT_BUSES = (u"health", u"logs", u"env", u"diag")
+
 #: 面之常驻提示（**一处定形** —— 面（web）唯取此字 · ⛔ 自撰 · 承 pm_1634 §三.1）
 NOTICE_LOCAL = u"内测版：留言只存在你这台机器上（⛔ 出机 · ⛔ 联网发送）"
 NOTICE_RELAY = u"留言将送到我方之收件端（仅你勾选之内容）"
@@ -144,6 +148,18 @@ def source_scan(path=None):
             if m.split(u".")[0] in BANNED_MODULES:
                 hits.append(u"%s:%d %s" % (os.path.basename(p), n.lineno, m))
     return (not hits), hits
+
+
+def face(root=None, env=None):
+    u"""**面之读数**（一处定形 · 承 pm_1640 §一.2 之律「**读一处（`/health`）· 动分端（`/v9/pa/*`）**」）
+    ⇒ 唯 `/health.feedback` 与 `/v9/pa/feedback/target`（运维 ／ 机器）**同借此处** ⇒ ⛔ 二处各写其形。
+    ⚠ 「面之读数」之正统之处 ＝ **`/health`**；`/v9/pa/*` 者唯**动作**（POST）。本函 ⛔ 出网 · ⛔ 副作用。
+    """
+    src = load(root, env)
+    return {"mode": src[u"mode"], "channel": src[u"channel"], "dir": src[u"dir"],
+            "outbound": src[u"outbound"], "notice": notice(src),
+            "resolved_dir": feedback_dir(root, src), "origin": src[u"origin"],
+            "consent_buses": list(CONSENT_BUSES), "note": src[u"note"]}
 
 
 def report(root=None):

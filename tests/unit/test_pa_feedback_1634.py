@@ -208,3 +208,26 @@ def test_ends_flask(fed, tmp_path):
     d = r.get_json()
     assert d[u"uploaded"] is False and os.path.isfile(d[u"pack"]) and d[u"bytes"] > 0
     assert u"README.txt" in d[u"members"]
+
+def test_read_one_place_health_carries_feedback(fed):
+    u"""(i) 我裁（pm_1640 §一.2）：**面之读数唯 `/health`** —— 落点声明之形**唯自一处**
+    （`feedback_target.face()`）⇒ `/health.feedback` ≡ `/v9/pa/feedback/target`（⛔ 二处各写）。
+    """
+    from flask import Flask
+
+    from core.pa.gateway_routes import register_pa_routes
+
+    app = Flask(__name__)
+    register_pa_routes(app)
+    tgt = app.test_client().get(u"/v9/pa/feedback/target").get_json()
+    tgt.pop(u"ok", None)
+
+    from core.routes.system_routes import system_bp
+    app2 = Flask(__name__)
+    app2.register_blueprint(system_bp)
+    h = app2.test_client().get(u"/health").get_json()
+    assert u"feedback" in h, sorted(h.keys())
+    assert h[u"feedback"] == tgt, (h[u"feedback"], tgt)
+    assert h[u"feedback"][u"outbound"] is False
+    assert u"只存在你这台机器上" in h[u"feedback"][u"notice"]
+    assert h[u"feedback"][u"consent_buses"] == list(FS.CONSENT_BUSES)
