@@ -21,7 +21,7 @@ u"""pa_update.py -- 应用**增量包**（甲-P0 之器二 · 承 pm_1620 §二.
   python -X utf8 scripts\\win_pa\\pa_update.py --go                  # 真办
   ... [--src <url>] [--manifest <本机清单.json>] [--root <装根>] [--staged <已下之树>]
       [--force] [--no-restart] [--json] [--self-test]
-退出码：0 成（含「已是最新」）｜ 2 前置 ⛔ 足 ∨ 败（已回滚）｜ 3 入口错
+退出码：0 成（含「已是最新」∧「同版号之重发」）｜ 2 前置 ⛔ 足 ∨ 败（已回滚）｜ 3 入口错
 """
 from __future__ import annotations
 
@@ -186,7 +186,10 @@ def say(i, n, msg, t0=None):
 
 #: 器之「败于何处」＋「是否已动盘」（**一处定形** · pm_1799 §二.1）
 #:   —— 终态之 note ／ note_why 由此出：⛔ 泛辞（承「失败即报根」）。
-_DIAG = {u"step": u"", u"from": None, u"to": None, u"touched": False, u"rolled_back": False}
+#:   ⭐ pm_1848 §三.3：加 `noop`（「已是最新 ⇒ 未动一物」之实）∧ `reissue` ／ 二戳
+#:   （同版号之新册 ⇒ 可装 ∧ 明书）—— ⛔ 以「版号同」充「同物」（旧病）。
+_DIAG = {u"step": u"", u"from": None, u"to": None, u"touched": False, u"rolled_back": False,
+         u"noop": False, u"reissue": False, u"stamp_from": None, u"stamp_to": None}
 
 
 def mark(step):
@@ -218,8 +221,19 @@ def fail_why(rc):
 def final_note(rc, a):
     u"""终态之「辞」（**如实** · pm_1799 §二.4）：成 ⇒ 「已就位 ＋ 下一步」；
     败 ⇒ 载**败步 ＋ 回滚之实**（⛔ 含混之「若已动盘 ⇒ …」）。
-    ⚠ 自动起服之路（`--no-restart` ⛔ 给）⇒ 仍走 `update_run` 之默认辞。"""
+    ⚠ 自动起服之路（`--no-restart` ⛔ 给）⇒ 仍走 `update_run` 之默认辞 ——
+      **唯二例外**（承 pm_1848 §三.3）：ⓐ 同版号之重发（`reissue` ⇒ 默认辞将误书
+      「已是最新」，故须明书二戳）；ⓑ 「已是最新 ⇒ 未动一物」（`noop` ⇒ ⛔ 书「已就位」）。"""
     if int(rc) == 0:
+        if _DIAG.get(u"reissue"):
+            tail = (u"· 请关窗重开 ClawsJoy PA（∨ 菜单「重启服务」）以生效"
+                    if getattr(a, u"no_restart", False) else u"")
+            return (u"已就位（同版号之新册 · 重发）：%s ｜ 戳 %s ⇒ %s%s"
+                    % (_DIAG.get(u"to") or u"新册", _DIAG.get(u"stamp_from") or u"⛔ 读",
+                       _DIAG.get(u"stamp_to") or u"⛔ 读", tail))
+        if _DIAG.get(u"noop"):
+            return (u"已是最新（%s）· ⛔ 动一物（承 pm_1848 §三.3）"
+                    % (_DIAG.get(u"to") or _DIAG.get(u"from") or u"—"))
         if getattr(a, u"no_restart", False):
             return (u"已就位（%s ⇒ %s）· 请关窗重开 ClawsJoy PA（∨ 菜单「重启服务」）以生效"
                     % (_DIAG[u"from"] or u"（旧包）", _DIAG[u"to"] or u"新册"))
@@ -293,6 +307,17 @@ def cur_version(root):
     from core.lib import build_info as BI
     d, note = BI.read(root)
     return ((d or {}).get(u"version"), note)
+
+
+def cur_stamp(root):
+    u"""装根之「造刻」（**一处出** · 承 pm_1848 §三.3）：`version.json` 之 `built_at`。
+
+    由（一手 · 本夜）：`cur_version` 唯返版号 ⇒ **同版号之重发**（戳 ⛔ 同）与「已是最新」
+    **不可分** ⇒ 误判「⛔ 动」⇒ 连 `--force` 亦不可装（旧器 `:560` 之早返）。
+    """
+    from core.lib import build_info as BI
+    d, note = BI.read(root)
+    return ((d or {}).get(u"built_at"), note)
 
 
 def load_manifest(a, root):
@@ -546,6 +571,7 @@ def run(a):
         return 2
     t = UM.totals(man)
     cur, cnote = cur_version(root)
+    stamp, _snote = cur_stamp(root)
     _DIAG[u"from"] = cur
     _DIAG[u"to"] = man[u"version"]
     _log_open(root, man[u"version"])
@@ -557,10 +583,23 @@ def run(a):
         print(u"[FAIL] 通道 ⛔ 合：清单 %s ≠ 本机 %s（⛔ 跨档 · 承 pm_1620 §三.9）"
               % (man[u"channel"], src.get(u"channel")))
         return 2
+    man_stamp = str(man.get(u"built_at") or u"")
     if cur and str(cur) == str(man[u"version"]):
-        say(2, 10, u"已是最新（%s）⇒ ⛔ 动" % cur)
-        return 0
-    if cur and str(cur) != str(man[u"base_version"]) and not a.force:
+        # ⭐ pm_1848 §三（一手 · 本夜三出同版号 9.0.8）：旧判**唯比版号** ⇒ 同版号之新册
+        #   （重发）与「已是最新」不可分 ⇒ 误判「⛔ 动」（连 `--force` 亦不可 · 旧 `:563` 更在其后）。
+        #   判据 ＝ 装根 `version.json` 之 `built_at` vs 册之 `built_at`：
+        #     戳**同**      ⇒ 已是最新 ⇒ ⛔ 动（照旧）；
+        #     戳 **⛔ 同**（含任一戳⛔读）⇒ 认「同版号之新册（重发）」⇒ **可装** ∧ 明书二戳。
+        if str(stamp or u"") and man_stamp and str(stamp) == man_stamp:
+            _DIAG[u"noop"] = True               # ⭐ 早返之实（承 pm_1848 §三.3：⛔ 书「已就位」）
+            say(2, 10, u"已是最新（%s · 戳 %s）⇒ ⛔ 动" % (cur, stamp))
+            return 0
+        _DIAG[u"reissue"] = True
+        _DIAG[u"stamp_from"] = stamp
+        _DIAG[u"stamp_to"] = man.get(u"built_at")
+        say(2, 10, u"同版号之新册（重发）：%s ｜ 装根之戳 %s ⟷ 册之戳 %s ⇒ 可装（承 pm_1848 §三）"
+            % (cur, stamp or u"⛔ 读", man_stamp or u"⛔ 读"))
+    elif cur and str(cur) != str(man[u"base_version"]) and not a.force:
         print(u"[FAIL] 基础版 ⛔ 符：本机 %s ≠ 清单之 base_version %s" % (cur, man[u"base_version"]))
         print(u"       ⇒ 去处：取整包（∨ 确知可升 ⇒ --force）")
         return 2
@@ -655,16 +694,26 @@ def run(a):
         UC.refresh(root)
     except Exception:                                         # noqa: BLE001 — 刷态 ⛔ 阻成
         pass
-    say(10, 10, u"成：%s ⇒ %s" % (cur or u"（旧包）", man[u"version"]))
+    if _DIAG.get(u"reissue"):
+        say(10, 10, u"成（同版号之新册 · 重发）：%s ｜ 戳 %s ⇒ %s"
+            % (man[u"version"], _DIAG.get(u"stamp_from") or u"⛔ 读",
+               _DIAG.get(u"stamp_to") or u"⛔ 读"))
+    else:
+        say(10, 10, u"成：%s ⇒ %s" % (cur or u"（旧包）", man[u"version"]))
     if a.json:
-        print(json.dumps({"ok": True, "from": cur, "to": man[u"version"],
-                          "files": t, "backup": bdir, "staged": stg},
-                         ensure_ascii=False, indent=1))
+        out = {"ok": True, "from": cur, "to": man[u"version"], "files": t,
+               "backup": bdir, "staged": stg}
+        if _DIAG.get(u"reissue"):       # ⭐ pm_1848 §三.3：机读之体亦载「重发 ＋ 二戳」
+            out[u"reissue"] = True
+            out[u"stamp_from"] = _DIAG.get(u"stamp_from")
+            out[u"stamp_to"] = _DIAG.get(u"stamp_to")
+        print(json.dumps(out, ensure_ascii=False, indent=1))
     return 0
 
 
 def self_test():
-    u"""自证（⛔ 出网 · ⛔ 动真盘）：守 ／ 形 ／ `add` 之校 ／ **`del` 一路之删 · 备 · 回滚**（正反控）。"""
+    u"""自证（⛔ 出网 · ⛔ 动真盘）：守 ／ 形 ／ `add` 之校 ／ **`del` 一路之删 · 备 · 回滚**
+    ／ 「已是最新（未动一物）」∧「同版号之重发」之辞（皆正反控 · pm_1848 §三.3）。"""
     import tempfile
     from core.lib import update_manifest as UM
     ok = True
@@ -790,6 +839,24 @@ def self_test():
     w2_ok = (_w2.first_fail == u"[FAIL] 早")
     ok &= w2_ok
     print(u"[%s] 反控三：**首**行 FAIL（⛔ 末行）—— 首 ＝ %s" % (u"OK" if w2_ok else u"FAIL", _w2.first_fail))
+    # ⭐ pm_1848 §三.3：**早返**（已是最新 ⇒ ⛔ 动一物）∧ **重发**（载二戳）之辞 —— 正控。
+    #   由：旧默认辞 `update_run.finish` 于 `from ≡ to` 恒书「已是最新」⇒ 重发之真装被
+    #   **反书成未动**（假辞 · 承「⛔ 不实之辞入屏」）。
+    _s7 = dict(_DIAG)
+    _DIAG.update({u"noop": True, u"from": u"9.0.8", u"to": u"9.0.8", u"stamp_to": u"S2"})
+    _n7 = final_note(0, type("_NS", (), {"no_restart": True})()) or u""
+    _n7_ok = (u"已是最新" in _n7) and (u"⛔ 动一物" in _n7) and (u"已就位" not in _n7)
+    ok &= _n7_ok
+    print(u"[%s] 正控七：早返之辞（已是最新 ∧ ⛔ 动一物）＝ %s" % (u"OK" if _n7_ok else u"FAIL", _n7))
+    _DIAG.update(_s7)
+    _s8 = dict(_DIAG)
+    _DIAG.update({u"reissue": True, u"to": u"9.0.8", u"stamp_from": u"S1", u"stamp_to": u"S2"})
+    _n8 = final_note(0, type("_NS", (), {"no_restart": False})()) or u""
+    _n8_ok = ((u"重发" in _n8) and (u"S1" in _n8) and (u"S2" in _n8)
+              and (u"已是最新" not in _n8))
+    ok &= _n8_ok
+    print(u"[%s] 正控八：重发之辞（载二戳 · ⛔ 书「已是最新」）＝ %s" % (u"OK" if _n8_ok else u"FAIL", _n8))
+    _DIAG.update(_s8)
     return 0 if ok else 2
 
 
@@ -808,6 +875,10 @@ def _tail(a, rc, t0):
     sec = int(time.time() - t0)
     if rc == 0 and not a.go:
         line = u"[PA] 演毕（⛔ 动盘）—— 加 `--go` 真办"
+    elif rc == 0 and _DIAG.get(u"noop"):
+        # ⭐ pm_1848 §三.3：早返之实**明书**（承「⛔ 以『已就位』之似做充『未动』」）
+        line = (u"[PA] 成（未动一物 —— 已是最新 %s · 戳 %s）"
+                % (_DIAG.get(u"to") or _DIAG.get(u"from") or u"—", _DIAG.get(u"stamp_to") or u"—"))
     elif rc == 0:
         line = u"[PA] 成 —— 若上文言「已是最新」⇒ 未动一物。"
     else:
