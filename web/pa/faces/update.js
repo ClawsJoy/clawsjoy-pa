@@ -19,6 +19,16 @@
      `error`（**人话** · ⛔ 原始异常 —— 原始因入机器字段 `last_error` ／ `note_why` ⇒ 本件 ⛔ 读）。
    ⛔ 本件 ⛔ 触 `core/**`（TD 之域）∧ ⛔ 自渲 `#paPrep`（其渲唯 `startup.js` 一处 · 承「⛔ 二套面」）。
    ⛔ 本件 ⛔ 起停（器之起停归后端）∧ **`start` 唯由用户之点**（pm_1691 §二.2）—— 本件唯**显示** ＋ 承其点。 */
+/* ⭐⭐ pm_1832 §二（要 · 一手 · 阻塞本批）：**终态之判据 ＝ 活版 vs 目标版** ——
+   病（PM 一手 · 刻 02:58–03:03 · 本机真走一次更新（**幂等之跑**：二端同版）＋ 重启）：
+     活版已是新版，而横幅仍书「已就位（**二端同版**）· 请关窗重开 ClawsJoy PA（∨ 菜单「重启服务」）以生效」
+     —— **辞与真相反**（已生效而催重开）∧ 该格内 `button` ／ `a` 计 `0`（用户点不掉）。
+   ⇒ 判据（唯此一路）：**活版 ＝ `/health` 之**顶层** `version`（**进程内存** · 唯此可辨「本次更新已生效否」）**；
+     **目标版 ＝ 本跑之 `to`**（∨ 可得性之 `latest_version`）。二者相等 ⇒ 该格**唯书**「已更新到 X」
+     （⛔ 载「请关窗重开 … 以生效」）；不等（**真未生效**）⇒ 维持后端之辞（`note` **照引** · ⛔ 改此支）。
+   ⚠ ⛔ 以 `build.version` 判：彼读**盘**（PM 一手：重启前**盘上已新版**而**活版仍旧）⇒ 用之必**假绿**。
+   ⚠ `from == to`（幂等之跑）⇒ 前端**⛔ 画箭头**（其形入「已更新到 X」· ⛔ 以二端同之箭充「已升」）。
+   ⭐ 并出**终态之键**（`term_key`）：`startup.js` 之终态自退以键为记 ⇒ 同键已退 ⛔ 复现（§二.4 ／ §二.5）。 */
 
 /* ⚠ **读**（一处）：`/health`（既有端）之 `update` 键 —— 可得性之真源（⛔ 第二读源）。 */
 const PA_UPD_SRC = '/health';
@@ -72,9 +82,10 @@ function paUpdAgeS(ts){
 }
 
 /* ⭐ **一处定形**（纯函数 · ⛔ DOM）：更新端之回 ＋ 本地之钟 ⇒ 面之态。
-   `u` ＝ 端之 JSON（未答 ⇒ null）；`ctx` ＝ {elapsed_s, http_status, health_version}。
+   `u` ＝ 端之 JSON（未答 ⇒ null）；`ctx` ＝ {elapsed_s, http_status, health_version, live_version,
+           run, run_live, pending_since_s, pending_stuck, recovered}。
    回 {state, phase, text, note, bnote, can_bar, pct, done, total, prog_total, eta_s, since_s,
-       since_src, current, latest, available, files_done, files_total, rolled_back, src}
+       since_src, current, latest, available, files_done, files_total, rolled_back, in_effect, term_key, src}
    （`state` ∈ unanswered ／ latest ／ unchecked ／ available ／ running ／ restart ／ done ／ failed；
      ⭐ `unchecked` ＝ 「`available === false` 而**后端未自书「已是最新」**」之第四态 ——
      其字面 **照书后端之 `note`**（如「取清单 ⛔ 得：…」／「未接（甲-P0）」）· ⛔ 冒「已是最新」。） */
@@ -97,6 +108,11 @@ function paUpdView(u, ctx){
   const rlive  = (c.run_live === true) || (rph === 'running');
   /* 已终之跑 ⇒ 唯「近事」显（逾 `PA_UPD_RECENT_S` ⇒ 归 `/health` 之真读数 —— ⛔ 长挂旧事）。 */
   const rfresh = (rph === 'running') || (rage != null && rage <= PA_UPD_RECENT_S);
+  /* ⭐⭐ pm_1832 §二.1：**活版** 唯自 `ctx.live_version`（＝ `/health` 之**顶层** `version` · **进程内存**）。
+     ⚠ 我一手（真页 · 令 1832 之验收）：本函之 `u` ＝ **`/health.update` 之子对象**（⛔ 顶层 ⇒ **无** `version`）
+       ⇒ 昔形 `ss(o.version)` **恒空** ⇒ `in_effect` 恒 `false` ⇒ 真页仍书旧辞（⛔ 自 `u` 取活版）。
+     ⚠ ⛔ 取 `build.version`（读**盘**）：重启前盘上已新版而活版仍旧 ⇒ **假绿**（PM 一手 · 见件首）。 */
+  const lv = ss(c.live_version);
   const el = paPrepNum(c.elapsed_s);
   const elR = (el == null) ? null : Math.max(0, Math.round(el));
   const v = {state:'unanswered', phase:'', text:'', note:'', bnote:'', can_bar:false, pct:null,
@@ -143,6 +159,7 @@ function paUpdView(u, ctx){
   if(rec){
     v.state = 'done'; v.phase = 'done';
     v.current = rec; v.latest = rec;
+    v.term_key = 'rec|' + rec;      /* 终态之键（⛔ 复现 · pm_1832 §二.4） */
     v.text = '已更新至 ' + rec;
     /* ⭐ pm_1813 §三（要 · 照实）：⛔ 恒言「服务已自重启」—— 本支之**可验之实** ＝ `/health` 已答
        **新版本**（版已前移 ⇒ 服务确已重起并应答）⇒ 书其实而 ⛔ 断其因（承「说一用一」· L142）。 */
@@ -180,6 +197,18 @@ function paUpdView(u, ctx){
   }
   if(rph === 'done' && rfresh){
     v.state = 'done';
+    /* 终态之**键**（该次跑之身分 · 一处定形）：`startup.js` 之终态自退以键为记
+       —— 同键之横幅一旦退 ⇒ ⛔ 复现（pm_1832 §二.4 ／ §二.5）。 */
+    v.term_key = 'upd|' + (ss(run && run.ended_at) || ss(run && run.started_at) || rto || rph);
+    /* ⭐⭐ pm_1832 §二.1（要 · 唯此一路）：**活版 vs 目标版** —— 相等 ⇒ 本次更新**已生效** */
+    v.in_effect = !!(rto && lv && lv === rto);
+    if(v.in_effect){
+      /* 已生效 ⇒ **唯书**「已更新到 X」：⛔ 载「请关窗重开 … 以生效」（辞与真相反即此病）
+         ∧ ⛔ 画箭头（`from == to` 之幂等跑 ⇒ 二端同 ⇒ 读者不明 · §二.3）。 */
+      v.text = '已更新到 ' + rto;
+      v.note = '活版已是 ' + rto + '（/health 之版本 ⇒ 进程已应答新版）· 本次更新已生效 · ⛔ 无需重开';
+      return v;
+    }
     v.text = '更新已完成' + (rver ? ('：' + rver) : '') + ' · 已就绪';
     /* ⭐⭐ pm_1813 §三（要 · 照实）：其辞「服务已自重启」在**本机**为真（更新器确自起），
        而**净机**之此路曾 `rc=2` **回滚**（承 pm_1796 ／ pm_1799）⇒ ⛔ 恒言。
@@ -242,6 +271,7 @@ function paUpdView(u, ctx){
   }
   if(raw === 'done' || v.phase === 'done'){
     v.state = 'done';
+    v.term_key = 'raw|' + (v.latest || v.current || 'done');
     v.text = '更新完成' + (v.latest ? ('：已升至 ' + v.latest) : '');
     v.note = '去处：按 F5 刷新本页看新版本';
     return v;
@@ -355,8 +385,13 @@ function paUpdBtnRender(v){
 /* 轮询（一处）：常态 30 s ／ 进行中 2 s —— 与 startup.js 之横幅**同源共显**（⛔ 二套面）。 */
 const paUpdRun = {started:false, t0:0, poll:null, mode:'', last:null, h:null, u:null, run:null, live:false, http:null, pending:null, retryMs:0, recoveredTo:'', recoveredAt:0};
 function paUpdApply(extra){
+  /* ⭐⭐ pm_1832 §二.1（**一处定形**）：**活版** ＝ `/health`（`paUpdRun.h` ∨ `paPrepRun.h`）之
+     **顶层** `version`（**进程内存** —— 唯此可辨「本次更新已生效否」）。
+     ⚠ `paUpdRun.u` ＝ `/health.update` 之子对象（⛔ 顶层）⇒ 活版 ⛔ 自彼取；⛔ 取 `build.version`（读**盘** ⇒ 假绿）。 */
+  const _hh = paUpdRun.h || ((typeof paPrepRun !== 'undefined') ? paPrepRun.h : null);
   const c = {elapsed_s:(Date.now() - paUpdRun.t0)/1000,
         http_status:paUpdRun.http, health_version:paUpdCurFromHealth(),
+        live_version:(_hh && _hh.version) ? String(_hh.version).trim() : '',
         run:paUpdRun.run, run_live:paUpdRun.live};
   if(extra && typeof extra === 'object'){ for(const k in extra){ c[k] = extra[k]; } }
   const v = paUpdView(paUpdRun.u, c);
@@ -426,8 +461,9 @@ async function paUpdFetch(){
   let mark = paUpdMarkRead(), recovered = '', pSince = null, pStuck = false;
   if(mark){
     if(h){
-      const bv = (h.build && h.build.version) ? String(h.build.version).trim()
-               : (h.version ? String(h.version).trim() : '');
+      /* ⭐ pm_1832 §二.2（照实 · 同族）：本判**唯取活版**（`h.version` · 进程内存）——
+         更新毕而**未重启** ⇒ 活版**仍旧** ⇒ ⛔ 冒「已更新至 X」（自**盘**取则假绿）。 */
+      const bv = h.version ? String(h.version).trim() : '';
       if(bv && mark.from && bv !== String(mark.from)){ paUpdRun.recoveredTo = bv; paUpdRun.recoveredAt = Date.now(); }
       mark = null; paUpdMarkWrite(null);
     } else {

@@ -194,23 +194,44 @@ let paPrepTermT = null;
    ⇒ 治：阈之起算唯取**终态首次入屏之刻**（`paPrepTermAt` · 一处定形）；重渲只**读**它，⛔ 重置。
    ⚠ 逾阈之判**每渲皆查**（钟被环境所扰亦不失退 —— ⛔ 只靠 `setTimeout`）。 */
 let paPrepTermAt = 0;
+/* ⭐⭐ pm_1832 §二.4 ／ §二.5（要 · 一手）：终态之**键** ＋ 「已退」之记 —— 二病：
+   病一（**恒挂** · PM 一手刻 02:58–03:03）：真更一次 ⇒ 重启 ⇒ 新开页，`#paPrep` 仍 `shown`
+     （`style.display = ''` ／ `rects = 1`）。其因：旧形之「非终态 ⇒ `paPrepTermAt = 0`」把钟**清零** ——
+     而**一次单发之未答**（`paPrepFetch` 之 `miss < 2` ⇒ `paPrepRender({state:'ready'})`）或一次
+     `status` 轮询之未答，皆足以清零 ⇒ 终态再现 ∧ 钟从头起 ⇒ 用户读成「退不掉」。
+   ⇒ 治：终态之「已退」以**键**为记 —— 同键之横幅一旦退 ⇒ **⛔ 复现**（纵有中间之非终态渲）；
+     键变（新一次更新之终态）⇒ 复位起新钟。⚠ **非终态 ⛔ 清键**（⛔ 一次未答即清零终态之记）。
+   病二（**点不掉** · PM 一手）：终态之格内 `button` ／ `a` 计 `0` ⇒ 一处显式可退（`#paPrepX` ⇒ 本件之函）。 */
+let paPrepTermKey = '';
+let paPrepTermGone = false;
+function paPrepTermDismiss(){                 /* 显式可退（唯终态现 —— 其收放在 `paPrepRender`） */
+  paPrepTermGone = true;
+  if(!paPrepTermAt) paPrepTermAt = Date.now();
+  if(paPrepTermT){ clearTimeout(paPrepTermT); paPrepTermT = null; }
+  const el = paPrepEl(); if(el) el.style.display = 'none';
+  return true;
+}
 function paPrepRender(v){
   const el = paPrepEl(); if(!el || !v) return v;
   el.setAttribute('data-state', v.state);
-  el.style.display = (v.state === 'ready') ? 'none' : '';
-  /* pm_1808 §二.3 ／ pm_1813 §三：终态（done）⇒ 逾阈自退；非终态 ⇒ 清账 ＋ 撤钟（免误隐在办之相）。 */
-  if(v.state === 'done'){
-    if(!paPrepTermAt) paPrepTermAt = Date.now();          /* 终态**首次**入屏 ⇒ 起算（⛔ 重渲重置） */
-    const _left = PA_PREP_TERM_HOLD_MS - (Date.now() - paPrepTermAt);
-    if(_left <= 0){ el.style.display = 'none'; }
-    else if(!paPrepTermT){
-      paPrepTermT = setTimeout(function(){ paPrepTermT = null;
-        const _e2 = paPrepEl(); if(_e2) _e2.style.display = 'none'; }, _left);
-    }
-  } else {
-    paPrepTermAt = 0;
+  /* pm_1808 §二.3 ／ pm_1813 §三 ／ pm_1832 §二.4：终态（done）⇒ 逾阈自退（以**键**为记 · ⛔ 复现）；
+     非终态 ⇒ 撤钟（免误隐在办之相）∧ ⛔ 清键（免「一次未答即清零终态之记」—— 此即 1832 之病一）。 */
+  const _term = (v.state === 'done');
+  const _key  = _term ? String(v.term_key || 'done') : '';
+  if(_term && _key !== paPrepTermKey){
+    paPrepTermKey = _key; paPrepTermAt = Date.now(); paPrepTermGone = false;
     if(paPrepTermT){ clearTimeout(paPrepTermT); paPrepTermT = null; }
   }
+  if(_term && !paPrepTermGone && (Date.now() - paPrepTermAt) >= PA_PREP_TERM_HOLD_MS) paPrepTermGone = true;
+  const _gone = _term && paPrepTermGone;
+  el.style.display = (v.state === 'ready' || _gone) ? 'none' : '';
+  if(_term && !paPrepTermGone && !paPrepTermT){
+    const _left = PA_PREP_TERM_HOLD_MS - (Date.now() - paPrepTermAt);
+    paPrepTermT = setTimeout(function(){ paPrepTermT = null;
+      const _e2 = paPrepEl(); if(_e2) _e2.style.display = 'none'; }, (_left > 0) ? _left : 0);
+  }
+  if(!_term && paPrepTermT){ clearTimeout(paPrepTermT); paPrepTermT = null; }
+  const _xb = document.getElementById('paPrepX'); if(_xb) _xb.style.display = _term ? '' : 'none';
   const ic = document.getElementById('paPrepIc');
   if(ic) ic.textContent = PA_PREP_ICON[v.state] || '⚠';
   const tx = document.getElementById('paPrepTx'); if(tx) tx.textContent = String(v.text || '');
@@ -312,7 +333,9 @@ try{ window.paPrepView = paPrepView; window.paPrepRender = paPrepRender;
      window.paPrepPaint = paPrepPaint; window.paPrepBegin = paPrepBegin;
      window.paPrepFetch = paPrepFetch; window.paPrepRun = paPrepRun;
      window.PA_PREP_PHASE = PA_PREP_PHASE; window.paPrepMerge = paPrepMerge;
-     window.paPrepFeedUpdate = paPrepFeedUpdate; window.paPrepUpd = function(){ return paPrepUpd; }; }catch(e){}
+     window.paPrepFeedUpdate = paPrepFeedUpdate; window.paPrepUpd = function(){ return paPrepUpd; };
+     window.paPrepTermDismiss = paPrepTermDismiss;
+     window.paPrepTermGone = function(){ return paPrepTermGone; }; }catch(e){}
 try{ window.paPrepFeedFeedback = paPrepFeedFeedback;
      window.paPrepFb = function(){ return paPrepFb; }; }catch(e){}
 /* 自起（⛔ 候 boot.js —— 首屏须「JS 一跑即显」· 承令一「⛔ 白屏」之反）。 */

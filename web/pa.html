@@ -18,6 +18,10 @@
   <span class="prep-tx" id="paPrepTx">正在准备…（正在读后端之进度）</span>
   <span class="prep-bar" id="paPrepBar" style="display:none"><i></i></span>
   <span class="prep-note" id="paPrepNote"></span>
+  <!-- ⭐⭐ pm_1832 §二.5（要 · 一手）：终态全无可退之器（一手：该格内 `button` ／ `a` 计 0）
+       ⇒ 用户点不掉 ⇒ 一处显式可退（`paPrepTermDismiss()` · `startup.js` 一处定形）——
+       唯**终态**（`done`）现（其收放在 `paPrepRender`）；样式**内联**（⛔ 改 `pa.css` ／ `pa_v3.css`）。 -->
+  <button class="prep-x" id="paPrepX" type="button" onclick="paPrepTermDismiss()" style="display:none;flex:0 0 auto;background:none;border:0;color:inherit;cursor:pointer;font:inherit;padding:0 4px" title="收起本行（本行已终：其读数仍在顶栏之版行）">✕</button>
 </div>
 <!-- v3 · 精简（CW b2a5182 · 承 pm_996 ／ pm_997）：主面环 8 ⇒ 3；首屏收为三块（顶栏 ＋ 今日上下文 ＋ composer）。
      ⛔ 丢功能：被折叠者皆在「更多 ▾」内一步可达（旧 DOM id 一字未删 · 收纳对表见投递件）。 -->
