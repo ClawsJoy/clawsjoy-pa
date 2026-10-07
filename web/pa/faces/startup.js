@@ -223,7 +223,11 @@ function paPrepRender(v){
     if(paPrepTermT){ clearTimeout(paPrepTermT); paPrepTermT = null; }
   }
   if(_term && !paPrepTermGone && (Date.now() - paPrepTermAt) >= PA_PREP_TERM_HOLD_MS) paPrepTermGone = true;
-  const _gone = _term && paPrepTermGone;
+  /* ⭐ pm_1841 §二（补）：投之**期**（`term_deadline` ＝ 该跑之 `ended_at` ＋ 同尺之窗）——
+     期至 ⇒ 即隐（本面之钟（1 s）读之 ⇒ ⛔ 待下一轮取数 ／ ⛔ 待 20 s 之面钟）。 */
+  const _late = _term && (typeof v.term_deadline === 'number') && v.term_deadline > 0
+                && Date.now() >= v.term_deadline;
+  const _gone = _term && (paPrepTermGone || _late);
   el.style.display = (v.state === 'ready' || _gone) ? 'none' : '';
   if(_term && !paPrepTermGone && !paPrepTermT){
     const _left = PA_PREP_TERM_HOLD_MS - (Date.now() - paPrepTermAt);

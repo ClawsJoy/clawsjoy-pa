@@ -24,6 +24,14 @@ u"""令 1832 之齿 —— 横幅终态之判据（`web/pa/faces/update.js` ＋ 
   S1 结构：`#paPrepX` 在 `pa.html` 之 `#paPrep` 格内 ∧ 样式**内联**（⛔ 改 `pa.css` ／ `pa_v3.css`）
      ∧ 点 ⇒ `paPrepTermDismiss()`。
   S2 结构：`paUpdView` 之活版唯取 `ctx.live_version` ／ `o.version`（⛔ `build.version`）∧ 阈唯 1 处。
+  W13 窗（pm_1841 §二）：**已生效**之终态逾窗（自该跑之 `ended_at` · `PA_UPD_TERM_HOLD_S`）⇒
+     **⛔ 再生**（回落可得性之真读数 · 其数仍在 `#paVerRow`）；界内 ⇒ 照旧显；`ended_at` 缺 ⇒ **照旧显**；
+     **反控**：「未生效」之支（`请关窗重开 … 以生效`）纵逾窗亦**照旧再生**（其辞须留）。
+  W14 端到端：同窗 —— 活版 ＝ 目标版 ∧ 逾窗 ⇒ `state` ⛔ `done`（全路：fetch → apply → view）。
+  S3 结构：阈唯 1 处 ∧ 与 `startup.js` 之 `PA_PREP_TERM_HOLD_MS` **同尺**（⛔ 二阈各说各话）。
+  W15（DOM）期：终态之**期**（`term_deadline`）至 ⇒ 即隐 —— ⛔ 待 20 s 之面钟 ／ ⛔ 待下一轮取数。
+  W16（纯层）投期：已生效 ∧ 近 ⇒ 投 `term_deadline`（≈ `ended_at` ＋ 本窗）；活版 ≠ 目标版 ⇒ ⛔ 投。
+  S4 结构：期唯「已生效」之支投（1 处）∧ 面之钟唯读一次。
 
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_prep_term_1832.py -q
@@ -96,13 +104,22 @@ def _block(src: str, head: str, stop: str) -> str:
     return src[i:j + len(stop)]
 
 
+def _read_n(src: str, prefix: str) -> int:
+    # 取 `const <名> = <数>;` 之数（供「同尺」之断言）。
+    ln = _decl(src, prefix)
+    tail = ln.split(u'=', 1)[1].strip().rstrip(u';').strip()
+    return int(tail)
+
+
 def _parts_view() -> list:
     t, s = _read(UJ), _read(SU)
     return [
         _fn(s, u"paPrepNum"), _fn(s, u"paPrepMB"), _fn(s, u"paPrepMeasuredNote"),
+        _decl(s, u"const PA_UPD_BUSY"),
         _decl(t, u"const PA_UPD_SRC"), _decl(t, u"const PA_UPD_POST"),
         _decl(t, u"const PA_UPD_POLL_MS"), _decl(t, u"const PA_UPD_BUSY_MS"),
         _decl(t, u"const PA_UPD_RECENT_S"),
+        _decl(t, u"const PA_UPD_TERM_HOLD_S"),
         _decl(t, u"const PA_UPD_PENDING_KEY"), _decl(t, u"const PA_UPD_WINDOW_S"),
         _decl(t, u"const PA_UPD_RETRY_MS"), _decl(t, u"const PA_UPD_RETRY_MAX_MS"),
         _decl(t, u"const PA_UPD_RECOVER_S"),
@@ -143,13 +160,21 @@ CASE_VIEW = u"""
 const HEALTH = {available:false, current_version:'9.0.8', latest_version:'9.0.8', note:'已是最新'};
 const RUN1 = {phase:'done', from:'9.0.8', to:'9.0.8',
               note:'已就位（9.0.8 ⇒ 9.0.8）· 请关窗重开 ClawsJoy PA（∨ 菜单「重启服务」）以生效',
-              started_at:tsAgo(60), ended_at:tsAgo(55)};
+              started_at:tsAgo(20), ended_at:tsAgo(5)};   /* ⭐ 近（界内）—— pm_1841 §二 之窗 */
 const RUN2 = {phase:'done', from:'9.0.7', to:'9.0.8',
               note:'已就位（9.0.7 ⇒ 9.0.8）· 请关窗重开 ClawsJoy PA（∨ 菜单「重启服务」）以生效',
               started_at:tsAgo(60), ended_at:tsAgo(55)};
 const RUNIDEM = {phase:'done', from:'9.0.8', to:'9.0.8', note:'',
                  started_at:tsAgo(60), ended_at:tsAgo(55)};
-const OLD = JSON.parse(JSON.stringify(RUN1)); OLD.ended_at = tsAgo(5);
+const OLD = JSON.parse(JSON.stringify(RUN1)); OLD.ended_at = tsAgo(2);
+/* ⭐ pm_1841 §二 之窗（自该跑之 `ended_at` 起）：**已生效**之终态逾窗 ⇒ ⛔ 再生（回落可得性之真读数）。
+   ⚠ 反控：**未生效**之支（⛔ `in_effect`）纵逾窗亦须**照旧再生**（其辞在催一件真须做的事）。 */
+const STALEEFF = JSON.parse(JSON.stringify(RUN1)); STALEEFF.ended_at = tsAgo(3600);
+const MIDWIN   = JSON.parse(JSON.stringify(RUN1)); MIDWIN.ended_at   = tsAgo(15);
+const OVERWIN  = JSON.parse(JSON.stringify(RUN1)); OVERWIN.ended_at  = tsAgo(25);
+const NOSRC    = JSON.parse(JSON.stringify(RUN1)); NOSRC.ended_at    = null;
+/* ⚠ `ended_at` 缺：本窗之「缺据 ⇒ ⛔ 断」＝ S3 之**结构**断言（`rage != null` 之合取）——此处唯证 ⛔ 多生一支。 */
+const STALENI  = JSON.parse(JSON.stringify(RUN2)); STALENI.ended_at  = tsAgo(3600);
 const out = {};
 /* W1 正控：活版 ＝ 目标版 ⇒ 该次更新已生效（PM 一手之态） */
 out.effected = paUpdView(HEALTH, {live_version:'9.0.8', run:RUN1});
@@ -165,6 +190,19 @@ out.disk_new = paUpdView({available:false, current_version:'9.0.7', latest_versi
 out.key1  = paUpdView(HEALTH, {live_version:'9.0.8', run:RUN1}).term_key;
 out.key1b = paUpdView(HEALTH, {live_version:'9.0.8', run:RUN1}).term_key;
 out.key2  = paUpdView(HEALTH, {live_version:'9.0.8', run:OLD}).term_key;
+/* W13 窗（pm_1841 §二）—— 正控（逾窗 ⇒ ⛔ 再生）／界内 ／缺据 ／反控（未生效之支 ⛔ 入窗） */
+out.stale_eff = paUpdView(HEALTH, {live_version:'9.0.8', run:STALEEFF});
+out.mid_win   = paUpdView(HEALTH, {live_version:'9.0.8', run:MIDWIN});
+out.over_win  = paUpdView(HEALTH, {live_version:'9.0.8', run:OVERWIN});
+out.no_src    = paUpdView(HEALTH, {live_version:'9.0.8', run:NOSRC});
+out.stale_ni  = paUpdView(HEALTH, {live_version:'9.0.7', run:STALENI});
+/* W16 期（pm_1841 §二 · 补）：已生效之终态投**绝对之期**（＝ ended_at ＋ 本窗）⇒ 面之钟可即断 */
+out.dead_win    = paUpdView(HEALTH, {live_version:'9.0.8', run:MIDWIN});
+/* ⚠ `undefined` 于 JSON 中消散 ⇒ 缺 ⇒ 归 `null`（以证「⛔ 投」非「投而空」） */
+out.dead_stale  = paUpdView(HEALTH, {live_version:'9.0.8', run:STALEEFF}).term_deadline || null;
+out.dead_ni     = paUpdView(HEALTH, {live_version:'9.0.7', run:RUN2}).term_deadline || null;
+out.dead_left   = (out.dead_win.term_deadline == null) ? null
+                : (out.dead_win.term_deadline - Date.now());
 console.log(JSON.stringify(out));
 """
 
@@ -200,6 +238,11 @@ var T3 = {state:'done', term_key:'upd|C', text:'已更新到 9.1.0', note:''};
 paPrepRender(T3); out.x_done = XB.style.display;
 paPrepTermDismiss(); out.dismissed = EL.style.display;
 paPrepRender(T3); out.after_dismiss = EL.style.display;
+/* W15 期（pm_1841 §二 · 补）：期至 ⇒ 即隐 —— ⛔ 待 20 s 之面钟（本处以「重渲」代面之 1 s 跳） */
+var T4 = {state:'done', term_key:'upd|D', text:'已更新到 9.1.0', note:'', term_deadline: NOW + 3000};
+paPrepRender(T4); out.dead_shown = EL.style.display;
+NOW += 1000; paPrepRender(T4); out.dead_wait = EL.style.display;
+NOW += 3000; paPrepRender(T4); out.dead_hit = EL.style.display;
 console.log(JSON.stringify(out));
 """
 
@@ -225,10 +268,11 @@ function fetch(u, o){
                           json:function(){ return Promise.resolve(c.data); }});
 }
 const out = {};
-const UPD = {available:false, current_version:'9.0.7', latest_version:'9.0.8', note:''};
+const UPD = {available:false, current_version:'9.0.7', latest_version:'9.0.8', note:'已是最新'};
 const RUN = {ok:true, phase:'done', from:'9.0.7', to:'9.0.8',
              note:'已就位（9.0.7 ⇒ 9.0.8）· 请关窗重开 ClawsJoy PA（∨ 菜单「重启服务」）以生效',
-             started_at:tsAgo(60), ended_at:tsAgo(55)};
+             started_at:tsAgo(20), ended_at:tsAgo(3)};    /* ⭐ 近 —— pm_1841 §二 之窗 */
+const RUN_OLD = JSON.parse(JSON.stringify(RUN)); RUN_OLD.ended_at = tsAgo(3600);
 function snap(){ return {state:paUpdRun.last.state, text:paUpdRun.last.text,
                          note:paUpdRun.last.note, in_effect:!!paUpdRun.last.in_effect}; }
 (async function(){
@@ -241,6 +285,11 @@ function snap(){ return {state:paUpdRun.last.state, text:paUpdRun.last.text,
   QUEUE.push({data:RUN});
   await paUpdFetch();
   out.not_yet = snap();
+  /* W14 端到端（pm_1841 §二）：活版 ＝ 目标版 ∧ 该跑逾窗 ⇒ 终态 ⛔ 再生（全路） */
+  QUEUE.push({data:{version:'9.0.8', update:UPD}});
+  QUEUE.push({data:RUN_OLD});
+  await paUpdFetch();
+  out.stale_eff = snap();
   console.log(JSON.stringify(out));
 })();
 """
@@ -284,7 +333,7 @@ def _t() -> dict:
 def test_W1_活版等于目标版则唯书已更新到并撤请关窗重开():
     v = _v()["effected"]
     assert v["state"] == "done", v
-    assert v["text"] == u"已更新到 9.0.8", v["text"]
+    assert v["text"] == u"已更新到 9.0.8 · 本次已生效", v["text"]
     assert v["in_effect"] is True, v
     assert u"请关窗重开" not in v["note"], u"已生效 ⇒ ⛔ 载「请关窗重开」（辞与真相反 · pm_1832 §二.1）：" + v["note"]
     assert u"以生效" not in v["note"], v["note"]
@@ -323,7 +372,7 @@ def test_W11_端到端_活版自health之顶层version():
     否则 `in_effect` 恒 `false` ⇒ 真页仍书旧辞（我之齿曾假绿 · 唯 `ctx` 覆写口被验）。"""
     d = _e2e()["effected"]
     assert d["state"] == "done", d
-    assert d["text"] == u"已更新到 9.0.8", d["text"]
+    assert d["text"] == u"已更新到 9.0.8 · 本次已生效", d["text"]
     assert d["in_effect"] is True, d
     assert u"请关窗重开" not in d["note"], d["note"]
 
@@ -403,3 +452,67 @@ def test_S2_活版唯取顶层version且阈唯1处():
     assert s.count(u"const PA_PREP_TERM_HOLD_MS") == 1, u"阈唯 1 处"
     assert s.count(u"getElementById('paPrep')") == 1, u"#paPrep 之取须一处"
     assert u"window.paPrepTermDismiss = paPrepTermDismiss;" in s, u"✕ 须可达（onclick）"
+
+
+def test_W13_窗_已生效之终态逾窗不复生而缺据照旧显():
+    # ⭐ pm_1841 §二（要）：**已生效**之终态之可见窗 ＝ 自该跑之 `ended_at` 起 —— 逾 ⇒ 本面**⛔ 再生**
+    #   （回落可得性之真读数）；反控：「未生效」之支 ⛔ 入窗。
+    d = _v()
+    st = d["stale_eff"]
+    assert st["state"] == "latest", u"已生效之终态逾窗 ⇒ ⛔ 再生（回落可得性 · ⛔ 长挂）：" + str(st)
+    assert u"已更新到" not in st["text"], st["text"]
+    assert u"请关窗重开" not in st["note"], u"⛔ 回落成「未生效」之支（其辞另有）：" + st["note"]
+    assert d["mid_win"]["state"] == "done" and d["mid_win"]["in_effect"] is True, d["mid_win"]
+    assert d["over_win"]["state"] == "latest", u"逾阈 ⇒ 再生（界）：" + str(d["over_win"])
+    ns = d["no_src"]
+    assert ns["state"] == "latest", \
+        u"`ended_at` 缺 ⇒ 终态本 ⛔ 出（既有之行：`rfresh` 本须 `rage` · **⛔ 本窗所加**）∧ ⛔ 冒「未生效」：" + str(ns)
+    assert u"请关窗重开" not in ns["note"], u"缺据 ⛔ 充「未生效」：" + ns["note"]
+    ni = d["stale_ni"]
+    assert ni["state"] == "done" and ni["in_effect"] is False, ni
+    assert u"请关窗重开" in ni["note"], u"「未生效」之支 ⛔ 入窗（其辞须留）：" + ni["note"]
+
+
+def test_W14_端到端_逾窗之已生效终态不复生():
+    d = _e2e()["stale_eff"]
+    assert d["state"] == "latest", u"全路（fetch → apply → view）：逾窗 ⇒ ⛔ 再生：" + str(d)
+    assert u"已更新到" not in d["text"], d["text"]
+
+
+def test_W15_期至即隐不拘面钟():
+    # pm_1841 §二（补）：终态投「期」（自该跑之 `ended_at`）⇒ 面之钟（1 s 跳）读之即断。
+    d = _t()
+    assert d["dead_shown"] == u"", d
+    assert d["dead_wait"] == u"", u"期未至 ⇒ 现（面钟 1 s 跳重渲）：" + str(d)
+    assert d["dead_hit"] == u"none", u"期至 ⇒ 即隐（⛔ 待 20 s 之面钟）：" + str(d)
+
+
+def test_W16_已生效之终态投期而他支不投():
+    d = _v()
+    dl = d["dead_left"]
+    assert dl is not None and 3000 < dl <= 7000, \
+        u"期 ＝ `ended_at` ＋ 本窗（此处该跑已老 ≈ 15 s ⇒ 余 ≈ 5 s）：" + str(dl)
+    assert d["dead_stale"] is None, u"逾窗 ⇒ ⛔ 再生 ⇒ ⛔ 投期：" + str(d["dead_stale"])
+    assert d["dead_ni"] is None, u"「未生效」之支 ⛔ 投期（其窗另有）：" + str(d["dead_ni"])
+
+
+def test_S3_阈唯1处且与startup同尺():
+    t = _read(UJ)
+    s = _read(SU)
+    assert t.count(u"const PA_UPD_TERM_HOLD_S") == 1, u"阈唯 1 处（一处定形）"
+    assert t.count(u"rage != null && rage > PA_UPD_TERM_HOLD_S") == 1, u"判唯 1 处"
+    assert _read_n(t, u"const PA_UPD_TERM_HOLD_S") * 1000 == _read_n(s, u"const PA_PREP_TERM_HOLD_MS"), \
+        u"二阈须**同尺**（面之自退 20 s ≡ 本窗 · 承 pm_1841 §二）"
+
+
+def test_S4_期唯已生效之支投且面之钟唯读一次():
+    t = _read(UJ)
+    s = _read(SU)
+    assert t.count(u"v.term_deadline") == 1, u"期唯 1 处投（＝「已生效」之支）"
+    body = _fn(t, u"paUpdView")
+    assert body.index(u"v.term_deadline") > body.index(u"v.in_effect = _eff"), \
+        u"期须在「已生效」之支内（承 pm_1841 §二：⛔ 动他支）"
+    r = _fn(s, u"paPrepRender")
+    assert u"typeof v.term_deadline === 'number'" in r, u"面之钟须读期"
+    assert r.count(u"typeof v.term_deadline === 'number'") == 1, u"面之钟唯读一次"
+    assert u"paPrepTermGone || _late" in r, u"期至须入「已隐」之判"
