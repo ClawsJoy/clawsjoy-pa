@@ -480,6 +480,15 @@ def render_and_maybe_apply(p, dry, register_tasks=False):
             lines.append(u"  [task] %s -> rc=%s" % (t["name"], r.returncode))
             if r.returncode != 0:
                 rc = 2
+    if register_tasks:
+        # ⭐ pm_1877 §二：**既存**之旧形任务 ⇒ 同**一处定形**迁之
+        #   （⛔ 以「已注册」充「形已新」 —— 上文之 no-op 即其根因）。
+        try:
+            from task_migrate import migrate as _tm_migrate
+            _rc_i, _ln_i, _rep_i = _tm_migrate(dry=False)
+            lines.extend(_ln_i)
+        except Exception as _e_i:                                       # noqa: BLE001 — 照实报因
+            lines.append(u"  [task-migrate] ⛔ 跑（%s: %s）" % (type(_e_i).__name__, str(_e_i)[:80]))
     if _v.get("value"):
         _rc_v, _ln_v = _apply_vault(_v["value"])
         lines.append(_ln_v)

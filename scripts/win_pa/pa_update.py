@@ -698,6 +698,23 @@ def run(a):
         if not a.no_restart:
             ctl(root, u"start")
         return 2
+    # ⭐⭐ pm_1877 §二（令）：任务之形 **自检 ＋ 迁移** —— payload 内之**一处**
+    #   （一手：九点一零 之闪屏修唯改**脚本**；净机之**任务**仍旧形 ⇒ 闪屏仍在 ⇒ 此处补之）。
+    #   ⚠ 迁移败 ⇒ 照实报 ∧ ⛔ 阻更新 ∧ ⛔ 回滚已装之载荷（二者独立 · 承 pm_1877 §二.1⒟）。
+    try:
+        _tmdir = os.path.dirname(os.path.abspath(__file__))
+        if _tmdir not in sys.path:
+            sys.path.insert(0, _tmdir)
+        from task_migrate import migrate as _tm_migrate
+        _rc_t, _ln_t, _rep_t = _tm_migrate(root=root, dry=False)
+        print(u"\n".join(_ln_t))
+        _DIAG[u"task_migrate"] = _rep_t
+        if _rc_t:
+            print(u"[⚠] 任务之形 ⛔ 尽迁（rc=%s）⇒ 照实报 ∧ ⛔ 阻更新 ∧ ⛔ 回滚载荷（承 pm_1877 §二.1⒟）" % _rc_t)
+    except Exception as _e_tm:                                          # noqa: BLE001 — 照实报因
+        print(u"[⚠] 任务迁移 ⛔ 跑（%s: %s）⇒ 照实报（⛔ 阻更新）"
+              % (type(_e_tm).__name__, str(_e_tm)[:120]))
+        _DIAG[u"task_migrate_error"] = u"%s: %s" % (type(_e_tm).__name__, str(_e_tm)[:200])
     if not a.no_restart:
         mark(u"起服务")
         rc, out = ctl(root, u"start")
