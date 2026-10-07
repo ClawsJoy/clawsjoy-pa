@@ -244,10 +244,45 @@ def missing_wheels(wheel_dir, dists):
     return [d for d in dists if _norm(d) not in got]
 
 
+# ---------------------------------------- 载荷之判据（pm_1598 §二 令一 · 换轴）
+# 病：`PAYLOAD` 为**手写白名单** ⇒ `engine` ／ `agents` ／ `gateway_endpoint.py` 之缺**闸不响**
+#   （其「册」与「印」同出一单 ⇒ **以清单自证清单**）⇒ 净机「启动不了」之根。
+# 换轴：**载荷 ＝ 资产白名单 ∪ 入口之导入闭包**（器：同域之 `import_closure.py` · ⛔ 手拟）。
+def closure_payload(root=None):
+    u"""闭包 ⇒ 须入载荷之诸径：其件在**顶**者 ⇒ 其件（如 `gateway_endpoint.py`）；
+    在**夹**者 ⇒ 其**顶之夹**（连带其资产 —— 如 `agents/<名>/config.yaml`，静态闭包 ⛔ 见）。"""
+    root = root or ROOT
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
+    import import_closure as _ic
+    out, _third, _unres = _ic.closure(root)
+    add = []
+    for rel in sorted(out):
+        r = rel.replace(os.sep, "/")
+        if "/" in r:
+            top = r.split("/")[0]
+        else:
+            top = r
+            if not os.path.isfile(os.path.join(root, top.replace("/", os.sep))):
+                continue   # 裸之命名空间夹（无件）⇒ ⛔ 缠其夹（如 `scripts/` ⇒ 入开发物）
+        if top not in add:
+            add.append(top)
+    return add
+
+
+def effective_payload(root=None):
+    u"""运行子集 ＝ 资产白名单 `PAYLOAD` **∪** 闭包所须之顶（一处定形 · pm_1598 令一）。"""
+    out = list(PAYLOAD)
+    for t in closure_payload(root):
+        if t not in out:
+            out.append(t)
+    return tuple(out)
+
+
 def _payload_walk(root):
     u"""运行子集之**全件**（剔 `__pycache__` ／ `.before_*` ／ 点件 · **⛔ 剔 `EXCLUDE`**）—— **器取**。"""
     out = []
-    for rel in PAYLOAD:
+    for rel in effective_payload(root):
         p = os.path.join(root, rel.replace("/", os.sep))
         if os.path.isfile(p):
             out.append(rel)
@@ -442,6 +477,43 @@ def prune_stale(out, want, skip_top=("wheel", "runtime")):
     return sorted(stale)
 
 
+# ------------------------------------------ 出包之硬闸（pm_1598 §二 令二）
+def release_gate(payload, root=None, live=True):
+    u"""⭐ 出包之**硬闸**：以「包内 runtime ＋ 载荷」真跑二器 ⇒ `(ok, rows)`。
+
+    ⛔ 过 ⇒ ⛔ 出包（免再出「净机启动不了」之包 —— 承「⛔ 以 rc 0 代『成』」）。
+    ① `import_closure.py --check`：**入口之导入闭包 ⊆ 载荷**（⛔ 白名单自证）
+    ② `build_runtime.py --check [--live]`：包内之根（`import core` rc 0）＋ 起服正控（`/health` 200）
+    ⚠ 闸之端口 ＝ `socket.bind(0)` 取空 ＋ 临时 `APPDATA` 覆盖端口 ⇒ **⛔ 撞现役 `5102`**。
+    """
+    root = root or ROOT
+    payload = os.path.abspath(payload)
+    rows = [u"[闸] 载荷＝%s ｜ 仓＝%s" % (payload, root)]
+    ok = True
+    py = sys.executable
+    r1 = subprocess.run([py, u"-X", u"utf8", u"-B", os.path.join(HERE, u"import_closure.py"),
+                         u"--repo", root, u"--check", payload],
+                        capture_output=True, text=True, encoding=u"utf-8", errors=u"replace")
+    rows += [x for x in (r1.stdout or u"").split(u"\n") if x.strip()]
+    ok1 = (r1.returncode == 0)
+    ok = ok and ok1
+    rows.append(u"[闸·一] 导入闭包 ⊆ 载荷：%s（rc %s）" % (u"过" if ok1 else u"⛔ 驳", r1.returncode))
+    cmd = [py, u"-X", u"utf8", u"-B", os.path.join(HERE, u"build_runtime.py"),
+           u"--root", root, u"--out", os.path.join(payload, u"runtime"),
+           u"--payload", payload, u"--check"]
+    if live:
+        cmd.append(u"--live")
+    r2 = subprocess.run(cmd, capture_output=True, text=True, encoding=u"utf-8", errors=u"replace")
+    rows += [x for x in (r2.stdout or u"").split(u"\n") if x.strip()]
+    ok2 = (r2.returncode == 0)
+    ok = ok and ok2
+    rows.append(u"[闸·二] 包内 runtime ＋ 载荷（起服正控%s）：%s（rc %s）"
+                % (u"" if live else u" · ⛔ 跑", u"过" if ok2 else u"⛔ 驳", r2.returncode))
+    rows.append(u"[闸] 判：%s ⇒ %s" % (u"过" if ok else u"⛔ 驳",
+                                    u"可出包" if ok else u"**⛔ 出包**（承 pm_1598 §二 令二）"))
+    return ok, rows
+
+
 def apply_bundle(root=None, out=None, wheel=True, json_out=False, runtime=None):
     u"""真做（⚠ 须**网**）—— ⓐ `pip download` 入 `wheel\\` ⓑ 复运行子集 ⓒ 写册（逐件 sha256）。
     ⛔ 起停 ／ ⛔ 改本仓（唯写 `out`）。"""
@@ -524,6 +596,12 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False, runtime=None):
     io.open(os.path.join(p["out"], "bundle_manifest.json"), "w", encoding="utf-8", newline="").write(
         json.dumps(man, ensure_ascii=False, indent=1))
     lines.append(u"[bundle] 立毕：件 %d ｜ 依 %d ｜ 册 bundle_manifest.json" % (len(entries), len(p["dists"])))
+    # ⭐ pm_1598 §二 令二：出包之**硬闸** —— 以「包内 runtime ＋ 载荷」真跑（⛔ 过 ⇒ ⛔ 出包）
+    _g_ok, _g_rows = release_gate(p["out"], root=p["root"], live=True)
+    lines += _g_rows
+    if not _g_ok:
+        lines.append(u"[bundle] ⛔ 闸驳 ⇒ 本包 ⛔ 可交付（pm_1598 §二 令二）")
+        return 2, lines
     return 0, lines
 
 
@@ -668,9 +746,17 @@ def main(argv):
     ap.add_argument("--no-wheel", action="store_true", help=u"⛔ 跑 pip download（轮已在）")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--gate", default="", help=u"出包之硬闸：以「包内 runtime ＋ 载荷」真跑二器")
     a = ap.parse_args(argv)
     if a.self_test:
         return self_test()
+    if a.gate:
+        if not os.path.isdir(a.gate):
+            print(u"[bundle] ⛔ 入口错：--gate 之径不在：%s" % a.gate)
+            return 3
+        ok, rows = release_gate(a.gate, root=a.root, live=True)
+        print(u"\n".join(rows))
+        return 0 if ok else 2
     if a.check:
         if not os.path.isdir(a.check):
             print(u"[bundle] ⛔ 入口错：--check 之径不在：%s" % a.check)

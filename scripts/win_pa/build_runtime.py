@@ -50,7 +50,12 @@ EMBED_BYTES = 11133606
 PTH_NAME = u"python312._pth"
 ZIP_NAME = u"python312.zip"
 SITEDIR = u"Lib" + BS + u"site-packages"
-PTH_TAIL = u"\n\n# Uncomment to run site.main() automatically\nimport site\n"
+#: ⭐ pm_1597 §二.1 ⒝（**定式之修**）：装根之行 —— `._pth` 之所在 ＝ `runtime\` ⇒ `..` ＝ 装根。
+#:   **有 `._pth` ⇒ `sys.path` 唯其诸行**（⛔ 脚本目录 ∧ ⛔ CWD ∧ `PYTHONPATH` 被忽 · 我一手三测）⇒
+#:   ⛔ 此行 ⇒ 子进程之 `from core…` 必 `ModuleNotFoundError`（净机八次同 · pm_1597 §一）。
+#: 序：**在 `Lib\site-packages` 之次** —— 免装根之顶件（如 `wheel\`）掩第三方之同名（我一手核）。
+PTH_ROOT = u".."
+PTH_TAIL = u"\n\n# paths above: stdlib zip / runtime dir / site-packages / install root (..)\nimport site\n"
 
 
 def sha256_file(p):
@@ -62,11 +67,12 @@ def sha256_file(p):
 
 
 def patch_pth(text):
-    u"""`._pth` 之正形（**一处定形**）：首行之 zip 名**照原**（⛔ 改）＋ 显列 `Lib\\site-packages` ＋ 启 `site`。"""
+    u"""`._pth` 之正形（**一处定形**）：zip 名**照原**（⛔ 改）＋ `Lib\\site-packages` ＋ **装根 `..`** ＋ 启 `site`。
+    ⛔ 装根一行 ⇒ 包内 runtime 之子进程见 `core` ⛔ 得（pm_1597 · 净机之「启动不了」之本）。"""
     lines = [l.strip() for l in (text or u"").replace(u"\r\n", u"\n").split(u"\n")]
     keep = [l for l in lines if l and not l.startswith(u"#")]
     zipname = keep[0] if keep else ZIP_NAME
-    return zipname + u"\n.\n" + SITEDIR + PTH_TAIL
+    return zipname + u"\n.\n" + SITEDIR + u"\n" + PTH_ROOT + PTH_TAIL
 
 
 def pth_ok(text):
@@ -168,9 +174,9 @@ def pip_cmds(exe, wheel, reqs):
     return [(u"铺后端", seed), (u"装依", main)]
 
 
-def run(cmd, cwd=None, timeout=3600):
+def run(cmd, cwd=None, timeout=3600, env=None):
     print(u"   $ " + u" ".join(cmd))
-    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True,
+    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env,
                        encoding=u"utf-8", errors=u"replace", timeout=timeout)
     return r
 
@@ -188,6 +194,128 @@ def plan_lines(a):
         u"[runtime] 7 报：python --version 逐字 ／ pip list 之件数 ／ 体量 ／ 件数",
     ]
     return lines
+
+
+# ------------------------------------------------------ 包内之根 ／ 起服之探（承 pm_1597 §二.2）
+def _free_port():
+    u"""空之端口（bind `0` ⇒ 器取 · ⛔ 字面量）。"""
+    import socket
+    s = socket.socket()
+    try:
+        s.bind((u"127.0.0.1", 0))
+        return int(s.getsockname()[1])
+    finally:
+        s.close()
+
+
+def _new_entries(root, before):
+    u"""顶件之「探前 ⛔ 在」者（＝探之自产 —— 唯报 ∧ 可清）。"""
+    try:
+        now = set(os.listdir(root))
+    except OSError:
+        return []
+    return sorted(n for n in now if n not in before)
+
+
+def _clean_own(root, names, allow=(u"logs", u"data")):
+    u"""清「探之自产」：**⛔ 白名单之外 ⇒ ⛔ 动**（承「⛔ 代删用户之物」）。"""
+    gone = []
+    for n in names:
+        if n not in allow:
+            continue
+        p = os.path.join(root, n)
+        if os.path.isdir(p) and os.path.abspath(p).startswith(os.path.abspath(root) + BS):
+            shutil.rmtree(p, ignore_errors=True)
+            gone.append(n)
+    return gone
+
+
+def _own_rows(payload, before):
+    u"""探毕：报 ∧ 清其自产 ⇒ 报行（⛔ 静）。"""
+    own = _new_entries(payload, before)
+    if not own:
+        return []
+    gone = _clean_own(payload, own)
+    return [u"   \u26a0 探之自产：%s（已清：%s）" % (u" \uff0f ".join(own), u" \uff0f ".join(gone) or u"\u65e0")]
+
+
+def probe_app_root(exe, payload):
+    u"""⭐ pm_1597 §二.2 ⒜：**包内之根可入** —— `runtime\\python.exe -c "import core"` ⇒ rc 0。
+
+    其由（pm_1597 §一 · 我一手复得）：embed 之 `._pth`（**有之 ⇒ `sys.path` 唯其诸行** ⇒
+      ⛔ 脚本目录 ∧ ⛔ CWD ∧ `PYTHONPATH` 被忽）⛔ 装根 ⇒ 子进程之
+      `agent_gateway_enhanced.py:15 from core.gateway.archive import …` ⇒ `ModuleNotFoundError`
+      ⇒ 秒死 ⇒ 端口永不开（净机之八次同）。
+    ⚠ CWD ＝ 装根（`unified_config._find_file` 之候选为**相对之径** ⇒ 我一手核）；探毕清其自产。"""
+    before = set(os.listdir(payload))
+    r = run([exe, u"-X", u"utf8", u"-c", u"import core;print('core-file=' + core.__file__)"],
+            cwd=payload)
+    got = u""
+    for l in (r.stdout or u"").split(u"\n"):
+        if l.strip().startswith(u"core-file="):
+            got = l.strip().split(u"=", 1)[1]
+    rows = _own_rows(payload, before)
+    ok = (r.returncode == 0) and bool(got)
+    why = got or ((r.stderr or u"").strip().split(u"\n") or [u""])[-1][:200]
+    return ok, ([u"[%s] 包内之根：`runtime\\python.exe -c \"import core\"` ⇒ rc %d ｜ %s"
+                 % (u"OK" if ok else u"FAIL", r.returncode, why)] + rows)
+
+
+def probe_start(exe, payload, timeout=300):
+    u"""⭐ pm_1597 §二.2 ⒝：**包内 runtime ＋ 载荷**跑一次**起服正控**（起 ⇒ `/health 200` ⇒ 收尸）。
+
+    沙箱（要 · 免扰）：空端口 ＋ 临时 `APPDATA` —— `%APPDATA%\\ClawsJoy\\system_unified.yaml`
+      **用户级层覆盖装根层**（承 `unified_config`）⇒ 端口 ／ 数据根皆落临时 ⇒ ⛔ 与现役之实例
+      争端口 ∧ ⛔ 把探之产写入载荷之 `data\\`。`logs\\` 出于 `pa_nowindow` 之本根 ⇒ 探毕清之。"""
+    import tempfile
+    import time
+    import urllib.request
+    port = _free_port()
+    tmp = tempfile.mkdtemp(prefix=u"cjpa_probe_")
+    pn = os.path.join(payload_scripts(payload), u"pa_nowindow.py")
+    before = set(os.listdir(payload))
+    rows = []
+    up = False
+    try:
+        d = os.path.join(tmp, u"ClawsJoy")
+        os.makedirs(d, exist_ok=True)
+        io.open(os.path.join(d, u"system_unified.yaml"), u"w", encoding=u"utf-8", newline=u"\n").write(
+            u"services:\n  gateway:\n    port: %d\npaths:\n  data_root: \"%s\"\n"
+            % (port, os.path.join(tmp, u"data").replace(BS, u"/")))
+        env = dict(os.environ)
+        env[u"APPDATA"] = tmp
+        try:
+            r = run([exe, u"-X", u"utf8", pn, u"start"], cwd=payload, timeout=timeout, env=env)
+            rc = r.returncode
+            for l in (r.stdout or u"").split(u"\n"):
+                if l.strip().startswith(u"[INFO] port"):
+                    rows.append(u"   " + l.strip())
+            t0 = time.time()
+            while time.time() - t0 < 120:
+                try:
+                    with urllib.request.urlopen(u"http://127.0.0.1:%d/health" % port, timeout=3) as h:
+                        if h.status == 200:
+                            up = True
+                            break
+                except Exception:
+                    pass
+                time.sleep(2.0)
+            rows.append(u"[%s] 起服之探：`pa_nowindow.py start`（沙箱端口 %d · 临时 APPDATA · 沙箱数据根）"
+                        u" ⇒ `/health` %s（%.1f s）｜ rc %s"
+                        % (u"OK" if up else u"FAIL", port, u"200" if up else u"\u26d4 \u8fbe",
+                           time.time() - t0, rc))
+            if not up:
+                tail = [l for l in (r.stdout or u"").split(u"\n") if l.strip()][-4:]
+                rows.append(u"   起服之尾：%s" % u" \uff0f ".join(x[:130] for x in tail))
+        finally:
+            try:
+                run([exe, u"-X", u"utf8", pn, u"stop"], cwd=payload, timeout=120, env=env)
+            except Exception as e:
+                rows.append(u"   \u26a0 收尸之探败：%s" % e)
+            rows += _own_rows(payload, before)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return up, rows
 
 
 def check(a):
@@ -218,7 +346,16 @@ def check(a):
     out = (r2.stdout or u"").strip().split(u"\n")
     ok_d = bool(out and out[0].strip() == u"True")
     rows.append(u"[%s] 依之验：%s" % (u"OK" if ok_d else u"FAIL", out[1] if len(out) > 1 else (r2.stderr or u"")[:200]))
-    return (ok_v and ok_d), rows
+    # ⭐ pm_1597 §二.2：包内之根（＋ 可择：起服之正控）—— 出包闸之新齿
+    ok_a, arows = probe_app_root(exe, a.payload)
+    rows += arows
+    ok_live = True
+    if getattr(a, u"live", False):
+        ok_live, lrows = probe_start(exe, a.payload)
+        rows += lrows
+    else:
+        rows.append(u"[--] 起服之正控 **⛔ 跑**（⛔ 静绿：须 `--live` ∨ `--go`）")
+    return (ok_v and ok_d and ok_a and ok_live), rows
 
 
 def build(a):
@@ -263,7 +400,7 @@ def build(a):
         if r.returncode != 0:
             return 2, rows + [u"   ⛔ stderr 尾：%s" % (r.stderr or u"")[-600:]]
     ok, rws = check(a)
-    rows += [u"[--] 6/7 " + x for x in rws]
+    rows += [u"[--] 6/8 " + x for x in rws]
     if not ok:
         return 2, rows
     return 0, rows
@@ -282,7 +419,12 @@ def main(argv):
     ap.add_argument(u"--go", action=u"store_true")
     ap.add_argument(u"--json", action=u"store_true")
     ap.add_argument(u"--self-test", action=u"store_true")
+    ap.add_argument(u"--live", dest=u"live", action=u"store_true", default=None,
+                    help=u"起服之正控（包内 runtime ＋ 载荷 ⇒ /health）")
+    ap.add_argument(u"--no-live", dest=u"live", action=u"store_false")
     a = ap.parse_args(argv)
+    if a.live is None:
+        a.live = bool(a.go)          # ⭐ 出包必跑；`--check` 唯核（⛔ 动）⇒ 缺省 ⛔ 跑（须显 --live）
     if a.self_test:
         return self_test()
     a.out = a.out or os.path.join(ROOT, u"runtime")
@@ -324,12 +466,17 @@ def self_test():
             fails.append(name)
 
     stock = u"python312.zip\r\n.\r\n\r\n# Uncomment to run site.main() automatically\r\n#import site\r\n"
-    say(patch_pth(stock) == u"python312.zip\n.\n" + SITEDIR + PTH_TAIL, u"正控：原形 ⇒ 正形（启 site ＋ 列 site-packages）")
+    say(patch_pth(stock) == u"python312.zip\n.\n" + SITEDIR + u"\n" + PTH_ROOT + PTH_TAIL,
+        u"正控：原形 ⇒ 正形（列 site-packages ＋ **装根 `..`** ＋ 启 site）")
+    say(PTH_ROOT in patch_pth(stock).split(u"\n"),
+        u"正控：正形**含装根之行** —— ⛔ 漏 ⇒ 包内子进程见 `core` ⛔ 得（pm_1597）")
+    say(patch_pth(patch_pth(stock)).split(u"\n").count(PTH_ROOT) == 1,
+        u"正控：装根之行**唯一**（⛔ 复加 · 幂等）")
     say(pth_ok(patch_pth(stock)), u"正控：正形 ⇒ 幂等")
     say(not pth_ok(stock), u"正控：原形 ⇒ ⛔ 为正形（⛔ 静默过）")
     say(patch_pth(u"python313.zip\n.\n") .startswith(u"python313.zip\n.\n" + SITEDIR),
         u"正控：他版之 zip 名 ⇒ 照原（⛔ 改成 312）")
-    say(patch_pth(u"") == ZIP_NAME + u"\n.\n" + SITEDIR + PTH_TAIL, u"正控：空 ⇒ 以 312 之默认")
+    say(patch_pth(u"") == ZIP_NAME + u"\n.\n" + SITEDIR + u"\n" + PTH_ROOT + PTH_TAIL, u"正控：空 ⇒ 以 312 之默认")
     for bad in (u"", u"C:", u"C:" + BS, ROOT, os.path.dirname(ROOT)):
         ok, _ = guard_out(bad)
         say(not ok, u"反控：出径 ⛔ 许：%s" % (bad or u"<空>"))
@@ -345,7 +492,7 @@ def self_test():
         u"正控：装依之令离线（--no-index ∧ --find-links）")
     say(len(required_dists()) >= 10, u"正控：依之表 ≥ 10 件（承 make_client_bundle）")
     say(len(_pf().REQUIRED_DEPS) >= 10, u"正控：逐件验之表 ≥ 10 件（承 preflight_start）")
-    total = 15
+    total = 17
     print(u"=== build_runtime 自测 %d/%d %s ===" % (total - len(fails), total, u"通过" if not fails else u"败"))
     return 0 if not fails else 1
 

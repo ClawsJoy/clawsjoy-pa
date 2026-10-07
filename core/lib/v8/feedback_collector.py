@@ -5,8 +5,20 @@ import os
 import json
 from typing import Dict, List, Optional, Any
 
-import psycopg2
-import psycopg2.extras
+try:
+    import psycopg2
+    import psycopg2.extras
+    _PSYCOPG2_ERR = None
+except Exception as _e:   # 净机无 Postgres ⇒ 无 psycopg2：显式降级（pm_1598 令三）
+    psycopg2 = None
+    _PSYCOPG2_ERR = _e
+
+
+def _connect(db_url):
+    """取 DB 连接；无 psycopg2（净机无 Postgres）⇒ 显式之错，勿以 AttributeError 混过。"""
+    if psycopg2 is None:
+        raise RuntimeError("psycopg2 未安装（本机无 Postgres）：%s" % _PSYCOPG2_ERR)
+    return psycopg2.connect(db_url)
 
 
 class FeedbackCollector:
@@ -53,7 +65,7 @@ class FeedbackCollector:
             bool: 是否写入成功
         """
         try:
-            conn = psycopg2.connect(self.db_url)
+            conn = _connect(self.db_url)
             cur = conn.cursor()
             cur.execute(
                 """
@@ -91,7 +103,7 @@ class FeedbackCollector:
         """同步更新 code_edges 的 used_count 或 ignored_count"""
         try:
             column = "used_count" if feedback_type == "used" else "ignored_count"
-            conn = psycopg2.connect(self.db_url)
+            conn = _connect(self.db_url)
             cur = conn.cursor()
             cur.execute(
                 f"UPDATE code_edges SET {column} = {column} + 1 WHERE id = %s",
@@ -108,7 +120,7 @@ class FeedbackCollector:
     ) -> List[Dict[str, Any]]:
         """查询反馈汇总"""
         try:
-            conn = psycopg2.connect(self.db_url)
+            conn = _connect(self.db_url)
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             conditions = []
             params = []
@@ -138,7 +150,7 @@ class FeedbackCollector:
     def get_edge_stats(self, edge_id: int) -> Optional[Dict[str, Any]]:
         """查询单条边的统计信息"""
         try:
-            conn = psycopg2.connect(self.db_url)
+            conn = _connect(self.db_url)
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cur.execute(
                 "SELECT id, source_name, target_name, edge_type, weight, "

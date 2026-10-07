@@ -137,12 +137,28 @@ def plan(dist, out, name):
             "sed": os.path.join(out, u"_setup_stage", name + u".sed")}
 
 
+def _gate(dist):
+    u"""出包之硬闸（pm_1598 §二 令二）：以「包内 runtime ＋ 载荷」真跑 ⇒ (ok, rows)。"""
+    try:
+        if HERE not in sys.path:
+            sys.path.insert(0, HERE)
+        import make_client_bundle as M
+    except Exception as e:
+        return False, [u"[闸] ⛔ 见器 make_client_bundle：%s（⇒ 按驳论 · ⛔ 静绿）" % e]
+    return M.release_gate(dist, live=True)
+
+
 def build(dist, out, name, zip_only=False, reuse=False, deflate=False):
     rows = []
     ok, why = guard_dist(dist)
     if not ok:
         return 2, [u"[FAIL] 前置：%s" % why]
     rows.append(u"[OK] 前置：%s" % why)
+    # ⭐ pm_1598 §二 令二：出包之**硬闸** —— ⛔ 过 ⇒ ⛔ 造（先于 zip ／ exe · 失早）
+    _g_ok, _g_rows = _gate(dist)
+    rows += _g_rows
+    if not _g_ok:
+        return 2, rows + [u"[FAIL] 出包之闸 ⛔ 过 ⇒ ⛔ 造（pm_1598 §二 令二）"]
     p = plan(dist, out, name)
     stage = p["stage"]
     os.makedirs(stage, exist_ok=True)

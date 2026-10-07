@@ -5,15 +5,40 @@
 
 import json
 import os
-import psycopg2
 import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import ollama  # 使用你的Ollama
+try:
+    import psycopg2
+    _PSYCOPG2_ERR = None
+except Exception as _e:   # 净机无 Postgres ⇒ 无 psycopg2：显式降级（pm_1598 令三）
+    psycopg2 = None
+    _PSYCOPG2_ERR = _e
+
+try:
+    import ollama  # 使用你的Ollama
+    _OLLAMA_ERR = None
+except Exception as _e:   # 净机无 Ollama ⇒ 显式降级（pm_1598 令三）
+    ollama = None
+    _OLLAMA_ERR = _e
 
 from core.lib.config_helper import get_data_root
+
+
+def _pg_connect(db_url):
+    """取 DB 连接；无 psycopg2（净机无 Postgres）⇒ 显式之错（pm_1598 令三）。"""
+    if psycopg2 is None:
+        raise RuntimeError("psycopg2 未安装（本机无 Postgres）：%s" % _PSYCOPG2_ERR)
+    return psycopg2.connect(db_url)
+
+
+def _ollama_chat(**kw):
+    """调 Ollama；无 ollama（净机无 Ollama）⇒ 显式之错（pm_1598 令三）。"""
+    if ollama is None:
+        raise RuntimeError("ollama 未安装（本机无 Ollama）：%s" % _OLLAMA_ERR)
+    return ollama.chat(**kw)
 
 
 class SelfUpgradingAgent:
@@ -65,7 +90,6 @@ class SelfUpgradingAgent:
         同一天同一 Agent 的洞察按 entity_name 覆盖更新，避免记录无限膨胀。
         """
         try:
-            import psycopg2
             from core.lib.code_entity_extractor import extractor
             db_url = getattr(extractor, "db_url", None) or os.getenv(
                 "DATABASE_URL",
@@ -86,7 +110,7 @@ class SelfUpgradingAgent:
                 },
                 ensure_ascii=False,
             )
-            conn = psycopg2.connect(db_url)
+            conn = _pg_connect(db_url)
             cur = conn.cursor()
             cur.execute(
                 """
@@ -154,7 +178,7 @@ class SelfUpgradingAgent:
 
         try:
             # 调用本地Ollama
-            response = ollama.chat(
+            response = _ollama_chat(
                 model=self.model_name,
                 messages=[{"role": "user", "content": analysis_prompt}],
                 options={"temperature": 0.3, "num_predict": 500},
@@ -284,9 +308,8 @@ class SelfUpgradingAgent:
     def consume_hypothesis(self, limit: int = 20) -> List[Dict]:
         """从 SAG 读取 system_hypothesis，返回可操作的修复建议"""
         try:
-            import psycopg2
             from core.lib.code_entity_extractor import extractor
-            conn = psycopg2.connect(extractor.db_url)
+            conn = _pg_connect(extractor.db_url)
             cur = conn.cursor()
             cur.execute("""
                 SELECT entity_name, signature, created_at
@@ -339,7 +362,7 @@ class SelfUpgradingAgent:
             entity_name = f'auto_fix::{fix["problem_type"]}'
             try:
                 db_url = os.getenv("DATABASE_URL", "postgresql://clawsjoy:clawsjoy_secret@localhost:5432/clawsjoy_dev")
-                conn = psycopg2.connect(db_url)
+                conn = _pg_connect(db_url)
                 cur = conn.cursor()
                 cur.execute(
                     "SELECT id, signature FROM code_entities WHERE entity_name = %s AND entity_type = 'auto_fix_suggestion' LIMIT 1",

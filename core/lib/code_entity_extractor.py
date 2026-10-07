@@ -9,9 +9,15 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import psycopg2
-import psycopg2.extras
-from psycopg2.pool import SimpleConnectionPool
+try:
+    import psycopg2
+    import psycopg2.extras
+    from psycopg2.pool import SimpleConnectionPool
+    _PSYCOPG2_ERR = None
+except Exception as _e:   # 净机无 Postgres ⇒ 无 psycopg2：显式降级，勿拖死整机（pm_1598 令三）
+    psycopg2 = None
+    SimpleConnectionPool = None
+    _PSYCOPG2_ERR = _e
 
 try:
     import redis as redis_lib
@@ -178,6 +184,8 @@ class ConnectionPool:
     """基于 psycopg2 SimpleConnectionPool 的连接池（最小连接数 2，最大连接数 10）"""
 
     def __init__(self, db_url: str, minconn: int = 2, maxconn: int = 30):
+        if SimpleConnectionPool is None:   # 显式降级（pm_1598 令三）
+            raise DbUnavailable("psycopg2 未安装（本机无 Postgres）：%s" % _PSYCOPG2_ERR)
         # connect_timeout：让每次探测有界（不再挂 OS 默认超时）
         if "connect_timeout" not in db_url:
             db_url = db_url + ("&" if "?" in db_url else "?") + "connect_timeout=3"
