@@ -200,7 +200,9 @@ const paPrepRun = {started:false, t0:0, h:null, http:null, tries:0, miss:0,
 const PA_UPD_BUSY = {downloading:1, verifying:1, backing_up:1, replacing:1};
 let paPrepUpd = null;   /* 更新面之末回（由 update.js 之 paPrepFeedUpdate 投 · ⛔ 本件自取） */
 function paPrepFeedUpdate(v){ paPrepUpd = (v && typeof v === 'object') ? v : null; paPrepPaint(); }
-function paPrepMerge(a, b){
+let paPrepFb = null;    /* 反馈面之末回（由 feedback.js 之 paPrepFeedFeedback 投 · ⛔ 本件自取 · pm_1635 §一.3） */
+function paPrepFeedFeedback(v){ paPrepFb = (v && typeof v === 'object') ? v : null; paPrepPaint(); }
+function paPrepMerge(a, b, c){
   const u = (b && typeof b === 'object') ? b : null;
   if(u){
     if(u.state === 'failed') return u;
@@ -208,6 +210,11 @@ function paPrepMerge(a, b){
     if(u.state === 'running' && PA_UPD_BUSY[u.phase]) return u;
     if(u.state === 'done') return u;
   }
+  /* ⭐ pm_1635 §一.3（三面 ⇒ **一幅横幅** · ⛔ 三横幅）：反馈之「成 ／ 败」＝ **最低**优先级 ——
+     唯「起服已就绪（横幅本应收）」时方占 ⇒ ⛔ 凌于起服之「准备中 ／ 失败」（其判在上）∧
+     ⛔ 凌于更新之诸态（上列已判）⇒ 免「更新要重启 ∧ 一条留言回执盖之」。 */
+  const f = (c && typeof c === 'object') ? c : null;
+  if(f && f.state && a && a.state === 'ready') return f;
   return a;
 }
 
@@ -215,7 +222,7 @@ function paPrepPaint(){
   const v = paPrepView(paPrepRun.h, {elapsed_s:(Date.now() - paPrepRun.t0) / 1000,
         tries:paPrepRun.tries, http_status:paPrepRun.http, was_ready:paPrepRun.wasReady});
   paPrepRun.last = v;
-  const face = paPrepMerge(v, paPrepUpd);   /* 二源 ⇒ 一处判（⛔ 二套面） */
+  const face = paPrepMerge(v, paPrepUpd, paPrepFb);   /* 三源 ⇒ 一处判（⛔ 三套面 · pm_1635 §一.3） */
   paPrepRender(face);
   return face;
 }
@@ -264,6 +271,8 @@ try{ window.paPrepView = paPrepView; window.paPrepRender = paPrepRender;
      window.paPrepFetch = paPrepFetch; window.paPrepRun = paPrepRun;
      window.PA_PREP_PHASE = PA_PREP_PHASE; window.paPrepMerge = paPrepMerge;
      window.paPrepFeedUpdate = paPrepFeedUpdate; window.paPrepUpd = function(){ return paPrepUpd; }; }catch(e){}
+try{ window.paPrepFeedFeedback = paPrepFeedFeedback;
+     window.paPrepFb = function(){ return paPrepFb; }; }catch(e){}
 /* 自起（⛔ 候 boot.js —— 首屏须「JS 一跑即显」· 承令一「⛔ 白屏」之反）。 */
 if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', paPrepBegin); }
 else { paPrepBegin(); }

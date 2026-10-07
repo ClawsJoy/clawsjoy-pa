@@ -248,3 +248,33 @@ details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(-
 .prep[data-state="done"]{background:rgba(63,185,80,.14);color:var(--green);border-bottom-color:rgba(63,185,80,.4)}
 .prep[data-state="unreachable"]{background:rgba(139,148,158,.14);color:var(--sub);border-bottom-color:rgba(139,148,158,.35)}
 .prep[data-state="restart"]{background:rgba(88,166,255,.16);color:var(--blue);border-bottom-color:rgba(88,166,255,.42)}
+
+/* —— 留言板（丙-P0 · 内测形）（CW b2a5182 · 2026-10-07 · pm_1635 五令 ＋ pm_1641 §二 · 承 TD_1634 ／ 1639 之端）——
+   唯外框 ／ 配色 —— 变量逐字沿用 pa.css 之 :root（⛔ 另立主题）。
+   ⚠ 本面 ⛔ 自渲横幅（三面（起服 ／ 更新 ／ 反馈）⇒ 一幅横幅 · 其渲唯 startup.js 一处）。
+   ⚠ 「⛔ 出机」之常驻明书 ⇒ 以 amber 框之（其字唯后端之 notice · ⛔ 自撰）。 */
+#paFeedback .fb-form{display:flex;flex-direction:column;gap:8px;padding:8px 11px 10px}
+#paFeedback .fb-in,#paFeedback .fb-ta{width:100%;background:var(--bg);color:var(--text);
+  border:1px solid var(--border);border-radius:8px;font:12.5px/1.6 inherit;padding:6px 9px}
+#paFeedback .fb-ta{min-height:72px;resize:vertical}
+#paFeedback .fb-buses{display:flex;flex-wrap:wrap;gap:6px 14px}
+#paFeedback .fb-bus{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--sub);cursor:pointer}
+#paFeedback .fb-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--sub)}
+#paFeedback .fb-file{display:flex;align-items:center;gap:6px;border:1px solid var(--border);
+  border-radius:999px;padding:3px 10px;cursor:pointer}
+#paFeedback .fb-file input{display:none}
+#paFeedback .fb-att{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#paFeedback .fb-send{border:1px solid var(--border);background:rgba(88,166,255,.14);color:var(--text);
+  border-radius:8px;font:600 12.5px inherit;padding:6px 18px;cursor:pointer}
+#paFeedback .fb-send[disabled]{opacity:.5;cursor:not-allowed}
+#paFeedback .fb-state{color:var(--sub);min-width:0;flex:1;line-height:1.6}
+#paFeedback .fb-items{margin:0 11px 12px;font-size:11.5px;color:var(--sub);
+  border-top:1px solid var(--border);padding-top:8px;line-height:1.7}
+#paFeedback .fb-item{border:1px solid var(--border);border-radius:7px;padding:4px 8px;margin-top:6px;
+  cursor:pointer;color:var(--text);font-size:11.5px}
+#paFeedback .fb-item:hover{border-color:var(--blue)}
+#paFeedback .fb-reply{margin:0 11px 8px;border:1px solid rgba(210,153,29,.45);background:rgba(210,153,29,.12);
+  color:var(--amber);border-radius:8px;padding:7px 10px;font-size:12px;line-height:1.6}
+#paFeedback .fb-reply[hidden]{display:none}
+#paFeedback #paFbNotice{margin:0 11px 8px;color:var(--amber);background:rgba(210,153,29,.10);
+  border:1px solid rgba(210,153,29,.30);border-radius:8px;padding:6px 10px;font-size:11.5px;line-height:1.6}

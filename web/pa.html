@@ -32,6 +32,7 @@
     <span class="verrow" id="paVerRow" title="版本 ＋ 更新之态：真源 GET /health 之 version ＋ 更新端（候 TD 1620 定名）· 前端唯显示 ⇒ ⛔ 自算">版本 —（读后端 /health）</span>
   </div>
   <div class="top-right">
+    <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · ⛔ 出机）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
     <span class="chip" id="paMoreBtn" onclick="paMore(true)" title="更多：轨迹 ／ 产出 ／ 文件 ／ 模式 ／ 常驻 ／ 系统 ／ 设置 ／ 私面（各一步可达）">更多 ▾</span>
     <span class="chip" id="drawerRightBtn" onclick="paSettings()" title="设置（老板 ／ 配置 ／ 建档）">⚙ 设置</span>
     <span class="chip" title="当前用户">👤 <span id="uidText">-</span></span>
@@ -144,7 +145,39 @@
       </section>
 
       </details>
-      <details class="mgrp" id="paMoreGrpSet"><summary>③ 设 · 关于 ／ 系统 ／ 设置 ／ 私面</summary>
+      <details class="mgrp" id="paMoreGrpSet"><summary>③ 设 · 留言 ／ 关于 ／ 系统 ／ 设置 ／ 私面</summary>
+      <!-- ⭐ 留言板（丙-P0 之面 · 内测形）（CW b2a5182 · 2026-10-07 · pm_1635 五令 ＋ pm_1641 §二 · 承 TD_1634 ／ 1639 之端）：
+           ⒜ 常驻明书 ⇒ **唯取后端 `notice`**（⛔ 前端自撰其辞）；⒝ 逐项勾选 ⇒ **唯取后端 `consent_buses`** ∧
+              **默认全关**（⛔ 一个「全选」之便键）；⒞ **⛔ 书「在线客服」四字**（内测期 ⛔ 有）；
+              「回话」照今日原型之黄框（其位在收件之上）。
+           读数唯 `GET /health` 之 `feedback` 键（**读一处 · 动分端** · 承 pm_1641 裁 ① ∧ TD_1639 §四.1）；
+           动唯 `POST ／ GET /v9/pa/feedback`（**本机之落点 · ⛔ 出站** —— 其证 ＝ 验收⒉ 之网络录 ＋ 结构齿）。
+           ⭐ 三面（起服 ／ 更新 ／ 反馈）之「成 ／ 败」唯经**一幅横幅**（`#paPrep` · 其渲唯 `startup.js` 一处）
+              ⇒ 本面 ⛔ 自渲横幅（⛔ 三横幅 · 承 pm_1635 §一.3）。
+           ⛔ 载绝对径 ／ ⛔ 起停。 -->
+      <section class="msec" id="paFeedback">
+        <h6>留言板（内测 · ⛔ 出机）</h6>
+        <p class="mnote" id="paFbNotice" role="status" aria-live="polite">留言板之「⛔ 出机」明书：正在读后端（⛔ 自撰其辞）…</p>
+        <div class="fb-reply" id="paFbReply" role="status" aria-live="polite" hidden></div>
+        <div class="fb-form">
+          <input class="fb-in" id="paFbTitle" maxlength="120" placeholder="题（必填 · 一句话说清你遇到的问题）">
+          <textarea class="fb-ta" id="paFbBody" placeholder="说明（必填）：操作步骤 ／ 期望 ／ 实际"></textarea>
+          <div class="fb-buses" id="paFbBuses" title="随件之数据：逐项 · 默认全关（唯取后端 consent_buses）"></div>
+          <div class="fb-row">
+            <label class="fb-file">＋ 附件<input type="file" id="paFbFiles" multiple accept="image/*,.txt,.log,.json"></label>
+            <span class="fb-att" id="paFbAttList">（无附件）</span>
+          </div>
+          <div class="fb-row" id="paFbAgreeWrap" hidden>
+            <input type="checkbox" id="paFbAgree"><label id="paFbAgreeLb" for="paFbAgree"></label>
+          </div>
+          <div class="fb-row">
+            <button class="fb-send" id="paFbSend" title="发送 ⇒ POST /v9/pa/feedback（落**本机** · ⛔ 出站）">发送</button>
+            <span class="fb-state" id="paFbState" role="status" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="fb-items" id="paFbItems" role="status" aria-live="polite">我之收件：读数中…</div>
+      </section>
+
       <section class="msec" id="paMoreAbout"><h6>关于 PA（自述 · 九问九答 · 逐条带源）</h6>
         <p class="mnote">真源：面册 <code>GET /web/pa/faces.json</code> ｜ 工具流水 <code>GET /v9/metrics/tool_flow</code>
           ｜ 画像 <code>GET /v9/pa/context</code> ｜ 权限 <code>GET /v9/pa/permission</code>
@@ -343,6 +376,7 @@
 <script src="pa/faces/sources.js"></script>
 <script src="pa/faces/startup.js"></script>
 <script src="pa/faces/update.js"></script>
+<script src="pa/faces/feedback.js"></script>
 <!-- ⭐ 首启引导（净机之「第一屏」· M1 余件之三 · 承 pm_1384 §三.3）：
      ⒜ 数据在本机（**人话** · ⛔ 行话）⒝ 模型三态 ＋ 修之门 ⒞ 数据目录 ⒟ ⛔ 静默（缺则显因）。
      读数源 ＝ GET /v9/pa/first_run（**只读**）；⛔ 后端 ⛔ 在答 ⇒ 明书「没读成」（⛔ 装成「已就绪」）。
