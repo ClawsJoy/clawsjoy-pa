@@ -65,8 +65,39 @@ EXCLUDE = (
     # ⭐ pm_1580 §二.1：本机之活配置（含个人邮箱）⇒ ⛔ 入包
     "config/alert_config.json",
     "config/scheduler_config.json",
+    # ⭐ pm_1656 §三.1 ／ §三.2：**旧演示之陈**（唯引 `web/images/` 者）
+    #   ⇒ 随图一并出包（**⛔ 留「开了就空」之面** —— 承「恒虚之支」之戒）。
+    #   其链：`web/app_complete.py` ⇒ `web/clawsjoy_story.html` ⇒ 二演示页 ⇒ `web/images/`。
+    "web/comic_gallery.html",
+    "web/image_compare.html",
+    "web/clawsjoy_story.html",
 )
 _EXCLUDE_SET = frozenset(EXCLUDE)
+#: ⭐ 剔之**前缀**（pm_1656 §三.1）：**静态大件** —— `web/images`
+#  （370.5 MB · 1882 张 hash 名 `.jpg`）⇒ ⛔ 在运行之闭包
+#  （一手：`core/gateway/sandbox_seed.py:33` 之 `SEED_EXCLUDE`）⇒ 出包。
+#  ⚠ `web/mobile`（65.3 MB）**本件 ⛔ 剔**：其有**活路由**
+#  （`agent_gateway_enhanced.py:310` 挂 `web_bp` · `web/routes.py:17` 之 `/mobile/`）
+#  ⇒ 非纯打包之事（`web/**` 属 CW 之域）⇒ 候 PM 裁（报于回件）。
+EXCLUDE_PREFIX = ("web/images/",)
+
+
+def banned_dir_names():
+    u"""已剔之前缀之**目录名**（**一处定形** · pm_1656 §三.2）
+    ⇒ 供 `ref_scan` ∧ 其齿共用（**⛔ 本处另列**）。"""
+    return tuple(sorted({q.strip(u"/").split(u"/")[-1] for q in EXCLUDE_PREFIX if q.strip(u"/")}))
+
+
+def ref_scan(line, names=None):
+    u"""行里「引已剔之目录」之判（**一处定形**）——
+    ⚠ 由 `EXCLUDE_PREFIX` 驱动（**⛔ 剔者 ⇒ ⛔ 报** —— 免「假红」，
+    如 `web/mobile/` 今本⛔剔 ⇒ 其引者 `web/routes.py` ⇒ 合）。"""
+    for n in (names if names is not None else banned_dir_names()):
+        for tok in (u"/" + n + u"/", u"'" + n + u"/", u'"' + n + u"/"):
+            if tok in line:
+                return True
+    return False
+#: 「引已剔之前缀」之判（**一处定形** · pm_1656 §三.2）
 #: 真源之必需节（⛔ 手拟 · 与 requirements.txt 同源）
 SEC_PREFIX = u"运行依赖"
 
@@ -362,8 +393,53 @@ def _payload_walk(root):
 
 
 def _payload_files(root):
-    u"""运行子集之**入包**之件（`_payload_walk` 剔 `EXCLUDE`）—— **器取**。"""
-    return [x for x in _payload_walk(root) if x not in _EXCLUDE_SET]
+    u"""运行子集之**入包**之件（`_payload_walk` 剔 `EXCLUDE` ／ `EXCLUDE_PREFIX`）—— **器取**。"""
+    return [x for x in _payload_walk(root)
+            if x not in _EXCLUDE_SET and not x.startswith(EXCLUDE_PREFIX)]
+
+
+def excluded_prefix_payload(root):
+    u"""前缀剔表里**实在**之件（逐条可见 · ⛔ 静默 · pm_1656 §三.1）—— **器取**。"""
+    return sorted(x for x in _payload_walk(root) if x.startswith(EXCLUDE_PREFIX))
+
+
+#: ⭐ 悬链之扫之**面**（pm_1656 §三.2 之「一处定形」）：**唯扫可现之面**
+#  （`.html` ／ `.js` ／ `.css`）。⇒ 由：**「开了就空」唯面之病**
+#  （⛔ 面者 ⇒ ⛔ 空）；而 `.py` ／ `.json` ／ `.txt` 之「提及其名」
+#  多入**注 ／ 文档 ／ 器自身**（如本器之 `EXCLUDE_PREFIX` 字面）
+#  ⇒ **假红之源**（一红即 ⛔ 出包 ⇒ 器之自重 ⛔ 值）。
+DANGLING_FACE_EXT = (".html", ".js", ".css")
+
+
+def dangling_refs(root, files):
+    u"""⭐ 悬链之齿（pm_1656 §三.2）：出包之**面**若引「已出包之物」⇒ 开则空 ⇒ 逐条报。
+
+    由：承「凡面之支 ⇒ 须能真达」（⛔ 恒虚之支）—— `web/images/` ／ 三演示页既出包
+    ⇒ 凡引其者（页 ／ 脚本 ／ 样式）须一并处置（剔 ／ 换明书 ／ 改远端）
+    ⇒ 否则 **红**（⛔ 以 rc 0 代「成」）。
+    ⚠ 界二条（一处定形）：
+      ① **唯扫面**（`DANGLING_FACE_EXT`）—— `.py` ／ `.json` ／ `.txt` 之名
+        多入注 ／ 文档 ／ 器自身 ⇒ 假红之源（如本器之 `EXCLUDE_PREFIX` 字面）；
+      ② **唯查前缀**（`EXCLUDE_PREFIX`），⏔ 查整件之剔（`EXCLUDE`）——
+        其缺多**可容**（如 `web/pa/ui_state.json`：面有「未应答」之路 ⇒ 照实）
+        且其名**必现于读数之面** ⇒ 混则假红。
+    """
+    out = []
+    for rel in files:
+        if not rel.lower().endswith(DANGLING_FACE_EXT):
+            continue
+        fp = os.path.join(root, rel.replace("/", os.sep))
+        try:
+            with io.open(fp, "rb") as fh:
+                raw = fh.read(400000)
+        except OSError:
+            continue
+        if not _is_text(raw):
+            continue
+        for i, line in enumerate(raw.decode("utf-8", "ignore").splitlines(), 1):
+            if ref_scan(line):
+                out.append({"file": rel, "line": i, "文": line.strip()[:100]})
+    return out
 
 
 def excluded_payload(root):
@@ -462,6 +538,8 @@ def plan_bundle(root=None, out=None):
             "live_paths": live, "live_org": [r for r in live if r["组织物"]],
             "live_off": [r for r in live if r["组织物"] or r["开发机"]],
             "excluded": excluded,
+            "excluded_prefix": excluded_prefix_payload(root),
+            "dangling": dangling_refs(root, files),
             "ig_payload": ignored_payload(root, files)}
 
 
@@ -805,6 +883,32 @@ def self_test():
     say("core/keep.py" in _pf, u"反控：寻常之件 ⛔ 误剔（⛔ 假红）")
     say(excluded_payload(ex) == ["config/memory/memory_optimization.yaml", "config/secrets.yaml"],
         u"正控：剔何物之逐条报（逐件可见 · ⛔ 静默）")
+    # ⭐ pm_1656 §三.1 ／ §三.2：前缀剔 ＋ 悬链之齿
+    os.makedirs(os.path.join(ex, "web", "images"))
+    io.open(os.path.join(ex, "web", "images", "a.jpg"), "w", encoding="utf-8").write("x")
+    io.open(os.path.join(ex, "web", "pa.html"), "w", encoding="utf-8").write(
+        "<a href=" + chr(34) + "/images/a.jpg" + chr(34) + ">q</a>" + chr(10))
+    io.open(os.path.join(ex, "web", "ok.html"), "w", encoding="utf-8").write("<p>hi</p>" + chr(10))
+    _pf2 = _payload_files(ex)
+    say("web/images/a.jpg" not in _pf2, u"正控（pm_1656 §三.1）：`web/images/` ⇒ ⛔ 入包（静态大件）")
+    say(excluded_prefix_payload(ex) == ["web/images/a.jpg"], u"正控：前缀剔 ⇒ 逐条可见（⛔ 静默）")
+    _dr = dangling_refs(ex, _pf2)
+    say(any(x["file"] == "web/pa.html" for x in _dr),
+        u"正控：引已剔之前缀 ⇒ 悬链之齿响（%d 处）" % len(_dr))
+    say(not any(x["file"] == "web/ok.html" for x in _dr), u"反控：⛔ 引者 ⛔ 假红")
+    io.open(os.path.join(ex, "web", "ref.py"), "w", encoding="utf-8").write(
+        "# 其链：`web/images/` 出包" + chr(10))
+    io.open(os.path.join(ex, "web", "hub.html"), "w", encoding="utf-8").write(
+        "<a href=" + chr(34) + "/web/ui_state.json" + chr(34) + ">h</a>" + chr(10))
+    _dr2 = dangling_refs(ex, _payload_files(ex))
+    say(not any(x["file"] == "web/hub.html" for x in _dr2),
+        u"反控：面引「整件之剔」（其缺可容）⇒ ⏔ 报（⏔ 假红）")
+    say(not any(x["file"] == "web/ref.py" for x in _dr2),
+        u"反控（面之界）：`.py` 之提及其名 ⇒ ⛔ 报（假红之源）")
+
+    say(not ref_scan("Path(__file__).parent / " + chr(34) + "mobile" + chr(34) + " / " + chr(34) + "index.html" + chr(34)),
+        u"反控：`mobile`（今 ⛔ 剔）⇒ ⛔ 报（免假红）")
+    say(ref_scan("r = " + chr(34) + "/mobile/" + chr(34), ("mobile",)), u"正控：若 `mobile` 入剔表 ⇒ 其路由引者 ⛔ 逃过")
     # ⭐ pm_1573 §二：册须载「源」（`commit` ／ `tree` ／ `刻`）⇒ 齿（正控 ／ 反控）
     _st = source_stamp(ROOT)
     say(len(_st.get("commit") or "") == 40 and len(_st.get("tree") or "") == 40,
@@ -878,12 +982,27 @@ def main(argv):
                 u"⛔ 得判（git ⛔ 用 ∨ 非仓）" if _ig is None else u"%d 件" % len(_ig)))
             for x in (_ig or [])[:12]:
                 print(u"    ⊘ %s" % x)
+            _exp = p["excluded_prefix"]
+            print(u"  剔·前缀（pm_1656 §三.1）：%d 件 ｜ %s" % (
+                len(_exp), (u"%s …" % _exp[0]) if _exp else u"（无）"))
+            _dr = p["dangling"]
+            print(u"  悬链之齿（pm_1656 §三.2）：%d 处（判「成」＝ 0）" % len(_dr))
+            for x in _dr[:12]:
+                print(u"    ⛔ %s:%d  %s" % (x["file"], x["line"], x["文"]))
             _s = p["源"]
             print(u"  源（pm_1573 §二）：commit %s ／ tree %s ／ 分支 %s ／ 刻 %s"
                   % (_s.get("commit"), _s.get("tree"), _s.get("分支"), _s.get("刻")))
             print(u"  将动：① pip download -d %s -r requirements-runtime.txt ② 复运行子集 ③ 写册"
                   u" ④ 自带运行时（--runtime）入包 ＋ 入册" % p["wheel_dir"])
         return 0
+    if p["dangling"]:
+        print(u"[FAIL] 悬链之齿（pm_1656 §三.2）：%d 处引**已剔之前缀** ⇒ 开则空 ⇒ **⛔ 出包**"
+              % len(p["dangling"]))
+        for x in p["dangling"][:12]:
+            print(u"    ⛔ %s:%d  %s" % (x["file"], x["line"], x["文"]))
+        print(u"    ⇒ 去处：随包一并处置（剔 ／ 换明书 ／ 改远端）"
+              u" —— 承「凡面之支 ⇒ 须能真达」")
+        return 2
     rc, lines = apply_bundle(a.root, p["out"], wheel=not a.no_wheel, json_out=a.json,
                              runtime=a.runtime or None)
     for x in lines:
