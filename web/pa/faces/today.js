@@ -538,8 +538,14 @@ async function paLoadToday(){
   await paLoadSrcFaces({runs: runs, nR: nR, nThr: nThr, nLine: nLine, d: bkDispatch, a: bkAuthz, l: bkLines, sf: bkSrcFaces});
 
   /* 会话面头：后端会话史（源 /api/v5/session/list）—— 真数据（⛔ 编） */
+  /* ⭐ pm_1853 §一.3：端名（`GET /api/v5/session/list`）⛔ 上用户面 ⇒ 入本行之 `title`（悬停可取 · ⛔ 丢真源）。
+     ⚠ 本行之可见文 唯人话（数 ＋ 名）；取不得 ⇒「读数暂缺」（⛔ 以端名熟眼）。 */
   paV3Txt('paChatHistSrc', '本机线程 ' + (nThr === null ? PA_GAP.down() : nThr + ' 条') + ' · 后端会话史 '
-    + (nSess === null ? PA_GAP.down('GET /api/v5/session/list 未应答') : nSess + ' 条（源 GET /api/v5/session/list）'));
+    + (nSess === null ? PA_GAP.down() : nSess + ' 条'));
+  try{
+    const _hs = document.getElementById('paChatHistSrc');
+    if(_hs) _hs.title = '源：GET /api/v5/session/list' + (nSess === null ? '（未应答 ⇒ 读数暂缺）' : '');
+  }catch(e){}
   return {ctx: !!ctx, runs: !!runs, appr: !!appr, sess: !!sess, bld: !!bld};
 }
 

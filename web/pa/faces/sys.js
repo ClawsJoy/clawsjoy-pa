@@ -28,6 +28,137 @@ function paSysEsc(s){
 }
 
 /* 结论之气 ⇒ 色（一处定形 · ⛔ 各面自造）。 */
+/* ⭐⭐ pm_1853 §二.2ⓜ（承 pm_1847 §一）：三态「去处」—— `guide`（唯指路之辞）／
+   `act`（本器可真跑）／ `none`（本器唯报）。可跑之二源（⃔ 各面自拼）：
+     一类「开系统页」（后端 `os.startfile`）／ 二类「清我司自己之物（白名单桶）」。
+   ⚠ 二表皆**对拍后端**（`core/pa/sys_act.py` 之 `SETTINGS_TARGETS` ／ `CLEAN_BUCKETS`）—— ⃔ 传字面。
+   ⚠ 守：缺省 ⛔ 危险（先取预案）∨ 逐次 token（TTL 120 s）∨ 红钮**二次确认**∨
+     回执示**撤之径** ∨ 陪伴轴（`paChatMode()==='companion'`）⇒ ⛔ 触发（端亦拒）。 */
+const PA_SYS_ACT_URL = '/v9/pa/sys/act';
+var PA_SYS_ACT_PAGE = {                 /* 系统页之字面 ⇒ 端之白名单键 */
+  'ms-settings:storagesense': 'storagesense',
+  'ms-settings:windowsupdate': 'windowsupdate',
+  'ms-settings:startupapps': 'startupapps',
+  'windowsdefender://': 'defender'
+};
+var PA_SYS_ACT_BUCKET = {               /* 桶之**人话**（用户所见）⇒ 端之桶名 */
+  '旧备份（回滚之靠山）': '装位/update/backup',
+  '暂存（旧包）': '装位/update/stage',
+  '诊断包': '装位/diag',
+  '壳之日志': '装位/shell'
+};
+var paSysActReg = [];                   /* 本次渲之可跑项（下标 ⇒ {act,target,人话,label}） */
+var paSysActRun = {};                   /* 键 ⇒ {busy,plan,token,ttl,err,receipt,confirm} */
+
+function paSysActOf(it){
+  var a = (it && it['去处']) || {};
+  if(String(a['kind'] || '') !== 'guide') return null;
+  var t = String(a['target'] || '');
+  if(t && PA_SYS_ACT_PAGE[t]) return {act: 'open_settings', target: PA_SYS_ACT_PAGE[t]};
+  var b = PA_SYS_ACT_BUCKET[String((it && it['人话']) || '')];
+  if(b) return {act: 'clean', target: b};
+  return null;
+}
+function paSysActRegNew(it, a){
+  paSysActReg.push({act: a.act, target: a.target, 人话: String((it && it['人话']) || ''),
+                    label: String(((it && it['去处']) || {})['label'] || '')});
+  return paSysActReg.length - 1;
+}
+function paSysActAxis(){
+  try{ return (typeof paChatMode === 'function' && paChatMode() === 'companion') ? 'chat' : 'sys'; }
+  catch(e){ return 'sys'; }
+}
+async function paSysActPost(body){
+  try{
+    const base = ((typeof API !== 'undefined') ? API : '');
+    body.axis = paSysActAxis();
+    const r = await fetch(base + PA_SYS_ACT_URL, {method: 'POST', cache: 'no-store',
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    let j = null; try{ j = await r.json(); }catch(e){ j = null; }
+    if(!j) return {ok: false, error: '端未答（HTTP ' + r.status + '）'};
+    return j;
+  }catch(e){ return {ok: false, error: '取不得（' + ((e && e.message) || '连不上本机之端') + '）'}; }
+}
+function paSysActPaint(k){
+  const el = document.getElementById('paSysActBox_' + k);
+  if(el) el.innerHTML = paSysActBoxHtml(k);
+}
+function paSysActBoxHtml(k){
+  const st = paSysActRun[k];
+  if(!st) return '';
+  const E = paSysEsc;
+  let h = '';
+  if(st.err) h += '<div style="font-size:11px;color:var(--amber)">' + E(st.err) + '</div>';
+  if(st.receipt){
+    const r = st.receipt, rc = r['回执'] || {};
+    h += '<div style="font-size:11.5px;color:var(--text)">回执：' + E(String(rc['果'] || '—'))
+      + ' · 件 ' + E(String(rc['件号'] == null ? '—' : rc['件号']))
+      + (r['幂等'] ? '（幂等回 · 同一次授权，⛔ 二动）' : '') + '</div>';
+    if(r['字节'] != null) h += '<div style="font-size:10.5px;color:var(--sub)">动了 ' + E(String(r['字节'])) + ' 字节</div>';
+    const kept = r['留之件'] || [];
+    if(kept.length) h += '<div style="font-size:10.5px;color:var(--sub)">留了最近一份：' + E(kept.join(' ／ ')) + '</div>';
+    if(r['撤之径']) h += '<div style="font-size:10.5px;color:var(--blue)">要撤回 ⇒ ' + E(String(r['撤之径'])) + '</div>';
+    const bad = r['败之件'] || [];
+    if(bad.length) h += '<div style="font-size:10.5px;color:var(--amber)">未成之件：'
+      + E(bad.map(function(x){ return String(x['径'] || '') + '（' + String(x['因'] || '') + '）'; }).join(' ／ ')) + '</div>';
+    h += '<div style="margin-top:3px"><span class="chip" onclick="paSysActClose(' + k + ')">知道了</span></div>';
+    return h;
+  }
+  if(st.busy) return h + '<div style="font-size:11px;color:var(--sub)">正在向后端要预案…</div>';
+  if(!st.plan) return h;
+  const p = st.plan;
+  h += '<div style="font-size:11.5px;color:var(--text)">预案：' + E(String(p['人话'] || '')) + '</div>';
+  h += '<div style="font-size:11px;color:var(--text)">要做：' + E(String(p['件数']))
+    + ' 件 · 合计 ' + E(String(p['合计人话'] || '—'))
+    + ' · 险级 ' + E(String(p['险级'] || '—'))
+    + (p['须管理员'] ? ' · 须管理员' : '') + '</div>';
+  if(p['须留最近一份']) h += '<div style="font-size:10.5px;color:var(--sub)">须留最近一份（回滚之靠山）</div>';
+  const rows = p['逐条'] || [];
+  if(rows.length){
+    const show = rows.slice(0, 8).map(function(x){ return '· ' + String(x['径'] || '') + '（' + String(x['字节'] == null ? 0 : x['字节']) + ' 字节）'; }).join('\n');
+    h += '<div style="font-size:10.5px;color:var(--sub);white-space:pre-wrap;word-break:break-word">逐件（前 ' + Math.min(rows.length, 8)
+      + ' ／ 共 ' + rows.length + '）：\n' + E(show) + '</div>';
+  }
+  if(p['去哪看']) h += '<div style="font-size:10.5px;color:var(--sub)">去哪看：' + E(String(p['去哪看'])) + '</div>';
+  if(st.ttl) h += '<div style="font-size:10.5px;color:var(--sub)">本授权之窗 ' + E(String(st.ttl)) + ' s（过了要重取预案）</div>';
+  if(p['须管理员']){
+    h += '<div style="font-size:11px;color:var(--amber)">须管理员 ⇒ 本器 ⛔ 自提权 —— 请你自己去点（上「去哪看」）。</div>';
+  }else if(st.confirm){
+    h += '<div style="margin-top:4px"><span class="chip" style="color:#fca5a5" onclick="paSysActGo(' + k + ')">⚠ 再点一次 ⇒ 真动（'
+      + E(String(p['件数'])) + ' 件）</span> <span class="chip" onclick="paSysActCancel(' + k + ')">算了</span></div>';
+  }else{
+    h += '<div style="margin-top:4px"><span class="chip" style="color:#fca5a5" onclick="paSysActArm(' + k + ')">真动（须点两下才动）</span>'
+      + ' <span class="chip" onclick="paSysActClose(' + k + ')">收起</span></div>';
+  }
+  return h;
+}
+function paSysActClose(k){ delete paSysActRun[k]; paSysActPaint(k); }
+function paSysActCancel(k){ if(paSysActRun[k]) paSysActRun[k].confirm = false; paSysActPaint(k); }
+function paSysActArm(k){ if(paSysActRun[k]) paSysActRun[k].confirm = true; paSysActPaint(k); }
+async function paSysActPlan(k){
+  const it = paSysActReg[k]; if(!it) return;
+  const st = paSysActRun[k] = paSysActRun[k] || {};
+  if(st.plan && !st.receipt){ st.confirm = true; paSysActPaint(k); return; }
+  st.busy = true; st.err = ''; st.receipt = null; paSysActPaint(k);
+  const j = await paSysActPost({act: it.act, target: it.target, dry_run: true});
+  st.busy = false;
+  if(j && j.ok && j['预案']){ st.plan = j['预案']; st.token = j['token']; st.ttl = j['ttl_s']; }
+  else st.err = (j && (j.error || j['因'])) ? String(j.error || j['因']) : '后端未答可读之果';
+  paSysActPaint(k);
+}
+async function paSysActGo(k){
+  const it = paSysActReg[k], st = paSysActRun[k];
+  if(!it || !st || !st.token) return;
+  st.busy = true; st.err = ''; st.confirm = false; paSysActPaint(k);
+  const j = await paSysActPost({act: it.act, target: it.target, dry_run: false, token: st.token});
+  st.busy = false;
+  if(j && j.ok) st.receipt = j;
+  else st.err = (j && (j.error || j['因'])) ? String(j.error || j['因']) : '后端未答可读之果';
+  paSysActPaint(k);
+}
+try{ window.paSysActPlan = paSysActPlan; window.paSysActArm = paSysActArm; window.paSysActGo = paSysActGo;
+     window.paSysActCancel = paSysActCancel; window.paSysActClose = paSysActClose; }catch(e){}
+
 function paSysV(v){
   const k = String(v == null ? '' : v);
   return {t: PA_SYS_V[k] || k || '未取', c: PA_SYS_VC[k] || 'unk'};
@@ -56,7 +187,17 @@ function paSysItemsHtml(panel){
       + '<div style="font-size:10.5px;color:var(--sub)">源：' + paSysEsc(it['源'] || '—') + '</div>';
     if(it['清之险']) h += '<div style="font-size:10.5px;color:var(--sub)">清之险：' + paSysEsc(it['清之险']) + '</div>';
     if(it['可否清']) h += '<div style="font-size:10.5px;color:var(--sub)">可否清：' + paSysEsc(it['可否清']) + '</div>';
-    if(act['kind'] === 'guide' && act['label']){
+    const _a = paSysActOf(it);
+    if(_a){
+      /* pm_1853 §二.2ⓜ：可真跑 ⇒ **一颗可点之「去处」**（先看预案）；后端之辞 ⇒ `title`（⛔ 丢信息）。 */
+      const _k = paSysActRegNew(it, _a);
+      h += '<div style="font-size:10.5px;color:var(--blue)">去处：'
+        + '<span class="chip" id="paSysActChip_' + _k + '" onclick="paSysActPlan(' + _k + ')" title="'
+        + paSysEsc(act['label'] || '') + '">'
+        + ((_a.act === 'open_settings') ? '打开（本器代你开这一页）' : '清一清（先看预案）')
+        + '</span></div>'
+        + '<div id="paSysActBox_' + _k + '" style="margin-top:3px"></div>';
+    }else if(act['kind'] === 'guide' && act['label']){
       h += '<div style="font-size:10.5px;color:var(--blue)">去处：' + paSysEsc(act['label']) + '</div>';
     }else if(act['kind'] === 'none'){
       h += '<div style="font-size:10.5px;color:var(--sub)">去处：本器唯报（一阶段只读 —— ⛔ 代你动）</div>';
@@ -85,11 +226,32 @@ function paSysPanelHtml(p){
     + '</div>';
 }
 
+/* ⭐⭐ pm_1853 §一.2 ／ pm_1855 §三.2：首屏收起之读数之**去处** ——
+   状态行之原字（`#runStateSrc` ／ `#paUiStateRow`，由 `status.js` 写）∨ 本机身份之原值
+   （`web_…` · `paUserRaw()`）。⛔ 丢真源（原字仍在 DOM ／ 本面可得）∨ ⛔ 二处各存。 */
+function paSysFoldReadingsHtml(){
+  function txt(id){ try{ const e = document.getElementById(id); return e ? String(e.textContent || '') : ''; }catch(e){ return ''; } }
+  const rs = txt('runStateSrc'), ui = txt('paUiStateRow');
+  let uid = ''; try{ if(typeof paUserRaw === 'function') uid = paUserRaw(); }catch(e){}
+  if(!rs && !ui && !uid) return '';
+  let rows = '';
+  if(uid) rows += '<div style="font-size:11px;color:var(--text)">本机身份：' + paSysEsc(uid)
+    + '<span style="font-size:10.5px;color:var(--sub)">（本机唯一之会话归属键 · ⛔ 静默回落默认 ／ 他人 —— 见「关于 PA → 判定规则」）</span></div>';
+  if(rs) rows += '<div style="font-size:10.5px;color:var(--sub)">' + paSysEsc(rs) + '</div>';
+  if(ui) rows += '<div style="font-size:10.5px;color:var(--sub)">' + paSysEsc(ui) + '</div>';
+  return '<div style="border:1px solid var(--border);border-radius:9px;padding:7px 9px;margin-bottom:7px;background:var(--card2)">'
+    + '<div style="font-size:11.5px;color:var(--text)">本页顶栏之原读数'
+    + '<span style="font-size:10.5px;color:var(--sub)">（首屏已收起 ⇒ 原字收此 · ⛔ 丢）</span></div>'
+    + rows + '</div>';
+}
+
 function paSysRender(){
   const box = document.getElementById('paSys');
   if(!box) return;
   const r = paSysRun;
   let h = '';
+  h += paSysFoldReadingsHtml();
+  paSysActReg = [];                     /* 本次渲之可跑项 ⇒ 下标重算（⛔ 跨次漂） */
   if(r.err){
     h += '<div style="font-size:11.5px;color:var(--amber);white-space:pre-wrap;word-break:break-word">取不得之报：'
       + paSysEsc(r.err) + '<br>' + paSysEsc(PA_SYS_OUTLET) + '</div>';
@@ -122,7 +284,7 @@ function paSysRender(){
     + '<div style="font-size:10.5px;color:var(--sub)">取于 ' + paSysEsc(d.generated_at || '—')
     + '（耗 ' + paSysEsc(String(d.elapsed_s)) + ' s' + (d.cached ? ' · 皆缓存' : ' · 本次真扫')
     + '）｜源：' + paSysEsc(d.source_note || '—') + '</div>'
-    + '<div style="font-size:10.5px;color:var(--sub)">本器全程 ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权（须授权之项已标「须授权」—— 本器 ⛔ 自提权）。</div>'
+    + '<div style="font-size:10.5px;color:var(--sub)">本器一阶段全程 ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权（本面纯读）；清删类之真动仅经「去处」之红钮（逐次授权 · 二次确认 · 可撤）—— 须授权之项已标「须授权」（本器 ⛔ 自提权）。</div>'
     + '<div style="margin-top:6px">';
   for(let i = 0; i < order.length; i++) h += paSysPanelHtml(by[order[i]]);
   h += '</div>'

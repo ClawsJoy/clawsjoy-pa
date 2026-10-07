@@ -5,7 +5,8 @@ function switchTab(btn, id){
   if(id==='pane-collect') loadFieldsForm();
 }
 async function loadSide(){
-  $('uidText').textContent = curUser();
+  /* pm_1855 §三：显示名由一处（`paSyncUserChip`）写 —— ⛔ 直写机器号（旧形：`= curUser()`）。 */
+  if(typeof paSyncUserChip === 'function'){ paSyncUserChip(); }else{ $('uidText').textContent = curUser(); }
   try{
     const r = await fetch(API+'/v9/pa/context?user_id='+encodeURIComponent(curUser()));
     if(r.ok){ const d=await r.json(); if(d.ok){ renderSide(d); return; } }

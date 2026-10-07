@@ -1197,7 +1197,14 @@ function paSelfRuleHtml(){
   return '<details class="msub" data-engskip="1"><summary>判定规则（本机自述规则表 · 一段可核）</summary>'
     + '<div class="t">' + paSelfEsc(t.map(function(r){ return r.k + ' ｜ ' + r.d + ' ｜ ' + r.re; }).join('\n')) + '</div>'
     + '<div class="t">误判可退：句首加「检索：」或「@ask」再发 ⇒ 强制走知识检索（⛔ 硬吞）'
-    + '｜本件为回答层件（⛔ 面体 · ⛔ 入册）｜后端判层路由 ⇒ 另立件候批</div></details>';
+    + '｜本件为回答层件（⛔ 面体 · ⛔ 入册）｜后端判层路由 ⇒ 另立件候批</div>'
+    /* ⭐ pm_1855 §三.3：本机身份（「当前用户」）之一句安全义 —— 原文在 `faces/session.js:54-62`（PM-011 · N9）。
+       ⛔ 删其真源 · ⛔ 二处各表（本处唯摘要一句 · 其详在彼）。 */
+    + '<div class="t">本机身份（顶栏「当前用户」）：本页必持一个**显式可见**之本机身份'
+    + '（落本机存储 · 首访之刻所铸）—— 由：旧形之「我是谁」**无生产者** ⇒'
+    + '无本机存储之浏览器一打开即以**别人（默认 ／ 老板）**之主体发请求'
+    + '（改权限档 ／ 接口调用）。今收敛为一生产者 ∨ ⛔ 静默变别人。'
+    + '其值显于「当前用户」之悬停 ∨ 本面。</div></details>';
 }
 /* ⭐ 多键之判（同一问可命中多节 ⇒ 逐节拼答 · ⛔ 只取首中） */
 function paSelfKeys(text){
@@ -3261,7 +3268,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   function go(){
     if(typeof window.loadSide !== "function" || window.loadSide.__paCtxRetryWrap) return;
     var wrapped = async function(){
-      try{ var u = document.getElementById("uidText"); if(u) u.textContent = curUser(); }catch(e){}
+      try{ if(typeof paSyncUserChip === "function"){ paSyncUserChip(); }else{ var u = document.getElementById("uidText"); if(u) u.textContent = curUser(); } }catch(e){}
       var kind = "net", status = 0, tries = 0, painted = false, t0 = Date.now();
       for(;;){
         tries += 1;
@@ -3464,19 +3471,29 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       } }catch(e){}
     return '';
   }
+  /* ⭐ pm_1853 §一.4：用户面 ⛔ 载后端之键名（`wall_s` ／ `bytes` ／ `tokens`）—— 唯人话；
+     缺 ⇒ **书其因**（⛔ 只书「未取得」）；原键 ⇒ `#paHumanReceipt` 之 `title`（反控 · ⛔ 丢真源）。 */
+  var RC_COST_NAME = {wall_s:'用时(s)', elapsed_s:'用时(s)', bytes:'数据(字节)', tokens:'词元', cost_cny:'费用(元)'};
+  function costRaw(){
+    var rc = rcOf(), out = [];
+    if(rc && typeof rc === 'object'){
+      Object.keys(RC_COST_NAME).forEach(function(k){ if(rc[k] != null) out.push(k + '=' + rc[k]); });
+    }
+    return out.join(' · ');
+  }
   function costText(){
     var rc = rcOf();
     if(rc && typeof rc === 'object'){
       var got = [];
-      ['wall_s','elapsed_s','bytes','tokens','cost_cny'].forEach(function(k){ if(rc[k] != null) got.push(k + '=' + rc[k]); });
-      if(got.length) return got.join(' \u00b7 ');
+      Object.keys(RC_COST_NAME).forEach(function(k){ if(rc[k] != null) got.push(RC_COST_NAME[k] + ' ' + rc[k]); });
+      if(got.length) return got.join(' · ');
     }
-    return '\u672a\u53d6\u5f97\uff08\u5019\u540e\u7aef\u8865 wall_s \uff0f bytes \uff0f tokens \u00b7 \u627f pm_1115 \u00a7\u4e00.1 \u21d2 \u524d\u7aef \u26d4 \u4f30\u7b97\uff09';
+    return '未取得（本轮后端尚未回用时之数）';
   }
   function whoText(){
     var l = pickLog(/\u5df2\u786e\u8ba4\u5199\u5165\uff08/);
     if(l){ var m = l.match(/\u5df2\u786e\u8ba4\u5199\u5165\uff08(.+?)\uff09/);
-      return '\u8001\u677f \u00b7 \u9009\u9879\u300c' + (m ? m[1] : '\u2014') + '\u300d \u00b7 \u523b ' + nowStr() + '\uff08\u540e\u7aef\u56de\u6267 \u00b7 \u627f pm_1115 \u00a7\u4e8c.5\uff09'; }
+      return '\u8001\u677f \u00b7 \u9009\u9879\u300c' + (m ? m[1] : '\u2014') + '\u300d \u00b7 \u523b ' + nowStr() + '\uff08\u540e\u7aef\u56de\u6267\uff09'; }
     if(pickLog(/\u5df2\u62d2\u7edd\u5199\u5165/)) return '\u8001\u677f \u00b7 \u5df2\u62d2\u7edd\uff08\u26d4 \u672a\u5199\u5165\uff09';
     var wr = pickLog(/\u7b49\u5f85\u6388\u6743\uff1a/);
     if(wr) return '\u23f3 \u5f85\u8001\u677f\u62cd\u677f\uff08' + wr.replace(/^.*\u7b49\u5f85\u6388\u6743\uff1a/, '') + '\uff09';
@@ -3499,7 +3516,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     }catch(e){ piece = null; }
     return [
       '\u00b7 \u505a\u4e86\u4ec0\u4e48\uff1a' + did,
-      '\u00b7 \u51ed\u4ec0\u4e48\uff1a' + (judgeText() || '\u672a\u53d6\u5f97\uff08\u672c\u8f6e\u65e0\u77e5\u8bc6\u68c0\u7d22\u4e4b\u636e \u00b7 \u26d4 \u524d\u7aef\u4e0d\u7f16\uff09'),
+      '\u00b7 \u51ed\u4ec0\u4e48\uff1a' + (judgeText() || '\u672a\u53d6\u5f97\uff08\u672c\u8f6e\u672a\u505a\u672c\u673a\u68c0\u7d22 \u21d2 \u65e0\u6b64\u636e\uff09'),
       '\u00b7 \u82b1\u4e86\u591a\u5c11\uff1a' + costText()
         + (piece ? ('\uff08本轮 \u00b7 那件\uff08' + piece + '\uff09\u4e4b\u4ee3\u4ef7\u89c1\u300c结\u8bba\u300d\u884c \u00b7 \u5c5e那件\uff09') : ''),
       '\u00b7 \u8c01\u6279\u7684\uff1a' + whoText(),
@@ -3516,10 +3533,12 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       var _pm = _pl ? _pl.match(/\u4ef6\u4e4b\u523b\s*([0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2})/) : null;
       _piece = _pm ? _pm[1] : null;
     }catch(e){ _piece = null; }
-    hr.textContent = '\ud83d\udccb \u672c\u8f6e\u56de\u6267\uff08\u4eba\u8bdd\u7248 \u00b7 \u672c\u8f6e\u8bfb\u6570\u523b ' + nowStr()
+    hr.textContent = '\ud83d\udccb \u672c\u8f6e\u56de\u6267\uff08\u672c\u8f6e\u8bfb\u6570\u523b ' + nowStr()
       + (_piece ? (' \uff5c \u7ed3\u8bba\u6240\u5f15\u4e4b\u4ef6\u4e4b\u523b ' + _piece) : ' \uff5c \u672c\u8f6e\u65e0\u4ef6\u4e4b\u523b')
       + '\uff09\n' + rcLines().join('\n');
     hr.title = '\u672c\u5757\u7531\u65e2\u6709\u56de\u6267\u884c\u5408\u6210\uff08\u26d4 \u53e6\u9020\u5b50\u7cfb\u7edf\uff09\u00b7 \u771f\u6e90\uff1a\u8d70\u5f84\u6807 \uff0f \u540e\u7aef\u56de\u6267 \uff0f \u4f1a\u8bdd\u65e5\u5fd7\uff5c' + SRC;
+    /* 反控（pm_1853 §一.4 · ⛔ 丢真源）：后端用时之**原键**仍可得 —— 入本块之 `title`。 */
+    try{ hr.title = hr.title + (costRaw() ? ('｜后端用时之原键：' + costRaw()) : ''); }catch(e){}
   }
 
   /* ---------- 7.3 内部读数 ⇒ 工程注记（用户面改人话 · 承 pm_1115 §一.2）---------- */

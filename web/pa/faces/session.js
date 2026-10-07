@@ -71,6 +71,22 @@ function ensureUserId(){
   return _uid;
 }
 function curUser(){ return ensureUserId(); }
+/* ⭐⭐ pm_1855 §三（承 pm_1853 §一.1）：**用户面之显示名** —— 首屏 ⛔ 载机器号。
+   `ensureUserId()`（上）**一字未动**：它仍是本机线程之归属键（`data/v9/pa/threads_web_*.json`）
+   ∨ 有意之**安全设**（⛔ 静默回落 default ／ 他人 —— 见上段之由 PM-011 · N9）。本处唯**易其显**：
+     人话在外（「本机」）；真身份入 `#uidChip` 之 `title`（悬停可取）∨ 入「🦺 本机体检」面之一行。
+   ⚠ 若画像有「称呼 ／ 名」之**实** ⇒ 以其名（有实方取 · ⛔ 编）—— 今无此生产者 ⇒ 恒「本机」。 */
+var PA_USER_LABEL = '本机';
+function paUserDisplay(){ return PA_USER_LABEL; }        /* 一处定形：显示名 */
+function paUserRaw(){ return ensureUserId(); }           /* 真身份（唯入 title ／ 体检面） */
+function paSyncUserChip(){
+  var raw = paUserRaw();
+  try{ var t = document.getElementById('uidText'); if(t) t.textContent = paUserDisplay(); }catch(e){}
+  try{ var c = document.getElementById('uidChip');
+    if(c) c.title = '当前用户：本机身份 ' + raw + '（本机唯一之会话归属键 · 仅本机）'; }catch(e){}
+  return raw;
+}
+window.paSyncUserChip = paSyncUserChip;
 /* 批122 A：pa 页自己就是会话所有者 —— 面板与聊天必须看同一个沙箱。
    聊天用 activeThread().id 发 /v9/agent/chat；这里把同一个值同步进 __APP_STATE.sessionId，
    curSession() 优先读它 ⇒ 面板 sid === 聊天 sid。

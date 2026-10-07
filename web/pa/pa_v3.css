@@ -27,6 +27,14 @@
    ⚠ 并告（一手 · 换行之修后）：1024 独占一行 ⇒ 其槽 `881.77 px` 而诸件所需唯 `447.6 px`
      ⇒ 本隐**已非必需**（余 `434 px`）；我 **⛔ 自除**其裁 —— 若你欲复其可见 ⇒ 删本行即可（一言）。 */
 @media (max-width:1180px){ .statusline .runstate-src{display:none} }
+/* ⭐⭐ pm_1853 §一.2（首屏净化）：1440 反而比 1024 更吵——一堵工程墙（端名 ⁄ 采样刻 ⁄
+   `Forever 0` ⁄ 源 `ui_state`）。今：**两位皆收** ⇒ 首屏唯留「● 就绪 ＋ 版行」（1024 之形 ⇒ 即正解）。
+   ⚠ ⛔ 删其值：原字仍在 `#runStateSrc` ⁄ `#paUiStateRow` 之 DOM（仍由 `status.js` 写）∨
+     其值收入「🦺 本机体检」面（`faces/sys.js` 之「状态行读数」一块 · 悬停可取）。
+   ⚠ ⛔ 改让位之序：`.statusline .uis{flex:1 1 0}` ⁄ `.statusline .runstate-src{flex:0 1 auto}` 照旧
+     （pm_1847 §四 之让位之序乍在盘上；本处唯晖 · ⛔改其 flex）。 */
+.statusline .uis{display:none}
+.statusline .runstate-src{display:none}
 /* —— 常驻轴栏（pm_1807 §一.1 · 两态「陪伴 ／ 办事」之宿主）——
    ⭐ 居顶栏之下 ∧ 主面（`.main`）之上 ⇒ **首屏常驻** ⇒ ⛔ 藏于抽屉 ∧ ⛔ 被首启盒所覆（其盒锚于底）。
    ⭐ 本栏为**空壳**：控件由 `web/pa/faces/selfdesc.js` 之 `#paModeBar` 入此 ⇒ JS 未跑 ⇒ `:empty`

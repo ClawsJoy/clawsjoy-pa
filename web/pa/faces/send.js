@@ -167,6 +167,15 @@ async function sendPA(text, t, meta){
       if(meta.grounded===true || meta.grounded===false) _b.grounded = meta.grounded;
       if(meta.answer_source) _b.answer_source = String(meta.answer_source);
     }
+    /* ⭐ pm_1853 §二.2ⓝ（承 pm_1847 §三）：附件之**本机端**：`attachments:[id]`（全部 · 本机指路）
+       ⊕ `attach_out:[id]`（**逐件已勾** · 且类为「文」 ⇒ 方入体）—— 缺省 ⛔ 出机。
+       ⛔ 前端自判（何者入体由 `core/pa/attach.py` 一处定形）。 */
+    try{
+      if(typeof paAttachIds === 'function'){
+        const _ids = paAttachIds();
+        if(_ids.length){ _b.attachments = _ids; _b.attach_out = paAttachOutIds(); }
+      }
+    }catch(e){}
     const r = await fetch(API+'/v9/pa/dialog', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(_b)});
     if(r.status===404){ addMsg('assistant','（PA 通道暂不可用：/v9/pa/dialog 未挂载）\n已记录：'+text+'\n（去处：确认服务版本 ∨ 看服务窗口之日志）'); paSetState('failed','PA 通道未挂载(404)'); return; }
@@ -406,3 +415,106 @@ async function readSSE(resp){
    判据(体检项 114 检测清单 C1-C4)：结论必须由 HTTP 状态码 + 后端回执 + 产物共同支撑，
    前端文案只作待验证信号。always = 照做并写 grants.yaml（下次同场景免问）。
    实现见 cards.js:paWriteDecide ＋ 后端 grants.py（本文件不含实现 · 勿在此重复造器）。 */
+
+/* ================== 附件（本机端 · pm_1853 §二.2ⓝ ／ 承 pm_1847 §三）==================
+   约：① 取件复用**原生** `<input type=file multiple>`（⛔ 桥、⛔ 自造选件器）；
+       ② 唯送本机端 `POST /v9/pa/attach`（`multipart` · 字段 `files`）；
+       ③ 逐件勾（**默认关**）且仅「文」可入体 —— 图 ／ 档恒 ⛔ 入体（唯本机指路）；
+       ④ 明书：已勾 ⇒ 「此件内容将随本轮出机」；未勾 ⇒ 「只给本机指路」。
+   ♠ ⛔ 绝对径上屏（唯名 ＋ 类 ＋ 字节 ＋ sha16）。本模块之表片名用 ASCII（⛔ 中文标识符）。 */
+var PA_ATTACH_URL = '/v9/pa/attach';
+var paAttachRecs = [];        /* [{id, name, bytes, sha16, kind, path, out}] */
+var paAttachBusy = false;
+
+function paAttachPick(){
+  try{ var f = document.getElementById('paAttachFiles'); if(f){ f.value = ''; f.click(); } }catch(e){}
+}
+function paAttachIds(){ return paAttachRecs.map(function(r){ return r.id; }); }
+function paAttachOutIds(){
+  return paAttachRecs.filter(function(r){ return r.out === true && r.kind === '文'; })
+    .map(function(r){ return r.id; });
+}
+function paAttachClear(){ paAttachRecs = []; paAttachRender(); }
+function paAttachToggle(id, on){
+  for(var i = 0; i < paAttachRecs.length; i++){
+    if(paAttachRecs[i].id === id){ paAttachRecs[i].out = (on === true); }
+  }
+  paAttachRender();
+}
+async function paAttachOnPick(inp){
+  if(paAttachBusy) return;
+  var fs = []; try{ fs = Array.prototype.slice.call((inp && inp.files) || []); }catch(e){ fs = []; }
+  if(!fs.length) return;
+  var box = document.getElementById('paAttachList');
+  if(box){ box.style.display = ''; box.textContent = '正在收下（唯本机 · ⛔ 出机）…'; }
+  paAttachBusy = true;
+  try{
+    var fd = new FormData();
+    for(var i = 0; i < fs.length; i++){ fd.append('files', fs[i], fs[i].name || '未名'); }
+    var r = await fetch(((typeof API !== 'undefined') ? API : '') + PA_ATTACH_URL,
+      {method: 'POST', cache: 'no-store', body: fd});
+    var j = null; try{ j = await r.json(); }catch(e){ j = null; }
+    var list = (j && j.ok && Array.isArray(j['附件'])) ? j['附件'] : null;
+    if(!list){
+      var why = (j && (j.error || j['因'])) ? String(j.error || j['因'])
+        : ('端未答可读之果（HTTP ' + r.status + '）');
+      if(box) box.textContent = '收不下：' + why;
+      paAttachBusy = false;
+      return;
+    }
+    for(var k = 0; k < list.length; k++){
+      var a = list[k] || {};
+      paAttachRecs.push({id: String(a['id'] || ''), name: String(a['名'] || ''),
+                         bytes: a['字节'], sha16: String(a['sha16'] || ''),
+                         kind: String(a['类'] || ''), path: String(a['落点'] || ''), out: false});
+    }
+    var skipped = (j && j['略']) || [];
+    if(skipped.length && box){
+      box.textContent = '有几件没收下：' + skipped.map(function(x){
+        return String(x['名'] || '') + '（' + String(x['因'] || '') + '）'; }).join(' ／ ');
+    }
+  }catch(e){
+    if(box) box.textContent = '收不下（' + ((e && e.message) || '连不上本机之端') + '）';
+  }
+  paAttachBusy = false;
+  paAttachRender();
+}
+function paAttachRender(){
+  var box = document.getElementById('paAttachList');
+  if(!box) return;
+  while(box.firstChild) box.removeChild(box.firstChild);
+  if(!paAttachRecs.length){ box.style.display = 'none'; return; }
+  box.style.display = '';
+  var head = document.createElement('div');
+  head.textContent = '附件 ' + paAttachRecs.length + ' 件（已存本机 · 缺省 ⛔ 出机）';
+  box.appendChild(head);
+  paAttachRecs.forEach(function(r){
+    var row = document.createElement('div');
+    row.style.marginTop = '2px';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = (r.out === true);
+    cb.disabled = (r.kind !== '文');
+    cb.setAttribute('title', (r.kind === '文')
+      ? '勾上 ⇒ 此件内容将随本轮出机（发给云端模型）'
+      : '类为「' + r.kind + '」⇒ 恒 ⛔ 入体（唯给本机指路）');
+    cb.onclick = function(){ paAttachToggle(r.id, cb.checked); };
+    row.appendChild(cb);
+    var sp = document.createElement('span');
+    sp.style.marginLeft = '4px';
+    sp.textContent = r.name + '（' + r.kind + ' · ' + (r.bytes == null ? '—' : r.bytes) + ' 字节）'
+      + (r.out ? ' —— 此件内容将随本轮出机' : ' —— 只给本机指路');
+    row.appendChild(sp);
+    box.appendChild(row);
+  });
+  var foot = document.createElement('div');
+  foot.style.marginTop = '3px';
+  var clr = document.createElement('span');
+  clr.className = 'chip';
+  clr.textContent = '清空';
+  clr.onclick = function(){ paAttachClear(); };
+  foot.appendChild(clr);
+  box.appendChild(foot);
+}
+try{ window.paAttachPick = paAttachPick; window.paAttachOnPick = paAttachOnPick;
+     window.paAttachIds = paAttachIds; window.paAttachOutIds = paAttachOutIds; }catch(e){}

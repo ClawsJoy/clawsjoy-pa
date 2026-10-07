@@ -55,7 +55,11 @@
     <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · ⛔ 出机）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
     <span class="chip" id="paMoreBtn" onclick="paMore(true)" title="更多：轨迹 ／ 产出 ／ 文件 ／ 模式 ／ 常驻 ／ 系统 ／ 设置 ／ 私面（各一步可达）">更多 ▾</span>
     <span class="chip" id="drawerRightBtn" onclick="paSettings()" title="设置（老板 ／ 配置 ／ 建档）">⚙ 设置</span>
-    <span class="chip" title="当前用户">👤 <span id="uidText">-</span></span>
+    <!-- ⭐⭐ pm_1855（承 pm_1853 §一.1）：首屏 ⛔ 载机器号（`web_…`）——
+         人话在外（「本机」）；真身份入本 `title`（悬停可取）∨ 入「🦺 本机体检」面之一行（⛔ 丢真源）。
+         ⚠ `ensureUserId()`（`faces/session.js`）一字未动 —— 它仍是本机线程之归属键（`data/v9/pa/threads_web_*.json`）
+           ∨ 有意之**安全设**（⛔ 静默回落 default ／ 他人 —— 见 `session.js:54-62` 之由）。其显 唯由 `paSyncUserChip()`（一处）。 -->
+    <span class="chip" id="uidChip" title="当前用户：本机身份">👤 <span id="uidText">本机</span></span>
   </div>
 </div>
 
@@ -337,7 +341,8 @@
 
 <div class="main">
   <div class="left">
-    <h4>本机画像 · 1 个客户</h4>
+    <!-- pm_1853 §一.6：私人 PA ——「客户」二字不类 ⇒「位」 -->
+    <h4>本机画像 · 1 位</h4>
     <!-- 承 pm_997 §四.2：⛔ 平铺 7 行 ⇒ 收 1 行摘要，展开才见逐面 -->
     <div class="srcsum" id="paSrcSummary" onclick="paSrcToggle()" title="本机全上下文＝素材库（只索引）；点开看逐面读数"><b id="paSrcSum">⚠ 无 JS：无读数（须运行期）</b> <span class="caret" id="paSrcCaret">▾</span></div>
     <div class="srclist" id="paSrcList" hidden>
@@ -445,6 +450,11 @@
            ⭐ 态之渲（分段控件 ＋ 更多 ▾ 之模式条 ＋ 下方「不出手」行）＝ **唯一出口** `paAxisRender`
              （`selfdesc.js` 之 `paint()`）⇒ `chat.js` 之 `setMode` 唯转调（⛔ 造辞 · ⛔ 判态）。 -->
       <div class="box">
+        <!-- ⭐⭐ pm_1853 §二.2ⓝ（承 pm_1847 §三）：聊天之附件 —— 取件复用**原生**
+             `<input type=file multiple>`（⛔ 桥 · 承 pm_1657 §二.2）；唯落本机（`POST /v9/pa/attach`），
+             缺省 ⛔ 出机 —— 要随本轮发给模型，须**逐件勾**（且类为「文」）。 -->
+        <input type="file" id="paAttachFiles" multiple style="display:none" onchange="paAttachOnPick(this)">
+        <button type="button" id="paAttachBtn" class="chip" onclick="paAttachPick()" title="附件：唯存你这台机器上 · 缺省 ⛔ 出机 —— 要随本轮发给模型，须逐件勾">📎 附件</button>
         <textarea id="input" placeholder="和 PA 说点什么…（Enter 发送 / Shift+Enter 换行）"></textarea>
         <button id="sendBtn" onclick="paSend()">发送</button>
         <button class="stop" id="stopBtn" style="display:none" onclick="paStop()">■ 停止</button>
@@ -453,6 +463,7 @@
            ⇒ 老板「要真跑」时须有**可点之去处** ⇒ 此行给之。守：**静态真话**（⛔ 猜意图 ／ ⛔ 造「要动作」
            之判）∧ ⛔ 动提示词（`core/**` 归 TD · 承 pm_1801 §一）⇒ 唯前端之便。其钮走与顶栏**同一函数**
            `paSysTopOpen()`（**一处定形** · ⛔ 二套）。⛔ 后端写（一阶段 ⛔ 写）。 -->
+      <div id="paAttachList" style="display:none;font-size:11px;color:var(--sub);margin-top:4px"></div>
       <div class="chatnohand" id="paChatNoHand">聊天只商量 · 不出手 —— 要真跑本机之事 ⇒ 点<span class="chip" id="paChatSysGo" onclick="paSysTopOpen()" title="本机体检（只读 · 七面）：唯本机 · 取一次 —— 点即展开（⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默）">🩺 本机体检</span></div>
     </div>
   </div>
@@ -503,6 +514,21 @@
   var B=(typeof API!=='undefined')?API:'';
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function q(s){return String(s==null?'':s).replace(/\*\*/g,'');}
+  /* ⭐ pm_1853 §一.5（首启盒之文案 · 一处定形）：后端之「话」为人话之句 —— 然其中可嵌
+     ① **机器码**（如「AI 走本机模型 —— 现在：**在∧可用**」）⇒ 人话；
+     ② **我辈之记**（「⛔ 假装能用」⇒ 易读成「这是假的」）⇒ 「未验证」（pm_1853 §一.5 之定）。
+     ⚠ 本表唯「码 ⇒ 人话」之**对译**（与下 `SAID` 同源之义）—— ⛔ 增事实 ／ ⛔ 改判 ／ ⛔ 二处各译。 */
+  var PA_STATE_WORD={'未接':'没接上','在·无权重':'有服务 · 还没下模型',
+                     '在∧可用':'可用','不可达':'答不上来','未核':'没查成'};
+  function face(s){
+    var t=q(s);
+    for(var k in PA_STATE_WORD){ t=t.split(k).join(PA_STATE_WORD[k]); }
+    t=t.split('⛔ 假装能用').join('未验证');
+    /* ③ **盘符径**（盘符 ＋ 冒号 ＋ 反斜杠 之形：即本机之开发径）⇒ ⛔ 上用户面
+       （净机为用户径 · 同族「回执 ⛔ 载本机绝对径」）⇒ 人话；其值仍在「工程注记」（⛔ 丢信息）。 */
+    t=t.replace(/[：:]\s*[A-Za-z]:[\\/][^\s，。；、）]+/g,'（点开「工程注记」即见其径）');
+    return t;
+  }
   function el(tag,st,html){var d=document.createElement(tag);if(st)d.setAttribute('style',st);if(html!=null)d.innerHTML=html;return d;}
   var SAID={'未接':'本机的 AI 模型**没接上**','在·无权重':'本机有模型服务，但**还没下模型**（下好才能用）',
             '在∧可用':'本机的 AI 模型**可用**','不可达':'本机有模型服务，但**答不上来**','未核':'模型**没查成**（见其据）'};
@@ -558,12 +584,15 @@
     b.appendChild(el('div','font-weight:700;margin:0 0 6px','🔰 第一次用（只读 · 数来自本机后端）'));
     var need=(d['须知']||[]);
     for(var i=0;i<need.length;i++){
-      b.appendChild(el('div','margin:2px 0','• '+esc(q(need[i]['话']))));
+      b.appendChild(el('div','margin:2px 0','• '+esc(face(need[i]['话']))));
     }
     var m=d['模型']||{};
     b.appendChild(el('div','margin-top:6px','• 模型之路：'+esc(q(SAID[m['态']]||m['态']))));
     var dir=d['数据目录']||{};
-    b.appendChild(el('div','margin-top:2px','• 数据目录：'+esc(dir['值']||'（未接）')));
+    /* pm_1853 §一.5：绝对径 ⛔ 上用户面（净机为用户径；且与「回执 ⛔ 载本机绝对径」同族）
+       ⇒ 人话：「点开即见其径」；其值入工程注记（下段 · ⛔ 丢信息）。 */
+    b.appendChild(el('div','margin-top:2px','• 数据目录：'
+      +(dir['值']?'本机（点开「工程注记」即见其径）':'（未接）')));
     var fs=d['面之源'],_vk=null;
     if(fs&&fs['键']){for(var vj=0;vj<fs['键'].length;vj++){if(fs['键'][vj]['键']==='PA_VAULT_DIR'){_vk=fs['键'][vj];}}}
     /* —— 以下皆「工程注记」（默认收起 · 原字不减） —— */
@@ -573,7 +602,7 @@
     var _elin=function(host,t){ host.appendChild(el('div','margin:2px 0',esc(t))); };
     for(var i2=0;i2<need.length;i2++){ _elin(eng,'• 依据：'+String(need[i2]['据']||'')); }
     _elin(eng,'• 模型：态＝'+String(m['态']||'')+(m['因']?(' ／ 因：'+String(m['因'])):''));
-    _elin(eng,'• 数据目录之源：'+String(dir['源']||''));
+    _elin(eng,'• 数据目录：'+String(dir['值']||'（未接）')+'（源：'+String(dir['源']||'')+'）');
     if(fs&&fs['键']&&fs['键'].length){
       _elin(eng,'• 面之源（面数由三键定）：');
       for(var j=0;j<fs['键'].length;j++){
