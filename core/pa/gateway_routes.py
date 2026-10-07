@@ -4229,6 +4229,116 @@ def register_pa_routes(app, brain=None):
             409,
         )
 
+    # ===== 丙-P0：留言板 ＋ 一键诊断（承 pm_1634 §二 · 技术总监席 f202f89 · 2026-10-07）=====
+    # 铁律：**内测期 ⛔ 出机** —— 落点唯本机之收件目录（`feedback_target.outbound()` 为唯一判据）；
+    # 本区之端⛔ 引网络之件（其证 ＝ 结构齿 `tests/unit/test_pa_feedback_1634.py` 之源码扫）。
+    def _fed_root():
+        from core.pa import feedback_store as _fs
+        return _fs.root_of(None)
+
+    def _fed_consent():
+        from core.pa import feedback_store as _fs
+        return list(_fs.CONSENT_BUSES)
+
+    def _fed_boot():
+        from core.gateway.boot_progress import boot_progress
+        return boot_progress.snapshot()
+
+    def _fed_version():
+        try:
+            from core.lib import build_info
+            _d, _n = build_info.read(None)
+            return (_d or {}).get("version")
+        except Exception:
+            return None
+
+    def _fed_port():
+        try:
+            from core.lib import port_config
+            return port_config.gateway_port()
+        except Exception:
+            return None
+
+    @bp.route("/v9/pa/feedback/target", methods=["GET"])
+    def pa_feedback_target():
+        """落点之声明（**一处出** · 面据以书常驻提示 ∧ ⛔ 自撰）。"""
+        from core.lib import feedback_target as _ft
+        src = _ft.load()
+        return ok({"mode": src["mode"], "channel": src["channel"], "dir": src["dir"],
+                   "outbound": src["outbound"], "notice": _ft.notice(src),
+                   "resolved_dir": _ft.feedback_dir(None, src), "origin": src["origin"],
+                   "consent_buses": _fed_consent(), "note": src["note"]})
+
+    @bp.route("/v9/pa/feedback", methods=["POST"])
+    def pa_feedback_submit():
+        """收件（题 ＋ 文 ＋ 附件 ＋ 逐项勾选）⇒ 落**本机**（⛔ 出机 · ⛔ 出站请求）。"""
+        from core.pa import feedback_store as _fs
+        data = request.get_json(silent=True) or {}
+        try:
+            fid, doc, rows = _fs.submit(None, data)
+        except _fs.FeedbackError as _e:
+            return err(str(_e), 400)
+        except Exception as _e2:
+            return err("收件失败：%s: %s" % (type(_e2).__name__, _e2), 500)
+        for _r in rows:
+            print(_r)
+        return ok({"id": fid, "at": doc["at"], "state": doc["state"],
+                   "attach_n": len(doc["attach"]), "consent": doc["consent"],
+                   "outbound": doc["target"]["outbound"], "hint": "已存本机；内测期不联网发送"})
+
+    @bp.route("/v9/pa/feedback", methods=["GET"])
+    def pa_feedback_list():
+        """取件之列（客服席 ／ 板之「我的留言」）—— 新者先 ∧ ⛔ 正文全载。"""
+        from core.pa import feedback_store as _fs
+        try:
+            lim = int(request.args.get("limit") or 50)
+        except Exception:
+            lim = 50
+        return ok({"items": _fs.list_items(None, limit=lim)})
+
+    @bp.route("/v9/pa/feedback/<fid>", methods=["GET"])
+    def pa_feedback_item(fid):
+        """取件之全 ＋ 回话（照今日原型之黄框）。"""
+        from core.pa import feedback_store as _fs
+        it = _fs.read_item(None, fid)
+        if it is None:
+            return err("件 ⛔ 见（%s）" % str(fid)[:40], 404)
+        return ok({"item": it})
+
+    @bp.route("/v9/pa/feedback/<fid>/reply", methods=["POST"])
+    def pa_feedback_reply(fid):
+        """回话（**客服席之口**）⇒ 落 `回话.json` ⇒ 板上显（⛔ 另一体系）。"""
+        from core.pa import feedback_store as _fs
+        data = request.get_json(silent=True) or {}
+        try:
+            rows = _fs.write_reply(None, fid, data.get("text"), by=(data.get("by") or "客服席"))
+        except _fs.FeedbackError as _e:
+            return err(str(_e), 400)
+        for _r in rows:
+            print(_r)
+        return ok({"id": str(fid), "replied": True})
+
+    @bp.route("/v9/pa/diagnostics", methods=["POST"])
+    def pa_diagnostics_build():
+        """一键诊断包（**唯落本机** · ⛔ 上传）：version ＋ 装根清单 ＋ 日志尾 ＋ health ＋ 环境。"""
+        from core.pa import diagnostics as _dg
+        data = request.get_json(silent=True) or {}
+        snap = data.get("health") if isinstance(data.get("health"), dict) else None
+        if snap is None:
+            try:
+                snap = {"boot": _fed_boot(), "version": _fed_version()}
+            except Exception:
+                snap = None
+        try:
+            zp, rows = _dg.build(port=_fed_port(), health=snap)
+        except Exception as _e:
+            return err("打包失败：%s: %s" % (type(_e).__name__, _e), 500)
+        for _r in rows:
+            print(_r)
+        return ok({"pack": zp, "bytes": __import__("os").path.getsize(zp),
+                   "members": _dg.members(zp), "uploaded": False,
+                   "hint": "唯落本机；由你自己决定交给谁（⛔ 自动上传）"})
+
     app.register_blueprint(bp)
     return bp
 

@@ -1,0 +1,11 @@
+# 反馈 ／ 求助之落点（**一处定形** · 承 pm_1634 §二.4 · 与 config/update_source.yaml 同族之形）
+#
+# 内测期（默认）＝ local ⇒ 留言／附件／诊断包 **唯落本机之收件目录** · ⛔ 任何网络发送
+#   （⛔ 出站请求 ∧ ⛔ DNS —— 承 pm_1634 §三.2 之硬正控）。
+# 将来接「公网中转」⇒ 唯改本文件（mode: relay ＋ relay_url）—— ⛔ 换面 ∧ ⛔ 换落点
+#   （承 pm_1634 §二.3 · 即 update_source.yaml「源可配」之同族）。
+# ⚠ 切源 ⛔ 须重出包（env 亦可覆：PA_FEEDBACK_MODE ／ PA_FEEDBACK_DIR ／ PA_FEEDBACK_RELAY_URL）。
+mode: local
+dir: data/pa/feedback
+channel: internal
+relay_url: ""

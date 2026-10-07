@@ -64,20 +64,21 @@ def test_head_yields_true_bytes(tmp_path):
     u"""(b) 正控：一次 HEAD ⇒ 真字节（附 note 空）。"""
     httpd, url = _serve(tmp_path, 4096)
     try:
-        tot, note = BP.probe_total_bytes(url, timeout=5.0)
-        assert tot == 4096, (tot, note)
-        assert note == u""
+        tot, note, why = BP.probe_total_bytes(url, timeout=5.0)
+        assert tot == 4096, (tot, note, why)
+        assert note == u"" and why == u""
     finally:
         httpd.shutdown()
 
 
 def test_head_dead_end_and_no_url_and_no_length(tmp_path):
     u"""(c) 反控：死端 ／ 无址 ／ 无 Content-Length ⇒ None ＋ 人话（⛔ 抛）。"""
-    tot, note = BP.probe_total_bytes(u"http://127.0.0.1:1/onnx.tar.gz", timeout=0.5)
-    assert tot is None and u"总长不可量" in note, (tot, note)
-    tot2, note2 = BP.probe_total_bytes(u" ", timeout=0.5)
-    assert tot2 is None and u"总长不可量" in note2, (tot2, note2)
-    assert note2 == BP.UNMEASURABLE_TOTAL_NOTE + u"（⛔ 知模型址）"
+    tot, note, why = BP.probe_total_bytes(u"http://127.0.0.1:1/onnx.tar.gz", timeout=0.5)
+    assert tot is None and note == BP.UNMEASURABLE_TOTAL_NOTE, (tot, note)
+    assert why, u"其因须另出（⛔ 混入人话之辞）"
+    tot2, note2, why2 = BP.probe_total_bytes(u" ", timeout=0.5)
+    assert tot2 is None and note2 == BP.UNMEASURABLE_TOTAL_NOTE, (tot2, note2)
+    assert why2 == u"⛔ 知模型址", why2
     # 无 Content-Length 者（本机之 204 应答）
     import http.server
     import socketserver
@@ -93,8 +94,10 @@ def test_head_dead_end_and_no_url_and_no_length(tmp_path):
     httpd = socketserver.TCPServer(("127.0.0.1", 0), _NoLen)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     try:
-        tot3, note3 = BP.probe_total_bytes(u"http://127.0.0.1:%d/x" % httpd.server_address[1], timeout=5.0)
+        tot3, note3, why3 = BP.probe_total_bytes(u"http://127.0.0.1:%d/x" % httpd.server_address[1],
+                                                   timeout=5.0)
         assert tot3 is None and note3 == BP.UNMEASURABLE_TOTAL_NOTE, (tot3, note3)
+        assert why3 == u"后端未给 Content-Length", why3
     finally:
         httpd.shutdown()
 
@@ -160,5 +163,37 @@ def test_health_download_carries_note():
     r = app.test_client().get("/health")
     assert r.status_code == 200, r.get_data(as_text=True)
     dl = r.get_json()[u"boot"][u"download"]
-    for k in (u"measured", u"path", u"done_bytes", u"total_bytes", u"frac", u"eta_s", u"note"):
+    for k in (u"measured", u"path", u"done_bytes", u"total_bytes", u"frac", u"eta_s", u"note", u"note_why"):
         assert k in dl, k
+
+
+def test_note_never_empty_when_total_missing(tmp_path, monkeypatch):
+    u"""(i) 我裁（pm_1637 §三.1）：**`total_bytes` 缺之支 ⇒ `note` 必非空**（一处定形 · 去重之半）。
+    正控：`total` 有 ⇒ note 空（其条自显「X / Y（%）」）；反控：`total` 缺 ⇒ note ＝ canonical ∧ 其因另出。
+    """
+    monkeypatch.delenv(BP.ONNX_TOTAL_ENV, raising=False)
+    f = tmp_path / u"onnx.tar.gz"
+    cases = []
+    cases.append(BP.download_face(str(tmp_path / u"nope"), None, None))        # ⛔ 量
+    f.write_bytes(b"x" * 300)
+    cases.append(BP.download_face(str(f), None, 5))                            # 量 ∧ ⛔ 总长
+    cases.append(BP.download_face(str(f), None, 5, u"总长不可量（后端未给）", u"TimeoutError"))
+    cases.append(BP.download_face(str(f), 600, 5))                             # 量 ∧ 有总长
+    for d in cases:
+        if d[u"total_bytes"] is None:
+            assert d[u"note"], u"`total` 缺 ⇒ note 必非空（pm_1637 裁）：%r" % d
+        else:
+            assert d[u"note"] == u"", d
+    assert cases[1][u"note"] == BP.UNMEASURABLE_TOTAL_NOTE
+    assert cases[2][u"note"] == BP.UNMEASURABLE_TOTAL_NOTE and cases[2][u"note_why"] == u"TimeoutError"
+
+    BP.boot_progress.reset()
+    BP.boot_progress.set_download(str(f))                       # 先立度点（件已在）⇒ ⛔ 知总长之支
+    BP.boot_progress.start_download_probe(u"http://127.0.0.1:1/x", timeout=0.5)
+    for _ in range(50):
+        if BP.boot_progress.snapshot()[u"download"][u"note_why"]:
+            break
+        time.sleep(0.1)
+    d = BP.boot_progress.snapshot()[u"download"]
+    assert d[u"total_bytes"] is None and d[u"note"] == BP.UNMEASURABLE_TOTAL_NOTE, d
+    assert d[u"note_why"], d

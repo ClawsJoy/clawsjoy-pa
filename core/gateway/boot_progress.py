@@ -12,7 +12,8 @@
   * **总长之真源**（pm_1632 §二.1 裁 ⒜）＝ **一次 HTTP `HEAD` 之 `Content-Length`**
     （其址唯自**库内之常量** `ONNXMiniLM_L6_V2.MODEL_DOWNLOAD_URL` ⇒ ⛔ 硬编数字 ／ ⛔ 二处各写）；
     探得 ⇒ `total_bytes` ／ `frac` ／ `eta_s` 皆真；⛔ 得（无址 ／ 断网 ／ 超时 ／ 后端未给）
-    ⇒ `total_bytes = null` ∧ `note` ＝「总长不可量（后端未给）」（⛔ 猜 · 承「界面态显真读数」）。
+    ⇒ `total_bytes = null` ∧ `note` ＝「总长不可量（后端未给）」（其因另出 `note_why`）——
+    **「不可量」之由唯后端 `note` 承**（pm_1637 §三.1 裁：去重 ⇒ 前端唯书「已下 X MB」· 一处定形）。
   * 态三：starting | ready | failed；failed 必附「因 ＋ 去处」（承「凡不可用必有因＋去处」）。
 
 以何形调用（判通 / 断须附）：
@@ -49,26 +50,29 @@ def onnx_model_url():
 
 
 def probe_total_bytes(url=None, timeout=ONNX_TOTAL_TIMEOUT):
-    """**一次** `HEAD` 取 `Content-Length`（总长之真源 · pm_1632 §二.1）⇒ `(total, note)`。
+    """**一次** `HEAD` 取 `Content-Length`（总长之真源 · pm_1632 §二.1）⇒ `(total, note, why)`。
 
     守（PM 一手 · 1632 §二.1）：唯一次（缓存归调用者 —— `start_download_probe`）｜有超时 ∧
     **失败 ⛔ 阻**（⛔ 成「准备」之门）｜**⛔ 硬编数字**（其数随上游而变）。
-    得 ⇒ `(int, "")`；⛔ 得（无址 ／ 断网 ／ 无 `Content-Length` ／ 超时）⇒ `(None, 「总长不可量…」)`。
+    得 ⇒ `(int, "", "")`；⛔ 得 ⇒ `(None, 「总长不可量（后端未给）」, 其因)` ——
+    ⚠ 其辞**唯 canonical 之字**（pm_1637 §三.1 我裁：**「不可量」之由唯后端 `note` 承** ∧ 与前端同族 ⇒
+      一处定形）；**其因另出**（`why` · 技术 · ⛔ 混入人话之辞）。
     ⚠ 纯函数（唯出网一次 · ⛔ 改本模块之态）。
     """
     u = str(url or onnx_model_url() or "").strip()
     if not u:
-        return None, UNMEASURABLE_TOTAL_NOTE + "（⛔ 知模型址）"
+        return None, UNMEASURABLE_TOTAL_NOTE, "⛔ 知模型址"
     try:
         import urllib.request
         with urllib.request.urlopen(urllib.request.Request(u, method="HEAD"), timeout=timeout) as r:
             v = r.headers.get("Content-Length")
         n = int(str(v).strip()) if v and str(v).strip().isdigit() else None
         if n and n > 0:
-            return n, ""
-        return None, UNMEASURABLE_TOTAL_NOTE
+            return n, "", ""
+        return None, UNMEASURABLE_TOTAL_NOTE, "后端未给 Content-Length"
     except Exception as e:                                       # noqa: BLE001 — 照实报因
-        return None, "%s（%s）" % (UNMEASURABLE_TOTAL_NOTE, type(e).__name__)
+        return None, UNMEASURABLE_TOTAL_NOTE, type(e).__name__
+
 
 
 def _file_bytes(path):
@@ -80,7 +84,7 @@ def _file_bytes(path):
     return None
 
 
-def download_face(path, total_bytes=None, spent_s=None, total_note=None):
+def download_face(path, total_bytes=None, spent_s=None, total_note=None, total_why=None):
     """下模型之面（纯函数 · 便于正反控）—— 量不得 ⇒ note 明书「不可量」；
     **知进度⽽ ⛔ 知总长** ⇒ note 明书「总长不可量（后端未给）」（承 pm_1632 §二.1 · ⛔ 猜）。"""
     got = _file_bytes(path)
@@ -95,7 +99,8 @@ def download_face(path, total_bytes=None, spent_s=None, total_note=None):
     else:
         note = ""
     d = {"measured": got is not None, "path": path, "done_bytes": got, "total_bytes": tot,
-         "frac": None, "eta_s": None, "note": note}
+         "frac": None, "eta_s": None, "note": note,
+         "note_why": (str(total_why or "") if (got is not None and not (tot and tot > 0)) else "")}
     if got is not None and tot and tot > 0 and got > 0:
         frac = min(1.0, float(got) / float(tot))
         d["frac"] = round(frac, 4)
@@ -120,6 +125,7 @@ class BootProgress(object):
         self._dl_path = None
         self._dl_total = None
         self._dl_note = ""
+        self._dl_why = ""
         self._dl_at = None
         self._probe_at = None
 
@@ -134,6 +140,7 @@ class BootProgress(object):
             self._dl_path = None
             self._dl_total = None
             self._dl_note = ""
+            self._dl_why = ""
             self._dl_at = None
             self._probe_at = None
 
@@ -177,6 +184,7 @@ class BootProgress(object):
             if total_bytes:
                 self._dl_total = int(total_bytes)
                 self._dl_note = ""
+                self._dl_why = ""
             self._dl_at = time.time()
 
     def start_download_probe(self, url=None, timeout=ONNX_TOTAL_TIMEOUT):
@@ -191,13 +199,15 @@ class BootProgress(object):
             self._probe_at = time.time()
 
         def _run():
-            tot, note = probe_total_bytes(url, timeout)
+            tot, note, why = probe_total_bytes(url, timeout)
             with self._lock:
                 if tot:
                     self._dl_total = int(tot)
                     self._dl_note = ""
+                    self._dl_why = ""
                 elif not self._dl_total:
                     self._dl_note = note or UNMEASURABLE_TOTAL_NOTE
+                    self._dl_why = why
 
         threading.Thread(target=_run, daemon=True, name="onnx-head-probe").start()
         return True
@@ -237,7 +247,8 @@ class BootProgress(object):
                 "phases_total": tot_n,
                 "phases": [dict(x) for x in self._phases],
                 "failed": dict(self._failed) if self._failed else None,
-                "download": download_face(self._dl_path, self._dl_total, spent, self._dl_note),
+                "download": download_face(self._dl_path, self._dl_total, spent, self._dl_note,
+                                          self._dl_why),
             }
             out["progress"] = 100 if self._state == "ready" else int(round(100.0 * done_n / (tot_n or 1)))
             return out
