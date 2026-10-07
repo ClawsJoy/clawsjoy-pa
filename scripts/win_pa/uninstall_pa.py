@@ -60,22 +60,28 @@ def runtime_exe(root):
 
 
 def cleanup_text(root, purge=False):
-    u"""派生之清理批（**一处定形**）—— `python.exe` 锁于装根 ⇒ 唯本器退后方可删。"""
+    u"""派生之清理批（**一处定形**）—— `python.exe` 锁于装根 ⇒ 唯本器退后方可删。
+
+    ⭐ 编码之守（pm_1656 §四.1 · 承 pm_1578 之旧规）：**批首 `chcp 65001`** ∧
+    **令行全 ASCII**（非 ASCII 唯入 `echo` ／ `rem` —— 而本批之输出落 `DEVNULL` ⇒ 实唯留英文）
+    ⇒ ⛔ 取 `mbcs`（**非中文系统之码页 ⛔ 定**）。落盘 ⇒ UTF-8（**⛔ BOM** —— 否则首行 `@echo off` 被当命令）。
+    """
     head = [u"@echo off",
+            u"chcp 65001 >nul",
             u"setlocal",
-            u"rem 待本器（python.exe）退 —— ⛔ 以 timeout（重定向时不可用）⇒ 以 ping 延时",
+            u"rem wait for this uninstaller (python.exe) to exit -- ping delay, NOT timeout (timeout is unusable when redirected)",
             u"ping -n 4 127.0.0.1 >nul",
             u"cd /d \"%TEMP%\""]
     if purge:
         body = [u"rmdir /s /q \"" + root + u"\" >nul 2>&1"]
-        tail = [u"echo [uninstall] 已彻底删：%s" % root]
+        tail = [u"echo [uninstall] purged: " + root]
     else:
         body = [u"for /d %%D in (\"" + root + u"\\*\") do (",
                 u"  if /i not \"%%~nxD\"==\"" + KEEP + u"\" rmdir /s /q \"%%D\" >nul 2>&1",
                 u")",
                 u"del /q \"" + root + u"\\*\" >nul 2>&1"]
-        tail = [u"echo [uninstall] 程序件已删。留下：%s" % os.path.join(root, KEEP),
-                u"echo [uninstall] 彻底清干净（连资料）：rmdir /s /q \"" + root + u"\""]
+        tail = [u"echo [uninstall] program files removed; kept: " + os.path.join(root, KEEP),
+                u"echo [uninstall] full wipe (incl. data): rmdir /s /q \"" + root + u"\""]
     return u"\r\n".join(head + body + tail + [u"endlocal", u"del /q \"%~f0\" >nul 2>&1"]) + u"\r\n"
 
 
@@ -172,11 +178,19 @@ def do_tasks(root, dry):
     return (0 if r.returncode == 0 else 2), [u"  [tasks] rc=%s" % r.returncode] + [u"    " + x for x in out]
 
 
+def write_cleanup(path, root, purge=False):
+    u"""落盘之守（**一处定形** · pm_1656 §四.1）：UTF-8 ∧ **⛔ BOM** ⇒ 原字节
+    （供 `spawn_cleanup` 与其齿共用 —— 一处定形）。"""
+    data = cleanup_text(root, purge).encode(u"utf-8")
+    with io.open(path, u"wb") as fh:
+        fh.write(data)
+    return data
+
+
 def spawn_cleanup(root, purge):
     fd, path = tempfile.mkstemp(prefix=u"cjpa_uninst_", suffix=u".cmd")
     os.close(fd)
-    with io.open(path, "w", encoding=u"utf-8", newline=u"") as fh:
-        fh.write(cleanup_text(root, purge))
+    write_cleanup(path, root, purge)
     DETACHED = 0x00000008
     NEWGRP = 0x00000200
     subprocess.Popen([u"cmd", u"/c", path], creationflags=DETACHED | NEWGRP,
@@ -248,6 +262,27 @@ def self_test():
     say((u"%%~nxD\"==\"" + KEEP) in txt, u"正控：清理批**不删** %s\\（逐名比较）" % KEEP)
     say((chr(13) + chr(10) + u"rmdir /s /q " + chr(34) + root + chr(34)) not in txt, u"反控：⛔ 整根删（唯 --purge 方如此）")
     say(u"%~f0" in txt, u"正控：清理批自清（%~f0）")
+    # ⭐ 编码之守（pm_1656 §四.1）：批首 `chcp 65001` ∧ 令行全 ASCII ∧ ⛔ BOM
+    say(txt.startswith(u"@echo off" + chr(13) + chr(10) + u"chcp 65001"),
+        u"正控：`chcp 65001` 紧接 `@echo off`（UTF-8 码页 ⇒ 中文之径 ⛔ 乱）")
+    _masked = txt.replace(root, u"<ROOT>")
+    _bad = [l for l in _masked.split(chr(13) + chr(10))
+            if l and any(ord(c) > 127 for c in l)
+            and not l.lstrip().startswith((u"echo", u"rem"))]
+    say(not _bad, u"反控：令行须 ASCII（非 ASCII 唯入 echo ／ rem）｜违 ＝ %r" % (_bad[:2],))
+    say(txt.encode(u"utf-8").count(chr(92).encode()) == txt.count(chr(92)),
+        u"反控：0x5C 皆独立之反斜（非 UTF-8 之多字节 ⛔ 含 0x5C ⇒ ⛔ 吃行）")
+    _fd, _p = tempfile.mkstemp(prefix=u"cjpa_t_", suffix=u".cmd")
+    os.close(_fd)
+    try:
+        _raw = write_cleanup(_p, root, False)
+        say(not _raw.startswith(b"\xef\xbb\xbf"), u"反控：清理批 ⛔ 带 BOM（否则首行被当命令）")
+        say(_raw.decode(u"utf-8") == cleanup_text(root, False), u"正控：UTF-8 往返 ⛔ 失")
+    finally:
+        try:
+            os.remove(_p)
+        except OSError:
+            pass
     ptxt = cleanup_text(root, purge=True)
     say((chr(13) + chr(10) + u"rmdir /s /q " + chr(34) + root + chr(34)) in ptxt, u"正控：--purge ⇒ 整根删（连 data）")
     rc, ln = render(root, False, True)
