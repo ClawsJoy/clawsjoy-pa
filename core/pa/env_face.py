@@ -17,6 +17,9 @@ r"""PA 环境感知面 v2（T2-刀2′ ＋ 刀2″ · 2026-10-05 · 技术总监
 【纪律（承令）】
   · **只读**：⛔ 写任何**被观察之一侧**（承 kb_mapping N1–N6 零噪音）；唯写**自己**的笔记（`env_notes/`）
   · 每项附 `src` ＝ **面之径逐字**；查不到 ⇒ `state="缺"`（⛔ 报「空」）
+  · ⭐⭐ **探之辞**（承 pm_1854 §二 ＝ pm_1831 §候 · 本档之 TCP 探）：探源之 `state` **三态照实** —— 在跑 ／ 不在跑 ／ 读不到
+    （⛔ 混 ∧ ⛔ 书「未接」）∧ 每态 **三物**：读数 ＋ 据（件 ／ 取刻 ／ 何处来 —— **端名入折叠**）＋ 去处（人话 · `{标, 端}`）；
+    ⛔ 内部缩写上屏（⛔ up／down ／ ⛔ 端名 ／ ⛔ 源档之径）。
   · ⭐⭐ **密钥唯布尔**：`<dev-home>\config.json` 内含**明文 API key** ⇒ 唯取**键名**，
     ⛔ 值入面 ／ ⛔ 入日志 ／ ⛔ 入 events.jsonl（第一红线）；末闸 `secret_guard` 实扫 `sk-`
   · 无写副作用之**自证** ⇒ `research()` 之内**前后对表**（侦察前 ／ 后之四栏印须同）
@@ -583,6 +586,23 @@ def _secret_bool():
     return " · ".join(parts) if parts else "无键名可报"
 
 
+#: ⭐⭐ 探之辞（承 pm_1854 §二 ＝ pm_1831 §候 · 本档之 TCP 探）—— **三态照实**（⛔ 混）：
+#:   在跑 ／ 不在跑 ／ 读不到（「读不到」⛔ 书「未接」／⛔ 书「不在跑」· 承「空 ⛔ 混 缺」＋「⛔ 自曝之辞」）。
+#: 每态 **三物**：**读数**（＝ state）＋ **据**（件 ／ 取刻 ／ 何处来 —— **端名入折叠**）＋ **去处**（人话 · {标, 端}）。
+#: ⛔ 内部缩写上屏：⛔ up／down ／ ⛔ 端名（<主机>:<端口>）／ ⛔ 源档之径。
+PROBE_READOUT = {"up": u"在跑", "down": u"不在跑", "unreadable": u"读不到"}
+
+#: 据之「何处来」—— 唯书**探之法**（地址入 件 栏 · ⛔ 断「本机」· ⛔ 上屏）
+PROBE_FROM = u"TCP 只读探（core/pa/agent_scan.py）"
+
+#: 去处（人话 · ⛔ 内部语）—— 逐态一枚；端 指面内之锚（承 core/pa/today.py 之形）
+PROBE_ANCHOR = {
+    "up": {"标": u"看它（本机服务）", "端": u"#paEnvCol-resources"},
+    "down": {"标": u"看它为何没跑", "端": u"#paEnvCol-resources"},
+    "unreadable": {"标": u"看重探", "端": u"#paEnvCol-resources"},
+}
+
+
 def resources_col():
     out = []
     pp = str(REPO_ROOT / "core" / "pa" / "providers.py")
@@ -600,14 +620,24 @@ def resources_col():
                          "只读", "缺（%s）" % type(e).__name__))
     try:
         from core.pa import agent_scan as S
+        _taken = time.strftime("%H:%M:%S")
         for s in S.SERVICES:
-            up = bool(S._port(s["host"], s["port"]))
-            out.append(_item("port:%s" % s["id"], s["name"], "port",
-                             "%s:%d" % (s["host"], s["port"]), "需授权",
-                             ("up" if up else "down") + " · from " + SRC_SCAN))
+            _st = S.port_state(s["host"], s["port"])
+            _ep = "%s:%d" % (s["host"], s["port"])
+            _it = _item("port:%s" % s["id"], s["name"], "port", _ep, "需授权",
+                        PROBE_READOUT.get(_st, PROBE_READOUT["unreadable"]))
+            #: ⭐ 据（端名入折叠 = 件 ／ src 二栏 · ⛔ 读数上屏）＋ 去处（人话 · {标, 端}）
+            _it[u"据"] = {u"件": _ep, u"取刻": _taken, u"何处来": PROBE_FROM}
+            _it[u"去处"] = PROBE_ANCHOR.get(_st, PROBE_ANCHOR["unreadable"])
+            out.append(_it)
     except Exception as e:
-        out.append(_item("port:ERR", "端口服务", "port", SRC_SCAN, "只读",
-                         "缺（%s）" % type(e).__name__))
+        _err = "%s: %s" % (type(e).__name__, e)
+        _it = _item("port:ERR", u"端口服务", "port", SRC_SCAN, "只读",
+                    PROBE_READOUT["unreadable"])
+        _it[u"据"] = {u"件": SRC_SCAN, u"取刻": time.strftime("%H:%M:%S"),
+                      u"何处来": PROBE_FROM, u"因": _err}
+        _it[u"去处"] = PROBE_ANCHOR["unreadable"]
+        out.append(_it)
     out.append(_item("num_ctx", "上下文窗口 num_ctx", "param", "env:CLAWSJOY_NUM_CTX",
                      "只读", str(int(os.environ.get("CLAWSJOY_NUM_CTX", "8192")))))
     rc, raw = _run(["nvidia-smi", "-L"], timeout=20)
@@ -636,7 +666,7 @@ def resources_col():
 # ============================== 主（面） ==============================
 def _cls(it):
     """**变化判据之投影**（⛔ 用全 state ⇒ 活面抖动误报）。
-    disk ⇒ 按余量分档；port ⇒ up/down；seat ⇒ 运行态；余 ⇒ 唯存在与身份。"""
+    disk ⇒ 按余量分档；port ⇒ 在跑／不在跑／读不到；seat ⇒ 运行态；余 ⇒ 唯存在与身份。"""
     k = it.get("kind")
     st = str(it.get("state") or "")
     if k == "disk":

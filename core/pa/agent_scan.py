@@ -109,16 +109,45 @@ def _version(path):
     return (out.splitlines()[0].strip() if out else ""), ("rc 0" if r.returncode == 0 else "rc:%d" % r.returncode)
 
 
-def _port(host, port):
+#: ⭐ 探之缺省逾时（秒）—— **我一手所测**（2026-10-08 · 本机）：对 127.0.0.1 之**闭口**，
+#:   拒连（ConnectionRefusedError · WinError 10061）**约在 2.0 s 方至** ——
+#:   `timeout = 2` ⇒ 逐口皆 TimeoutError（＝「不在跑」被误判为「读不到」；四口实测四中）
+#:   ⇒ 故缺省取 **3.5**（留 1.5 s 之裕）⇒ 拒连达而「不在跑」真 ∧ 逾时唯属「读不到」。
+PROBE_TIMEOUT_S = 3.5
+
+
+def port_state(host, port, timeout=PROBE_TIMEOUT_S):
+    u'''TCP 探之**三态**（承 pm_1854 §二 ＝ pm_1831 §候 · 探之辞）——
+    返回 up ／ down ／ unreadable（⛔ 笼二者为一名 · 承「空 ⛔ 混 缺」）：
+      · 连成 ⇒ up（在跑）；
+      · 拒连 ⇒ down（不在跑 —— 端口在而无人听）；
+      · 逾时 ／ 名不可解 ／ 他错 ⇒ unreadable（读不到 —— ⛔ 书「不在跑」／⛔ 书「未接」）。
+
+    ⚠ 逾时之缺省见 PROBE_TIMEOUT_S —— 本机之拒连 **约 2.0 s 方至** ⇒ 取 2 s 则二态必混。
+    '''
     s = socket.socket()
-    s.settimeout(2)
+    s.settimeout(timeout)
     try:
         s.connect((host, port))
-        return True
-    except Exception:
-        return False
+        return "up"
+    except ConnectionRefusedError:
+        return "down"
+    except socket.timeout:
+        return "unreadable"
+    except OSError as e:
+        #: Windows 之 WSAECONNREFUSED（10061）—— ConnectionRefusedError 之外之形亦归「不在跑」
+        if getattr(e, "winerror", None) == 10061:
+            return "down"
+        return "unreadable"
     finally:
         s.close()
+
+
+def _port(host, port):
+    u'''旧形（布尔）—— 唯「在跑」为真；一处定形 ⇒ 引 port_state()（⛔ 二探之心）。
+
+    ⚠ 此处唯布尔 ⇒ 逾时**照旧 2 s**（拒连与逾时皆为「非 up」· ⛔ 须辨三态）。'''
+    return port_state(host, port, timeout=2) == "up"
 
 
 def _npm_installed():
