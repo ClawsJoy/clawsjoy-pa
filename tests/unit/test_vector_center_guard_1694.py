@@ -15,6 +15,8 @@ r"""pm_1694 §二 令⒜ 之齿 —— 「引 `core` 之齿」须可跑（⛔ �
      ⇒ **全绿**（修前：其族败 · 「16 败 ／ 2 过」）。
   G4 界：不可用时取集合 ⇒ `RuntimeError` 载原文；`_forget_half_started()` ⇒ chromadb 之登记
      **⛔ 载本径**（否则其 `stop()` 之 `del self.bindings` ＝ PM 报之错）。
+  ⭐ pm_1698 §三.1⒜ 之续（2026-10-07）：`get_data_root()` 今**与「根」绑定**（⛔ 按 CWD）
+     ⇒ 本件之「异形之仓」**须以 env `CLAWSJOY_DATA_DIR` 指之**（昔以「异 cwd」造异仓之法已不灵）。
 """
 from __future__ import annotations
 
@@ -25,6 +27,8 @@ import sys
 from pathlib import Path
 
 import pytest
+
+from core.lib.config_helper import DATA_ROOT_ENV   # env 之覆之名（一处定形）
 
 ROOT = Path(__file__).resolve().parents[2]
 FACE_TOOTH = ROOT / "tests" / "unit" / "test_pa_update_face_1691.py"
@@ -43,9 +47,17 @@ def _odd_sandbox(base: Path) -> Path:
     return base
 
 
-def _py(args, cwd):
+def _py(args, cwd, data_root=None):
+    """⭐ data_root ⇒ 以 env DATA_ROOT_ENV 定其「仓」（承 pm_1698 §三.1⒜）。
+
+    ⚠ 何以须 env（一手 · 2026-10-07）：get_data_root() 今**与「根」绑定**（⛔ 按 CWD）
+      ⇒ 昔以「异 cwd」造「异仓」之法**已不灵** ⇒ 沙箱须以 env 指之。
+    """
     env = dict(os.environ)
     env["PYTHONPATH"] = str(ROOT)
+    env.pop(DATA_ROOT_ENV, None)
+    if data_root is not None:
+        env[DATA_ROOT_ENV] = str(data_root)
     return subprocess.run([sys.executable, "-X", "utf8", "-B"] + list(args),
                           capture_output=True, cwd=str(cwd), env=env, timeout=300)
 
@@ -60,7 +72,8 @@ def test_G1_odd_db_import_core_still_ok(tmp_path):
 
     r = _py(["-c",
              "import core;from core.lib.vector_knowledge_center import vector_knowledge_center as v;"
-             "print('AV',v.available);print('ERR',v.connect_error)"], cwd=sb)
+             "print('AV',v.available);print('ERR',v.connect_error)"], cwd=sb,
+            data_root=sb / "data")
     out = (r.stdout or b"").decode("utf-8", "replace")
     assert r.returncode == 0, u"import core 须成（修前必 rc 1）：%s" % out[-700:]
     assert "AV False" in out, out[-400:]
@@ -88,7 +101,7 @@ def test_G3_face_tooth_green_in_odd_sandbox(tmp_path):
         pytest.skip(u"面之齿 ⛔ 在（他树 ⇒ 跳）")
     sb = _odd_sandbox(tmp_path)
     r = _py(["-m", "pytest", str(FACE_TOOTH), "-q", "-p", "no:cacheprovider",
-             "--basetemp=%s" % (tmp_path / "pt")], cwd=sb)
+             "--basetemp=%s" % (tmp_path / "pt")], cwd=sb, data_root=sb / "data")
     out = ((r.stdout or b"") + (r.stderr or b"")).decode("utf-8", "replace")
     assert r.returncode == 0, out[-900:]
     assert "failed" not in out, out[-600:]

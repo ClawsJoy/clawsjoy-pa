@@ -7,12 +7,34 @@
 """
 
 
+import os
+from pathlib import Path
+
 from core.lib.unified_config import unified_config
+
+# 仓根之「一处定形」（承规七 · pm_1698 三.1a）：get_data_root() 之**相对值** ⇒ 按**仓根**拼。
+# 由：昔返 config 之字面 data（相对径）⇒ 消费者 Path(get_data_root()) / "vector_kb"
+#   按 **CWD** 解 ⇒「异 cwd ⇒ 异仓」（态漂）—— 2026-10-07 一手之显形：CW 之面齿在沙箱
+#   CWD 下竟写 D:/clawsjoy_v9/data/**（＝规七之第四次）。
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+#: env 之覆（供齿 ／ 沙箱 ／ 试）—— 名与 core/lib/platform_client.py:15 **同源**（一举一义）。
+DATA_ROOT_ENV = "CLAWSJOY_DATA_DIR"
 
 
 def get_data_root() -> str:
-    """获取数据根目录"""
-    return unified_config.get("paths.data_root", "data")
+    """获取数据根目录（**绝对径** · 与「根」绑定 · 不按 CWD —— 承规七 · pm_1698 三.1a）。
+
+    之序：① env CLAWSJOY_DATA_DIR（覆）⇒ ② 配置 paths.data_root（默认 data）。
+    **相对值** ⇒ 按**仓根**（core/lib/config_helper.py 之 parents[2]）拼 ⇒ 恒**绝对径**
+    （不按 CWD —— 否则「异 cwd ⇒ 异仓」）。
+    """
+    raw = (os.environ.get(DATA_ROOT_ENV) or "").strip() or \
+        str(unified_config.get("paths.data_root", "data") or "").strip()
+    if not raw:
+        raw = "data"
+    p = Path(str(raw))
+    return str(p if p.is_absolute() else (REPO_ROOT / p))
 
 
 def get_llm_endpoint() -> str:
