@@ -173,3 +173,11 @@ config/scheduler_config.json
 #   ⚠ 真减少其数 ⇒ 唯清弃树本体（承 pm_1811 §一.2⒜）／ 出仓（承 pm_1794 §四.1⒜）。
 /dist/
 /_tmp/
+# ⚠ `/version.json`（仓根 · 运行态 ＋ 出包器之产物 · 承 pm_1817 §二）：
+#   **出包器 ⛔ 读它**（一手：`make_update.py:215-224 version_payload` 自 `git rev-parse` ＋ man 生
+#   ⇒ 全器之 `io.open` 唯 `pyproject.toml`（`:177` ／ `:184`）＋ 写（`:312` ／ `:316` ／ `:325`）
+#   ∧ 其「add ／ mod」之判走 **git 物库**（`_exists_at` ⇒ `git cat-file -e <rev>:version.json`）
+#   ⇒ 入 ignore ⛔ 破出包（一手：干跑之 manifest 仍含 `version.json` · mode=`add` · 196 B）。
+#   ⚠ **其效与 `dist/` ／ `_tmp/` 相反**：`-i` ＝ 唯列**被忽略**者 ⇒ 本件入 ignore ⇒
+#   **反使其入 `ls-files -o -i` 之列（＋1）** ⇒ 唯去 `git status` 之 `??` 一行（承 pm_1779 §二.2 之族）。
+/version.json
