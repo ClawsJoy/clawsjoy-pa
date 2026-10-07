@@ -9,12 +9,14 @@ r"""投一步.py —— 件-投-醒 一步之器（落箱 ＋ 落行 ＋ 醒 · 
 
 用法：
   python -X utf8 -B scripts\dev\投一步.py --src <草稿全路径> --to 项目经理 --num 1096 \
-      --cat 报 --need X --note Y                # 默认 **演**（⛔ 落盘）
+      --from 技术总监 --cat 报 --need X --note Y   # 默认 **演**（⛔ 落盘）；⭐ --from **必填**
   （加 --go ⇒ 真办：落箱 ＋ 落行 ＋ 醒）
   python -X utf8 -B scripts\dev\投一步.py --self-test   # 自证（含 **反控**：醒必败 ⇒ 须返非零）
   ⚠ 席名（2026-10-06 承 pm 1294 §三 · 并收 ／ pm 1298 §二 · 落账归一）：CW 席之**台账名** ＝ 「CodexWindows线」
     （⛔ SEATS 之「V9工程师·全史席」）⇒ 二键并存（**别名只作「入」** ⇒ 投 CW 之件免 --to-id）
     ⇒ ⭐⭐ **落行须归一为台账之名**（CANON：V9工程师·全史席 ⇒ CodexWindows线）⇒ ⛔ 别名入账。
+  ⭐ `--from` **必填**（2026-10-08 承 pm_1844 §二.3 · CW 1842 之呈）：原默认「技术总监」⇒ 忘传则**静默误归**
+    （「空 ⛔ 混 缺」之族 ∧ 归因错即台账之根病）⇒ ⛔ 采「自件名推」（名 ／ 账 ⛔ 必同源）⇒ 缺则 rc 2 ＋ 显报「席名 ⛔ 给」。
 
 退出码：0 = 三步皆成（演毕亦然）｜2 = 用法错｜3 = 草稿不在｜4 = 落箱败（BOM ／ CR ／ 件之完 ／ 箱内异）
         ｜5 = 落行败（透传其 rc）｜6 = 已落行（复合键在 ⇒ ⛔ 复落）｜7 = **醒败**｜8 = 已投（凭在 ⇒ ⛔ 复投）
@@ -154,12 +156,24 @@ def fm_field(fm, name):
     return out
 
 
+#: 需求动作之字段名（**一处并收** —— pm_1835 §二.2 之令 ＋ pm_1837 §二.1 · 技术总监 f202f89）：
+#   本族**二名并存**（一手扫 `02_协作\信通` 之 2107 件：「动作需求」1656 ／「需求动作」193 ／ 二者皆有 0）
+#   ⇒ 器**认二名**（同 SEATS 别名 ／ CANON 之族 · 一处并收）；
+#   ⚠ 唯认一名 ⇒ 其一名之件之**闸一静默过**（＝器之绿 ⛔ 充事之实 · 一手之正反控见 --self-test）。
+NEED_FIELDS = (u"动作需求", u"需求动作")
+
+
 def promised_sections(fm):
     u"""「动作需求」之 §〈汉字数〉 ⇒ (集, 所取之列逐字) —— ⚠ **唯取本字段** ∧ **§ 须紧接「（」**
     （承 pm 1298 §三.1 之剔法 ＋ 实探）：本族之诺之形 ≡ （§三）／（§一 · 器取）；
     ⛔ 取他件之引（如 §五.⒊ 之界 ／ pm 1294 §三 ⇒ 实：1222 ／ 1253 之假红）；
-    ⛔ 取变体（如（器取逐行 · §一）⇒ 宁漏 ⛔ 假红）。"""
-    f = fm_field(fm, u"动作需求")
+    ⛔ 取变体（如（器取逐行 · §一）⇒ 宁漏 ⛔ 假红）。
+    ⭐ 字段名**认二名**（`NEED_FIELDS` —— pm_1835 §二.2 ／ pm_1837 §二.1 · 一手：1656 ／ 193）。"""
+    f = u""
+    for _nf in NEED_FIELDS:
+        f = fm_field(fm, _nf)
+        if f:
+            break
     got = set()
     for m in re.finditer(u"（§[ \t]*([%s]+)" % HAN, f):
         n = han_to_int(m.group(1))
@@ -364,6 +378,19 @@ def selftest():
     hit = (u"§六" in m) and (u"动作需求" in m)
     print(u"  %s 其报含「所缺之节号逐字 ＋ 所取之列逐字」" % (u"OK " if hit else u"✗ "))
     ok = ok and hit
+    # ⭐ 2026-10-08（pm_1835 §二.2 ／ pm_1837 §二.1）：**二名皆须触发闸一**（正控）∧ **缺名 ⇒ 仍过**（反控）
+    lack2 = os.path.join(tmp, "d2.md")
+    open(lack2, "wb").write(u"---\ntype: 报\ndate: 2026-10-08\n需求动作: 办一（§一）／ 办六（§六）\n---\n\n## 一 甲\n\n正文\n".encode("utf-8"))
+    rc, m = step_box(lack2, "d2.md", dry=False, box=box)
+    res(u"二名之正控（需求动作 诺 §一／§六 · 其文唯 §一）⇒ 4", rc, 4)
+    print(u"    其报：" + m)
+    hit = (u"§六" in m)
+    print(u"  %s 其报含「所缺之节号逐字」" % (u"OK " if hit else u"✗ "))
+    ok = ok and hit
+    noname = os.path.join(tmp, "d3.md")
+    open(noname, "wb").write(u"---\ntype: 报\ndate: 2026-10-08\n---\n\n## 一 甲\n\n正文\n".encode("utf-8"))
+    rc, m = step_box(noname, "d3.md", dry=False, box=box)
+    res(u"二名之反控（⛔ 该字段 ⇒ 无为而治 · 须 0）", rc, 0)
     susp = os.path.join(tmp, "e.md")
     open(susp, "wb").write(u"# 甲\n正文（\n".encode("utf-8"))
     rc, m = step_box(susp, "e.md", dry=False, box=box)
@@ -396,8 +423,26 @@ def selftest():
     res(u"SEATS 二键 ⇔ 同 id（别名只作入）", SEATS.get(u"V9工程师·全史席") == SEATS.get(u"CodexWindows线"), True)
     res(u"CANON 归一台账之名", CANON.get(u"V9工程师·全史席"), u"CodexWindows线")
     res(u"CANON 幂等", CANON.get(u"CodexWindows线", u"CodexWindows线"), u"CodexWindows线")
+
+    print(u"[自证 6 席名必填（承 pm_1844 §二.3 · 静默之默认 ＝ 误归）]")
+    rc_n, m_n = check_sender(None)
+    res(u"⛔ --from（None）⇒ 2", rc_n, 2)
+    print(u"    其报：" + m_n)
+    res(u"其报含「席名 ⛔ 给」逐字", (u"席名 ⛔ 给" in m_n), True)
+    res(u"--from ＝ 空白 ⇒ 2", check_sender(u"   ")[0], 2)
+    res(u"明书席名 ⇒ 0（反控 · 可达零）", check_sender(u"技术总监")[0], 0)
     print(u"[总判] %s" % (u"PASS" if ok else u"FAIL"))
     return 0 if ok else 1
+
+
+#: 席名之检（承 pm_1844 §二.3）：⛔ 默认值 ⇒ 忘传即**静默误归** ⇒ 缺则 rc 2 ＋ 显报。
+def check_sender(sender):
+    u"""席名 ⛔ 给 ⇒ (2, 显报)。⭐ ⛔ 采「自件名推」（名 ／ 账 ⛔ 必同源）
+    —— 承 pm_1844 §二.3（静默之默认 ＝ 误归 · CW 1842 即中招）⇒ 唯明书。"""
+    if (sender or u"").strip():
+        return 0, u"席名 ＝ %s" % sender.strip()
+    return 2, (u"席名 ⛔ 给（--from）⇒ 静默之默认 ＝ 误归（承 pm_1844 §二.3 · CW 1842 即中招）"
+               u"｜表：%s" % u" ／ ".join(sorted(SEATS)))
 
 
 # ---------------------------------------------------------------- main
@@ -408,7 +453,9 @@ def main():
     ap.add_argument("--name")
     ap.add_argument("--to")
     ap.add_argument("--to-id")
-    ap.add_argument("--from", dest="sender", default=u"技术总监")
+    # ⭐ `--from` 改**必填**（承 pm_1844 §二.3）：原 default ＝ 「技术总监」⇒ 忘传则静默误归
+    #   （CW 1842 即中招）⇒ ⛔ 默认（「空 ⛔ 混 缺」）∧ ⛔ 自件名推（名 ／ 账 ⛔ 必同源）。
+    ap.add_argument("--from", dest="sender")
     ap.add_argument("--num")
     ap.add_argument("--date")
     ap.add_argument("--cat", default=u"报")
@@ -422,6 +469,10 @@ def main():
     if not (a.src and a.to and a.num):
         print(u"[用法错] 须 --src ／ --to ／ --num（rc=2）")
         return 2
+    rc_s, msg_s = check_sender(a.sender)
+    if rc_s != 0:
+        print(u"[用法错] " + msg_s)
+        return rc_s
     tid = a.to_id or SEATS.get(a.to)
     if not tid:
         print(u"[用法错] 席位「%s」⛔ 在表 ⇒ 以 --to-id 明书（rc=2）｜表：%s"
