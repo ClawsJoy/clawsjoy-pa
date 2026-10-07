@@ -7,9 +7,13 @@
     python scripts\\\\win_pa\\\\pa_nowindow.py start
     python scripts\\\\win_pa\\\\pa_nowindow.py stop
     python scripts\\\\win_pa\\\\pa_nowindow.py status
+    python scripts\\\\win_pa\\\\pa_nowindow.py open [--print-url]
+        # open the PA page (THIN path: reads the true source key only => no app stack)
 
 纪律:
-  1. 端口真源 = config/system/system_unified.yaml (core.lib.port_config.gateway_port())
+  1. 端口真源 = config/system/system_unified.yaml
+     应用之出口 = core.lib.port_config.gateway_port()  (**重**：连带 core/__init__ => chromadb)
+     薄径之读   = port_lite.py  (**轻** · 唯读同键 · 无 core · 承 pm_1595 §二 令二/令三)
   2. 端口占用判据 = TCP 连测 (WSL2 转发端口在 netstat 里看不见 LISTENING)
   3. 起法 = CREATE_NO_WINDOW | DETACHED_PROCESS | CREATE_BREAKAWAY_FROM_JOB
      (2026-10-05 061 §一.3 真脱离: 不受起者 job 连坐; 若 job 不许 breakaway 则降级并大声告警)
@@ -46,11 +50,25 @@ def gateway_port():
     return int(_gp())
 
 
+def port_lite():
+    u"""薄径之端口读器（**无 core** —— 承 pm_1595 §二 令二）。
+
+    由（一手之实）：取一个端口号而以 gateway_port() 为径 => 连带 core/__init__ =>
+    chromadb 起（器取：IMPORT_S=1.46 / chromadb_loaded=True / tenant_loaded=True）。
+    唯**薄径**用之（开页面 / 状态 / console 之名）；**起服**仍走 gateway_port()（应用之出口）。
+    """
+    d = os.path.dirname(os.path.abspath(__file__))
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    import port_lite as _pl
+    return _pl
+
+
 def console_path():
     u"""⭐ pm_1453 §三.4：console 之名**随端口** —— 旧码硬编 `gateway_5102_console.log`
     ⇒ 端口改后**名实不符**（本刻 `5103` 之日志仍旧名 · 老板照拄必惑）。
     惰性（⛔ 于 import 期求端口：真源未配 ⇒ `fail-loud` 会炸 import）。"""
-    return os.path.join(ROOT, 'logs', 'gateway_%d_console.log' % gateway_port())
+    return os.path.join(ROOT, 'logs', 'gateway_%d_console.log' % port_lite().read_port(ROOT))
 
 
 def tcp_open(port, host='127.0.0.1', timeout=1.5):
@@ -379,9 +397,39 @@ def cmd_stop():
     return 0
 
 
+def cmd_open():
+    u"""开 PA 页面（**薄径** · 承 pm_1595 §二 令一(b)）：端口走 port_lite（无 core）=> 址 => 默认浏览器。
+    除死值（旧之字形之字面死值 —— 今 ⛔ 在）；取不得 => **fail-loud**（承 port_config 口径 3）。
+    用法：pa_nowindow.py open [--print-url]（后者不开浏览器 · 供齿与复核）。"""
+    os.chdir(ROOT)
+    pl = port_lite()
+    try:
+        url = pl.page_url(ROOT)
+    except pl.PortUnconfigured as e:
+        print('[OPEN] port unconfigured -- refusing (fail-loud): %s' % e)
+        return 2
+    if '--print-url' in sys.argv[2:]:
+        print(url)
+        return 0
+    ok = False
+    try:
+        import webbrowser
+        ok = bool(webbrowser.open(url))
+    except Exception as e:
+        print('[OPEN] webbrowser.open raised: %s' % e)
+    if not ok:
+        try:
+            os.startfile(url)      # Windows 兜底（webbrowser 之返值不可靠）
+            ok = True
+        except Exception as e:
+            print('[OPEN] startfile raised: %s' % e)
+    print('[OPEN] %s -> %s' % (url, 'opened' if ok else 'FAILED'))
+    return 0 if ok else 2
+
+
 def cmd_status():
     os.chdir(ROOT)
-    port = gateway_port()
+    port = port_lite().read_port(ROOT)
     up = tcp_open(port)
     print('[INFO] port %d tcp_open=%s (judged by TCP connect, NOT netstat LISTENING)' % (port, up))
     if up:
@@ -396,7 +444,7 @@ def cmd_status():
 
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'status'
-    fn = {'start': cmd_start, 'stop': cmd_stop, 'status': cmd_status,
+    fn = {'start': cmd_start, 'stop': cmd_stop, 'status': cmd_status, 'open': cmd_open,
           'detach-probe': cmd_detach_probe,
           '_detach-child': cmd_detach_child}.get(cmd)
     if fn is None:

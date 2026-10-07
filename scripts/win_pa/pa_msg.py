@@ -23,6 +23,8 @@ MSG = {
     u"start": u"[PA] 起服务（无窗）…… 首启约 30 秒（其间页面会显「未接」，属常）",
     u"stop": u"[PA] 停服……",
     u"start-failed": u"[PA] 起服 ⛔ 成 —— 因见上之数行（⛔ 静默）",
+    u"open": u"[PA] 开 PA 页面（端口自真源之配置读 · 未配则明报）……",
+    u"open-failed": u"[PA] 开页面 ⛔ 成 —— 端口未配 ∨ 浏览器 ⛔ 起（其因见上之数行 · ⛔ 静默）",
 }
 
 
@@ -41,7 +43,8 @@ def self_test():
         if not ok:
             fails.append(name)
 
-    say(sorted(MSG) == [u"start", u"start-failed", u"stop"], u"正控：三键齐（start ⁄ stop ⁄ start-failed）")
+    say(sorted(MSG) == [u"open", u"open-failed", u"start", u"start-failed", u"stop"],
+        u"正控：五键齐（start ⁄ stop ⁄ start-failed ⁄ open ⁄ open-failed）")
     say(all(v.strip() for v in MSG.values()), u"正控：无空辞")
     say(render(u"START") is MSG[u"start"] and render(u"") is None,
         u"正控：键不计大小写 ∧ 未知键 ⇒ None")

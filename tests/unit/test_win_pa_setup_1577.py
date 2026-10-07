@@ -114,7 +114,9 @@ def test_launchers_use_bundled_runtime_and_single_entry():
         assert "%~dp0" in t, n
     assert "pa_nowindow.py" in lt[m.LAUNCH_START] and " start" in lt[m.LAUNCH_START]
     assert "pa_nowindow.py" in lt[m.LAUNCH_STOP] and " stop" in lt[m.LAUNCH_STOP]
-    assert "port_config" in lt[m.LAUNCH_OPEN], u"端口须取真源（⛔ 字面）"
+    _open = lt[m.LAUNCH_OPEN]
+    assert "pa_nowindow.py" in _open and " open" in _open, \
+        u"端口须取真源（一处定形：唯入口 pa_nowindow.py open · ⛔ 字面）"
     assert "uninstall_pa.py" in lt[m.LAUNCH_UNINSTALL]
     assert lt[m.LAUNCH_UNINSTALL].rstrip().endswith("exit /b %RC%")
 

@@ -11,7 +11,9 @@ u"""installer_post.py -- 「双击即装」之后置（承 pm_1577 §二 ／ §�
 
 一处定形（⛔ 二源）：
   ⭐ 立目录之表 ＝ `install_win_pa.dir_items()`（含 `data/kb` 之六骨架 · 承 note_kernel）
-  ⭐ 端口之真源 ＝ `core.lib.port_config.gateway_port()`（⛔ 本器另写字面 —— 唯启动器引之）
+  ⭐ 端口之值 ＝ `config/system/system_unified.yaml` 之 `services.gateway.port`
+    应用之出口 ＝ `core.lib.port_config.gateway_port()`；**薄径**之读 ＝ `port_lite.py`
+    ⇒ ⭐ 本器所生之启动器 **⛔ 载端口之字面**（唯调唯一入口 `pa_nowindow.py open` · 承 pm_1595 §二）
   ⭐ 起停之唯一入口 ＝ `scripts/win_pa/pa_nowindow.py`（⛔ 本器 ⛔ 另起）
 
 用法（常规由 install_pa.cmd 调）：
@@ -144,17 +146,18 @@ def launcher_texts():
             + u"set \"RC=%ERRORLEVEL%\"\r\n"
             + CMD_CP_RESTORE
             + u"endlocal & exit /b %RC%\r\n")
-    # NOTE: no `%` formatting below -- batch `for /f` eats it; concatenate instead
+    # pm_1595 (s2 order 1b): NO for /f (cmd swallows the outer quote pair => empty result =>
+    #   the dead literal would win) and NO port literal.  The .cmd only calls the ONE entry
+    #   pa_nowindow.py open (which os.chdir(ROOT)s, reads the true-source key, opens the browser).
+    #   Unreadable => non-zero => human words + pause (fail-loud, per port_config rule 3).
     openp = (head
-             + u"set \"URL=\"\r\n"
-             + u"for /f \"usebackq delims=\" %%U in (`" + py
-             + u" -X utf8 -c \"import sys;sys.path.insert(0,r'%ROOT%');"
-             + u"from core.lib.port_config import gateway_port;"
-             + u"print('http://127.0.0.1:'+str(gateway_port())+'/web/pa.html')\"`) do set \"URL=%%U\"\r\n"
-             + u"if not defined URL set \"URL=http://127.0.0.1:5103/web/pa.html\"\r\n"
-             + u"start \"\" \"%URL%\"\r\n"
+             + py + u" -X utf8 " + msg + u" open\r\n"
+             + py + u" -X utf8 " + pn + u" open\r\n"
+             + u"set \"RC=%ERRORLEVEL%\"\r\n"
+             + u"if not \"%RC%\"==\"0\" " + py + u" -X utf8 " + msg + u" open-failed\r\n"
+             + u"if not \"%RC%\"==\"0\" pause\r\n"
              + CMD_CP_RESTORE
-             + u"endlocal & exit /b 0\r\n")
+             + u"endlocal & exit /b %RC%\r\n")
     uninst = (head
               + py + u" -X utf8 \"%ROOT%" + BS + u"scripts" + BS + u"win_pa" + BS
               + u"uninstall_pa.py\" --go --root \"%ROOT%\"\r\n"
@@ -424,6 +427,22 @@ def self_test():
         if not ok:
             fails.append(name)
 
+    def _forf_backtick(texts):
+        u"""取「反引号之 for /f」之命令文（唯 `in (` … `)` 形）—— 判 A 支（首末皆引号）之形。"""
+        out = []
+        for tx in texts:
+            i = 0
+            while True:
+                i = tx.find(u"in (`", i)
+                if i < 0:
+                    break
+                j = tx.find(u"`)", i)
+                if j < 0:
+                    break
+                out.append(tx[i + 5:j])
+                i = j + 2
+        return out
+
     lt = launcher_texts()
     say(set(lt) == {LAUNCH_START, LAUNCH_STOP, LAUNCH_OPEN, LAUNCH_UNINSTALL}, u"正控：四启动器之名齐")
     for n, t in lt.items():
@@ -433,7 +452,15 @@ def self_test():
         u"正控：启动器走**唯一入口** pa_nowindow.py start")
     say(u"pa_nowindow.py" in lt[LAUNCH_STOP] and u" stop" in lt[LAUNCH_STOP],
         u"正控：停止器走**唯一入口** pa_nowindow.py stop")
-    say(u"port_config" in lt[LAUNCH_OPEN], u"正控：打开页面之端口取自**真源** port_config（⛔ 字面）")
+    say(u"pa_nowindow.py" in lt[LAUNCH_OPEN] and u" open" in lt[LAUNCH_OPEN],
+        u"正控：打开页面走**唯一入口** pa_nowindow.py open（一处定形）")
+    say(u"in (`" not in lt[LAUNCH_OPEN],
+        u"反控：打开页面 ⛔ 用「反引号之 for /f」（旧形：引号之 exe ＋ 引号之末参 ⇒ cmd 吞引 ⇒ 空果 · pm_1595）")
+    _fc = _forf_backtick(lt.values())
+    say(all((not c.strip().startswith(u'"')) or (not c.strip().endswith(u'"')) for c in _fc),
+        u"反控：四启动器之「反引号 for /f」命令 ⛔ 首末皆引号（A 支之形 ⇒ 空果 ⇒ 死值上位）")
+    # 端口之字面之扫 ⇒ 徙入齿 `tests/unit/test_win_pa_launcher_form.py`（**一处定形**）：
+    #   针（二端口之数）⛔ 居本件 —— 否则「自指之字面」必致假红（承 _SYSREG 之族 · pm_1595 §二 令四）。
     say(u"uninstall_pa.py" in lt[LAUNCH_UNINSTALL], u"正控：卸载器走 uninstall_pa.py")
     say(UNINSTALL_KEY.startswith(u"Software" + BS + u"Microsoft"), u"正控：卸载键之域")
     say((_SYSREG_A not in UNINSTALL_KEY) and (_SYSREG_B not in UNINSTALL_KEY),
