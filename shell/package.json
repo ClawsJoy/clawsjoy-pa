@@ -23,7 +23,7 @@
     "appId": "com.clawsjoy.pa",
     "productName": "ClawsJoyPA",
     "directories": { "output": "../dist/pa_shell/setup" },
-    "files": ["main.js", "identity.js", "preload.js", "package.json", "icon.png"],
+    "files": ["main.js", "identity.js", "update.js", "preload.js", "package.json", "icon.png"],
     "extraResources": [
       { "from": "../dist/pa_shell/payload", "to": "payload" }
     ],

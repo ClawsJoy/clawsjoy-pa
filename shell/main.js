@@ -19,6 +19,7 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const ID = require('./identity');   // ⭐ 身份之判（**一处定形** · pm_1679 §四）
+const UP = require('./update');     // ⭐ 载荷层之更新之器（**一处定形** · pm_1684 §二）
 
 const APP_ID = 'com.clawsjoy.pa';
 const SELFTEST = !!process.env.CLAWSJOY_SHELL_SELFTEST;
@@ -240,6 +241,8 @@ let IDENTITY = null;   // 身份之判之果（一处）—— 非 null 且 !ok 
 
 let win = null;
 let tray = null;
+let trayMenu = null;
+let appMenu = null;
 let isQuitting = false;
 const st = { window: false, page_loaded: false, url: null, title: null, load_error: null };
 
@@ -300,7 +303,7 @@ function buildTray() {
       } },
     { label: '打开日志目录', click: async function () { await shell.openPath(logsDir()); } }
   ];
-  const menu = Menu.buildFromTemplate([
+  trayMenu = Menu.buildFromTemplate([
     { label: '显示', click: function () { if (win) { win.show(); } } },
     { label: '隐藏', click: function () { if (win) { win.hide(); } } },
     { type: 'separator' },
@@ -310,18 +313,20 @@ function buildTray() {
     { type: 'separator' },
     { label: '留言 / 反馈', submenu: fb },
     { type: 'separator' },
+    { id: UPDATE_ENTRY_ID, label: UP.entryLabel(null), click: function () { onUpdateClick(); } },
     { label: '检查更新（壳层）', click: function () { checkShellUpdate(); } },
     { type: 'separator' },
     { label: '退出', click: function () { isQuitting = true; saveWindowState(); app.quit(); } }
   ]);
   tray.setToolTip('ClawsJoy PA');
-  tray.setContextMenu(menu);
+  tray.setContextMenu(trayMenu);
   tray.on('double-click', function () { if (win) { win.show(); win.focus(); } });
   log('托盘已立');
 }
 function buildAppMenu() {
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
+  appMenu = Menu.buildFromTemplate([
     { label: 'ClawsJoy', submenu: [
+      { id: UPDATE_ENTRY_ID, label: UP.entryLabel(null), click: function () { onUpdateClick(); } },
       { label: '检查更新（壳层）', click: function () { checkShellUpdate(); } },
       { type: 'separator' },
       { label: '退出', click: function () { isQuitting = true; saveWindowState(); app.quit(); } } ] },
@@ -332,7 +337,89 @@ function buildAppMenu() {
       { label: '打开留言板', click: function () { if (!win) { createWindow(); } else { win.show(); } reloadPage(); } },
       { label: '打开落点目录（留言收发处）', click: async function () { const r = await openFeedbackDir(); log('openFeedbackDir ⇒ ' + JSON.stringify(r)); } },
       { label: '打开日志目录', click: async function () { await shell.openPath(logsDir()); } } ] }
-  ]));
+  ]);
+  Menu.setApplicationMenu(appMenu);
+}
+
+// ---------------------------------------------------------------- 载荷层之更新（入口 · 一处定形）
+/* 入口之律（pm_1684 §二）：
+   * 其源唯 `GET /health.update`（**一处读** ⇒ ⛔ 自算 ／ ⛔ 出网自取清单）。
+   * 其动唯调「载荷内之器」（`shell/update.js:updaterArgv` —— **一处定形** ／ ⛔ 二处各拼）。
+   * ⛔ 于「非本壳之服」之上施增量（须先过 `identity.js` 之判 —— pm_1679 §四）。
+   * 「凡等待 ⇒ 进度 ＋ 时长 ＋ 因 ＋ 去处」（pm_1617 §一.3）—— 进 ／ 时入菜单之题 ／ 日志；
+     结果 ／ 因 ／ 去处入「人话」之窗。
+*/
+const UPDATE_ENTRY_ID = 'pa-update-entry';
+let updState = { readable: false, available: false };
+let updBusy = false;
+let updT0 = 0;
+let updTick = null;
+
+function updateEntryLabel() {
+  if (updBusy) { return '更新中…（' + Math.round((Date.now() - updT0) / 1000) + ' s）'; }
+  return UP.entryLabel(updState);
+}
+function refreshUpdateMenu() {
+  const menus = [trayMenu, appMenu];
+  for (let i = 0; i < menus.length; i++) {
+    if (!menus[i]) { continue; }
+    const it = menus[i].getMenuItemById(UPDATE_ENTRY_ID);
+    if (!it) { continue; }
+    it.label = updateEntryLabel();
+    it.enabled = !updBusy;
+  }
+}
+async function readUpdateState() {
+  try { updState = await UP.readState(PORT); }
+  catch (e) { updState = { readable: false, available: false, why: 'read: ' + (e && e.message) }; }
+  return updState;
+}
+function updateDest() { return shellLogFile(); }
+
+async function showLines(title, lines) {
+  const ls = lines || [];
+  log('人话（' + title + '）：' + ls.join(' ｜ '));
+  const opt = { type: 'info', title: 'ClawsJoy PA', message: title, detail: ls.join('\n'),
+                buttons: ['好'], noLink: true };
+  try {
+    if (win) { await dialog.showMessageBox(win, opt); } else { await dialog.showMessageBox(opt); }
+  } catch (e) { log('弹窗 ⛔ 得（其因已入日志）：' + (e && e.message)); }
+}
+
+/* 入口之实（**唯此一函** —— 二处菜单共调 · ⛔ 二处各写） */
+async function onUpdateClick() {
+  if (updBusy) {
+    await showLines('更新中', ['正在更新 ⇒ 请候其毕（进度 ／ 时长见于菜单之题 ∧ 日志）',
+                              '去处：' + updateDest()]);
+    return;
+  }
+  await readUpdateState();
+  const st = updState;
+  if (!st.readable) { await showLines('⛔ 更新', [UP.entryWhy(st, IDENTITY), '去处：' + updateDest()]); return; }
+  if (!IDENTITY || !IDENTITY.ok) { await showLines('⛔ 更新', [UP.entryWhy(st, IDENTITY), '去处：' + updateDest()]); return; }
+  if (!st.available) {
+    await showLines('更新', ['已是最新（' + (st.current || '—') + '）⇒ ⛔ 须更新', '去处：' + updateDest()]);
+    return;
+  }
+  updBusy = true; updT0 = Date.now();
+  updTick = setInterval(refreshUpdateMenu, 1000);
+  refreshUpdateMenu();
+  log('更新：起 ｜ ' + UP.entryLabel(st) + ' ｜ root=' + rootDir());
+  let run = null;
+  try {
+    run = await UP.updatePayload({ pyExe: pyExe(), root: rootDir(), port: PORT,
+                                   state: st, identity: IDENTITY, onLine: log });
+  } catch (e) {
+    run = { phase: 'failed', ok: false, reason: '壳侧之跑 ⛔ 得：' + (e && e.message), why: '',
+            elapsed_s: (Date.now() - updT0) / 1000 };
+  }
+  updBusy = false;
+  if (updTick) { clearInterval(updTick); updTick = null; }
+  log('更新：毕 ⇒ ' + run.phase + '（code=' + run.code + '）');
+  await readUpdateState();
+  refreshUpdateMenu();
+  await showLines(run.ok ? '更新完成' : '更新 ⛔ 成', UP.statusLines(run, run.elapsed_s, updateDest()));
+  if (run.ok) { reloadPage(); }
 }
 
 // ---------------------------------------------------------------- 壳层之更新（electron-updater · ⛔ 与载荷层相撞）
@@ -354,10 +441,13 @@ function checkShellUpdate() {
 /* 自测之桩（唯自测 · ⛔ 入产品之路）：扮一「他之 PA」应答 `/health`。 */
 function startStub(opt) {
   return new Promise(function (resolve) {
-    const body = JSON.stringify((opt && opt.omitBuild)
+    const o = opt || {};
+    const doc = o.omitBuild
       ? { status: 'healthy', version: '9.0.0' }
       : { status: 'healthy', version: '9.0.0',
-          build: { available: true, path: 'D:\\OTHER\\ClawsJoyPA\\version.json', version: '9.0.0' } });
+          build: { available: true, path: 'D:\\OTHER\\ClawsJoyPA\\version.json', version: '9.0.0' },
+          update: o.update || { available: false, current_version: '9.0.0', latest_version: null, size_bytes: 0, files: 0 } };
+    const body = JSON.stringify(doc);
     const srv = http.createServer(function (req, res) {
       if (req.url && req.url.indexOf('/health') === 0) {
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(body);
@@ -411,6 +501,41 @@ async function selfTest() {
   r.identity_nobuild = await serviceIdentity(_sb.port);
   r.identity_nobuild_caught = !!(r.identity_nobuild && !r.identity_nobuild.ok);
   stopStub(_sa); stopStub(_sb);
+  // ⭐ pm_1684 §二.2 之齿（载荷层之更新）：调器之形 ／ 门之正反控 ／ 人话 ／ 真 HTTP 桩 ／ 败之路
+  r.update_argv = UP.updaterArgv({ pyExe: pyExe(), root: rootDir() });
+  r.update_argv_ok = (r.update_argv.args.length === 8)
+    && (r.update_argv.args[3] === UP.scriptPath(rootDir()))
+    && (r.update_argv.args[4] === '--root') && (r.update_argv.args[5] === rootDir())
+    && (r.update_argv.args[6] === '--json') && (r.update_argv.args[7] === '--go')
+    && (r.update_argv.cwd === rootDir()) && (r.update_argv.exe === pyExe());
+  const _av = UP.stateFromHealth({ update: { available: true, latest_version: '9.0.3', size_bytes: 72091 } });
+  r.upd_avail_label = UP.entryLabel(_av);
+  r.upd_avail_on = UP.entryEnabled(_av, { ok: true });
+  r.upd_avail_blocked_by_identity = !UP.entryEnabled(_av, { ok: false });
+  const _la = UP.stateFromHealth({ update: { available: false, current_version: '9.0.2', note: '已是最新' } });
+  r.upd_latest_label = UP.entryLabel(_la);
+  r.upd_latest_off = !UP.entryEnabled(_la, { ok: true });
+  r.upd_nokey_off = !UP.entryEnabled(UP.stateFromHealth({ status: 'healthy' }), { ok: true });
+  const _fr = UP.parseRun(2, '[FAIL] 逐件校 ⛔ 合 ⇒ 整体 ⛔ 落\n[FAIL] **已回滚至 `9.0.1`**（fail-loud）');
+  r.upd_fail_phase = _fr.phase;
+  r.upd_fail_rb = _fr.rolled_back_to;
+  r.upd_fail_lines = UP.statusLines(_fr, 3.2, null);
+  const _fmsg = r.upd_fail_lines.join(' ');
+  r.upd_fail_msg_ok = (_fmsg.indexOf('已回滚至 9.0.1') >= 0) && (_fmsg.indexOf('去处：') >= 0);
+  const _s1 = await startStub({ update: { available: true, latest_version: '9.0.3', size_bytes: 72091 } });
+  const _s2 = await startStub({ update: { available: false, current_version: '9.0.2' } });
+  const _r1 = await UP.readState(_s1.port);
+  const _r2 = await UP.readState(_s2.port);
+  stopStub(_s1); stopStub(_s2);
+  r.upd_http_avail_on = UP.entryEnabled(_r1, { ok: true });
+  r.upd_http_latest_off = !UP.entryEnabled(_r2, { ok: true });
+  r.upd_http_latest_label = UP.entryLabel(_r2);
+  const _bad = await UP.runUpdate({ pyExe: path.join(rootDir(), 'runtime', 'no-such-python.exe'),
+                                    root: rootDir(), timeoutMs: 60000 });
+  r.upd_badrun_phase = _bad.phase;
+  r.upd_badrun_lines = UP.statusLines(_bad, _bad.elapsed_s, null);
+  r.update_state = await UP.readState(r.port);
+  r.update_readable = !!(r.update_state && r.update_state.readable);
   const _dec = ID.decidePage(r.identity);
   if (r.port) { createWindow(_dec.load === 'msg' ? _dec.msg : null); }
   await sleep(2500);
@@ -453,6 +578,9 @@ if (!gotLock) {
     await startService();
     IDENTITY = await serviceIdentity();
     log('身份之核：' + JSON.stringify(IDENTITY));
+    await readUpdateState();
+    refreshUpdateMenu();
+    setInterval(function () { readUpdateState().then(refreshUpdateMenu); }, 60000);
     const _dec = ID.decidePage(IDENTITY);
     if (_dec.load === 'msg') { log('⛔ 载载荷之页（他之 PA 应答）⇒ 以「人话 ＋ 去处」代之'); }
     createWindow(_dec.load === 'msg' ? _dec.msg : null);
