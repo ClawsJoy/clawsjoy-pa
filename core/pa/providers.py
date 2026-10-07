@@ -185,6 +185,36 @@ def resolve_model(name):
     return None
 
 
+def label_map():
+    """显示名（label）⇒ 实名（id）—— 大小写归一 · 一处定形（pm_1613 令五）。"""
+    out = {}
+    for pid in PROVIDERS:
+        for m in PROVIDERS[pid].get("models") or []:
+            lb = str(m.get("label") or "").strip()
+            if lb and m.get("id"):
+                out.setdefault(lb.lower(), m["id"])
+    return out
+
+
+def resolve_model_ex(name):
+    """归一 ＋ 白名单 ⇒ (实名 | None, 显形之辞) —— ⛔ 静默（承 pm_1613 令五）。
+
+    与 resolve_model 之别：凡「显示名（label）落于注册表」之替换 ⇒ 辞明书其由
+    （「显示名 ⛔ 在后端之实名表 ⇒ 按下默认」须显形 · ⛔ 静默换）。
+    """
+    _id = resolve_model(name)
+    if _id:
+        return _id, ""
+    _pre, bare = split_prefix(name)
+    if not bare:
+        return None, "空名"
+    _hit = label_map().get(bare.lower())
+    if _hit:
+        return _hit, ("「%s」为注册表之显示名（label）· 不在后端实名表 ⇒ 已按其替换为「%s」"
+                      "（源：core/pa/providers.py models[].label）" % (bare, _hit))
+    return None, ("未识之模型名：%s（唯注册表之实名 ∨ 别名 ∨ 显示名）" % (str(name)[:60],))
+
+
 def _tcp_open(host, port, timeout=0.25):
     u"""本机端口可达？—— **唯本机**之探（⛔ 发模型请求 · 承本模块「只读」之界）。"""
     import socket as _sock

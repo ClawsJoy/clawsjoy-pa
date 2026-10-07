@@ -258,6 +258,19 @@ def _data_dir():
 #   ⛔ 进程级单例（多会话 ⛔ 分）· ⛔ 前端硬编（承 pm_1449 §二.1 之裁）。
 #   名之验 ＝ **后端白名单**（`core/pa/providers.resolve_model` ⇒ 注册表之实名）
 #   ⇒ ⛔ 自由字串（非法 ⇒ 400 显因 · ⛔ 静默回落）。
+def _loopback(req):
+    """唯本机（环回）—— 另端（LAN / 他机）⛔ 达（承 pm_1613 令四 · 端之鉴权）。
+
+    ⚠ 服务绑 0.0.0.0 ⇒ LAN 可达本端 ⇒ 故须显判（⛔ 凭「无鉴权」而放行）。
+    """
+    a = str(getattr(req, "remote_addr", "") or "").strip()
+    if a.startswith("127."):
+        return True
+    if a.startswith("::ffff:") and a[7:].startswith("127."):
+        return True
+    return a in ("::1", "localhost")
+
+
 def _uid_safe(raw):
     """单段 uid（⛔ 空 ／ ⛔ 路径分隔 ／ ⛔ 穿越）—— 会话档之径。⛔ 得 ⇒ ""。"""
     s = str(raw or "").strip()
@@ -273,14 +286,14 @@ def session_model_of(uid, req=None):
     · 合法 ⇒ 落档（**唯变时写**）。
     ⚠ 会话档读不动（`ThreadStoreCorrupt`）⇒ **⛔ 静默当空**：返 (None, 照实之由)。
     """
-    from core.pa.providers import resolve_model
+    from core.pa.providers import resolve_model_ex
     from core.pa.threads import ThreadStore, ThreadStoreCorrupt
 
     ts, key = ThreadStore(_data_dir()), (uid or "default")
     if req is not None and str(req).strip():
-        _m = resolve_model(req)
+        _m, _note = resolve_model_ex(req)
         if not _m:
-            return None, ("未识之模型名：%s（唯注册表之实名 ∨ 别名 —— 见 GET /v9/pa/providers 之 known_models）" % (str(req)[:60],))
+            return None, ("未识之模型名：%s（唯注册表之实名 ∨ 别名 ∨ 显示名 —— 见 GET /v9/pa/providers 之 known_models）" % (str(req)[:60],))
         try:
             st = ts.load(key)
         except ThreadStoreCorrupt as _e:
@@ -291,7 +304,7 @@ def session_model_of(uid, req=None):
                 ts.save(key, st)
             except ThreadStoreCorrupt as _e:
                 return None, "会话档拒写，⛔ 落模型：%s" % (str(_e.reason or "")[:80],)
-        return _m, "会话档"
+        return _m, ("会话档" if not _note else ("会话档 ｜ " + _note))
     try:
         st = ts.load(key)
     except ThreadStoreCorrupt as _e:
@@ -2891,6 +2904,57 @@ def register_pa_routes(app, brain=None):
         from core.pa import providers as _PV
 
         return ok(public_view(), 印=_code_sha16(pa_providers, _PV))
+
+    # ---- 供应商密钥之「写」口（pm_1613 令四 · 后端半）：唯本机 ＋ 一次性令牌 · ⛔ 值 ----
+    @bp.route("/v9/pa/providers/key/token", methods=["GET"])
+    def pa_provider_key_token():
+        """一次性令牌之领（唯本机 · ⛔ 值上屏 —— 唯 Cookie · HttpOnly · SameSite=Strict）。"""
+        from core.pa import provider_keys as _PK
+
+        if not _loopback(request):
+            return err("此端唯本机可领（来源 %s）" % (request.remote_addr or "?"), 403)
+        tok, ttl = _PK.issue_token()
+        r = ok({"issued": True, "expires_in": ttl, "cookie": _PK.TOKEN_COOKIE,
+                "用": "唯同源 POST /v9/pa/providers/key（Cookie 自带 · 用即焚）"},
+               印=_code_sha16(pa_provider_key_token, _PK))
+        r.set_cookie(_PK.TOKEN_COOKIE, tok, max_age=int(ttl), path=_PK.TOKEN_PATH,
+                     httponly=True, samesite="Strict")
+        return r
+
+    @bp.route("/v9/pa/providers/key", methods=["POST"])
+    def pa_provider_key():
+        """供应商密钥之 落 / 清（承 pm_1613 令四）。唯本机 ＋ 一次性令牌；⛔ 回值（唯布尔 ＋ 面）。"""
+        from core.pa import provider_keys as _PK
+        from core.pa.providers import PROVIDERS, key_state
+
+        if not _loopback(request):
+            return err("此端唯本机可用（来源 %s）" % (request.remote_addr or "?"), 403)
+        body = request.get_json(silent=True) or {}
+        pid = str(body.get("provider") or "").strip()
+        p = PROVIDERS.get(pid)
+        if not p:
+            return err("无此供应商：%s（见 GET /v9/pa/providers）" % (pid or "—"), 400)
+        env_name = p.get("key_env")
+        if not env_name:
+            return err("此供应商 ⛔ 需密钥（key_env 缺 —— 如本机 Ollama）", 400)
+        okc, why = _PK.consume_token(request.cookies.get(_PK.TOKEN_COOKIE))
+        if not okc:
+            return err("鉴权⛔：%s" % why, 403)
+        raw = body.get("key")
+        if raw is None or not str(raw).strip():
+            okc, face = _PK.clear_key(env_name)
+            act = "cleared"
+        else:
+            okc, face = _PK.set_key(env_name, raw)
+            act = "set"
+        if not okc:
+            return err("密钥⛔ 落：%s" % face, 400)
+        _st = key_state(pid)
+        r = ok({"provider": pid, "key_env": env_name, "action": act,
+                "key_state": _st, "key_configured": (_st == "configured"), "落": face},
+               印=_code_sha16(pa_provider_key, _PK))
+        r.delete_cookie(_PK.TOKEN_COOKIE, path=_PK.TOKEN_PATH)
+        return r
 
     # ---- P2 ①（pm_1449 §二.1）：会话级模型之仓 —— 读（GET）／ 落 · 清（POST） ----
     @bp.route("/v9/pa/session_model", methods=["GET", "POST"])

@@ -29,11 +29,19 @@ system_bp = Blueprint("system", __name__)
 def health():
     from core.lib.startup import startup_manager
     from core.lib.hardware_probe import hardware_probe
+    # ⭐ pm_1616 令一：起服「准备中」之可读读数（一处定形 · core/gateway/boot_progress.py）——
+    #   门开即可答（本端唯读内存之态 · ⛔ 等重初始化之毕）。
+    try:
+        from core.gateway.boot_progress import boot_progress
+        _boot = boot_progress.snapshot()
+    except Exception as _e_boot:
+        _boot = {"state": "unknown", "note": "读数⛔ 得：%s" % str(_e_boot)[:120]}
     return jsonify({
         "status": "healthy" if startup_manager.ready else "starting",
         "version": __version__,
         "startup": startup_manager.status(),
         "hardware": hardware_probe.report(),
+        "boot": _boot,
     })
 
 

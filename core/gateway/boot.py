@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core.gateway.registry import _init_registries
+from core.gateway.boot_progress import boot_progress, onnx_cache_path
 from core.gateway.state_persist import _load_retrieval_cache, _persist_retrieval_cache
 from core.lib.unified_config import unified_config
 
@@ -54,6 +55,9 @@ def run_gateway_startup(app):
     #   一律在其后。旧序「重初始化 ⇒ app.run」令「门」被初始化堵住：净机首启须下向量模型
     #   （all-MiniLM-L6-v2 · ~79 MB）⇒ 数分钟不听端口 ⇒ 页面 ERR_CONNECTION_REFUSED（pm_1607 §〇）。
     #   今：监听先起（后台线程）⇒ 页面 ／ `/health` 即刻可答（`/health` 自报 status=starting）。
+    boot_progress.begin(["http_listen", "registries", "guards", "kb",
+                         "vector_model_download", "engine", "ready"])
+    boot_progress.set_phase("http_listen")
     _port = unified_config.get("services.gateway.port", 5002)
     _door = _threading.Thread(target=_serve_http, args=(app, _port), daemon=False, name="gw-http")
     _door.start()
@@ -63,12 +67,20 @@ def run_gateway_startup(app):
     else:
         print("[BOOT] 门先开：HTTP 监听已起 http://127.0.0.1:%d/ （%.1f s）" % (_port, _open_s), flush=True)
 
+    boot_progress.set_phase("registries")
     from core.lib.hook_manager import HookManager
     from core.lib.startup import startup_manager
 
     HookManager()
     startup_manager.start()
-    _init_registries()
+    try:
+        _init_registries()
+    except Exception as _e_reg:
+        boot_progress.fail("重初始化失败（registry ／ 含向量模型准备）：%s" % _e_reg,
+                           "见 logs 之 gateway_<port>_console.log；若为向量模型下载失败（断网）⇒ 联网后重启")
+        print("[BOOT] ⛔ 重初始化失败：%s" % _e_reg, flush=True)
+        raise
+    boot_progress.set_phase("guards")
     # P1 S6: 挂载全局守卫(bridge_loop 用, 含审批/计划/越权)
     try:
         from core.gateway.guards.registry import mount_guards
@@ -199,6 +211,8 @@ def run_gateway_startup(app):
     except Exception as _e:
         print(f"⚠ 平台连接失败: {_e}")
 
+    boot_progress.set_phase("vector_model_download")
+    boot_progress.set_download(onnx_cache_path())
     # V9 本地浏览器(Manus 对齐): 启动独立 WS 服务(扩展连接；端口 = 网关端口 + browser_local.ws_port_offset, 见 ws_port())
     try:
         from core.lib.v8 import browser_local
@@ -237,6 +251,8 @@ def run_gateway_startup(app):
     except Exception as _ui_exc:
         print(f"[UI_STATE] ⛔ 快照之落 ⛔ 起（{type(_ui_exc).__name__}: {_ui_exc}）")
 
+    boot_progress.set_phase("engine")
     print(f"🚀 ClawsJoy Gateway v6.0 重初始化毕（端口 {port}）")
     # ⭐ 门先开（pm_1608 §二.2 ⒜）：监听之线程为主 —— 主线程并之（⛔ 进程即退）
+    boot_progress.mark_ready()
     _door.join()
