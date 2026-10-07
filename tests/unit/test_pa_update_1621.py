@@ -19,6 +19,9 @@ u"""pm_1621 四条 之齿（CW b2a5182 · 2026-10-07）—— 更新环节之可
   U12 反控（端未答）⇒ 明书「更新面未答」＋「⛔ 不等于已是最新」（⛔ 静默 ∧ ⛔ 充知）。
   U13 反控（缺 `available` 键）⇒ ⛔ 充「已是最新」。
   U14 反控（唯 `last_error` 有原始异常）⇒ ⛔ 入屏 ∧ ⛔ 当失败。
+  U15 正控（pm_1633 裁 ⒝ · `measured ∧ ⛔ total`）⇒ 显「已下 X MB」∧「总长不可量」。
+  U16 反控（pm_1633 裁 ⒝）：有 `total` ⇒ 按字节之条（⛔ 含「总长不可量」）；
+      无 `done` ⇒ 面 **⛔ 书「已下」**。
   M1–M5 **一幅横幅**（令四 · ⛔ 二套面）：更新进行中 ／ 更新失败 ／ 更新完成 ⇒ 皆占横幅；
      更新之「有新版 ／ 已是最新 ／ 未答」⇒ **⛔ 占**横幅（令一之版本归顶栏版行）。
   S1 一处定形：`paPrepMerge` 唯 1 处 ∧ 横幅之渲唯 `startup.js` 一处（update.js ⛔ 自渲）。
@@ -96,6 +99,7 @@ def _harness() -> str:
         _decl(s, u"const PA_PREP_NOTE_WAIT"), _decl(s, u"const PA_PREP_OUTLET"),
         _decl(s, u"const PA_PREP_ICON"), _decl(s, u"const PA_UPD_BUSY"),
         _fn(s, u"paPrepNum"), _fn(s, u"paPrepMB"), _fn(s, u"paPrepView"), _fn(s, u"paPrepMerge"),
+        _fn(s, u"paPrepMeasuredNote"),   # pm_1633 裁 ⒝ 之共函（**唯 1 处定义** · 二面共用）
         # update.js（更新之态 ＋ 版行）
         _decl(t, u"const PA_UPD_SRC"), _decl(t, u"const PA_UPD_POLL_MS"),
         _decl(t, u"const PA_UPD_BUSY_MS"), _block(t, u"const PA_UPD_PHASE = {", u"};"),
@@ -120,6 +124,7 @@ const UC = [
  ["noavail",  {state:"idle", current:"1.0.0"}, {elapsed_s:1}],
  ["rawonly",  {state:"idle", available:false, current:"1.0.0", last_error:"Traceback (most recent call last)"}, {elapsed_s:1}],
  ["oddphase", {state:"running", phase:"weird_step", since_s:4}, {elapsed_s:4}]
+ ,["dl_meas_nototal", {state:"running", phase:"downloading", done_bytes:314572, total_bytes:null, since_s:5}, {elapsed_s:5}]
 ];
 const MC = [
  ["m_running",  {status:"starting", startup:{ready:false, status:"硬件检测"}}, {elapsed_s:5}, {state:"running", phase:"downloading", done_bytes:1, total_bytes:2}],
@@ -331,3 +336,21 @@ def test_S4_取数唯health_不引未挂之端():
     assert u"'/health'" in src, u"更新之态须取既有之 /health（候 TD_1620 之端报）"
     assert u"/v9/pa/" not in src, u"⛔ 引未挂之 /v9/pa/*（面册闸 test_pa_ui_faces 必判「悬」）"
     assert u"cache:'no-store'" in src, u"取数须绕缓存"
+
+
+# ---------- U15 ～ U16：`measured ∧ ⛔ total`（pm_1633 裁 ⒝ · 「已量者须显」） ----------
+
+def test_U15_裁B_已量而总长缺须显已下与不可量():
+    v = _v()["u"]["dl_meas_nototal"]
+    assert v["state"] == "running", v
+    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"总长不可量" in v["text"], v["text"]
+    assert u"后端未给" in v["text"], v["text"]
+
+
+def test_U16_裁B_反控_有总长则按字节条_未量则不书已下():
+    bar = _v()["u"]["dl_bar"]
+    assert u"总长不可量" not in bar["text"], bar["text"]
+    assert u"已下 0.3 MB / 0.6 MB" in bar["text"], bar["text"]
+    backup = _v()["u"]["backup"]
+    assert u"已下" not in backup["text"], backup["text"]

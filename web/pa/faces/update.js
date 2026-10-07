@@ -83,6 +83,8 @@ function paUpdView(u, ctx){
   if(busy){
     v.state = 'running';
     const ph = PA_UPD_PHASE[v.phase] || (v.phase ? ('当前步骤：' + v.phase) : '正在更新（后端未给步骤）');
+    /* ⭐ pm_1633 裁 ⒝（一处定形 · 与 `startup.js` 共本函）：`measured ∧ ⛔ total` ⇒ 显「已下 X MB（总长不可量）」 */
+    const mn = paPrepMeasuredNote(v.done, v.total);
     let t = '正在更新…（' + ph;
     if(v.total != null && v.total > 0 && v.done != null){
       v.can_bar = true;
@@ -94,12 +96,13 @@ function paUpdView(u, ctx){
       v.can_bar = true;
       v.pct = Math.max(0, Math.min(100, Math.floor((v.files_done / v.files_total) * 100)));
       t += ' · 已 ' + v.files_done + ' / ' + v.files_total + ' 件（' + v.pct + '%）';
+      if(mn) t += ' · ' + mn;
       if(v.since_s != null) t += ' · 已等 ' + v.since_s + ' 秒';
     } else if(v.since_s != null){
       t += ' · 已等 ' + v.since_s + ' 秒' + (v.since_src === 'page' ? '（本页计时 · 后端未给已耗）' : '');
-      t += ' · 进度不可量（后端未给 done ／ total）';
+      t += (mn ? (' · ' + mn) : ' · 进度不可量（后端未给 done ／ total）');
     } else {
-      t += ' · 进度不可量（后端未给 done ／ total ／ 已耗）';
+      t += (mn ? (' · ' + mn) : ' · 进度不可量（后端未给 done ／ total ／ 已耗）');
     }
     v.text = t + '）';
     v.note = '更新中请勿关闭服务窗口' + (v.available === null ? '（更新源头之可得性后端未给）' : '');

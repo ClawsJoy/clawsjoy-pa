@@ -44,6 +44,18 @@ const PA_PREP_ICON = {starting:'⏳', running:'⏳', restart:'🔁', done:'✅',
 
 function paPrepNum(v){ return (typeof v === 'number' && isFinite(v)) ? v : null; }
 function paPrepMB(n){ return (Math.round((n / 1048576) * 10) / 10) + ' MB'; }
+/* ⭐ pm_1633 裁 ⒝（**一处定形** · ⛔ 二处各写）：`measured`（缓存件已见）而「总长」缺 ⇒ 辞
+   「已下 X MB（总长不可量 —— 后端未给）」—— ⛔ 造数（⛔ 硬编 `79 MB`）∧ ⛔ 以 % 充字节。
+   `total` 有（> 0）⇒ 返 ''（**其处自显「X / Y（%）」之条** —— 承 `1617` 令一）。
+   ⚠ 语源 ＝ 后端 `download.note` 之族（`boot_progress.download_face` 之 `measured ∧ ⛔ total ⇒ note 空`）——
+      **已量者须显** ⇒ 由本函补；⛔ 盖其后端之 `note`（**照实并列**）。 */
+function paPrepMeasuredNote(done, total){
+  const d = paPrepNum(done);
+  if(d == null) return '';
+  const t = paPrepNum(total);
+  if(t != null && t > 0) return '';
+  return '已下 ' + paPrepMB(d) + '（总长不可量 —— 后端未给）';
+}
 function paPrepEl(){ return document.getElementById('paPrep'); }
 function paPrepVisible(){ const el = paPrepEl(); return !!(el && el.style.display !== 'none'); }
 
@@ -118,12 +130,14 @@ function paPrepView(h, ctx){
       if(dN != null && tN) t2 += ' · 步 ' + dN + '/' + tN;
     } else {
       const _pr2 = paPrepNum(bt.progress);
+      const mn = paPrepMeasuredNote(done, total);
+      if(mn) t2 += ' · ' + mn;
       if(_pr2 != null){ v.can_bar = true; v.pct = Math.max(0, Math.min(100, Math.round(_pr2))); }
       if(dN != null && tN) t2 += ' · 步 ' + dN + '/' + tN + ((v.pct == null) ? '' : ('（' + v.pct + '%）'));
-      else if(_pr2 != null) t2 += ' · 后端步进度 ' + Math.round(_pr2) + '%（⛔ 字节不可量 —— 后端未给 done ／ total）';
+      else if(_pr2 != null) t2 += ' · 后端步进度 ' + Math.round(_pr2) + '%（⛔ 字节不可量 —— 后端未给 done ／ total' + (mn ? ' · 已下者见上' : '') + '）';
       if(_e2) t2 += ' · ' + _e2;
       if(dl && dl.note) t2 += ' · ' + String(dl.note);
-      if(v.pct == null && !_e2) t2 += ' · 进度不可量（后端未给 done ／ total ／ 已耗）';
+      if(v.pct == null && !_e2 && !mn) t2 += ' · 进度不可量（后端未给 done ／ total ／ 已耗）';
     }
     v.text = t2 + '）';
     v.note = PA_PREP_NOTE_WAIT;

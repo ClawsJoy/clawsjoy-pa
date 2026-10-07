@@ -24,6 +24,10 @@ u"""pm_1617 令一 ／ 令二 ／ 令四 ／ 令五 之齿（CW b2a5182 · 2026-
   L20 正控（`/health.boot` · `state=ready`）⇒ `state='ready'`（横幅收）。
   L21 ⛔ 造相：`boot.phase` 不在表 ⇒ **照实显原值**。
   L22 一处定形（结构）：`boot` 唯 `paPrepView` 读（⛔ 渲点 ／ ⛔ 合一之判）。
+  L23 正控（pm_1633 裁 ⒝）：`download.measured=true` ∧ `total_bytes=null` ∧ `done_bytes=0.3 MB` ⇒
+      面须**显「已下 0.3 MB」**∧ 含「总长不可量」∧ 含「后端未给」（⛔ 静默略去已量之真读数 ∧ ⛔ 造数）。
+  L24 反控（pm_1633 裁 ⒝）：`total_bytes` 有 ⇒ 面为「按字节之条」（**⛔ 含「总长不可量」**）；
+      `measured=false`（done 为 null）⇒ 面 **⛔ 书「已下」**。
 
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_startup_prep_1617.py -q
@@ -96,6 +100,7 @@ def _harness() -> str:
         _decl(s, u"const PA_PREP_OUTLET"),
         _fn(s, u"paPrepNum"),
         _fn(s, u"paPrepMB"),
+        _fn(s, u"paPrepMeasuredNote"),
         _fn(s, u"paPrepView"),
     ]
     cases = u"""
@@ -118,6 +123,7 @@ const CASES = [
  ["boot_fail",   {status:"starting", boot:{state:"failed", phase:"registries", since_s:9.0, phase_since_s:9.0, phases_done:2, phases_total:7, progress:28, failed:{reason:"重初始化失败（registry ／ 含向量模型准备）：boom", hint:"见 logs 之 gateway_<port>_console.log；若为向量模型下载失败（断网）⇒ 联网后重启"}, download:{measured:false, done_bytes:null, total_bytes:null, frac:null, eta_s:null, note:"不可量（缓存件未见 ⇒ ⛔ 知进度）"}}}, {elapsed_s:9}],
  ["boot_ready",  {status:"healthy", boot:{state:"ready", phase:"ready", since_s:41.0, phase_since_s:1.0, phases_done:7, phases_total:7, progress:100, failed:null, download:{measured:true, done_bytes:83152000, total_bytes:83152000, frac:1.0, eta_s:null, note:"已毕（缓存件齐）"}}}, {elapsed_s:3}],
  ["boot_odd",    {status:"starting", boot:{state:"starting", phase:"weird_phase", since_s:1.0, phase_since_s:1.0, phases_done:0, phases_total:0, progress:0, failed:null, download:{measured:false, done_bytes:null, total_bytes:null, frac:null, eta_s:null, note:""}}}, {elapsed_s:1}],
+ ["boot_meas_nototal", {status:"starting", boot:{state:"starting", phase:"vector_model_download", since_s:23.4, phase_since_s:20.1, phases_done:4, phases_total:7, progress:57, failed:null, download:{measured:true, done_bytes:314572, total_bytes:null, frac:null, eta_s:null, note:""}}}, {elapsed_s:9}],
  ["absent",      undefined, undefined]
 ];
 const out = {};
@@ -315,3 +321,23 @@ def test_L22_一处定形_boot唯view读():
     assert "boot" in _fn(s, "paPrepView"), u"`/health.boot` 须由 view 读（一处取）"
     assert "boot" not in _fn(s, "paPrepRender"), u"渲点 ⛔ 读 boot（承一处定形）"
     assert "boot" not in _fn(s, "paPrepMerge"), u"合一之判 ⛔ 读 boot（承一处定形）"
+
+
+# ---------- L23 ～ L24：`measured ∧ ⛔ total`（pm_1633 裁 ⒝ · 「已量者须显」） ----------
+
+def test_L23_裁B_已量而总长缺须显已下之真读数与不可量():
+    v = _v()["boot_meas_nototal"]
+    assert v["state"] == "starting", v
+    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"总长不可量" in v["text"], v["text"]
+    assert u"后端未给" in v["text"], v["text"]
+    assert u"步 4/7" in v["text"], v["text"]
+
+
+def test_L24_裁B_反控_有总长则按字节条_未量则不书已下():
+    bar = _v()["boot_bar"]
+    assert u"总长不可量" not in bar["text"], bar["text"]
+    assert u"已下 11.8 MB / 79.3 MB" in bar["text"], bar["text"]
+    steps = _v()["boot_steps"]
+    assert u"已下" not in steps["text"], steps["text"]
+    assert u"总长不可量" not in steps["text"], steps["text"]
