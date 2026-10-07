@@ -29,6 +29,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import urllib.parse
 import urllib.request
 
 from core.lib import update_source as US
@@ -41,6 +42,18 @@ CHANNELS = (u"internal", u"beta", u"stable")
 #: 取清单之超时（秒）—— 一次 `GET`（⛔ 阻门 ∧ ⛔ 拖「已是最新」之答）
 FETCH_TIMEOUT = 8.0
 _HEX64 = re.compile(u"^[0-9a-f]{64}$")
+
+
+#: URL 之径所须保之字（其余 ⇒ 百分号编码）—— HTTP 之径唯 ASCII 安全。
+_URL_SAFE = u"/:?&=#%+,;@$!*'()~"
+
+
+def ascii_url(u):
+    u"""URL ⇒ **逐段百分号编码**（**一处定形**）。非 ASCII 之名（如 `scripts/win_pa/净机安装一页.md`）
+    ⛔ 直投 `urllib` ⇒ `UnicodeEncodeError` ⇒ **下件中途而败**（本席一手 · 沙箱自验所逮）
+    ⇒ 故取件之 URL 一律经此（⛔ 二处各拼）。
+    """
+    return urllib.parse.quote(str(u), safe=_URL_SAFE)
 
 
 def sha256_bytes(b):
@@ -155,7 +168,7 @@ def fetch(src, timeout=FETCH_TIMEOUT):
     u"""取清单（**唯此一处出网**）⇒ `(doc | None, note, why)`；⛔ 得 ／ 形 ⛔ 合 ⇒ `None` ＋ 因。
     ⚠ ⛔ 抛（调用者据 `note` ／ `why` 照实报 —— 承「凡不可用必有因 ＋ 去处」）。
     """
-    url = US.manifest_url(src)
+    url = ascii_url(US.manifest_url(src))
     try:
         with urllib.request.urlopen(urllib.request.Request(url, method=u"GET"), timeout=timeout) as r:
             raw = r.read()
@@ -173,7 +186,7 @@ def fetch(src, timeout=FETCH_TIMEOUT):
 
 def fetch_file(src, path, timeout=FETCH_TIMEOUT):
     u"""取一件（**一处出** —— `update_source.package_url` 拼之）⇒ `(bytes | None, note, why)`。"""
-    url = US.package_url(src, path)
+    url = url_for(src, path)
     try:
         with urllib.request.urlopen(urllib.request.Request(url, method=u"GET"), timeout=timeout) as r:
             return r.read(), u"", u""
@@ -182,5 +195,5 @@ def fetch_file(src, path, timeout=FETCH_TIMEOUT):
 
 
 def url_for(src, path):
-    u"""件之取处（**一处出** —— ⛔ 本模块另拼）。"""
-    return US.package_url(src, path)
+    u"""件之取处（**一处出** —— ⛔ 本模块另拼；非 ASCII ⇒ 编码，见 `ascii_url`）。"""
+    return ascii_url(US.package_url(src, path))

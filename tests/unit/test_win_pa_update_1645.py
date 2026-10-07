@@ -241,6 +241,25 @@ def test_U7_face唯读盘():
     assert not (calls & {u"refresh", u"fetch", u"urlopen", u"Request"}), calls
 
 
+def test_U8_非ASCII之名之取件(tmp_path):
+    u"""本席一手（沙箱自验）所逮之真洞：清单可含**非 ASCII 之名**（托于今日之树：
+    `scripts/win_pa/净机安装一页.md`）⇒ 取件之 URL 若直投 `urllib` ⇒ `UnicodeEncodeError`
+    ⇒ **下件中途而败**（且落在「先全下全验」之半途）。治：URL 逐段百分号编码（`ascii_url` 一处）。
+    """
+    rel = u"脚本/净机 一页.md"
+    d = tmp_path / u"脚本"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / u"净机 一页.md").write_bytes(u"中文之件·内容".encode(u"utf-8"))
+    httpd, base = _serve(tmp_path, _man_ok())
+    try:
+        src = {u"url": base}
+        assert u"%" in UM.url_for(src, rel), UM.url_for(src, rel)
+        raw, note, why = UM.fetch_file(src, rel, timeout=3.0)
+        assert raw == u"中文之件·内容".encode(u"utf-8"), (note, why)
+    finally:
+        httpd.shutdown()
+
+
 def test_P1_never点名():
     for f in (MU.never, PU.never):
         assert f(u"config/.env"), f
