@@ -29,6 +29,35 @@ from typing import Any, Dict, List, Optional
 import chromadb
 from chromadb.config import Settings
 
+#: 向量仓之件名（**一处定形** —— ⛔ 散写之字面）。
+VECTOR_DB_NAME = u"chroma.sqlite3"
+
+
+import logging
+
+_log = logging.getLogger(__name__)
+
+
+class _UnavailableCollections(dict):
+    u"""连不成时之**照实之占位**（⛔ 静默）：凡真取集合 ⇒ 明报其因。
+
+    由（pm_1694 §二 令⒜）：`import core` ⛔ 得因「外部之态」（仓之锁 ／ 异形 ／ 版漂）而死 ——
+    本机之实（2026-10-07）：`<cwd>/data/vector_kb/chroma.sqlite3` 为异形 ⇒ `chromadb/api/rust.py`
+    之 `start()` 抛 ⇒ 其 `stop()` 复以 `AttributeError: 'RustBindingsAPI' object has no
+    attribute 'bindings'` 派之 ⇒ **凡「引 core」之齿（全族）皆败**（⛔ 其件之过）。
+    """
+
+    def __init__(self, why):
+        super().__init__()
+        self.why = u"%s" % (why,)
+
+    def __getitem__(self, key):
+        raise RuntimeError(u"向量知识中心不可用：%s" % self.why)
+
+    def get(self, key, default=None):
+        raise RuntimeError(u"向量知识中心不可用：%s" % self.why)
+
+
 
 class VectorKnowledgeCenter:
     """向量知识中心 - 统一管理所有向量化知识"""
@@ -50,28 +79,43 @@ class VectorKnowledgeCenter:
         self.persist_dir = Path(_dir)
         self.persist_dir.mkdir(parents=True, exist_ok=True)
 
-        self.client = chromadb.PersistentClient(
-            path=str(self.persist_dir), settings=Settings(anonymized_telemetry=False, allow_reset=True)
-        )
+        # ⭐ pm_1694 §二 令⒜：连 ⇒ **照实之降**（⛔ 令 import 死 · ⛔ 静默）
+        self.available = False
+        self.connect_error = u""
+        try:
+            self.client = chromadb.PersistentClient(
+                path=str(self.persist_dir), settings=Settings(anonymized_telemetry=False, allow_reset=True)
+            )
 
-        # 知识集合映射（#22 修复: 原块误置于 get_client 的 return 之后成为死代码,
-        # collections 从不初始化, add_skill/search 等路径 AttributeError）
-        self.collections = {
-            "skills": self.client.get_or_create_collection(name="knowledge_skills", metadata={"description": "技能知识库"}),
-            "agents": self.client.get_or_create_collection(
-                name="knowledge_agents", metadata={"description": "Agent知识库"}
-            ),
-            "routes": self.client.get_or_create_collection(name="knowledge_routes", metadata={"description": "路由知识库"}),
-            "memories": self.client.get_or_create_collection(
-                name="knowledge_memories", metadata={"description": "记忆知识库"}
-            ),
-            "documents": self.client.get_or_create_collection(
-                name="knowledge_documents", metadata={"description": "文档知识库"}
-            ),
-        }
+            # 知识集合映射（#22 修复: 原块误置于 get_client 的 return 之后成为死代码,
+            # collections 从不初始化, add_skill/search 等路径 AttributeError）
+            self.collections = {
+                "skills": self.client.get_or_create_collection(name="knowledge_skills", metadata={"description": "技能知识库"}),
+                "agents": self.client.get_or_create_collection(
+                    name="knowledge_agents", metadata={"description": "Agent知识库"}
+                ),
+                "routes": self.client.get_or_create_collection(name="knowledge_routes", metadata={"description": "路由知识库"}),
+                "memories": self.client.get_or_create_collection(
+                    name="knowledge_memories", metadata={"description": "记忆知识库"}
+                ),
+                "documents": self.client.get_or_create_collection(
+                    name="knowledge_documents", metadata={"description": "文档知识库"}
+                ),
+            }
+
+            self.available = True
+        except Exception as _exc:                          # noqa: BLE001 —— 照实之降（⛔ 静默）
+            self.client = None
+            self.connect_error = u"%s: %s" % (type(_exc).__name__, _exc)
+            self.collections = _UnavailableCollections(self.connect_error)
+            self._forget_half_started()
+            _log.warning(u"向量知识中心不可用（%s）⇒ %s", self.persist_dir, self.connect_error)
 
         # #25 启动日志: 默认实例遍历所有 session 库统计总数(真实数据在 data/projects/{sid}/vector_kb)
-        if session_id in (None, "default"):
+        if not self.available:
+            print(u"⚠️ 向量知识中心不可用（%s）：%s" % (self.persist_dir, self.connect_error))
+            print(u"   - 去处：核 `%s`（锁 ／ 异形 ／ 版漂）" % (self.persist_dir / VECTOR_DB_NAME))
+        elif session_id in (None, "default"):
             _totals = self.count_all_sessions()
             print(f"✅ 向量知识中心初始化完成（全 session 汇总）")
             for _label, _cnt in _totals.items():
@@ -81,8 +125,23 @@ class VectorKnowledgeCenter:
             for name, col in self.collections.items():
                 print(f"   - {name}: {col.count()} 条")
 
+    def _forget_half_started(self):
+        u"""抹「半启之 system」（承上）—— `chromadb` 于 `start()` **之前**即登其 system ⇒
+        start 败后其 stop 复以 `del self.bindings` 抛（**即 PM 报之错**）⇒ 故**先抹其登**。"""
+        try:
+            from chromadb.api.shared_system_client import SharedSystemClient as _S
+            _S._identifier_to_system.pop(str(self.persist_dir), None)
+            _S._identifier_to_refcount.pop(str(self.persist_dir), None)
+        except Exception:                                  # noqa: BLE001 —— 照实
+            pass
+
     def get_client(self):
-        """获取底层 ChromaDB 客户端（#22: 供 code_indexer 等复用, 与旧版 live 兼容）"""
+        """获取底层 ChromaDB 客户端（#22: 供 code_indexer 等复用, 与旧版 live 兼容）
+
+        ⚠ 连不成 ⇒ `None`（**照实**：`available` ／ `connect_error` 载其因 —— 承 pm_1694 §二）。
+        """
+        if not self.available:
+            _log.warning(u"get_client：向量知识中心不可用（%s）", self.connect_error)
         return self.client
 
     def count_all_sessions(self) -> Dict[str, int]:
@@ -120,6 +179,8 @@ class VectorKnowledgeCenter:
 
     def _get_collection(self, name: str):
         """获取集合"""
+        if not self.available:
+            raise RuntimeError(u"向量知识中心不可用：%s" % self.connect_error)
         try:
             return self.client.get_collection(name)
         except Exception:
@@ -127,6 +188,8 @@ class VectorKnowledgeCenter:
 
     def _get_or_create_collection(self, name: str):
         """获取或创建集合"""
+        if not self.available:
+            raise RuntimeError(u"向量知识中心不可用：%s" % self.connect_error)
         try:
             return self.client.get_collection(name)
         except Exception:
