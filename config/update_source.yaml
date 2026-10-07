@@ -1,0 +1,10 @@
+# ⭐ 更新源之声明（一处定形 · pm_1626 §二.1 ／ pm_1628 §二.3 令三）—— 「客户端只取本通道」之真源之一。
+# 优先序（一处定形）：环境变量（PA_UPDATE_URL ／ PA_UPDATE_CHANNEL ／ PA_UPDATE_PROVIDER）
+#                     ⇒ 本文件 ⇒ 内置默认（core/lib/update_source.py）。
+# 由：切源 ⛔ 须重出包 —— 改此三行（∨ 设 env）即可切（承 pm_1626 §二.1 之要）。
+# url  ＝ 更新源之根（唯目录 ⇒ 件名由 update_manifest.json 定）
+# channel ＝ 通道（内测 ＝ internal ／ 后 beta ／ stable）；客户端**只取本通道**（⛔ 跨档）
+# provider ＝ generic（静态文件 · 内测 ／ 静态桶）｜github（Releases）｜oss（后扩）
+url: http://192.168.3.11:8800/
+channel: internal
+provider: generic

@@ -28,6 +28,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -39,7 +40,7 @@ if sys.stdout is not None:
 BS = chr(92)
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-VERSION = u"1.0"
+TOOL_VERSION = u"1.0"   # ⭐ 本**器**之版号（⛔ 产品之版号 —— 产品见 version.json · pm_1628 §二.2）
 
 APP_ID = u"ClawsJoyPA"
 DISPLAY_NAME = u"ClawsJoy PA（PA 网关 · 本地）"
@@ -53,6 +54,11 @@ LAUNCH_START = u"启动ClawsJoyPA.cmd"
 LAUNCH_STOP = u"停止ClawsJoyPA.cmd"
 LAUNCH_OPEN = u"打开ClawsJoyPA页面.cmd"
 LAUNCH_UNINSTALL = u"卸载ClawsJoyPA.cmd"
+#: 卸载器之 exe（pm_1628 §二.1 令一 · 由 `make_uninstaller.py` 于**构建期**编 ⇒ 随包入 payload）
+#: ⚠ 与 `make_uninstaller.EXE_NAME` **一处定形**（由 `tests/unit/test_win_pa_uninstaller_1629.py` 以器核）
+UNINSTALL_EXE = u"卸载ClawsJoyPA.exe"
+#: 版本元数据之件（**一处定形** —— 逐键 ≡ `core/lib/build_info.py:FIELDS` · 齿以器核）
+VERSION_JSON = u"version.json"
 
 #: 三快捷（**一源**）：(显示名, 指向之件, 说明) —— 开始菜单与桌面同此三者
 SHORTCUTS = (
@@ -310,16 +316,117 @@ def make_shortcuts(root, desktop=True, dry=False):
     return rows
 
 
+
+def manifest_source(dest):
+    u"""包内之册所载「源」（**一处定形** —— `bundle_manifest.json` 之「源」键 · 承 pm_1573 §二）。"""
+    p = os.path.join(dest, u"bundle_manifest.json")
+    try:
+        with io.open(p, encoding=u"utf-8") as fh:
+            man = json.loads(fh.read())
+        src = man.get(u"源")
+        if isinstance(src, dict):
+            return src, u""
+        return {}, u"册无「源」键"
+    except Exception as e:                                    # noqa: BLE001 — 照实报因
+        return {}, u"册读不得：%s: %s" % (type(e).__name__, e)
+
+
+def pkg_version(dest):
+    u"""产品之版号（**一处定形** · ⛔ 字面）：读自带 `pyproject.toml` 之 `[project].version`。
+    真源链：`pyproject.toml[project].version` ≡ `core/lib/version.py:__version__`
+      （由 `tests/unit/test_version_single_source.py` 以器核）⇒ 本器唯读其**一**面。
+    读不得 ⇒ `TOOL_VERSION`（兜底）＋ **明书其由**（⛔ 静默 · 承「真读数」）。
+    """
+    p = os.path.join(dest, u"pyproject.toml")
+    try:
+        try:
+            import tomllib as _tl
+        except ImportError:
+            _tl = None
+        if _tl is not None:
+            with io.open(p, "rb") as fh:
+                v = str(((_tl.load(fh).get(u"project") or {}).get(u"version") or u"")).strip()
+            if v:
+                return v, u"pyproject.toml[project].version"
+        txt = io.open(p, encoding=u"utf-8", errors=u"replace").read()
+        for ln in txt.splitlines():
+            _t = ln.strip()
+            if _t.startswith(u"version") and u"=" in _t:
+                v = _t.split(u"=", 1)[1].strip().strip(u'"').strip(u"'")
+                if v:
+                    return v, u"pyproject.toml（逐行 · 兜底）"
+        return TOOL_VERSION, u"⛔ 见 pyproject.toml[project].version ⇒ 兜底 %s" % TOOL_VERSION
+    except Exception as e:                                    # noqa: BLE001 — 照实报因
+        return TOOL_VERSION, u"pyproject.toml 读败（%s: %s）⇒ 兜底 %s" % (type(e).__name__, e, TOOL_VERSION)
+
+
+def version_payload(dest):
+    u"""装根 `version.json` 之内容（**一处定形** —— 逐键 ≡ `core/lib/build_info.py:FIELDS`）。
+    `commit` ／ `tree` ／ `built_at` 取**包内之册**（⛔ 本机之时 —— 承 pm_1573 §二「源之印」）；
+    `channel` ＝ 本包所属之通道（默认 `internal` · env `PA_BUILD_CHANNEL` 可覆）。
+    """
+    src, _sn = manifest_source(dest)
+    ver, _vf = pkg_version(dest)
+    return {
+        u"version": ver,
+        u"commit": src.get(u"commit"),
+        u"tree": src.get(u"tree"),
+        u"built_at": src.get(u"刻") or time.strftime(u"%Y-%m-%dT%H:%M:%S%z"),
+        u"channel": (os.environ.get(u"PA_BUILD_CHANNEL") or u"").strip() or u"internal",
+    }
+
+
+def write_version_json(dest, dry=False):
+    u"""落装根 `version.json`（**一道定形** · 承 pm_1628 §二.2 令二）⇒ 其版号亦为注册表
+    `DisplayVersion` 之真源（⛔ 二处各写）。"""
+    _src, sn = manifest_source(dest)
+    ver, vf = pkg_version(dest)
+    pay = version_payload(dest)
+    rows = [u"  [version] %s" % os.path.join(dest, VERSION_JSON),
+            u"    version = %s（出自 %s）" % (pay[u"version"], vf),
+            u"    channel = %s（env PA_BUILD_CHANNEL 可覆）" % pay[u"channel"]]
+    if sn:
+        rows.append(u"    ⚠ 源之册：%s" % sn)
+    if pay[u"commit"] is None or pay[u"tree"] is None:
+        rows.append(u"    ⚠ commit ／ tree 之印 ⛔ 得（册 ⛔ 载「源」⇒ 照实）")
+    if not dry:
+        with io.open(os.path.join(dest, VERSION_JSON), "w", encoding="utf-8", newline=u"") as fh:
+            fh.write(json.dumps(pay, ensure_ascii=False, indent=1))
+    return rows
+
+
+def uninstall_program(root):
+    u"""卸载器之真源（**一处定形** · pm_1628 §二.1 令一）⇒ `(径, 形)`。
+    exe 在 ⇒ 取之（人验之口：确认框 ＋ **将撤之清单**）；⛔ 在 ⇒ 兜底 `.cmd`（仍可卸 · ⛔ 断）。
+    ⚠ exe 之运行依 ＝ **.NET Framework 4.x**（Win10 ／ Win11 内置）—— 缺 ⇒ 兜底之 cmd 仍可卸。
+    """
+    exe = os.path.join(root, UNINSTALL_EXE)
+    if os.path.isfile(exe):
+        return exe, u"exe"
+    return os.path.join(root, LAUNCH_UNINSTALL), u"cmd"
+
+
+
+def quiet_uninstall_program(root):
+    u"""静默卸载之真源（**一处定形** · pm_1628 §二.1 令一）⇒ 引住之命令行。
+    exe 在 ⇒ `"<exe>" --yes`（**⛔ 弹确认框** · 供 `QuietUninstallString`）；
+    ⛔ 在 ⇒ 兜底 `.cmd`（其有 `pause` ⇒ 非静默 · 然仍可卸 · ⛔ 断）。
+    ⚠ 旧貌（pm_1632 §五.1 我一手核）：`QuietUninstallString` 恒指 `.cmd` ⇒ 与「静默」之名 ⛔ 符。
+    """
+    p, kind = uninstall_program(root)
+    return (u'"' + p + u'" --yes') if kind == u"exe" else (u'"' + p + u'"')
+
+
 def uninstall_values(root):
     u"""卸载项之逐键（**一源**）—— 域 ＝ HKCU（⛔ 系统级 ⇒ ⛔ 提权）。"""
     return [
         (u"DisplayName", u"REG_SZ", DISPLAY_NAME),
-        (u"DisplayVersion", u"REG_SZ", VERSION),
+        (u"DisplayVersion", u"REG_SZ", version_payload(root)[u"version"]),
         (u"Publisher", u"REG_SZ", PUBLISHER),
         (u"InstallLocation", u"REG_SZ", root),
         (u"DisplayIcon", u"REG_SZ", runtime_exe(root)),
-        (u"UninstallString", u"REG_SZ", u"\"" + os.path.join(root, LAUNCH_UNINSTALL) + u"\""),
-        (u"QuietUninstallString", u"REG_SZ", u"\"" + os.path.join(root, LAUNCH_UNINSTALL) + u"\""),
+        (u"UninstallString", u"REG_SZ", u"\"" + uninstall_program(root)[0] + u"\""),
+        (u"QuietUninstallString", u"REG_SZ", quiet_uninstall_program(root)),
         (u"NoModify", u"REG_DWORD", 1),
         (u"NoRepair", u"REG_DWORD", 1),
     ]
@@ -366,7 +473,9 @@ def preflight(root):
 
 def plan(dest, desktop=True, shortcuts=True):
     return {
-        u"version": VERSION,
+        u"version": version_payload(dest)[u"version"],
+        u"version_file": os.path.join(dest, VERSION_JSON),
+        u"tool_version": TOOL_VERSION,
         u"dest": dest,
         u"runtime": runtime_exe(dest),
         u"dirs": plan_dirs(dest),
@@ -394,11 +503,14 @@ def render_and_maybe_apply(p, dry, do_shortcuts=True):
             os.makedirs(d, exist_ok=True)
     lines += [u"  [dir] %s" % os.path.relpath(d, dest) for d in p[u"dirs"]]
     lines += write_launchers(dest, dry)
+    lines += write_version_json(dest, dry)
     if do_shortcuts:
         lines += make_shortcuts(dest, desktop=bool(p[u"shortcuts"]), dry=dry)
     else:
         lines.append(u"  [shortcut] ⛔ 本轮跳过（--no-shortcuts）")
     lines += register_uninstall(dest, dry)
+    _uprog, _ukind = uninstall_program(dest)
+    lines.append(u"[install_post] 卸载项：%s（%s · 每用户 · data\\ 保留）" % (_uprog, _ukind))
     lines.append(u"[install_post] 报源：%s" % json.dumps(p[u"source"], ensure_ascii=False))
     if dry:
         lines.append(u"[install_post] 干跑（⛔ 未动）—— --go 方真做")
@@ -522,7 +634,8 @@ def main(argv):
         rc, lines = render_and_maybe_apply(p, dry, do_shortcuts=not a.no_shortcuts)
     chatter = _buf.getvalue()
     if a.json:
-        print(json.dumps({u"version": VERSION, u"dry_run": dry, u"rc": rc,
+        _pv = version_payload(dest)[u"version"]
+        print(json.dumps({u"version": _pv, u"tool_version": TOOL_VERSION, u"dry_run": dry, u"rc": rc,
                           u"plan": p, u"lines": lines, u"杂记": chatter},
                          ensure_ascii=False, indent=2))
     else:

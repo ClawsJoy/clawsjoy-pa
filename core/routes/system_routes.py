@@ -36,9 +36,17 @@ def health():
         _boot = boot_progress.snapshot()
     except Exception as _e_boot:
         _boot = {"state": "unknown", "note": "读数⛔ 得：%s" % str(_e_boot)[:120]}
+    # ⭐ pm_1628 §二.2 令二：版本元数据（装根 `version.json`）之读数 ——
+    #   ⚠ 缺件 ⁄ 坏 ⇒ 照实报（available=False ＋ 因）（⛔ 静默 · 承「真读数」）。
+    try:
+        from core.lib import build_info as _bi
+        _build = _bi.report()
+    except Exception as _e_build:                              # noqa: BLE001 — 照实报因
+        _build = {"available": False, "note": "读数⛔ 得：%s" % str(_e_build)[:120]}
     return jsonify({
         "status": "healthy" if startup_manager.ready else "starting",
         "version": __version__,
+        "build": _build,
         "startup": startup_manager.status(),
         "hardware": hardware_probe.report(),
         "boot": _boot,

@@ -1,2 +1,8 @@
 # 行尾钉进仓（承 DS/老板 2026-10-03 裁：两侧 git 尺不同 ⇒ 不钉各机配置）
 * text=auto eol=lf
+
+# Windows 启动器：**仓内 LF ∧ 检出 CRLF**（pm_1630 §二.3）——
+# 由：cmd.exe 依字节解 .cmd，且齿 `test_win_pa_setup_1578` 断「其头 ≡ CMD_PROLOGUE（CRLF）」
+# ⇒ 入仓须钉住（⛔ 赖各机 `core.autocrlf` —— 扫上文之同族）。
+*.cmd text eol=crlf
+*.bat text eol=crlf

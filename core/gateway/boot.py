@@ -67,6 +67,15 @@ def run_gateway_startup(app):
     else:
         print("[BOOT] 门先开：HTTP 监听已起 http://127.0.0.1:%d/ （%.1f s）" % (_port, _open_s), flush=True)
 
+    # ⭐⭐ pm_1632 §二.1（我裁 ⒜ · 总长之真源）：**门后之一探** —— 向量模型之「总长」唯自
+    #   一次 HTTP HEAD 之 Content-Length（⛔ 硬编数字 · ⛔ 钩库内）。后台线程 · 唯一次 · 有超时 ·
+    #   失败 ⛔ 阻（⛔ 成「准备」之门）。⛔ 得 ⇒ `/health` 之 `boot.download.note` 明书
+    #   「总长不可量（后端未给）」（旧病 ＝「两半皆悬」：既无人设 env ⇒ 亦无明书 · pm_1631/CW）。
+    try:
+        boot_progress.start_download_probe()
+    except Exception as _e_probe:
+        print("[BOOT] ⚠ 总长之探 ⛔ 起（不影响准备）：%s: %s" % (type(_e_probe).__name__, _e_probe), flush=True)
+
     boot_progress.set_phase("registries")
     from core.lib.hook_manager import HookManager
     from core.lib.startup import startup_manager

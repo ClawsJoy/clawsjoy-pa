@@ -660,6 +660,23 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False, runtime=None):
         fp = os.path.join(p["out"], u"runtime", rel.replace("/", os.sep))
         entries.append({"rel": u"runtime/" + rel, "sha256": _sha256(fp),
                         "bytes": os.path.getsize(fp)})
+    # ⭐ pm_1628 §二.1 令一：卸载器 exe（**构建期**编 ⇒ **随包入 payload** ∧ **入册**
+    #   —— 一处定形：编器 /命名 / 落处 皆在 `make_uninstaller`；本处唯“呼之 ∧ 记之”。
+    #   ⚠ ⛔ 得（无 csc ⁄ 编败）⇒ 明书其行 ∧ 卸载项走 `卸载ClawsJoyPA.cmd` 兜底（仍可卸 · 包仍可交付）。
+    try:
+        if HERE not in sys.path:
+            sys.path.insert(0, HERE)
+        import make_uninstaller as _mu
+        _exe_ok, _exe_rows = _mu.ensure_exe(p["out"])
+        lines += _exe_rows
+        if _exe_ok:
+            _fp = os.path.join(p["out"], _mu.EXE_NAME)
+            entries.append({"rel": _mu.EXE_NAME, "sha256": _sha256(_fp),
+                            "bytes": os.path.getsize(_fp)})
+        else:
+            lines.append(u"[bundle] ⚠ 卸载器 exe ⛔ 编 ⇒ 卸载项走 卸载ClawsJoyPA.cmd 兜底（仍可卸 · 包仍可交付）")
+    except Exception as _e_exe:                              # noqa: BLE001 — 照实报因
+        lines.append(u"[bundle] ⚠ 卸载器 exe 之钩败：%s: %s" % (type(_e_exe).__name__, _e_exe))
     man = manifest_for(entries, p["dists"], p["源"])
     io.open(os.path.join(p["out"], "bundle_manifest.json"), "w", encoding="utf-8", newline="").write(
         json.dumps(man, ensure_ascii=False, indent=1))

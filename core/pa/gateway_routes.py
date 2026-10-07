@@ -2896,6 +2896,22 @@ def register_pa_routes(app, brain=None):
             r["to_seat"] = to_seat
         return ok(r) if r.get("ok") else err(r.get("error"))
 
+    # ---- 版本与更新源之面（pm_1628 §二.2 令二 ＋ §二.3 令三）：只读 · 一处定形 ----
+    #   真源：`core/lib/build_info.py`（装根 `version.json`）＋ `core/lib/update_source.py`
+    #   （`update_source.yaml` · env 可覆）。⛔ 密钥 · ⛔ 用户数据；未见 ⇒ 照实报（⛔ 充）。
+    @bp.route("/v9/pa/version", methods=["GET"])
+    def pa_version():
+        u"""本机之版本元数据 ＋ 更新源之声明（只读 · 唯此一处出）。"""
+        from core.lib import build_info as _bi
+        from core.lib import update_source as _us
+        _s = _us.load()
+        return ok({"build": _bi.report(),
+                   "source": {"url": _s["url"], "channel": _s["channel"],
+                              "provider": _s["provider"], "origin": _s["origin"],
+                              "file": _s["file"], "note": _s["note"]},
+                   "manifest_url": _us.manifest_url(_s)},
+                  印=_code_sha16(pa_version, _bi, _us))
+
     # ---- 模型供应商面（PM 034 P0）：只读 · 密钥唯布尔 · ⛔ 值 ----
     @bp.route("/v9/pa/providers", methods=["GET"])
     def pa_providers():
