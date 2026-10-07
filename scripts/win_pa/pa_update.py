@@ -452,7 +452,7 @@ def run(a):
 
 
 def self_test():
-    u"""自证（⛔ 出网 · ⛔ 动真盘）：守 ／ 形 ／ 备份之正反控。"""
+    u"""自证（⛔ 出网 · ⛔ 动真盘）：守 ／ 形 ／ `add` 之校 ／ **`del` 一路之删 · 备 · 回滚**（正反控）。"""
     import tempfile
     from core.lib import update_manifest as UM
     ok = True
@@ -476,6 +476,56 @@ def self_test():
     b_ok, _r = verify_all(man2, stg)
     ok &= (not b_ok)
     print(u"[%s] 反控：印 ⛔ 合 ⇒ ⛔ 落" % (u"OK" if not b_ok else u"FAIL"))
+    # ⭐ pm_1757 §一.2 ／ §二⒞.5（承 pm_1745 §二 · pm_1747 §三.2⒞）：补 `del` 一路之正反控。
+    #   ⚠ 昔之盲（一手所逮）：`man` 已载 `del` 一件而正反控**唯跑 `verify_all`**，而 `verify_all`
+    #   遇 `del` 即 `continue` ⇒ `backup` ／ `apply_all` ／ `rollback` 之 `del` 支**全未覆**
+    #   ⇒ **自证绿 ⛔ 证该路可用**（假绿 —— 与「以器之绿充事之实」同族）。
+    dman = {"version": u"9.0.2", "base_version": u"9.0.1", "channel": u"internal",
+            "built_at": u"2026-10-07T00:00:00+0800",
+            "files": [{"path": u"core/gone.txt", "sha256": u"", "size": 0, "mode": u"del"}]}
+    d0, _p0 = UM.validate(dman)
+    dx = json.loads(json.dumps(dman))
+    dx["files"][0]["sha256"] = u"0" * 64
+    d_sha, _p1 = UM.validate(dx)
+    dy = json.loads(json.dumps(dman))
+    dy["files"][0]["size"] = 1
+    d_size, _p2 = UM.validate(dy)
+    r_ok = bool(d0) and (not d_sha) and (not d_size)
+    ok &= r_ok
+    print(u"[%s] 反控：`del` 之形（携 `sha256` ⇒ %s ／ 携 `size` ⇒ %s ／ 正形 ⇒ %s）"
+          % (u"OK" if r_ok else u"FAIL", u"拒" if not d_sha else u"纳",
+             u"拒" if not d_size else u"纳", u"纳" if d0 else u"拒"))
+    droot = os.path.join(tmp, u"droot")
+    os.makedirs(os.path.join(droot, u"core"))
+    dtgt = os.path.join(droot, u"core", u"gone.txt")
+    io.open(dtgt, u"wb").write(b"bye")
+    want = UM.sha256_bytes(b"bye")
+    dbdir = os.path.join(tmp, u"dbak")
+    os.makedirs(dbdir)
+    _dr, drec = backup(droot, dman[u"files"], dbdir)
+    dit = ((drec or {}).get(u"files") or [{}])[0]
+    d_back = bool(dit.get(u"backup")) and os.path.isfile(dit.get(u"backup") or u"")
+    d_ok, _a1, _a2 = apply_all(dman[u"files"], droot, tmp)
+    d_del = bool(d_ok) and not os.path.isfile(dtgt)
+    rollback(droot, drec, [])
+    dback = io.open(dtgt, u"rb").read() if os.path.isfile(dtgt) else b""
+    d_res = (UM.sha256_bytes(dback) == want)
+    p_ok = (dit.get(u"existed") is True) and d_back and d_del and d_res
+    ok &= p_ok
+    print(u"[%s] 正控＋回滚：`del` 目标在 ⇒ 备（%s）⇒ 删（%s）⇒ 复原（印%s）"
+          % (u"OK" if p_ok else u"FAIL", u"有" if d_back else u"无",
+             u"成" if d_del else u"在", u"合" if d_res else u"⛔"))
+    eroot = os.path.join(tmp, u"eroot")
+    os.makedirs(os.path.join(eroot, u"core"))
+    ebdir = os.path.join(tmp, u"ebak")
+    os.makedirs(ebdir)
+    _er, erec = backup(eroot, dman[u"files"], ebdir)
+    eit = ((erec or {}).get(u"files") or [{}])[0]
+    e_ok, _b1, _b2 = apply_all(dman[u"files"], eroot, tmp)
+    n_ok = bool(e_ok) and (eit.get(u"existed") is False)
+    ok &= n_ok
+    print(u"[%s] 正控二：`del` 目标本缺 ⇒ 备「无」∧ 删不误（`ok`=%s）"
+          % (u"OK" if n_ok else u"FAIL", e_ok))
     return 0 if ok else 2
 
 
