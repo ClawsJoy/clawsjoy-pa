@@ -2,7 +2,7 @@
    口径（承 L76）：本屏每一读数须回指真源；后端无此读数 ⇒ 显式「未知 ／ 未接」，⛔ 编数。
    真源（皆 GET · 只读）：pa/ui_state.json（#paUiStateRow · status.js 已接）／ /v9/pa/context
         ／ /v9/pes/runs ／ /v9/audit/approvals ／ /v9/pa/threads ／ /api/v5/session/list ／ /v9/pa/build。
-   ⚠ 主面环 8 ⇒ 3（pm_997 §二）⇒ 5（pm_裁_主面环≤5：今日上下文 ／ 会话 ／ 任务 ／ 环境 ／ 收口）；Alt+1…5
+   ⚠ 主面环 8 ⇒ 3（pm_997 §二）⇒ 5（pm_裁_主面环≤5 · pm_1847 §二 换位后：今日上下文 ／ 会话 ／ 任务 ／ 产品线 ／ 收口）；Alt+1…5
       （Ctrl+1…n 被浏览器占 ⇒ ⛔ 假称可用 · 承 pm_995 §五照实格）。 */
 
 const PA_V3_FACES = [
@@ -12,14 +12,14 @@ const PA_V3_FACES = [
 ];
 /* ⭐ pm_刀3 ／ 刀3′ ／ 刀7p ／ 刀13p ＋ pm_裁_主面环≤5：四新面之**账**归此
    —— 面之注入与渲染在 tasks.js（其为最早可动且掌派活之事体）；
-   环内 ＝ 环境 ／ 收口（入 #faceTabs ＋ PA_V3_FACES）；环外 ＝ 产品线 ／ 开机（入「更多 ▾ · ④ 面」组）。
+   环内 ＝ 产品线 ／ 收口（入 #faceTabs ＋ PA_V3_FACES · pm_1847 §二 换位后）；环外 ＝ 环境 ／ 开机（入「更多 ▾ · ④ 面」组）。
    本径只开一钩：`setFaceById` 后调对应面之取数器（缺钩 ⇒ 面空而不报错 · 照实）。 */
 let paXFaceHooks = {};
 let paV3Face = 'ctx';
 
 /* ⭐ pm_裁_主面环≤5（承 pm_997 §二 之「8 ⇒ 3」）：环内 ／ 环外须各得其位 ——
-   环内（PA_V3_FACES）＝ 今日上下文 ／ 会话 ／ 任务 ／ 环境 ／ 收口（5 面 · Alt+1…5）；
-   环外（产品线 ／ 开机）＝ 注入「更多 ▾」之「④ 面」组（各一步可达 · ⛔ 丢功能）。
+   环内（PA_V3_FACES）＝ 今日上下文 ／ 会话 ／ 任务 ／ 产品线 ／ 收口（5 面 · Alt+1…5 · pm_1847 §二 之换位）；
+   环外（环境 ／ 开机）＝ 注入「更多 ▾」之「④ 面」组（各一步可达 · ⛔ 丢功能）。
    ⛔ 动 pa.html（内容件 · 承 pm_1052／pm_1067）⇒ 环外之钮由 tasks.js 注入 #paMoreBody。 */
 function paV3Dom(id){
   document.querySelectorAll('#faceTabs button, #paXMoreTabs button').forEach(function(b){
@@ -60,9 +60,17 @@ function paTodayToggle(which){
 }
 /* ⭐⭐ pm_1823 §二 ＋ pm_1827 §一.2（要）：四行之**去处** —— 点它 ⇒ **真到办之处**（承定义页 §二「去处」列）。
    ⛔ 空跳 ｜ ⛔ 二步。后端 `去处[].端` 所标：要我拍的 ／ 近来之痕 ⇒ `#paToday`（就地展开）；
-   今天该做的 ／ 在等的 ⇒「任务」面。 */
+   今天该做的 ／ 在等的 ⇒「任务」面（行 3 另有「开机 ›」＝ 一钮开其面 · pm_1847 §二.2）。 */
 function paTodayGo(kind){
   if(kind === 'ask' || kind === 'trace'){ paTodayToggle(kind); return; }   /* 就地展开：件在行下现出 */
+  /* ⭐⭐ pm_1847 §二.2（归 9.0.9）：行 3「在等的」之**另一步** —— 开「开机」面
+     （上次断点 ／ 攒件 ／ 续办 · 源 GET /v9/pa/resume）。其**数**入行 3 归 9.0.10（须 TD 于
+     core/pa/today.py 增源 ⇒ ⛔ 我越域）⇒ 本批唯落此**去处**（点 ⇒ 开其面 · 仍留「更多 ▾」之入口）。 */
+  if(kind === 'resume'){
+    try{ if(typeof paXOpenFace === 'function'){ paXOpenFace('resume'); }
+         else { setFaceById('resume'); } }catch(e){}
+    return;
+  }
   try{ setFaceById('tasks'); }catch(e){}                                   /* 去办 ／ 看进度 ⇒「任务」面 */
 }
 /* —— 今日四行（取数 ／ 渲之**一处定形** · 承 pm_1827 §一）——

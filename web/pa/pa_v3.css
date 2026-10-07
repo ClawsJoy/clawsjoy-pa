@@ -3,13 +3,30 @@
    只写 v3 外框与新增面；配色与变量逐字沿用 pa.css 之 :root（⛔ 另立主题 · ⛔ 抄 DSH 品牌）。 */
 
 /* —— 首屏块 ① · 顶栏（一行：品牌 ＋ 状态行 ＋ 入口）—— */
-.topbar{height:46px;gap:12px}
-.statusline{flex:1;min-width:0;display:flex;align-items:center;gap:7px;font-size:11px;color:var(--sub);
+/* ⭐⭐ pm_1847 §四（认缺陷 · 归 9.0.9 · 即刻办）：**窄宽须保版行完整** —— 版行含**可点之更新入口**
+   （`#paVerRow` 之 `onclick` ∧ 其辞「点此更新」）⇒ ⛔ 被裁。
+   由（一手 · 真 Chrome ／ CDP）：**病根在「槽」而不在「件」** —— 入口侧之「⬆ 更新到 9.0.9
+     （约 1.1 MB）」（`#paUpdGo` · 一手 211.34 px）一现 ⇒ 状态行所分得之槽唯 `69.95 px`（真辞）
+     ／ `233.80 px`（无钮），而版行最长之辞 `247.42 px` ⇒ **槽 < 内容** ⇒ `.statusline{overflow:hidden}`
+     裁其**末位子件**（＝ 与 pm_1792 同族）。
+   ⇒ 断源（⛔ 唯治其钟）：**顶栏容不下 ⇒ 状态行独占一行** —— `.topbar` 于容不下时换行 ∧
+     `.statusline` 立其最小内容宽（`460 px` ＝「运行状态 ＋ 状态来源 ＋ 版行最长辞 ＋ 分隔」之一手
+     上界 `457.2 px`）⇒ 二者不足则**换行**，足则**仍单行**。
+   一手（七档宽 × 四辞）：1440 ＝ **单行**（制高 `46 px` · 槽 `705.30` ／ `485.95` **一字未变**）；
+     1024 ／ 1180 ＝ 状态行独占一行（槽 `881.77` ／ `1037.77` ⇒ 版行 `247.42` 全字可见）。
+   ⛔ 收版行 ／ ⛔ 收更新钮 ／ ⛔ 隐其数（其值仍在 DOM ／ 真源仍在其端）。 */
+.topbar{height:auto;min-height:46px;gap:12px;flex-wrap:wrap;row-gap:4px}
+.statusline{flex:1;min-width:min(460px,100%);display:flex;align-items:center;gap:7px;font-size:11px;color:var(--sub);
   white-space:nowrap;overflow:hidden}
 .statusline .sep{opacity:.35}
 .statusline .uis{color:var(--sub);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 .statusline .perm{color:var(--sub)}
 @media (max-width:1180px){ .statusline .uis{display:none} }
+/* ⭐ pm_1847 §四.2（承其裁「收**非必要**子件」）：窄宽下「状态来源：…」**让位** —— 其值一字未删
+   （仍在 `#runStateSrc` 之 DOM ／ 真源仍在其端）⇒ ⛔ 丢其真源（承「⛔ 丢功能」）。
+   ⚠ 并告（一手 · 换行之修后）：1024 独占一行 ⇒ 其槽 `881.77 px` 而诸件所需唯 `447.6 px`
+     ⇒ 本隐**已非必需**（余 `434 px`）；我 **⛔ 自除**其裁 —— 若你欲复其可见 ⇒ 删本行即可（一言）。 */
+@media (max-width:1180px){ .statusline .runstate-src{display:none} }
 /* —— 常驻轴栏（pm_1807 §一.1 · 两态「陪伴 ／ 办事」之宿主）——
    ⭐ 居顶栏之下 ∧ 主面（`.main`）之上 ⇒ **首屏常驻** ⇒ ⛔ 藏于抽屉 ∧ ⛔ 被首启盒所覆（其盒锚于底）。
    ⭐ 本栏为**空壳**：控件由 `web/pa/faces/selfdesc.js` 之 `#paModeBar` 入此 ⇒ JS 未跑 ⇒ `:empty`
@@ -138,9 +155,15 @@
 .morebody .mode-strip{padding:0 0 6px}
 .statusline>*+*::before{content:"|";opacity:.3;margin-right:7px}
 .statusline .runstate-src,.statusline .uis{overflow:hidden;text-overflow:ellipsis}
-.statusline .uis{flex:1 1 auto;min-width:0}
 .statusline>*{flex:0 0 auto;white-space:nowrap}
-.statusline .uis{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* ⭐ pm_1847 §四：状态行内之**让位之序**（承其裁「收非必要子件」）——
+   ① `#paUiStateRow`（如实读数）＝**占余量**而**⛔ 挤他人**：基尺 `0` ⇒ 其基本尺寸 ⛔ 入负余量
+      （旧 `flex:1 1 auto` 之基尺＝其内容 ⇒ 同排紧张时它**先**取其内容宽 ⇒ 反逼末位子件被裁）；
+   ② `#runStateSrc`（状态来源）＝**末位让位**：可缩 ＋ `min-width:0` ⇒ 唯真不足时以省略号退让
+      （一手：1440 之两态其宽皆 `130.64` **未缩** ⇒ ⛔ 无谓失字；1200 之「未答」辞 ⇒ 退至 `38.88`）；
+   ③ 版行（`.verrow`）恒**不让**（`flex:0 0 auto` · 见下）⇒ **唯它永不被裁**。 */
+.statusline .uis{flex:1 1 0;min-width:0}
+.statusline .runstate-src{flex:0 1 auto;min-width:0}
 
 /* 抽屉分组＋模式两行（CW b2a5182 · 承 pm_998 §二格① · F6⑦：抽屉内同屏同级 ≤ 4）：三组默认收起；模式 8 项分两行 × 4。 */
 details.mgrp{border:1px solid var(--border);border-radius:9px;margin-bottom:8px;background:var(--card2)}
@@ -262,10 +285,14 @@ details.eng.paroute{margin:0 0 5px}
 .prep .prep-note{flex:1;min-width:0;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:900px){ .prep .prep-bar{flex-basis:80px} }
 
-/* —— 版行（pm_1621 令一 · 版本可见）：真源 /health.version ＋ 更新端 · 常显不占横幅 —— */
+/* —— 版行（pm_1621 令一 · 版本可见）：真源 /health.version ＋ 更新端 · 常显不占横幅 ——
+   ⭐⭐ pm_1847 §四（归 9.0.9）：**去其 `max-width` 硬帽**（旧 `290px` ∧ ≤1180 之 `190px`）。
+   由（一手 · `Range` 之文实界）：更新中之辞 `320.72 px` ／ 未答之辞 `347.28 px` ⇒ 帽必裁其尾；
+     旧 ≤1180 之 `190 px` 更把「点此更新」四字裁没 —— 老板之「更新入口不见了」即此。
+   ⇒ 版行之宽 ＝ 其辞之宽（**全字可见**）；「槽是否够」由顶栏之换行（见上）先保 ⇒ 二者各司其职。
+   ⚠ ⛔ 收版行 ／ ⛔ 收更新钮（其形见下 `#paUpdGo`）。 */
 .verrow{color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;max-width:290px}
-@media (max-width:1180px){ .verrow{max-width:190px} }
+  overflow:hidden;text-overflow:ellipsis}
 
 /* ⭐⭐ pm_1792 §二.1：**更新按钮之显眼形**（一处定形）—— 唯 `available === true` ∧ ⛔ 在跑时现，
    现隐由 `update.js` 之 `paUpdBtnRender` 收放（此处唯「形」· ⛔ 管现隐）。

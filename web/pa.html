@@ -379,7 +379,11 @@
             <button class="go" id="paTodayDoGo" onclick="paTodayGo('do')" title="点 ⇒ 去办：派活 ／ 打开该件">去办 ›</button></div>
           <div class="xbody" id="paTodayDoBody" hidden><div class="src" id="paTodayDoSrc"></div></div>
           <div class="mline"><span class="ic">⏳</span><span class="k">在等的</span><span class="v" id="paTodayWait">读数中…</span><span class="w" id="paTodayWaitWhere"></span>
-            <button class="go" id="paTodayWaitGo" onclick="paTodayGo('wait')" title="点 ⇒ 看进度 ／ 催一下">看进度 ›</button></div>
+            <button class="go" id="paTodayWaitGo" onclick="paTodayGo('wait')" title="点 ⇒ 看进度 ／ 催一下">看进度 ›</button>
+            <!-- ⭐⭐ pm_1847 §二.2（归 9.0.9）：行 3 之**另一步** —— 「开机」面（上次断点 ／ 攒件 ／ 续办）。
+                 其**数**入行 3 归 9.0.10（须 TD 于 core/pa/today.py 增源）；本批唯落此**去处**（点 ⇒ 开其面）。
+                 ⚠ 唯本机只读（源 GET /v9/pa/resume · ⛔ 出机 ／ ⛔ 写）；「更多 ▾」之首仍有其入口（⛔ 丢功能）。 -->
+            <button class="go" id="paTodayWaitResume" onclick="paTodayGo('resume')" title="开机面：上次断点 ／ 攒件 ／ 续办（唯本机 · 只读）">开机 ›</button></div>
           <div class="xbody" id="paTodayWaitBody" hidden><div class="src" id="paTodayWaitSrc"></div></div>
           <div class="mline"><span class="ic">🧾</span><span class="k">近来之痕</span><span class="v" id="paTodayTrace">读数中…</span><span class="w" id="paTodayTraceWhere"></span>
             <button class="go" id="paTodayTraceGo" onclick="paTodayGo('trace')" title="点 ⇒ 看当日之事（会话 ／ 产出之痕）">去看 ›</button></div>

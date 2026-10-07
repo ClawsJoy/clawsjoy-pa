@@ -763,13 +763,17 @@ function paXMissing(id, label, why, key){
 }
 
 const PA_XFACE = [
-  ['env',     '环境',   '环境感知面 · 四栏（agents ／ kb ／ tools ／ resources）· 源 GET /v9/pa/env', true],
-  ['lines',   '产品线', '产品线面（线名 ／ 席 ／ 件集 ／ 状态 ／ 下一拍）· 源 GET /v9/pa/lines', false],
+  ['env',     '环境',   '环境感知面 · 四栏（agents ／ kb ／ tools ／ resources）· 源 GET /v9/pa/env', false],
+  ['lines',   '产品线', '产品线面（线名 ／ 席 ／ 件集 ／ 状态 ／ 下一拍）· 源 GET /v9/pa/lines', true],
   ['resume',  '开机',   '开机面（断点续：上次断点 ／ 离线区间 ／ 攒件 ／ 续办 ／ 幂等跳过 ／ 失败件）· 源 GET /v9/pa/resume', false],
   ['receipt', '收口',   '收口面（四段 ＋ 回执四件（件号／席／果／印）＋ 催数 · 每件自带件之刻）· 源 GET ／ POST /v9/pa/dispatch/receipt', true]
 ];
 /* ⭐ pm_裁_主面环≤5：true ⇒ 入主面环（#faceTabs ＋ PA_V3_FACES）；false ⇒ 入「更多 ▾」之「④ 面」组
-   （注入 #paMoreBody · 各一步可达）。⛔ 丢功能：两者**皆建 pane**（data-face 逐字不变 ⇒ 旧 DOM 之引 ⛔ 破）。 */
+   （注入 #paMoreBody · 各一步可达）。⛔ 丢功能：两者**皆建 pane**（data-face 逐字不变 ⇒ 旧 DOM 之引 ⛔ 破）。
+   ⭐⭐ pm_1847 §二（采 ⒜ 换位）：**产品线 ⇒ 入环**（替「环境」之环位 —— 老板之实用 · 一手 /v9/pa/lines 有真数）
+     ∧ **环境 ⇒ 降「更多 ▾」之首**（＝工程内部读数面 · 与 pm_1822 §二.1 之「左栏数字墙」同族 ⇒ 老板少用）
+     ⇒ **环仍 5**（今日 ／ 会话 ／ 任务 ／ 产品线 ／ 收口）∧ `Alt+1…5` 不变 ∧ 环境面仍**一步可达**（「更多 ▾」之首）。
+   ⭐ 组之文案（`④ 面 · …`）**由本旗处定形**（⛔ 手搓名单 ⇒ 换位后自跟）—— 见 `paXMoreHost()`。 */
 function paXOpenFace(id){
   try{ if(typeof setFaceById === 'function'){ setFaceById(id); } }catch(e){}
   try{ if(typeof paMore === 'function'){ paMore(false); } }catch(e){}   /* 面开 ⇒ 收抽屉（⛔ 挡面） */
@@ -784,10 +788,18 @@ function paXMoreHost(){
     /* ⭐ pm_1813 §二.1 ／ §二.2（要）：**令号 ⛔ 上屏 ∧ 实现细节 ⛔ 上屏** ——
        旧书「（承 pm_裁_主面环≤5）」＝ **内部令号**；「pane 与 data-face 一字未删」＝ **实现细节**
        ⇒ 皆改**人话**（其义一字不失：这两面收在此处 · 功能一字未减）。 */
-    box.innerHTML = '<summary>④ 面 · 产品线 ／ 开机（这两面不占主面环 ⇒ 收在此处）</summary>'
+    /* ⭐ pm_1847 §二：本组之名单＝**环外者之实**（由 `PA_XFACE` 之旗出 ⇒ ⛔ 手搓 · 换位后自跟）。
+       ⚠ 文案仍守 pm_1813 §二：⛔ 内部令号 ／ ⛔ 实现细节（唯人话）。 */
+    var _outList = PA_XFACE.filter(function(f){ return f[3] === false; });
+    var _out = _outList.map(function(f){ return f[1]; });
+    /* ⭐ 端名亦**自本旗出**（⛔ 手搓 ⇒ 换位后之「源：…」必与实同 —— 面之辞**须如实**）。 */
+    var _outSrc = _outList.map(function(f){
+      var m = /GET \/v9\/[A-Za-z0-9_\/]+/.exec(String(f[2] || ''));
+      return m ? ('<code>' + m[0] + '</code>（' + f[1] + '）') : '';
+    }).filter(function(t){ return !!t; }).join('｜');
+    box.innerHTML = '<summary>④ 面 · ' + _out.join(' ／ ') + '（这两面不占主面环 ⇒ 收在此处）</summary>'
       + '<section class="msec" id="paXMoreTabs" style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 2px"></section>'
-      + '<p class="mnote">源：<code>GET /v9/pa/lines</code>（产品线）｜<code>GET /v9/pa/resume</code>（开机）。'
-      + '这两面只是收在此处 · 功能一字未减。</p>';
+      + '<p class="mnote">源：' + _outSrc + '。皆收在此处 · 功能一字未减。</p>';
     body.insertBefore(box, body.firstChild);
   }
   return document.getElementById('paXMoreTabs');
