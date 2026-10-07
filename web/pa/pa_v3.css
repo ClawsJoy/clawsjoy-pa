@@ -244,6 +244,16 @@ details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(-
   overflow:hidden;text-overflow:ellipsis;max-width:290px}
 @media (max-width:1180px){ .verrow{max-width:190px} }
 
+/* ⭐⭐ pm_1792 §二.1：**更新按钮之显眼形**（一处定形）—— 唯 `available === true` ∧ ⛔ 在跑时现，
+   现隐由 `update.js` 之 `paUpdBtnRender` 收放（此处唯「形」· ⛔ 管现隐）。
+   位置之注：居 `.top-right` 之**首**（⛔ `.statusline` 之内 —— 彼 `overflow:hidden` ⇒ 同排挤满时
+   末位子件被裁，即老板「没发现按钮」之真因）。⛔ 减首屏控件数之律 ⛔ 适用本钮（老板点名要它明显）。 */
+#paUpdGo{flex:0 0 auto;font-weight:700;letter-spacing:.3px;padding:4px 13px;
+  background:var(--amber);border-color:var(--amber);color:var(--bg);
+  box-shadow:0 0 0 1px rgba(210,153,29,.40),0 0 10px rgba(210,153,29,.30)}
+#paUpdGo:not([disabled]):hover{filter:brightness(1.12)}
+#paUpdGo[disabled]{opacity:.45}
+
 /* —— 横幅之各态配色（pm_1621 令二：更新之「完成 ／ 需重启」与「准备中」须别形）—— */
 .prep[data-state="done"]{background:rgba(63,185,80,.14);color:var(--green);border-bottom-color:rgba(63,185,80,.4)}
 .prep[data-state="unreachable"]{background:rgba(139,148,158,.14);color:var(--sub);border-bottom-color:rgba(139,148,158,.35)}

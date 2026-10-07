@@ -166,7 +166,7 @@ async function paLoadUiState(){
       + ' · Forever ' + fv
       + ' · 本地在 ' + chk(d && d['本地在']) + ' · 远端在 ' + chk(d && d['远端在'])
       + '（' + chk(d && d['远端host']) + '）'
-      + ' · 采样刻 ' + chk(d && d['刻']) + '（快照 · ⛔ 实时）';
+      + ' · 采样刻 ' + chk(d && d['刻']) + '（服务启动时之快照 · 非实时 ⇒ 刷此无效）';
     return d;
   }catch(e){
     el.textContent = '如实读数：快照读不到（' + U + ' · ' + String((e && e.message) || e) + '）· ⛔ 未知';

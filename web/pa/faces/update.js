@@ -30,6 +30,14 @@ const PA_UPD_BUSY_MS  = 2000;         /* 更新进行中 ⇒ 密巡（进度须�
 /* 已终之跑（`done` ／ `failed`）显报之窗（秒）：逾 ⇒ 归 `/health` 之真读数（⛔ 长挂「需重启」＝ 面之假）。
    ⭐ pm_1693 §四.3 裁准 ＝ `3600`（一时）· **一处定形**（⛔ 散数 —— 阈唯此一处 · 齿在）。 */
 const PA_UPD_RECENT_S = 3600;
+/* ⭐⭐ 空窗期之相位（令 1789 §三⒜）：更新一起 ⇒ 服务自停（约十余秒至四十秒）⇒ 期间 `/health` 连不上。
+   昔之病：F5 后本页「忘」了它发起过更新 ⇒ 退「更新面未答」⇒ 用户读成「更新无效」。
+   本处之器（**一处定形**）：`sessionStorage` 之标记（F5 亦存）＋ 退避之窗 ＋ 上限 ＋ 逾时之下一步。 */
+const PA_UPD_PENDING_KEY  = 'paUpdPending';   /* sessionStorage 之键（一处 · 读 ／ 写共用） */
+const PA_UPD_WINDOW_S     = 180;              /* 空窗之上限（秒）——逾 ⇒ 显「起不来」＋下一步（⛔ 令用户干瞪眼） */
+const PA_UPD_RETRY_MS     = 2000;             /* 退避之始（2 秒） */
+const PA_UPD_RETRY_MAX_MS = 8000;             /* 退避之上限（8 秒） */
+const PA_UPD_RECOVER_S    = 60;               /* 「已更新至 X」之显报窗（秒）——恢复后须**看得见**（⛔ 一闪即没） */
 
 /* `phase` 机器码 ⇒ 人话（⛔ 在表 ⇒ 照实显原值 · 承「界面态显真读数」）。 */
 const PA_UPD_PHASE = {
@@ -94,12 +102,32 @@ function paUpdView(u, ctx){
   const v = {state:'unanswered', phase:'', text:'', note:'', bnote:'', can_bar:false, pct:null,
              done:null, total:null, prog_total:null, eta_s:null, since_s:null, since_src:'',
              current:'', latest:'', available:null, files_done:null, files_total:null,
-             rolled_back:null, can_start:false, src:PA_UPD_SRC};
+             rolled_back:null, can_start:false, reconnecting:false, reconnect_stuck:false, src:PA_UPD_SRC};
   if(!o){
     if(rlive){
       v.state = 'running'; v.phase = 'running';
-      v.since_s = (rsince != null) ? rsince : elR;
-      v.since_src = (rsince != null) ? 'backend' : (elR == null ? '' : 'page');
+      /* ⭐⭐ 空窗期（令 1789 §三⒜）：本页（∨ 本会话 · ⛔ 畏 F5）已发起更新 ∧ 服未答
+         ⇒ **相位须自明「正在重启」**（⛔ 退「更新面未答」）；「已等」之起算唯取标记之刻（⛔ 以屏刻充）。 */
+      const pend = paPrepNum(c.pending_since_s);
+      const pR   = (pend == null) ? null : Math.max(0, Math.round(pend));
+      v.since_s = (rsince != null) ? rsince : (pR != null ? pR : elR);
+      v.since_src = (rsince != null) ? 'backend' : (v.since_s == null ? '' : (pR != null ? 'pending' : 'page'));
+      v.reconnecting = (pR != null) || (c.reconnecting === true);
+      if(c.pending_stuck === true){
+        /* 逾 `PA_UPD_WINDOW_S` 仍未起 ⇒ **给下一步**（点菜单「重启服务」∨ 板上 .cmd —— ⛔ 体检器 / 本页均 ⛔ 自行起停）。 */
+        v.reconnect_stuck = true;
+        v.text = '更新已发起，然服务逾 ' + PA_UPD_WINDOW_S + ' 秒仍未起来'
+               + (v.since_s != null ? ('（本页已等 ' + v.since_s + ' 秒）') : '');
+        v.note = '下一步：点菜单「重启服务」∨ 双击板上之 .cmd（安装目录）重起 —— ⛔ 本页 ⛔ 自行起停服务｜'
+               + PA_UPD_OUTLET_SELF;
+        return v;
+      }
+      if(v.reconnecting){
+        v.text = '更新进行中 · 服务正在重启（本页已发起更新 ⇒ 自动重试中'
+               + (v.since_s != null ? (' · 已等 ' + v.since_s + ' 秒') : '') + '）';
+        v.note = '本页会自动重试（指数退避 2→4→8 秒 · 上限 8 秒）· ⛔ 充「已完成」· 更新中请勿关服务窗口';
+        return v;
+      }
       v.text = '更新进行中…（服务正在重启之窗内 —— 二端此刻俱未答'
              + (v.since_s != null ? (' · 已等 ' + v.since_s + ' 秒') : '') + '）';
       v.note = '本页会自动重试（无需你操作 —— 面之自动重试）· ⛔ 充「已完成」';
@@ -107,6 +135,16 @@ function paUpdView(u, ctx){
     }
     v.text = '更新面未答（' + PA_UPD_SRC + ' 之 update 未给' + (c.http_status ? (' · HTTP ' + c.http_status) : ' · 连不上') + '）';
     v.note = '⛔ 不等于「已是最新」（承「未知 ⛔ 充知」）｜' + PA_UPD_OUTLET_SELF;
+    return v;
+  }
+  /* ⭐⭐ 空窗毕之「成」（令 1789 §三⒜）：本页曾发起更新 ∧ `/health` 复答 ∧ 版已前移
+     ⇒ 显「已更新至 X」（标记之清在 `paUpdFetch` —— 一处 · ⛔ 二处各写）。 */
+  const rec = ss(c.recovered);
+  if(rec){
+    v.state = 'done'; v.phase = 'done';
+    v.current = rec; v.latest = rec;
+    v.text = '已更新至 ' + rec;
+    v.note = '服务已自重启并报此版本 ⇒ 更新已成（空窗之相位已复位 · 标记已清）';
     return v;
   }
   const bak = paPrepNum(o.since_s);
@@ -252,11 +290,17 @@ function paUpdCurFromHealth(){
 }
 function paUpdVerText(v){
   const cur = (v && v.current) ? v.current : paUpdCurFromHealth();
-  if(!cur) return '版本 —（后端未给）· 更新面未答';
-  let t = '版本 ' + cur;
   const st = v ? v.state : 'unanswered';
+  if(!cur){
+    /* ⭐⭐ 令 1789 §三⒜：版未取（服未答之空窗）∧ 本页已知在跑 ⇒ **⛔ 冒「更新面未答」** —— 照实显「更新中」。 */
+    if(st === 'running' || st === 'restart')
+      return '版本 —（后端未给）· 更新中（服务正在重启之窗内'
+           + ((v && v.since_s != null) ? (' · 已等 ' + v.since_s + ' 秒') : '') + '）';
+    return '版本 —（后端未给）· 更新面未答';
+  }
+  let t = '版本 ' + cur;
   if(st === 'available') t += ' · ⬆ 有新版 ' + (v.latest || '（版本号未给）')
-    + (v.total != null ? ('（约 ' + paPrepMB(v.total) + '）') : '');
+    + (v.total != null ? ('（约 ' + paPrepMB(v.total) + '）') : '') + ' · 点此更新';
   else if(st === 'latest') t += ' · 已是最新';
   else if(st === 'unchecked') t += ' · ' + ((v && v.bnote) ? v.bnote : '更新读数 ⛔ 得');
   else if(st === 'running') t += ' · 更新中（' + ((v.since_s != null) ? ('已等 ' + v.since_s + ' 秒')
@@ -273,6 +317,15 @@ function paUpdVerRender(v){
   const st = v ? v.state : 'unanswered';
   el.style.color = (st === 'available') ? 'var(--amber)'
     : (st === 'failed' ? 'var(--red)' : (st === 'done' ? 'var(--green)' : ''));
+  /* ⭐⭐ pm_1789 §三⒝：版行在 `can_start` 时**直接可点**（＝ `paUpdGo`）∧ 着可点之形 ——
+     与右侧 `#paUpdGo` 同功（文案「点此更新」）；⛔ `can_start` ⇒ ⛔ 可点（免误触）。 */
+  const on = !!(v && v.can_start);
+  el.style.cursor = on ? 'pointer' : '';
+  el.title = on
+    ? ('点此更新（＝点右侧「⬆ 更新到 ' + ((v && v.latest) || '新版') + '」）· 唯由你之点')
+    : ('版本 ＋ 更新之态：真源 GET ' + PA_UPD_SRC + '（可得性）＋ POST ' + PA_UPD_POST
+       + '（跑之相位）· 前端唯显示 ⇒ ⛔ 自算');
+  el.onclick = on ? (function(){ try{ paUpdGo(); }catch(e){} }) : null;
   return v;
 }
 
@@ -292,11 +345,13 @@ function paUpdBtnRender(v){
 }
 
 /* 轮询（一处）：常态 30 s ／ 进行中 2 s —— 与 startup.js 之横幅**同源共显**（⛔ 二套面）。 */
-const paUpdRun = {started:false, t0:0, poll:null, mode:'', last:null, h:null, u:null, run:null, live:false, http:null};
-function paUpdApply(){
-  const v = paUpdView(paUpdRun.u, {elapsed_s:(Date.now() - paUpdRun.t0)/1000,
+const paUpdRun = {started:false, t0:0, poll:null, mode:'', last:null, h:null, u:null, run:null, live:false, http:null, pending:null, retryMs:0, recoveredTo:'', recoveredAt:0};
+function paUpdApply(extra){
+  const c = {elapsed_s:(Date.now() - paUpdRun.t0)/1000,
         http_status:paUpdRun.http, health_version:paUpdCurFromHealth(),
-        run:paUpdRun.run, run_live:paUpdRun.live});
+        run:paUpdRun.run, run_live:paUpdRun.live};
+  if(extra && typeof extra === 'object'){ for(const k in extra){ c[k] = extra[k]; } }
+  const v = paUpdView(paUpdRun.u, c);
   paUpdRun.last = v;
   paUpdVerRender(v);
   paUpdBtnRender(v);
@@ -320,6 +375,24 @@ async function paUpdPost(action){
   }catch(e){ st = 0; j = null; }
   return {st:st, j:(j && typeof j === 'object') ? j : null};
 }
+/* 标记之读（**一处** —— 与 paUpdGo 之写同键）：`sessionStorage`（F5 亦存）⇒ ⛔ 无 storage ⇒ null（照实 · ⛔ 崩）。 */
+function paUpdMarkRead(){
+  try{
+    if(typeof window === 'undefined' || !window.sessionStorage) return null;
+    const raw = window.sessionStorage.getItem(PA_UPD_PENDING_KEY);
+    if(!raw) return null;
+    const o = JSON.parse(raw);
+    return (o && typeof o === 'object' && typeof o.t0 === 'number') ? o : null;
+  }catch(e){ return null; }
+}
+/* 标记之写（**一处** —— 与 paUpdFetch 之读同键）：`o` 空 ⇒ 清。⛔ 无 storage ⇒ 静默（照实）。 */
+function paUpdMarkWrite(o){
+  try{
+    if(typeof window === 'undefined' || !window.sessionStorage) return;
+    if(o){ window.sessionStorage.setItem(PA_UPD_PENDING_KEY, JSON.stringify(o)); }
+    else { window.sessionStorage.removeItem(PA_UPD_PENDING_KEY); }
+  }catch(e){}
+}
 async function paUpdFetch(){
   let st = 0, h = null, u = null;
   try{
@@ -338,18 +411,66 @@ async function paUpdFetch(){
     if(ph === 'idle'){ paUpdRun.live = false; }
     else { run = p.j; paUpdRun.live = (ph === 'running'); }
   }
+  /* ⭐⭐ 空窗期之相位（令 1789 §三⒜）：本页（∨ 本会话 · ⛔ 畏 F5）已发起更新 ⇒ 标记在。
+     ⒜ 服复答（`h` 有）⇒ 判成 ／ 未成：版已前移 ⇒ 「已更新至 X」＋清标记；
+        版未动 ⇒ 清标记（回落可得性 ⇒ 可重试 —— ⛔ 长挂「重启中」）。
+     ⒝ 服不答 ⇒ **抬 `live`**（认「在跑」）⇒ 面出「服务正在重启」（⛔ 退「更新面未答」）。 */
+  let mark = paUpdMarkRead(), recovered = '', pSince = null, pStuck = false;
+  if(mark){
+    if(h){
+      const bv = (h.build && h.build.version) ? String(h.build.version).trim()
+               : (h.version ? String(h.version).trim() : '');
+      if(bv && mark.from && bv !== String(mark.from)){ paUpdRun.recoveredTo = bv; paUpdRun.recoveredAt = Date.now(); }
+      mark = null; paUpdMarkWrite(null);
+    } else {
+      pSince = Math.max(0, Math.floor((Date.now() - mark.t0) / 1000));
+      pStuck = (pSince > PA_UPD_WINDOW_S);
+      paUpdRun.live = true;
+    }
+  }
+  /* 恢复之显报**留窗**（令 1789 §三⒜「显『已更新至 X』」须看得见 —— ⛔ 一闪即没 · 逾窗归真读数）。 */
+  if(paUpdRun.recoveredTo && (Date.now() - paUpdRun.recoveredAt) <= PA_UPD_RECOVER_S * 1000) recovered = paUpdRun.recoveredTo;
   paUpdRun.h = h; paUpdRun.u = u; paUpdRun.http = u ? null : (st || null);
-  paUpdRun.run = run;
-  const v = paUpdApply();
-  paUpdSetInterval((v.state === 'running' || v.state === 'restart') ? PA_UPD_BUSY_MS : PA_UPD_POLL_MS,
-                   (v.state === 'running' || v.state === 'restart') ? 'busy' : 'idle');
+  paUpdRun.run = run; paUpdRun.pending = mark;
+  const v = paUpdApply({pending_since_s:pSince, pending_stuck:pStuck, recovered:recovered});
+  /* 退避（令 1789 §三⒜ · 2→4→8 秒 · 上限 8）：唯「重启之窗」内退避；常巡 ／ 在跑之密巡不涉。 */
+  let ms = PA_UPD_POLL_MS, mode = 'idle';
+  if(v.state === 'running' || v.state === 'restart'){
+    if(v.reconnecting){
+      paUpdRun.retryMs = Math.min(PA_UPD_RETRY_MAX_MS, paUpdRun.retryMs ? (paUpdRun.retryMs * 2) : PA_UPD_RETRY_MS);
+      ms = paUpdRun.retryMs; mode = 'busy:' + ms;
+    } else {
+      paUpdRun.retryMs = PA_UPD_RETRY_MS;
+      ms = PA_UPD_BUSY_MS; mode = 'busy';
+    }
+  } else { paUpdRun.retryMs = 0; }
+  paUpdSetInterval(ms, mode);
   return v;
+}
+/* 「暂不可起」之显（令 1789 §三⒞ · ⛔ 静默 return）：写版行 `#paVerRow`（常显 —— ⛔ 藏于文档）
+   · 下一轮读数自覆（⛔ 长挂 ／ ⛔ 造「已开始」之假）。 */
+function paUpdWhyRender(why){
+  const msg = '暂不可起（因：' + why + '）';
+  try{
+    const el = document.getElementById('paVerRow');
+    if(el){ el.textContent = msg; el.title = msg; el.style.color = 'var(--amber)'; }
+  }catch(e){}
+  return msg;
 }
 /* ⭐⭐ 起一支（**唯由用户之点** · pm_1691 §二.2）：幂等 —— ⛔「可起」⇒ ⛔ 发（⛔ 起第二支）。 */
 async function paUpdGo(){
   const v = paUpdRun.last;
-  if(!v || !v.can_start) return v;                 /* 幂等：⛔ 起第二支 */
+  /* ⭐⭐ 令 1789 §三⒞：⛔ 静默 return —— 不可起 ⇒ **须显「暂不可起（因：…）」**（免「点了像没点」）。 */
+  if(!v || !v.can_start){
+    paUpdWhyRender(!v ? '状态未取（请稍候再点；后端 /health 未答）'
+      : ((v.state === 'running' || v.state === 'restart') ? '更新已在跑（⛔ 起第二支）'
+         : ('当前不可起（' + (v.bnote || v.text || v.state || '读数未给') + '）')));
+    return v;                                      /* 幂等：⛔ 起第二支 */
+  }
   paUpdRun.live = true;
+  paUpdRun.recoveredTo = ''; paUpdRun.recoveredAt = 0;   /* 起新一支 ⇒ 清旧「已更新至」之显报 */
+  /* 标记（F5 亦存）：本页自此刻起已发起更新 ⇒ 空窗期之相位可复现（令 1789 §三⒜）。 */
+  paUpdMarkWrite({t0:Date.now(), from:(v.current || ''), to:(v.latest || '')});
   const p = await paUpdPost('start');
   if(p.j){ paUpdRun.run = p.j; paUpdRun.live = (String(p.j.phase || '').trim() === 'running'); }
   paUpdSetInterval(paUpdRun.live ? PA_UPD_BUSY_MS : PA_UPD_POLL_MS, paUpdRun.live ? 'busy' : 'idle');
@@ -364,6 +485,8 @@ function paUpdBegin(){
 try{ window.paUpdView = paUpdView; window.paUpdVerText = paUpdVerText; window.paUpdVerRender = paUpdVerRender;
      window.paUpdFetch = paUpdFetch; window.paUpdBegin = paUpdBegin; window.PA_UPD_PHASE = PA_UPD_PHASE;
      window.paUpdRun = paUpdRun; window.paUpdCurFromHealth = paUpdCurFromHealth;
-     window.paUpdBtnRender = paUpdBtnRender; window.paUpdAgeS = paUpdAgeS; window.paUpdGo = paUpdGo; }catch(e){}
+     window.paUpdBtnRender = paUpdBtnRender; window.paUpdAgeS = paUpdAgeS; window.paUpdGo = paUpdGo;
+     window.paUpdMarkRead = paUpdMarkRead; window.paUpdMarkWrite = paUpdMarkWrite;
+     window.paUpdWhyRender = paUpdWhyRender; window.paUpdApply = paUpdApply; }catch(e){}
 if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', paUpdBegin); }
 else { paUpdBegin(); }

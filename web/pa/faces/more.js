@@ -239,13 +239,12 @@ function paUiEngDetails(raw){
   if(typeof orig !== 'function') return;
   window.paLoadUiState = async function(){
     var d = await orig.apply(this, arguments);
-    /* ⭐ pm 1346 §二.2：本行之**采样刻（`d['刻']`）已上屏**（`more.js:290` 渲）⇒ 须标（承 core.js:85 之律：
-       取数刻与此刻之差 > 阈 ⇒ 显「已陈旧」 · ⛔ 静默显旧数）。
-       ⚠ 「采样刻（快照）」＝ 源之**性**；「已陈旧」＝ 龄之**判** —— 二物 ⛔ 同轴（承 pm 1346 §二.2）⇒ ⛔ 以彼代此。 */
-    if(window.PA_STALE){
-      var _stEl = document.getElementById('paUiStateRow');
-      if(_stEl){ PA_STALE.mark(_stEl, (d && d['刻']) ? d['刻'] : null, '界面态快照（web/pa/ui_state.json）'); PA_STALE.tick(); }
-    }
+    /* ⭐⭐ 令 1789 §五：本行 **⛔ 入 `PA_STALE` 射程**（昔之病 · 我一手逮）——
+       其「刻」＝ **服务启动时落一次**（`core/gateway/ui_state.py`：唯一写者 ＝ 服务 · 启动时落一次）
+       ⇒ **天生只会越来越旧** ⇒ 服务一启、过阈（5 min）**必报「已陈旧」**；
+       且「↻ 刷新」（`paRefreshLive`）**⛔ 重取此行** ⇒ 乃**永不消之假警**。
+       ⛔ 以「已陈旧 · 请刷新」诱发用户点一个**不可能有效**之刷新（承「⛔ 不实之辞入屏」）。
+       正解 ＝ **标其源之性**（静态）：「源为服务启动快照 · 非实时」（其文本 ／ 标题在渲处书 · 见下 `采样刻 …（服务启动时之快照）`）。 */
     try{
       var el = document.getElementById('paUiStateRow');
       /* ⭐ 快照读不到（F2 网络 ／ F3a 坏体）⇒ 用户面只留人话；「因」入 title ／ data-raw ／ 可点注记（承 pm_1018 §二 ⓜ.2 ／ pm_1012 §四 令③）。 */
@@ -296,7 +295,7 @@ function paUiEngDetails(raw){
         /* 未知须与正常可分（承 L85）：partial ⇒ 行着黄（☝ 无色）；ok ⇒ 清色（☝ 残留）。 */
         el.style.color = miss.length ? 'var(--amber)' : '';
         el.removeAttribute('data-unknown-color');
-        el.innerHTML = esc('采样刻 ' + chk2(d['刻']) + '（快照） · 显存 ' + num2(vr.free) + '/' + num2(vr.total) + ' MB · 已载 '
+        el.innerHTML = esc('采样刻 ' + chk2(d['刻']) + '（服务启动时之快照 · 非实时 ⇒ 刷此无效） · 显存 ' + num2(vr.free) + '/' + num2(vr.total) + ' MB · 已载 '
             + num2(d['已载']) + ' · Forever ')
           + '<b style="font-weight:600' + (warn ? (';color:' + warn) : '') + '">' + esc(fShow) + '</b>'
           + esc(' · 本地在 ' + yn(d['本地在']) + ' · 远端 ' + paRemoteText(d) + ' · 源 ui_state')

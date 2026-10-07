@@ -29,14 +29,17 @@
     <span class="runstate-src" id="runStateSrc" title="本状态的来源（真源标识：后端事件名 ／ 接口径；由 paRenderState 写 ⇒ ⛔ 前端猜）">状态来源：—</span>
     <span class="uis" id="paUiStateRow" title="界面态快照（只读 · web/pa/ui_state.json；由技总器 --落 写；前端只显示 ⇒ ⛔ 自算）">如实读数 —（快照未载入）</span>
     <!-- ⭐ pm_1621 令一（版本可见）：当前版本之真源 ＝ 后端 `/health.version`（⛔ 前端写死）＋「已是最新 ∨ 有新版 vX」。 -->
-    <span class="verrow" id="paVerRow" title="版本 ＋ 更新之态：真源 GET /health（可得性）＋ POST /v9/pa/update（跑之相位）· 前端唯显示 ⇒ ⛔ 自算">版本 —（读后端 /health）</span>
-    <!-- ⭐ pm_1691 令（面内之「更新」按钮 · 落面）：唯 `available === true` ∧ ⛔ 在跑时现 —— 由 update.js 之 paUpdBtnRender 收放；
-         点 ⇒ POST /v9/pa/update 体 {"action":"start"}（**唯由用户之点** —— 轮询唯 status）⇒ 起后密巡显进度。
-         ⛔ 值 ／ ⛔ 本地径入屏；⛔ 起停服务（器之起停归后端）。 -->
-    <button class="chip" id="paUpdGo" onclick="paUpdGo()" style="display:none" disabled
-            title="更新到新版（本机端 · 唯本机可用 ∧ 唯由你之点）">⬆ 更新</button>
+    <span class="verrow" id="paVerRow" title="版本 ＋ 更新之态：真源 GET /health（可得性）＋ POST /v9/pa/update（跑之相位）· 前端唯显示 ⇒ ⛔ 自算｜有新版时本行可点（＝右侧「⬆ 更新到 X」）">版本 —（读后端 /health）</span>
   </div>
-  <div class="top-right">
+  <div class="top-right" style="flex:0 0 auto">
+    <!-- ⭐⭐ pm_1789 §三⒝ ＋ pm_1792 §二.1：真按钮**移出 `.statusline`**（彼 `flex:1;min-width:0;overflow:hidden`
+         ⇒ 同排挤满时**末位子件被裁** —— 老板「没发现这颗按钮」之真因）⇒ 入 `.top-right` 之**首**（`.top-right`
+         `flex:0 0 auto` ⇒ 其左端永在视口内）⇒ **任何宽度皆不被压**。点 ⇒ POST /v9/pa/update 体 {"action":"start"}
+         （**唯由用户之点** —— 轮询唯 status）⇒ 起后密巡显进度。⛔ 值 ／ ⛔ 本地径入屏；⛔ 起停服务（器之起停归后端）。
+         ⭐ 其**显眼之形**（描边 ／ 着色 ／ 加粗）**一处定形於 `web/pa/pa_v3.css` 之 `#paUpdGo`**（⛔ 此处 ⛔ 再写样式）；
+         现隐唯由 `update.js` 之 `paUpdBtnRender` 收放（唯 `available === true` ∧ ⛔ 在跑时现）。 -->
+    <button class="chip" id="paUpdGo" onclick="paUpdGo()" style="display:none;flex:0 0 auto" disabled
+            title="更新到新版（本机端 · 唯本机可用 ∧ 唯由你之点）">⬆ 更新</button>
     <span class="chip" id="paKeyBtn" onclick="paKeyOpen()" title="密钥（模型供应商 · 唯落本机）：填 ／ 换 ／ 清 —— 值 ⛔ 上屏 ／ ⛔ 掩码 ／ ⛔ 入日志 ／ ⛔ 出机">🔑 密钥</span>
     <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · ⛔ 出机）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
     <span class="chip" id="paMoreBtn" onclick="paMore(true)" title="更多：轨迹 ／ 产出 ／ 文件 ／ 模式 ／ 常驻 ／ 系统 ／ 设置 ／ 私面（各一步可达）">更多 ▾</span>

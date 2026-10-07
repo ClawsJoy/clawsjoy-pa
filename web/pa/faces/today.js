@@ -450,7 +450,9 @@ async function paLoadToday(){
    ⒟ 反控：刷新后 ⇒ 陈旧消 ＋ 刻前移（与「静置逾阈 ⇒ 必显陈旧」成对 · 两向皆可机械验）。 */
 async function paRefreshLive(){
   try{
-    if(window.PA_STALE) PA_STALE.clear();
+    /* ⭐⭐ 令 1789 §五：⛔ 清全域（昔之 `PA_STALE.clear()`）—— 其病：**未重取之面徽标被清而旧数照显**
+       ⇒ **静默显旧数**（违 `core.js:80-81` 自家之律）。本处唯重取四类面 ⇒ 其**重取时由 `PA_STALE.mark`
+       **就地更新其刻**（＝「只清将重取之面」）⇒ **未重取之面照留其陈旧徽标**（诚实 · ⛔ 抹去）。 */
     await paLoadToday();
     try{ if(typeof paLoadEnvFace === 'function') await paLoadEnvFace(); }catch(e){}
     try{ if(typeof paLoadLinesFace === 'function') await paLoadLinesFace(); }catch(e){}
