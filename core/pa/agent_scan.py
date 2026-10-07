@@ -109,10 +109,13 @@ def _version(path):
     return (out.splitlines()[0].strip() if out else ""), ("rc 0" if r.returncode == 0 else "rc:%d" % r.returncode)
 
 
-#: ⭐ 探之缺省逾时（秒）—— **我一手所测**（2026-10-08 · 本机）：对 127.0.0.1 之**闭口**，
-#:   拒连（ConnectionRefusedError · WinError 10061）**约在 2.0 s 方至** ——
-#:   `timeout = 2` ⇒ 逐口皆 TimeoutError（＝「不在跑」被误判为「读不到」；四口实测四中）
-#:   ⇒ 故缺省取 **3.5**（留 1.5 s 之裕）⇒ 拒连达而「不在跑」真 ∧ 逾时唯属「读不到」。
+#: ⭐ 探之缺省逾时（秒）—— **我一手所测**（2026-10-08 · 本机 · 四口 ＝ `47821` ／ `47999` ／ `11` ／ `49123`
+#:   · 皆 `127.0.0.1` 之**闭口**）：其**拒连**（`ConnectionRefusedError` · `WinError 10061`）**约在 2.0 s 方至** ——
+#:     · `timeout = 2` ⇒ `TimeoutError` ×4（`2.00`–`2.01 s`）＝ **「不在跑」被误判为「读不到」**（四口实测四中）；
+#:     · `timeout = 3` ⇒ `ConnectionRefusedError` ×4（`2.01`–`2.04 s`）；
+#:     · `timeout = 4` ⇒ `ConnectionRefusedError` ×4（`2.03`–`2.06 s`）。
+#:   ⇒ 取 `2 s` ＝ 恰在**刀口**（⛔ 随手之默认）⇒ 故缺省取 **3.5**（留 `1.5 s` 之裕）⇒
+#:     拒连达而「不在跑」真 ∧ 逾时唯属「读不到」（承 pm_1854 §二 ／ pm_1856 §二.4 之令）。
 PROBE_TIMEOUT_S = 3.5
 
 
