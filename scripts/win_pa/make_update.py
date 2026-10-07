@@ -135,6 +135,19 @@ def _over_threshold(man):
     return over
 
 
+def _ver_lit(rhs):
+    u"""版号之**字面** ⇒ 其值（**一处定形**）—— 去字面前缀（`u` ／ `r` ／ `b` ／ `f`）∧ 引号。
+
+    ⚠ 2026-10-07 一手所逮之真 bug：`u"9.0.0"` 旧法唯 `strip(chr(34))`
+      ⇒ 得 `u"9.0.0`（首之 `u"` 未去）⇒ `base_version` 载入清单
+      ⇒ `pa_update.py:317` 之「基础版 ⛔ 符」⇒ 升级**被拒**（演练之真危）。
+    """
+    v = (rhs or u"").strip()
+    if len(v) > 1 and v[0] in u"urbfURBF" and v[1] in u"'\"":
+        v = v[1:]
+    return v.strip(u"\"").strip(u"'").strip()
+
+
 def pkg_version(root):
     u"""产品之版号（**一处定形** · ⛔ 字面）：`pyproject.toml[project].version`（≡ `core/lib/version.py`）。"""
     p = os.path.join(root, u"pyproject.toml")
@@ -155,7 +168,7 @@ def pkg_version(root):
         for ln in txt.splitlines():
             s = ln.strip()
             if s.startswith(u"version") and u"=" in s:
-                v = s.split(u"=", 1)[1].strip().strip(u'"').strip(u"'")
+                v = _ver_lit(s.split(u"=", 1)[1])
                 if v:
                     return v, u"pyproject.toml（逐行 · 兜底）"
     except Exception:                                         # noqa: BLE001 — 照实回落
@@ -170,7 +183,7 @@ def _version_py_at(root, rev):
     for ln in raw.decode(u"utf-8", u"replace").splitlines():
         s = ln.strip()
         if s.startswith(u"__version__") and u"=" in s:
-            v = s.split(u"=", 1)[1].strip().strip(u'"').strip(u"'").strip()
+            v = _ver_lit(s.split(u"=", 1)[1])
             if v:
                 return v
     return None
@@ -315,6 +328,13 @@ def self_test():
               bool(UM.bad_path(u"a\\b")), u"反控：`..` ／ 盘符 ／ 反斜杠 ⇒ 拒")
     ok &= say(never(u"config/.env") != u"" and never(u"tests/unit/a.py") != u"", u"正控：点名 ／ 前缀 ⇒ ⛔ 入")
     ok &= say(never(u"core/lib/x.py") == u"", u"反控：常件 ⇒ 合")
+    ok &= say(_ver_lit(u'u"9.0.0"') == u"9.0.0" and _ver_lit(u'"9.0.0"') == u"9.0.0"
+              and _ver_lit(u"9.0.0") == u"9.0.0" and _ver_lit(u"u'1.2'") == u"1.2"
+              and _ver_lit(u"  u\"9.0.0\"  ") == u"9.0.0",
+              u"正控：版号字面（u\" ／ \" ／ 裸 ／ u'）⇒ 其值（⛔ 留前缀）")
+    ok &= say(_ver_lit(u'u"9.0.0"') != u'u"9.0.0',
+              u"反控：旧法之病（u\"9.0.0\" ⇒ u\"9.0.0）⇒ 今 ⛔ 复现")
+
     ok &= say(never(u"web/images/a.jpg") != u"" and never(u"web/mobile/vosk.bin") != u"",
               u"正控（pm_1656 §三.3）：`web/images/` ／ `web/mobile/` ⇒ ⛔ 入（免一条增量数百 MB）")
     man = {"version": u"9.0.1", "base_version": u"9.0.0", "channel": u"internal",
