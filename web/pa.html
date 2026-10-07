@@ -29,7 +29,12 @@
     <span class="runstate-src" id="runStateSrc" title="本状态的来源（真源标识：后端事件名 ／ 接口径；由 paRenderState 写 ⇒ ⛔ 前端猜）">状态来源：—</span>
     <span class="uis" id="paUiStateRow" title="界面态快照（只读 · web/pa/ui_state.json；由技总器 --落 写；前端只显示 ⇒ ⛔ 自算）">如实读数 —（快照未载入）</span>
     <!-- ⭐ pm_1621 令一（版本可见）：当前版本之真源 ＝ 后端 `/health.version`（⛔ 前端写死）＋「已是最新 ∨ 有新版 vX」。 -->
-    <span class="verrow" id="paVerRow" title="版本 ＋ 更新之态：真源 GET /health 之 version ＋ 更新端（候 TD 1620 定名）· 前端唯显示 ⇒ ⛔ 自算">版本 —（读后端 /health）</span>
+    <span class="verrow" id="paVerRow" title="版本 ＋ 更新之态：真源 GET /health（可得性）＋ POST /v9/pa/update（跑之相位）· 前端唯显示 ⇒ ⛔ 自算">版本 —（读后端 /health）</span>
+    <!-- ⭐ pm_1691 令（面内之「更新」按钮 · 落面）：唯 `available === true` ∧ ⛔ 在跑时现 —— 由 update.js 之 paUpdBtnRender 收放；
+         点 ⇒ POST /v9/pa/update 体 {"action":"start"}（**唯由用户之点** —— 轮询唯 status）⇒ 起后密巡显进度。
+         ⛔ 值 ／ ⛔ 本地径入屏；⛔ 起停服务（器之起停归后端）。 -->
+    <button class="chip" id="paUpdGo" onclick="paUpdGo()" style="display:none" disabled
+            title="更新到新版（本机端 · 唯本机可用 ∧ 唯由你之点）">⬆ 更新</button>
   </div>
   <div class="top-right">
     <span class="chip" id="paKeyBtn" onclick="paKeyOpen()" title="密钥（模型供应商 · 唯落本机）：填 ／ 换 ／ 清 —— 值 ⛔ 上屏 ／ ⛔ 掩码 ／ ⛔ 入日志 ／ ⛔ 出机">🔑 密钥</span>

@@ -43,7 +43,18 @@ const PA_PREP_OUTLET = '去处：看服务窗口之日志 ∨ 重起服务（安
 const PA_PREP_ICON = {starting:'⏳', running:'⏳', restart:'🔁', done:'✅', failed:'❌', unreachable:'⚠'};
 
 function paPrepNum(v){ return (typeof v === 'number' && isFinite(v)) ? v : null; }
-function paPrepMB(n){ return (Math.round((n / 1048576) * 10) / 10) + ' MB'; }
+/* ⭐⭐ pm_1693 §四.2 裁（**量级自适应 · 一处定形**）：昔之 `x MB`（一位小数）⇒ `16978 B` 渲「约 0 MB」
+   ⇒ **看着像「什么都没有」**（用户会误判 —— 承「面须唯人话」）⇒ 今：
+     `≥ 1 MB` ⇒ `X.X MB`（一位小数）／ `≥ 1 KB` ⇒ `N KB`（整数）／ 否则 ⇒ `N B`（整数）；
+     **`0` ∨ 非数 ⇒ 「未知」**（**⛔ 书「0」** —— 「0 B」＝「什么都没有」之误读 · 承「未知 ⛔ 充知」）。
+   ⚠ 本函为 `startup.js` ／ `update.js` **共用**（⛔ 二处各写 · 齿在）。 */
+function paPrepMB(n){
+  const v = paPrepNum(n);
+  if(v == null || v <= 0) return '未知';
+  if(v >= 1048576) return (Math.round((v / 1048576) * 10) / 10) + ' MB';
+  if(v >= 1024) return Math.round(v / 1024) + ' KB';
+  return Math.round(v) + ' B';
+}
 /* ⭐ pm_1633 裁 ⒝ ＋ pm_1638 裁（**去重**）（**一处定形** · ⛔ 二处各写）：`measured`（缓存件已见）
    而「总长」缺 ⇒ **读数归前端 ∧ 「由」归后端**（⛔ 二音 ∧ ⛔ 无声）：
      ⒜ `note` 非空 ⇒ 本函出「已下 X MB · <note 之逐字>」（后端之辞照实并列 —— 前端 ⛔ 再造其由）；
@@ -197,7 +208,12 @@ const paPrepRun = {started:false, t0:0, h:null, http:null, tries:0, miss:0,
      ⇒ 起服之「失败」⇒「准备中」⇒「未答」。
    ⚠ 更新之「未答 ／ 已是最新 ／ 有新版」**⛔ 占**横幅（其位 ＝ 顶栏之版行 `#paVerRow`）——
      否则首屏恒挂一条非等待之语（承「凡等待必有提示」之反：⛔ 无等待亦挂）。 */
-const PA_UPD_BUSY = {downloading:1, verifying:1, backing_up:1, replacing:1};
+/* ⭐⭐ pm_1693 §四.1 裁（**准改**）：⭐ **`running` 须占横幅** —— 更新乃长时之等待（数秒至数十秒 ∧ 其间服会停）
+   ⇒ 承「凡等待必有提示 ＋ 进度 ＋ 时长」（**唯版行 ＋ 按钮 ⛔ 够**）。
+   ⚠ **二控**（pm 裁 · ⛔ 越）：**唯增 `running`** —— `idle` ／ `done` ／ `failed` **⛔ 增**（后二之占横幅乃
+     `paPrepMerge` 之下二支 —— **既有之支** · pm_1693 §一.4 所认之七景 ⒟⒠ ⇒ 与本表**无涉**：本表唯「相位」）。
+   ⚠ 本表 ＝ **更新之相位**（⛔ 起服之相位 —— 起服之相在 `PA_PREP_PHASE`）⇒ **二表 ⛔ 交**（正反控之齿在）。 */
+const PA_UPD_BUSY = {running:1, downloading:1, verifying:1, backing_up:1, replacing:1};
 let paPrepUpd = null;   /* 更新面之末回（由 update.js 之 paPrepFeedUpdate 投 · ⛔ 本件自取） */
 function paPrepFeedUpdate(v){ paPrepUpd = (v && typeof v === 'object') ? v : null; paPrepPaint(); }
 let paPrepFb = null;    /* 反馈面之末回（由 feedback.js 之 paPrepFeedFeedback 投 · ⛔ 本件自取 · pm_1635 §一.3） */

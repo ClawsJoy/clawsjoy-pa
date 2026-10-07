@@ -37,6 +37,9 @@ u"""pm_1621 四条 之齿（CW b2a5182 · 2026-10-07）—— 更新环节之可
   S2 版本真源：`update.js` ⛔ 硬编版号字面（真源 ＝ /health.version）。
   S3 版行在页：`pa.html` 有 `#paVerRow` ∧ 载 `update.js`。
 
+  ╔╔ pm_1693 §四.2 裁（**量级自适应**）：`paPrepMB` 今为
+     `≥ 1 MB` ⇒ `X.X MB` ／ `≥ 1 KB` ⇒ `N KB` ／ 否则 `N B`；`0` ∨ 非数 ⇒ 「未知」。
+     ⇒ 本件之字面断言从新（昔为 `0.3 MB` · **已陈**）—— 载的仍是下游之真数。
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_update_1621.py -q
 """
@@ -109,10 +112,13 @@ def _harness() -> str:
         _decl(s, u"const PA_PREP_ICON"), _decl(s, u"const PA_UPD_BUSY"),
         _fn(s, u"paPrepNum"), _fn(s, u"paPrepMB"), _fn(s, u"paPrepView"), _fn(s, u"paPrepMerge"),
         _fn(s, u"paPrepMeasuredNote"),   # pm_1633 裁 ⒝ 之共函（**唯 1 处定义** · 二面共用）
-        # update.js（更新之态 ＋ 版行）
-        _decl(t, u"const PA_UPD_SRC"), _decl(t, u"const PA_UPD_POLL_MS"),
+        # update.js（更新之态 ＋ 版行 ＋ pm_1691「动」之相位）
+        _decl(t, u"const PA_UPD_SRC"), _decl(t, u"const PA_UPD_POST"), _decl(t, u"const PA_UPD_POLL_MS"),
         _decl(t, u"const PA_UPD_BUSY_MS"), _block(t, u"const PA_UPD_PHASE = {", u"};"),
-        _decl(t, u"const PA_UPD_OUTLET"), _fn(t, u"paUpdView"), _fn(t, u"paUpdCurFromHealth"),
+        _decl(t, u"const PA_UPD_LOG"), _decl(t, u"const PA_UPD_OUTLET"),
+        _decl(t, u"const PA_UPD_OUTLET_SELF"),
+        _decl(t, u"const PA_UPD_RECENT_S"), _fn(t, u"paUpdAgeS"),
+        _fn(t, u"paUpdView"), _fn(t, u"paUpdCurFromHealth"),
         _fn(t, u"paUpdVerText"),
         _decl(t, u"const paUpdRun"),
         u"const paPrepRun = {h: null};",
@@ -189,7 +195,7 @@ def test_U1_下载中须有字节之条与剩余秒():
     v = _v()["u"]["dl_bar"]
     assert v["state"] == "running" and v["can_bar"] is True and v["pct"] == 41, v
     assert BUSY in v["text"] and u"正在下载增量包" in v["text"], v["text"]
-    assert u"已下 0.3 MB / 0.6 MB（41%）" in v["text"], v["text"]
+    assert u"已下 256 KB / 614 KB（41%）" in v["text"], v["text"]
     assert u"约还需 8 秒" in v["text"], v["text"]
 
 
@@ -259,7 +265,7 @@ def test_U10_有新版须显版本与大小():
     v = _v()["u"]["avail"]
     assert v["state"] == "available", v
     assert u"有新版 1.0.1" in v["text"] and u"当前 1.0.0" in v["text"], v["text"]
-    assert u"约 0.6 MB" in v["text"] and u"12 件" in v["text"], v["text"]
+    assert u"约 614 KB" in v["text"] and u"12 件" in v["text"], v["text"]
 
 
 def test_U11_已是最新():
@@ -358,7 +364,10 @@ def test_S4_取数唯health_不引未挂之端():
     src = re.sub(r"(?m)^[ \t]*//[^\n]*$", "", src)
     src = re.sub(r"(?m)(?<![:/])//[^\n]*$", "", src)
     assert u"'/health'" in src, u"更新之态须取既有之 /health（候 TD_1620 之端报）"
-    assert u"/v9/pa/" not in src, u"⛔ 引未挂之 /v9/pa/*（面册闸 test_pa_ui_faces 必判「悬」）"
+    # ⭐ pm_1691（端已挂 · TD `c5a41ff`）：`/v9/pa/update` **可引**（唯此一处 —— 面册闸判「悬」之据）；
+    #   他之 `/v9/pa/*` 仍 ⛔（⛔ 引未挂之端 ∧ ⛔ 加第二读源 —— 承 pm_1641 裁 ①「读一处 · 动分端」）。
+    _pa = re.findall(r"/v9/pa/[A-Za-z0-9_/]*", src)
+    assert _pa == [u"/v9/pa/update"], u"唯「动」端可引（pm_1691）：" + repr(_pa)
     assert u"cache:'no-store'" in src, u"取数须绕缓存"
 
 
@@ -367,7 +376,7 @@ def test_S4_取数唯health_不引未挂之端():
 def test_U15_裁B_已量而总长缺须显已下与不可量():
     v = _v()["u"]["dl_meas_nototal"]
     assert v["state"] == "running", v
-    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"已下 307 KB" in v["text"], v["text"]
     assert u"总长不可量" in v["text"], v["text"]
     assert u"后端未给" in v["text"], v["text"]
 
@@ -375,7 +384,7 @@ def test_U15_裁B_已量而总长缺须显已下与不可量():
 def test_U16_裁B_反控_有总长则按字节条_未量则不书已下():
     bar = _v()["u"]["dl_bar"]
     assert u"总长不可量" not in bar["text"], bar["text"]
-    assert u"已下 0.3 MB / 0.6 MB" in bar["text"], bar["text"]
+    assert u"已下 256 KB / 614 KB" in bar["text"], bar["text"]
     backup = _v()["u"]["backup"]
     assert u"已下" not in backup["text"], backup["text"]
 
@@ -385,7 +394,7 @@ def test_U16_裁B_反控_有总长则按字节条_未量则不书已下():
 def test_U17_裁去重_更新面走回落且其辞惟startup一处():
     v = _v()["u"]["dl_meas_nototal"]
     assert v["state"] == "running", v
-    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"已下 307 KB" in v["text"], v["text"]
     assert u"（总长不可量 —— 后端未给）" in v["text"], u"后端 ⛔ 给 note ⇒ 前端补（回落）"
     src = _read(UJ)
     src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
@@ -402,7 +411,7 @@ def test_U19_裁TD1644_键之对齐():
     v = u["avail"]
     assert v["state"] == "available", v
     assert u"有新版 1.0.1" in v["text"] and u"当前 1.0.0" in v["text"], v["text"]
-    assert u"约 0.6 MB" in v["text"], u"`size_bytes`（清单之真数）须出 · 得 " + v["text"]
+    assert u"约 614 KB" in v["text"], u"`size_bytes`（清单之真数）须出 · 得 " + v["text"]
     assert u["latest"]["state"] == "latest" and u"已是最新" in u["latest"]["text"], u["latest"]
     assert u"已升至 1.0.1" in u["done"]["text"], u["done"]["text"]
     t = _read(UJ)
@@ -435,5 +444,6 @@ def test_U18_版之真源_health_build优先且缺则回落():
     assert c["build_absent"] == "1.0.0", u"无 `build` 键 ⇒ 回落 `/health.version`"
     assert c["both_absent"] == "", u"皆缺 ⇒ 空（⛔ 造 —— 承「未知 ⛔ 充知」）"
     src = re.sub(r"/\*.*?\*/", "", _read(UJ), flags=re.S)
-    assert u"/v9/pa/" not in src, u"面之读数 ⛔ 引 `/v9/pa/*`（唯「动」—— 承 pm_1641 裁 ①）"
+    assert u"/v9/pa/" not in src.replace(u"/v9/pa/update", u""), \
+        u"面之读数 ⛔ 引他之 `/v9/pa/*`（唯「动」端可引 —— pm_1691 修 pm_1641 裁 ①）"
     assert u"'/health'" in src, u"读数之端唯 `/health`"

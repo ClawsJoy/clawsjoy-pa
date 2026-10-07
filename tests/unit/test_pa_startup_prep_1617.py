@@ -25,7 +25,7 @@ u"""pm_1617 令一 ／ 令二 ／ 令四 ／ 令五 之齿（CW b2a5182 · 2026-
   L21 ⛔ 造相：`boot.phase` 不在表 ⇒ **照实显原值**。
   L22 一处定形（结构）：`boot` 唯 `paPrepView` 读（⛔ 渲点 ／ ⛔ 合一之判）。
   L23 正控（pm_1633 裁 ⒝）：`download.measured=true` ∧ `total_bytes=null` ∧ `done_bytes=0.3 MB` ⇒
-      面须**显「已下 0.3 MB」**∧ 含「总长不可量」∧ 含「后端未给」（⛔ 静默略去已量之真读数 ∧ ⛔ 造数）。
+      面须**显「已下 307 KB」**∧ 含「总长不可量」∧ 含「后端未给」（⛔ 静默略去已量之真读数 ∧ ⛔ 造数）。
  L24 反控（pm_1633 裁 ⒝）：`total_bytes` 有 ⇒ 面为「按字节之条」（**⛔ 含「总长不可量」**）；
      `measured=false`（done 为 null）⇒ 面 **⛔ 书「已下」**。
  L25 正控（pm_1638 裁 · 去重 · ⒜）：`measured ∧ ⛔total` 而**后端给 `note`** ⇒ 面含**后端 note 之逐字**
@@ -35,6 +35,9 @@ u"""pm_1617 令一 ／ 令二 ／ 令四 ／ 令五 之齿（CW b2a5182 · 2026-
  L27 反控（pm_1638 裁 · 去重 · ⒞）：`total` 有 ⇒ 面为「X ／ Y（%）」之条 ∧ **⛔ 涉「不可量」**。
  L28 一处定形（结构）：回落辞**源中唯 1 处**（本函之内）∧ `update.js` **⛔ 自书其辞**。
 
+  ╔╔ pm_1693 §四.2 裁（**量级自适应**）：`paPrepMB` 今为
+     `≥ 1 MB` ⇒ `X.X MB` ／ `≥ 1 KB` ⇒ `N KB` ／ 否则 `N B`；`0` ∨ 非数 ⇒ 「未知」。
+     ⇒ 本件之字面断言从新（昔为 `0.3 MB` · **已陈**）—— 载的仍是下游之真数。
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_startup_prep_1617.py -q
 """
@@ -336,7 +339,7 @@ def test_L22_一处定形_boot唯view读():
 def test_L23_裁B_已量而总长缺须显已下之真读数与不可量():
     v = _v()["boot_meas_nototal"]
     assert v["state"] == "starting", v
-    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"已下 307 KB" in v["text"], v["text"]
     assert u"总长不可量" in v["text"], v["text"]
     assert u"后端未给" in v["text"], v["text"]
     assert u"步 4/7" in v["text"], v["text"]
@@ -359,14 +362,14 @@ FALLBACK = u"（总长不可量 —— 后端未给）"
 def test_L25_裁去重_后端有note则前端不再书其由():
     v = _v()["boot_meas_nototal_note"]
     assert v["state"] == "starting", v
-    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"已下 307 KB" in v["text"], v["text"]
     assert u"总长不可量（后端未给）" in v["text"], u"后端 note 之逐字须照实入屏"
     assert FALLBACK not in v["text"], u"⛔ 二音：后端已给其由 ⇒ 前端 ⛔ 再造"
 
 
 def test_L25b_裁去重_后端之他辞亦照实且不冒后端未给():
     v = _v()["boot_meas_nototal_note2"]
-    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"已下 307 KB" in v["text"], v["text"]
     assert u"总长不可量（HEAD 探不得）" in v["text"], v["text"]
     assert u"后端未给" not in v["text"], u"⛔ 冒「后端未给」（后端已给其辞 —— 承「未知 ⛔ 充知」）"
     assert FALLBACK not in v["text"], v["text"]
@@ -374,7 +377,7 @@ def test_L25b_裁去重_后端之他辞亦照实且不冒后端未给():
 
 def test_L26_裁去重_后端未给note则前端补书其由():
     v = _v()["boot_meas_nototal"]
-    assert u"已下 0.3 MB" in v["text"], v["text"]
+    assert u"已下 307 KB" in v["text"], v["text"]
     assert FALLBACK in v["text"], u"回落：后端 ⛔ 给其由 ⇒ 前端须补（⛔ 无声）"
 
 

@@ -300,12 +300,13 @@
   },
   {
    "id": "update",
-   "title": "版本与更新之态（唯读 /health）",
+   "title": "版本与更新之态（读 /health ＋ 动 /v9/pa/update）",
    "file": "faces/update.js",
    "open": true,
    "private": false,
    "dom": [
-    "#paVerRow"
+    "#paVerRow",
+    "#paUpdGo"
    ],
    "boot": []
   },
