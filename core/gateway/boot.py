@@ -76,6 +76,14 @@ def run_gateway_startup(app):
     except Exception as _e_probe:
         print("[BOOT] ⚠ 总长之探 ⛔ 起（不影响准备）：%s: %s" % (type(_e_probe).__name__, _e_probe), flush=True)
 
+    # ⭐ pm_1645 §二.1ⓞ（甲-P0）：更新之读数之**守护**（门后 · 后台 · 即刻一次 → 其后每 REFRESH_S）
+    #   —— `/health` 之 `update` 键唯**读盘**（只读之窗 ⛔ 出网）⇒ 出网在此。⛔ 阻门（失败也唯为无读数）。
+    try:
+        from core.lib import update_check as _uc
+        _uc.start_periodic()
+    except Exception as _e_uc:
+        print("[BOOT] ⚠ 更新之守护 ⛔ 起（不影响准备）：%s: %s" % (type(_e_uc).__name__, _e_uc), flush=True)
+
     boot_progress.set_phase("registries")
     from core.lib.hook_manager import HookManager
     from core.lib.startup import startup_manager

@@ -45,17 +45,26 @@ def health():
         _build = {"available": False, "note": "读数⛔ 得：%s" % str(_e_build)[:120]}
     # ⭐ pm_1640 §一.2 之律（**读一处（/health）· 动分端（/v9/pa/*）**）：面之读数唯此端 ⇒
     #   落点声明（留言板）亦在此（形唯自 `feedback_target.face()` 一处出 · ⛔ 二处各写）。
-    #   ⚠ 将来「更新之读数」（有新版 ／ 已是最新 ／ 大小 ／ 通道）⇒ 俟甲-P0 ⇒ 落 `update` 键（⛔ 新端）。
+    #   ⭐ pm_1645 §二.1ⓞ（甲-P0 之落）：「有新版 ／ 已是最新 ／ 大小 ／ 通道」
+    #   ⇒ **已落本端之 `update` 键**（⛔ 新端）；其态落盘（`update_check`）⇒ 本端唯**读**（只读之窗 · ⛔ 出网 · ⛔ 阻塞）。
     try:
         from core.lib import feedback_target as _ft
         _feedback = _ft.face()
     except Exception as _e_fb:                                 # noqa: BLE001 — 照实报因
         _feedback = {"mode": None, "outbound": None, "note": "读数⛔ 得：%s" % str(_e_fb)[:120]}
+    # ⭐ pm_1645 §二.1ⓞ：更新之读数（唯此一处 · 纯读盘之态——有新版 ／ 已是最新 ／ 大小 ／ 通道）。
+    #   ⚠ 刷新（出网）唯二处：起服门后之守护（`update_check.start_periodic`）· 甲-P0 之器（`pa_update.py`）。
+    try:
+        from core.lib import update_check as _uc
+        _update = _uc.face()
+    except Exception as _e_upd:                                # noqa: BLE001 — 照实报因
+        _update = {"available": False, "note": "读数⛔ 得：%s" % str(_e_upd)[:120]}
     return jsonify({
         "status": "healthy" if startup_manager.ready else "starting",
         "version": __version__,
         "build": _build,
         "feedback": _feedback,
+        "update": _update,
         "startup": startup_manager.status(),
         "hardware": hardware_probe.report(),
         "boot": _boot,

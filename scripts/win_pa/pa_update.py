@@ -1,0 +1,435 @@
+# -*- coding: utf-8 -*-
+u"""pa_update.py -- 应用**增量包**（甲-P0 之器二 · 承 pm_1620 §二.1 ＋ §三 ／ pm_1645 §二 令一 · TD f202f89）。
+
+其的：把「本批之小修」从建机送到用户机并生效 ⇒ **⛔ 重下整包**（`534.3 MB` ⟷ `≈ 0.6 MB`）。
+
+十步（**全程可见** —— 承 pm_1620 §三.7：凡等待必有**提示 ＋ 进度 ＋ 时长** ⇒ ⛔ 静默）：
+  ① 取清单（源之声明一处出）② 校形 ／ 通道 ／ 基础版 ③ 逐件下 ④ 逐件校（sha256 ＋ size）
+  ⑤ 备份（**唯装根之外** —— 见下）⑥ 先停后换（服务在跑 ⇒ 文件占用）⑦ **原子替换**（同卷 `os.replace`）
+  ⑧ 逐件落成 ⑨ 重启 ⑩ 探 `/health`。
+**任一步败 ⇒ 反替换 ＋ fail-loud「已回滚至 <版本>」**（承 pm_1620 §三.5）。
+
+陈三铁律：
+  ⒜ **⛔ 动用户环境之数据**（承 pm_1620 §三.8）：`data/` ／ 会话 ／ 库 ／ 台账 ／ 记忆 ／
+     `config/.env`（密钥）**一律 ⛔ 碰**（清单若含之 ⇒ **拒** —— `NEVER` 之点名 ＋ `data/` 前缀）。
+     ⇒ 本器之备份 ／ 态 **⛔ 入装根之 `data/`**（落 `%LOCALAPPDATA%\\ClawsJoyPA\\update`）。
+  ⒝ **⛔ 明文信任**（承 pm_1620 §三.9）：唯 `sha256` ＋ `size` 为凭（**逐件校** · 一件 ⛔ 合 ⇒ 整体 ⛔ 落）。
+  ⒞ **⛔ 半途**：**先全下全验，后方动盘**（⇒ 网断之败 ⛔ 留半成品之树）。
+
+用法：
+  python -X utf8 scripts\\win_pa\\pa_update.py                       # 干跑（印将动何物）
+  python -X utf8 scripts\\win_pa\\pa_update.py --go                  # 真办
+  ... [--src <url>] [--manifest <本机清单.json>] [--root <装根>] [--staged <已下之树>]
+      [--force] [--no-restart] [--json] [--self-test]
+退出码：0 成（含「已是最新」）｜ 2 前置 ⛔ 足 ∨ 败（已回滚）｜ 3 入口错
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import os
+import subprocess
+import sys
+import time
+
+if sys.stdout is not None:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+BS = chr(92)
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+STOPPER = os.path.join(u"scripts", u"win_pa", u"pa_nowindow.py")
+#: ⛔ 动之「点名」（**一处定形** —— 双保险 ∧ ⛔ 静默 · 与 `make_update.py:NEVER` 同族）
+NEVER = (u"config/.env", u"config/secrets.yaml", u"scripts/win_pa/ClawsJoyPA_PA_Boot.xml")
+NEVER_PREFIX = (u"data/", u"logs/", u".git/")
+#: 起服之待（秒）—— 探 `/health` 之窗（门先开 ⇒ 秒级可答）
+HEALTH_WAIT_S = 40.0
+
+
+def _add_core(root):
+    for p in (root, HERE):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+
+
+def say(i, n, msg, t0=None):
+    el = (u"（%.1f s）" % (time.time() - t0)) if t0 else u""
+    print(u"[更新] %d/%d %s%s" % (i, n, msg, el), flush=True)
+
+
+def never(rel):
+    u"""⛔ 动之点名 ⇒ 因 ∨ 空串（**一处定形**）。"""
+    if rel in NEVER:
+        return u"点名（密钥 ／ 机器相关）"
+    for p in NEVER_PREFIX:
+        if rel.startswith(p):
+            return u"点名之前缀（%s）" % p
+    return u""
+
+
+def upd_dir(root=None, env=None):
+    u"""态 ／ 备份之落处（**一处定形**）：`%LOCALAPPDATA%\\ClawsJoyPA\\update`；
+    无 ⇒ `<装根>/data/pa/update`。⛔ 入装根之 `data/` 为要（承 pm_1620 §三.8 之正控）。"""
+    env = os.environ if env is None else env
+    la = (env.get(u"LOCALAPPDATA") or u"").strip()
+    if la:
+        return os.path.join(la, u"ClawsJoyPA", u"update")
+    return os.path.join(root or ROOT, u"data", u"pa", u"update")
+
+
+def stage_dir(version, root=None, env=None):
+    return os.path.join(upd_dir(root, env), u"stage", str(version))
+
+
+def backup_dir(version, root=None, env=None):
+    return os.path.join(upd_dir(root, env), u"backup", str(version))
+
+
+def cur_version(root):
+    u"""本机之版（**一处出** · 承 `build_info`）⇒ `(str | None, note)`。"""
+    from core.lib import build_info as BI
+    d, note = BI.read(root)
+    return ((d or {}).get(u"version"), note)
+
+
+def load_manifest(a, root):
+    u"""取清单（本机文件 ∨ 源）⇒ `(man | None, note, why, src)`。"""
+    from core.lib import update_manifest as UM
+    from core.lib import update_source as US
+    src = US.load(root, os.environ)
+    if a.src:
+        src = dict(src)
+        src[u"url"] = a.src
+        src.setdefault(u"origin", {})
+        src[u"origin"] = dict(src.get(u"origin") or {})
+        src[u"origin"][u"url"] = u"cli:--src"
+    if a.manifest:
+        try:
+            with io.open(a.manifest, encoding=u"utf-8-sig") as fh:
+                man = json.loads(fh.read())
+        except Exception as e:                                # noqa: BLE001 — 照实报因
+            return None, u"清单 ⛔ 读：%s（%s）" % (a.manifest, type(e).__name__), u"read", src
+        ok, probs = UM.validate(man)
+        if not ok:
+            return None, u"清单之形 ⛔ 合：%s" % u"；".join(probs[:4]), u"shape", src
+        return man, u"", u"", src
+    man, note, why = UM.fetch(src)
+    return man, note, why, src
+
+
+def fetch_all(man, src, dest, timeout=None):
+    u"""逐件下 ⇒ `(files | None, rows)`。**唯下 `add` ／ `mod`**（`del` 无件可下）。
+    `dest` 之树按**装根相对之径**落（供逐件校 ＋ 替换）。"""
+    from core.lib import update_manifest as UM
+    rows = []
+    want = [e for e in man.get(u"files") or [] if e.get(u"mode") in (u"add", u"mod")]
+    t0 = time.time()
+    got = 0
+    for i, e in enumerate(want, 1):
+        raw, note, why = UM.fetch_file(src, e[u"path"], timeout=timeout or UM.FETCH_TIMEOUT)
+        if raw is None:
+            return None, rows + [u"[FAIL] 下件 %d/%d ⛔ 得：%s — %s（%s）"
+                                 % (i, len(want), e[u"path"], note, why)]
+        got += len(raw)
+        p = os.path.join(dest, e[u"path"].replace(u"/", os.sep))
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with io.open(p, u"wb") as fh:
+            fh.write(raw)
+        rows.append(u"    下 %d/%d %-52s %8d B" % (i, len(want), e[u"path"], len(raw)))
+    rows.append(u"[OK] 下毕：%d 件 ／ %d B（%.2f MB）｜%.1f s"
+                % (len(want), got, got / 1048576.0, time.time() - t0))
+    return want, rows
+
+
+def verify_all(man, staged):
+    u"""逐件校（sha256 ＋ size ⇒ **不重下** · 唯读盘）⇒ `(ok, rows)`。"""
+    from core.lib import update_manifest as UM
+    rows = []
+    bad = 0
+    for e in man.get(u"files") or []:
+        if e.get(u"mode") == u"del":
+            continue
+        p = os.path.join(staged, e[u"path"].replace(u"/", os.sep))
+        if not os.path.isfile(p):
+            rows.append(u"[FAIL] 缺件：%s" % e[u"path"])
+            bad += 1
+            continue
+        raw = io.open(p, u"rb").read()
+        if len(raw) != e[u"size"] or UM.sha256_bytes(raw) != e[u"sha256"]:
+            rows.append(u"[FAIL] 印 ⛔ 合：%s（期 %s ／ 实 %s · %d B）"
+                        % (e[u"path"], e[u"sha256"][:16], UM.sha256_bytes(raw)[:16], len(raw)))
+            bad += 1
+    rows.append(u"[%s] 逐件校：%d 件 ／ 瑕 %d" % (u"OK" if bad == 0 else u"FAIL",
+                                              len([e for e in man[u"files"] if e[u"mode"] != u"del"]), bad))
+    return (bad == 0), rows
+
+
+def ctl(root, act, timeout=180):
+    u"""起停（**唯引装根之器** —— ⛔ 本器另写一套）⇒ `(rc | None, out)`；⛔ 在 ⇒ `(None, 因)`。"""
+    p = os.path.join(root, STOPPER)
+    if not os.path.isfile(p):
+        return None, u"未见 %s（⛔ 起停 ⇒ 报「停而可换」之支）" % STOPPER
+    try:
+        r = subprocess.run([sys.executable, u"-X", u"utf8", u"-B", p, act],
+                           capture_output=True, text=True, encoding=u"utf-8",
+                           errors=u"replace", timeout=timeout)
+    except Exception as e:                                    # noqa: BLE001 — 照实报因
+        return None, u"%s: %s" % (type(e).__name__, e)
+    return r.returncode, ((r.stdout or u"") + (r.stderr or u"")).strip()
+
+
+def locked(path):
+    u"""占用之判（**器取**）—— 试以追加开之。"""
+    if not os.path.isfile(path):
+        return False
+    try:
+        with io.open(path, u"ab"):
+            return False
+    except OSError:
+        return True
+
+
+def backup(root, entries, bdir):
+    u"""备份（**唯将动之件**）⇒ `(rows, rollback | None)`；其记 ＝ `rollback.json`（反替换之凭）。"""
+    rows = []
+    rec = []
+    for e in entries:
+        tgt = os.path.join(root, e[u"path"].replace(u"/", os.sep))
+        it = {"path": e[u"path"], "mode": e[u"mode"], "existed": os.path.isfile(tgt)}
+        if it["existed"]:
+            bdst = os.path.join(bdir, e[u"path"].replace(u"/", os.sep))
+            os.makedirs(os.path.dirname(bdst), exist_ok=True)
+            with io.open(bdst, u"wb") as fh:
+                fh.write(io.open(tgt, u"rb").read())
+            it["backup"] = bdst
+        rec.append(it)
+        rows.append(u"    备 %-52s %s" % (e[u"path"], u"有" if it["existed"] else u"无（新件）"))
+    with io.open(os.path.join(bdir, u"rollback.json"), u"w", encoding=u"utf-8", newline=u"") as fh:
+        fh.write(json.dumps({"files": rec}, ensure_ascii=False, indent=1))
+    rows.append(u"[OK] 备份：%d 件 → %s" % (len(rec), bdir))
+    return rows, {"files": rec}
+
+
+def apply_all(entries, root, staged):
+    u"""原子替换（**同卷** —— 先落 `<target>.new` ⇒ `os.replace`）⇒ `(ok, rows, done)`。"""
+    rows = []
+    done = []
+    for e in entries:
+        rel = e[u"path"]
+        tgt = os.path.join(root, rel.replace(u"/", os.sep))
+        try:
+            if e[u"mode"] == u"del":
+                if os.path.isfile(tgt):
+                    os.remove(tgt)
+                done.append(e)
+                rows.append(u"    删 %s" % rel)
+                continue
+            os.makedirs(os.path.dirname(tgt), exist_ok=True)
+            new = tgt + u".new"
+            with io.open(new, u"wb") as fh:
+                fh.write(io.open(os.path.join(staged, rel.replace(u"/", os.sep)), u"rb").read())
+            os.replace(new, tgt)
+            done.append(e)
+            rows.append(u"    换 %-52s %s" % (rel, e[u"mode"]))
+        except Exception as ex:                               # noqa: BLE001 — 照实报因
+            rows.append(u"[FAIL] %s ⛔ 换：%s: %s" % (rel, type(ex).__name__, ex))
+            return False, rows, done
+    rows.append(u"[OK] 替换：%d 件（原子 · 同卷 os.replace）" % len(done))
+    return True, rows, done
+
+
+def rollback(root, rec, rows):
+    u"""反替换（**唯已动之件**）⇒ 尽复原 ＋ fail-loud（承 pm_1620 §三.5）。"""
+    back = 0
+    for it in (rec or {}).get(u"files") or []:
+        tgt = os.path.join(root, it[u"path"].replace(u"/", os.sep))
+        try:
+            if it.get(u"existed") and it.get(u"backup") and os.path.isfile(it[u"backup"]):
+                with io.open(tgt, u"wb") as fh:
+                    fh.write(io.open(it[u"backup"], u"rb").read())
+                back += 1
+            elif os.path.isfile(tgt):
+                os.remove(tgt)
+                back += 1
+        except Exception as ex:                               # noqa: BLE001 — 照实报因
+            rows.append(u"    ⚠ 复原 %s 败：%s" % (it[u"path"], type(ex).__name__))
+    rows.append(u"[回滚] 已复原 %d 件" % back)
+    return rows
+
+
+def probe_health(port=None, wait_s=HEALTH_WAIT_S):
+    u"""探 `/health`（**起服之正控**）⇒ `(ok, rows)`；⛔ 得 ⇒ 照实报因 ＋ 去处。"""
+    import urllib.request
+    try:
+        from core.lib.port_config import gateway_port
+        port = port or gateway_port()
+    except Exception:                                         # noqa: BLE001 — 回落
+        port = port or 5102
+    url = u"http://127.0.0.1:%s/health" % port
+    t0 = time.time()
+    rows = [u"[..] 探 %s（窗 %.0f s）" % (url, wait_s)]
+    last = u""
+    while time.time() - t0 < wait_s:
+        try:
+            with urllib.request.urlopen(url, timeout=5.0) as r:
+                d = json.loads(r.read().decode(u"utf-8"))
+            rows.append(u"[OK] /health 200 ｜status=%s ｜version=%s ｜%.1f s"
+                        % (d.get(u"status"), d.get(u"version"), time.time() - t0))
+            return True, rows
+        except Exception as e:                                # noqa: BLE001 — 续试
+            last = u"%s: %s" % (type(e).__name__, e)
+            time.sleep(1.5)
+    rows.append(u"[FAIL] /health ⛔ 达（%.1f s）｜%s ⇒ 去处：看 logs\\gateway_%s_console.log"
+                % (time.time() - t0, last, port))
+    return False, rows
+
+
+def run(a):
+    from core.lib import update_manifest as UM
+    root = os.path.abspath(a.root)
+    _add_core(root)
+    man, note, why, src = load_manifest(a, root)
+    if man is None:
+        print(u"[FAIL] 清单 ⛔ 得：%s（%s）" % (note, why))
+        print(u"       ⇒ 去处：核 %s（源之声明）∨ --src" % src.get(u"file"))
+        return 2
+    t = UM.totals(man)
+    cur, cnote = cur_version(root)
+    say(1, 10, u"清单：v%s（基 %s · %s）｜件 %d（add %d ／ mod %d ／ del %d）｜%d B（%.2f MB）"
+        % (man[u"version"], man[u"base_version"], man[u"channel"], t[u"n"],
+           t[u"add"], t[u"mod"], t[u"del"], t[u"bytes"], t[u"bytes"] / 1048576.0))
+    say(1, 10, u"本机：版 %s（%s）｜源 %s" % (cur or u"⛔ 读", cnote or u"—", src.get(u"url")))
+    if man[u"channel"] != src.get(u"channel"):
+        print(u"[FAIL] 通道 ⛔ 合：清单 %s ≠ 本机 %s（⛔ 跨档 · 承 pm_1620 §三.9）"
+              % (man[u"channel"], src.get(u"channel")))
+        return 2
+    if cur and str(cur) == str(man[u"version"]):
+        say(2, 10, u"已是最新（%s）⇒ ⛔ 动" % cur)
+        return 0
+    if cur and str(cur) != str(man[u"base_version"]) and not a.force:
+        print(u"[FAIL] 基础版 ⛔ 符：本机 %s ≠ 清单之 base_version %s" % (cur, man[u"base_version"]))
+        print(u"       ⇒ 去处：取整包（∨ 确知可升 ⇒ --force）")
+        return 2
+    if not cur:
+        say(2, 10, u"⚠ 本机之版号 ⛔ 读（旧包 ∨ 未装）⇒ 基础 ⛔ 可验 —— 照实续（承 pm_1620 §三.11 之演练）")
+    for e in man[u"files"]:
+        nv = never(e[u"path"])
+        if nv:
+            print(u"[FAIL] 清单含⛔ 动之件：%s（%s）⇒ 拒（承 pm_1620 §三.8 之铁律）" % (e[u"path"], nv))
+            return 2
+    if not a.go:
+        print(u"[--] 干跑（⛔ 动盘）—— 加 --go 真办｜将动 %d 件（%d B）"
+              % (t[u"n"], t[u"bytes"]))
+        return 0
+    stg = a.staged or stage_dir(man[u"version"], root)
+    os.makedirs(stg, exist_ok=True)
+    want, rows = fetch_all(man, src, stg)
+    print(u"\n".join(rows))
+    if want is None:
+        return 2
+    ok, rows = verify_all(man, stg)
+    print(u"\n".join(rows))
+    if not ok:
+        print(u"[FAIL] 逐件校 ⛔ 合 ⇒ **整体 ⛔ 落**（⛔ 半途之半成品 · 承 pm_1620 §三.3）")
+        return 2
+    entries = man[u"files"]
+    bdir = backup_dir(man[u"version"], root)
+    os.makedirs(bdir, exist_ok=True)
+    rows, rec = backup(root, entries, bdir)
+    print(u"\n".join(rows))
+    if not a.no_restart:
+        rc, out = ctl(root, u"stop")
+        if rc is None:
+            say(6, 10, u"⚠ 停：%s" % out)
+        elif rc != 0:
+            print(u"[FAIL] 停 ⛔ 成（rc=%s）⇒ 拒（恐换而不成）\n%s" % (rc, out))
+            return 2
+        else:
+            say(6, 10, u"停成（先停后换）")
+    locked_files = [e[u"path"] for e in man[u"files"] if locked(os.path.join(root, e[u"path"].replace(u"/", os.sep)))]
+    if locked_files:
+        print(u"[FAIL] 件被占（%d 件：%s…）⇒ 拒（恐换而不成）" % (len(locked_files), locked_files[0]))
+        if not a.no_restart:
+            ctl(root, u"start")
+        return 2
+    ok, rows, done = apply_all(entries, root, stg)
+    print(u"\n".join(rows))
+    if not ok:
+        rows = rollback(root, rec, [])
+        print(u"\n".join(rows))
+        print(u"[FAIL] **已回滚至 `%s`**（fail-loud · 承 pm_1620 §三.5）" % (cur or u"原态"))
+        if not a.no_restart:
+            ctl(root, u"start")
+        return 2
+    if not a.no_restart:
+        rc, out = ctl(root, u"start")
+        say(9, 10, u"重启：%s" % (u"成" if rc == 0 else u"⚠ rc=%s（%s）" % (rc, out[:80])))
+        ok, rows = probe_health()
+        print(u"\n".join(rows))
+        if not ok:
+            rows = rollback(root, rec, [])
+            print(u"\n".join(rows))
+            print(u"[FAIL] 起服之正控 ⛔ 过 ⇒ **已回滚至 `%s`**" % (cur or u"原态"))
+            return 2
+    try:
+        from core.lib import update_check as UC
+        UC.refresh(root)
+    except Exception:                                         # noqa: BLE001 — 刷态 ⛔ 阻成
+        pass
+    say(10, 10, u"成：%s ⇒ %s" % (cur or u"（旧包）", man[u"version"]))
+    if a.json:
+        print(json.dumps({"ok": True, "from": cur, "to": man[u"version"],
+                          "files": t, "backup": bdir, "staged": stg},
+                         ensure_ascii=False, indent=1))
+    return 0
+
+
+def self_test():
+    u"""自证（⛔ 出网 · ⛔ 动真盘）：守 ／ 形 ／ 备份之正反控。"""
+    import tempfile
+    from core.lib import update_manifest as UM
+    ok = True
+    ok &= (never(u"data/v9/x.json") != u"")
+    ok &= (never(u"config/.env") != u"")
+    ok &= (never(u"core/pa/x.py") == u"")
+    print(u"[%s] 正反控：⛔ 动之名点（data/ ／ .env ／ 常件）" % (u"OK" if ok else u"FAIL"))
+    tmp = tempfile.mkdtemp(prefix=u"pa_upd_st_")
+    man = {"version": u"9.0.1", "base_version": u"9.0.0", "channel": u"internal",
+           "built_at": u"2026-10-07T00:00:00+0800",
+           "files": [{"path": u"core/a.txt", "sha256": UM.sha256_bytes(b"hi"), "size": 2, "mode": u"add"},
+                     {"path": u"core/gone.txt", "sha256": u"", "size": 0, "mode": u"del"}]}
+    stg = os.path.join(tmp, u"stage")
+    os.makedirs(os.path.join(stg, u"core"))
+    io.open(os.path.join(stg, u"core", u"a.txt"), u"wb").write(b"hi")
+    v_ok, v_rows = verify_all(man, stg)
+    ok &= v_ok
+    print(u"[%s] 正控：逐件校（%s）" % (u"OK" if v_ok else u"FAIL", u"／".join(v_rows)))
+    man2 = json.loads(json.dumps(man))
+    man2["files"][0]["sha256"] = u"0" * 64
+    b_ok, _r = verify_all(man2, stg)
+    ok &= (not b_ok)
+    print(u"[%s] 反控：印 ⛔ 合 ⇒ ⛔ 落" % (u"OK" if not b_ok else u"FAIL"))
+    return 0 if ok else 2
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=u"应用增量包（甲-P0 之器二）")
+    ap.add_argument(u"--root", default=ROOT)
+    ap.add_argument(u"--src", default=None, help=u"更新源之根（覆声明 · 承「源须可配」）")
+    ap.add_argument(u"--manifest", default=None, help=u"本机之清单（离线之径）")
+    ap.add_argument(u"--staged", default=None, help=u"已下之树（供试）")
+    ap.add_argument(u"--force", action="store_true")
+    ap.add_argument(u"--no-restart", action="store_true")
+    ap.add_argument(u"--go", action="store_true")
+    ap.add_argument(u"--json", action="store_true")
+    ap.add_argument(u"--self-test", action="store_true")
+    a = ap.parse_args(argv)
+    _add_core(os.path.abspath(a.root))
+    if a.self_test:
+        return self_test()
+    return run(a)
+
+
+if __name__ == u"__main__":
+    sys.exit(main())
