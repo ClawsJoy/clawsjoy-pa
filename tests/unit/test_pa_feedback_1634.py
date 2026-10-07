@@ -57,6 +57,18 @@ def test_target_one_place_default_local_no_outbound(fed):
     assert FT.feedback_dir(None, src) == str(fed)
 
 
+def test_notice_local_carries_outlet(fed):
+    u"""(a) 我裁（pm_1647 §一.1）：常驻提示须含**去处**之半句（⛔ 唯言「⛔ 出机」而不言「如何到我方」）。
+    —— 「凡不可用必有因 ＋ 去处」；面（web）唯取此字（CW 之齿 F1 证「⛔ 自撰」）。
+    """
+    assert u"只存在你这台机器上" in FT.NOTICE_LOCAL, FT.NOTICE_LOCAL
+    assert u"⛔ 出机" in FT.NOTICE_LOCAL, FT.NOTICE_LOCAL
+    assert (u"上门取" in FT.NOTICE_LOCAL) or (u"复制给我们" in FT.NOTICE_LOCAL), FT.NOTICE_LOCAL
+    src = FT.load()
+    assert FT.notice(src) == FT.NOTICE_LOCAL, FT.notice(src)
+    assert u"上门取" in FT.face()[u"notice"], FT.face()[u"notice"]
+
+
 def test_target_env_override_records_origin(fed, monkeypatch):
     u"""(a) env 覆 ⇒ `origin` 记其出 ∧ `relay` ＋ 空 url ⇒ 仍 ⛔ 出机（⛔ 假在线）。"""
     monkeypatch.setenv(FT.ENV[u"mode"], u"relay")

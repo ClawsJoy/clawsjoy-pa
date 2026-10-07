@@ -45,7 +45,7 @@ _DEFAULT = {u"mode": DEFAULT_MODE, u"dir": DEFAULT_DIR,
 CONSENT_BUSES = (u"health", u"logs", u"env", u"diag")
 
 #: 面之常驻提示（**一处定形** —— 面（web）唯取此字 · ⛔ 自撰 · 承 pm_1634 §三.1）
-NOTICE_LOCAL = u"内测版：留言只存在你这台机器上（⛔ 出机 · ⛔ 联网发送）"
+NOTICE_LOCAL = u"内测版：留言只存在你这台机器上（⛔ 出机 · ⛔ 联网发送）—— 去处：我们上门取 ∨ 你可以自己复制给我们"
 NOTICE_RELAY = u"留言将送到我方之收件端（仅你勾选之内容）"
 
 
