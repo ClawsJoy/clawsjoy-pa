@@ -17,7 +17,7 @@ name: CI (Windows / win_pa)
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 jobs:
@@ -42,4 +42,4 @@ jobs:
         run: python -X utf8 -B scripts/win_pa/uninstall_win_pa.py --self-test
 
       - name: Note -- what this job does NOT cover
-        run: echo "NOT covered on CI: real Ollama/GPU/weights, scheduled-task registration, live 4-state screen."
+        run: 'echo "NOT covered on CI: real Ollama/GPU/weights, scheduled-task registration, live 4-state screen."'
