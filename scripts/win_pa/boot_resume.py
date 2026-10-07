@@ -12,8 +12,8 @@
   5. 落账          data\\v9\\pa\\boot_log.jsonl 逐次一行
 
 攒件之真源:
-  · D:\\clawsjoy_v9\\data\\v9\\pa\\inbox\\   ← ⭐ **件落盘即攒，⛔ 不依赖服务在跑**
-  · 信通信箱（D:\\Obsidian\\...\\内容工坊\\02_协作\\信通）← 机器关了，邮件仍在
+  · <main-repo>\\data\\v9\\pa\\inbox\\   ← ⭐ **件落盘即攒，⛔ 不依赖服务在跑**
+  · 信通信箱（<vault>\\...\\内容工坊\\02_协作\\信通）← 机器关了，邮件仍在
 
 用法:
   python boot_resume.py                 # 开机任务用（全跑）

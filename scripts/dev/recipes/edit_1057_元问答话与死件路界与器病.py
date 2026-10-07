@@ -53,7 +53,7 @@ I = [("gateway_routes.py · context_missing 空答 ⇒ 人话句", "core/pa/gate
             u'"answer": "本会话无可读之上句（元问 · 本机无「上一句」可引）⇒ 如实不答（⛔ 不编）", "context_prev": "",'),
 ])]
 
-J = [("落台账_行.py · 面之快照「取数刻」被吞", r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\08_工具\落台账_行.py", [
+J = [("落台账_行.py · 面之快照「取数刻」被吞", r"<vault>\内容工坊\08_工具\落台账_行.py", [
     ("sub", u"import os, io, csv, sys, hashlib, argparse, datetime",
             u"import os, io, csv, sys, re, hashlib, argparse, datetime"),
     ("sub", u'+ u"# 面之快照（⛔ 契 · ⛔ 判红之据）· 取数刻 %s · bytes %d · 数据行 %d · 契 %s\\n"',
@@ -94,7 +94,7 @@ BASES = [
     ("G", 0, "core/pa/pa_core.py", "5dba11f023edb883", "7cb7d13ed66ca4de"),
     ("H", 0, "core/pa/gateway_routes.py", "783012f8a1550279", "78652e53e372724f"),
     ("I", 0, "core/pa/gateway_routes.py", "78652e53e372724f", "5e720bd71630dd21"),
-    ("J", 0, r"D:\Obsidian\ClawsJoy\ClawsJoy\内容工坊\08_工具\落台账_行.py", "4f1a239ea0383d4b", "b95b4004b4aa678e"),
+    ("J", 0, r"<vault>\内容工坊\08_工具\落台账_行.py", "4f1a239ea0383d4b", "b95b4004b4aa678e"),
     ("K", 0, ".gitignore", "621b07950bacd199", "b9e7c0771af9910f"),
     ("L", 0, "core/pa/gateway_routes.py", "5e720bd71630dd21", "0f34ad396fa2ef6e"),
     ("M", 0, "core/pa/gateway_routes.py", "0f34ad396fa2ef6e", "4f2b0a4e661157d0"),

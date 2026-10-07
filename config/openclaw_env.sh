@@ -1,9 +1,9 @@
 #!/bin/bash
 # ClawsJoy - OpenClaw 环境配置
 # 用途：配置 OpenClaw 使用 ClawsJoy Skills
-# 用法：source /home/flybo/clawsjoy/config/openclaw_env.sh
+# 用法：source /home/<user>/clawsjoy/config/openclaw_env.sh
 
-export CLAWSJOY_HOME="/home/flybo/clawsjoy"
+export CLAWSJOY_HOME="/home/<user>/clawsjoy"
 export OPENCLAW_SKILLS="/root/.openclaw/skills"
 
 # ClawsJoy Skills 列表

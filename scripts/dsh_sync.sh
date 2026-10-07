@@ -9,7 +9,7 @@
 #   ③默认 dry-run，且**永不 --delete**
 set -u
 
-DEFAULT_SANDBOX="/home/flybo/clawsjoy_v5/data/projects/web_1783219071801/session_1783388196051/clawsjoy_dev"
+DEFAULT_SANDBOX="/home/<user>/clawsjoy_v5/data/projects/web_1783219071801/session_1783388196051/clawsjoy_dev"
 SANDBOX="${SANDBOX:-$DEFAULT_SANDBOX}"
 LIVE="${LIVE:-$HOME/clawsjoy_v5}"
 

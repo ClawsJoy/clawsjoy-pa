@@ -19,7 +19,7 @@ r"""PA 统一调用面（T2-刀7 ／ 刀7-正 · 2026-10-05 · 技术总监 f202
   三类执行器（⛔ 另造运输）：
     seat  本机席   ⇒ **复用** `core.pa.dispatch.SeatExecutor`（`paseo agent send` 之路）
     cli   本机 CLI ⇒ 起进程 ＋ **超时必带** ＋ `stdin=DEVNULL`（⛔ 交互式）
-    api   云端     ⇒ provider `base_url` ＋ 密钥**唯从 `D:\paseo-home\config.json` 读**
+    api   云端     ⇒ provider `base_url` ＋ 密钥**唯从 `<dev-home>\config.json` 读**
   ⛔ **未在册之 agent ⇒ 拒调**（⛔ 静默兜底）；`agent_id` 缺 ⇒ 回**册**（可枚举）。
 
 【红线】
@@ -96,7 +96,7 @@ INVOKES = {
     "v9_gateway":       {"via": "local_http",  "text": "HTTP 127.0.0.1:5102（本网关）"},
 }
 
-#: 云端 provider（**真源** ＝ `D:\paseo-home\config.json` 之 `agents.providers`）
+#: 云端 provider（**真源** ＝ `<dev-home>\config.json` 之 `agents.providers`）
 API_PROVIDERS = {
     "codex-deepseek": {"label": "Codex (DeepSeek)", "base_key": "OPENAI_BASE_URL",
                        "key_key": "OPENAI_API_KEY", "path": "/chat/completions"},

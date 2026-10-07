@@ -10,8 +10,8 @@
 # ============================================================
 # 一键同步 + 重启（改正方案#2 + #4）
 set -u
-LIVE="/home/flybo/clawsjoy_v5"
-SANDBOX="/home/flybo/clawsjoy_v5/data/projects/web_1783219071801/session_1783388196051/clawsjoy_dev"
+LIVE="/home/<user>/clawsjoy_v5"
+SANDBOX="/home/<user>/clawsjoy_v5/data/projects/web_1783219071801/session_1783388196051/clawsjoy_dev"
 
 echo "=== 0. 前置门（度量归属，2026-09-13）==="
 GATE_FAIL=0
@@ -42,7 +42,7 @@ while IFS= read -r f; do
     *) continue ;;
   esac
   # 2026-09-13 修：原实现在**绝对路径**上匹配 */data/* —— 而沙箱本身就在
-  # /home/flybo/clawsjoy_v5/data/projects/... 下，于是**每个文件都被跳过**，DIFF_COUNT 恒为 0
+  # /home/<user>/clawsjoy_v5/data/projects/... 下，于是**每个文件都被跳过**，DIFF_COUNT 恒为 0
   # （声称扫描、实际没扫 = 流程假绿）。改为先算相对路径再过滤。
   relf=$(echo "$f" | sed "s#^$SANDBOX/##")
   case "$relf" in

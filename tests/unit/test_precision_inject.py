@@ -326,9 +326,9 @@ def test_read_knowledge_file_and_noise_filter(_iso):
             "tool": "execute_command",
             "arg": "ls -la data/",
             "success": True,
-            "result": "total 724\ndrwxr-xr-x 51 flybo flybo 4096 .",
+            "result": "total 724\ndrwxr-xr-x 51 alice alice 4096 .",
         },
-        {"tool": "execute_command", "arg": "pwd", "success": True, "result": "/home/flybo/x"},
+        {"tool": "execute_command", "arg": "pwd", "success": True, "result": "/home/alice/x"},
         {"tool": "execute_command", "arg": "sed -i 替换", "success": True, "result": "已替换第1行"},
         {"tool": "browser_local", "arg": "click 发布", "success": True, "result": "发布按钮选择器已确认"},
     ]

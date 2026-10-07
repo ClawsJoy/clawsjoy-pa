@@ -44,7 +44,7 @@ SERVICES = [
      "host": "127.0.0.1", "port": 5102, "level": "L2", "channel": "HTTP"},
 ]
 # ⭐ 2026-10-06（pm_1409 §二.3 · 批二）：本机之 agent home 与 Paseo 配置之**字面径** ⇒ 拔。
-#   原 `D:\codex-home` ／ `D:\paseo-home` ／ `D:\paseo-home\config.json` ＝ **开发机之径**
+#   原 `<dev-home>` ／ `<dev-home>` ／ `<dev-home>\config.json` ＝ **开发机之径**
 #   ⇒ 净机必败。今唯 env 出径：缺 ⇒ 空（探读数照实「未接」· ⛔ 崩 ／ ⛔ 字面兜底）。
 CAPS_SOURCES = tuple(p.strip() for p in (os.environ.get("PA_CAPS_SOURCES") or "").split(os.pathsep) if p.strip())
 

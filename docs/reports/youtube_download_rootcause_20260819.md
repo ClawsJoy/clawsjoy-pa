@@ -9,7 +9,7 @@
 ## 一、排查结果
 
 ### 1. yt-dlp 已安装 [OK]
-- /home/flybo/miniconda3/bin/yt-dlp, 版本 2026.07.04
+- /home/<user>/miniconda3/bin/yt-dlp, 版本 2026.07.04
 - pip 包存在(yt-dlp 2026.7.4)
 
 ### 2. 代理配置现状

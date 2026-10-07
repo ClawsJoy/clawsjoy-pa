@@ -1,6 +1,6 @@
 #!/bin/bash
 # ClawsJoy 全服务启动脚本
-cd /home/flybo/clawsjoy_v5
+cd /home/<user>/clawsjoy_v5
 
 echo "🚀 启动 ClawsJoy 全服务..."
 echo ""
@@ -34,9 +34,9 @@ nohup python3.10 discord_bot_poll.py > logs/discord.log 2>&1 &
 # 5. 数字人 (7860)
 echo "🎭 启动数字人 (7860)..."
 pkill -f "webui.py" 2>/dev/null
-cd /home/flybo/clawsjoy_avatar/GMTalker
-nohup bash -c "source /home/flybo/miniconda3/etc/profile.d/conda.sh && conda activate gmtalker && python webui.py" > /tmp/gmtalker.log 2>&1 &
-cd /home/flybo/clawsjoy_v5
+cd /home/<user>/clawsjoy_avatar/GMTalker
+nohup bash -c "source /home/<user>/miniconda3/etc/profile.d/conda.sh && conda activate gmtalker && python webui.py" > /tmp/gmtalker.log 2>&1 &
+cd /home/<user>/clawsjoy_v5
 
 sleep 3
 echo ""

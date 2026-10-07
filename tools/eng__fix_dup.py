@@ -4,7 +4,7 @@
 import os
 import shutil
 
-src = "/home/flybo/clawsjoy_v5/agent_gateway_enhanced.py"
+src = "/home/<user>/clawsjoy_v5/agent_gateway_enhanced.py"
 dst = "clawsjoy_dev/agent_gateway_enhanced.py"
 
 size = os.path.getsize(src)

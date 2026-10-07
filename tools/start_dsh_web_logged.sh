@@ -8,6 +8,6 @@ set -euo pipefail
 LOG_DIR="$HOME/.dsh/logs"
 mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/dsh-web.log"
-cd /home/flybo/deepseek-harness
+cd /home/<user>/deepseek-harness
 echo "[$(date '+%F %T')] start dsh web (log -> $LOG)" | tee -a "$LOG"
 exec pnpm dsh web "$@" >>"$LOG" 2>&1

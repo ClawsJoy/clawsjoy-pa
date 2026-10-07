@@ -1,11 +1,11 @@
 #!/bin/bash
 # ClawsJoy - OpenClaw 软链接配置模块
-# 用法：source /home/flybo/clawsjoy/config/openclaw_links.sh && setup_links
+# 用法：source /home/<user>/clawsjoy/config/openclaw_links.sh && setup_links
 
 setup_links() {
     echo "🔗 配置 ClawsJoy → OpenClaw 软链接..."
     
-    local CLAWSJOY_SKILLS="/home/flybo/clawsjoy/skills"
+    local CLAWSJOY_SKILLS="/home/<user>/clawsjoy/skills"
     local OPENCLAW_SKILLS="/root/.openclaw/skills"
     
     # 创建目录

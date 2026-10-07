@@ -17,7 +17,7 @@ r"""PA 环境感知面 v2（T2-刀2′ ＋ 刀2″ · 2026-10-05 · 技术总监
 【纪律（承令）】
   · **只读**：⛔ 写任何**被观察之一侧**（承 kb_mapping N1–N6 零噪音）；唯写**自己**的笔记（`env_notes/`）
   · 每项附 `src` ＝ **面之径逐字**；查不到 ⇒ `state="缺"`（⛔ 报「空」）
-  · ⭐⭐ **密钥唯布尔**：`D:\paseo-home\config.json` 内含**明文 API key** ⇒ 唯取**键名**，
+  · ⭐⭐ **密钥唯布尔**：`<dev-home>\config.json` 内含**明文 API key** ⇒ 唯取**键名**，
     ⛔ 值入面 ／ ⛔ 入日志 ／ ⛔ 入 events.jsonl（第一红线）；末闸 `secret_guard` 实扫 `sk-`
   · 无写副作用之**自证** ⇒ `research()` 之内**前后对表**（侦察前 ／ 后之四栏印须同）
 """
@@ -62,8 +62,8 @@ TOOL_REL = {"内容工坊 08_工具": ("内容工坊", "08_工具"),
 
 
 #: ⭐⭐ 径之**一处**（承 pm_1366 §三 ⓐ「一处出径」）—— `build_env()["paths"]` 之真源表。
-#: ⚠ 何以立此：前端（`web\pa\faces\products.js:240` 之 `C:/Users/flybo/…` —— ⓒ 待拔）与后端
-#:   （`allowlist()` 之 `D:\npm-global\…` —— ⓑ **已拔** ⇒ `_shim_files()`）旧为**各自硬编** ⇒ 「二源必漂」 ∧ **净机必败**。
+#: ⚠ 何以立此：前端（`web\pa\faces\products.js` 之 `C:/Users/<用户>/…` —— ⓒ **已拔**）与后端
+#:   （`allowlist()` 之 `<npm-global>\…` —— ⓑ **已拔** ⇒ `_shim_files()`）旧为**各自硬编** ⇒ 「二源必漂」 ∧ **净机必败**。
 #:   ⇒ 今唯此处出径；⛔ 值**新硬编**于本档：逐项自 env ∨ **既有之真源**取
 #:   （`vault_root()` ／ `get_data_root()` ／ `config paths.logs_root` ／ `SRC_TOOLS`）；
 #:   ⭐ **无可推之真源 ⇒ `None` ＋ `paths_src` 明书「未接」**（⛔ 以字面兜底 ——
@@ -182,7 +182,7 @@ def resolve_paths():
 
 
 def resolve_ws_root(paths_map=None):
-    r"""⭐ 工作区根（`D:\paseo-workspace`）—— ⛔ 字面：env `PA_WS_ROOT` ∨ `tools` 之父。"""
+    r"""⭐ 工作区根（`<workspace>`）—— ⛔ 字面：env `PA_WS_ROOT` ∨ `tools` 之父。"""
     v, s = _env_first(PATH_ENV["ws_root"])
     if v:
         return _abs(v), s

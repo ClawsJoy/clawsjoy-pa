@@ -253,8 +253,8 @@ class EscapeGuard(ToolGuard):
                 # 2026-08-30: Obsidian vault 路径(/mnt/d/...) → 引导用 obsidian_knowledge(read)
                 # (Agent 反复用 read_file 读 vault 被拦, 却不知正确工具 → 浪费多轮)
                 # 2026-09-28(成对改): vault 归类改引**唯一真源** core.lib.paths.is_vault_path()
-                # 此前写死 "Obsidian/ClawsJoy" / "/mnt/d/Obsidian" 两串 ⇒ Windows 原生形态
-                # (D:\Obsidian\...) 认不出 ⇒ 判据在场却打错对象（CEO 2026-09-28 ④）。
+                # 此前写死 "Obsidian/ClawsJoy" / "/mnt/d/vault" 两串 ⇒ Windows 原生形态
+                # (<vault>\...) 认不出 ⇒ 判据在场却打错对象（CEO 2026-09-28 ④）。
                 from core.lib.paths import is_vault_path
 
                 _is_vault = is_vault_path(_rpath)

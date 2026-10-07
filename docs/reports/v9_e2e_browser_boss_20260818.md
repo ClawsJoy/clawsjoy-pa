@@ -108,5 +108,5 @@
 
 ## 八、待办提示
 
-1. 需将 agent_gateway_enhanced.py / web/dashboard/workbench.html / tests/integration/test_frontend_protocol.py 同步到 live（/home/flybo/clawsjoy_v5）并重启网关（用户手动）。
+1. 需将 agent_gateway_enhanced.py / web/dashboard/workbench.html / tests/integration/test_frontend_protocol.py 同步到 live（/home/<user>/clawsjoy_v5）并重启网关（用户手动）。
 2. 沙箱 config 端口改动（clawsjoy.yaml 5003 / system_unified.yaml 5003）确认是否保留。

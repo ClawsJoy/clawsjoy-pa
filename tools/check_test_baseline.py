@@ -23,7 +23,7 @@
 #   为什么: 失败可能被“吞”——部分收集失败时 rc!=1、收集错误行无 `::` 不进 failed 名单
 #   ⇒ 门禁自称的 PASS 严格只能算 **reported PASS**，第四问（收集阶段有无异常）
 #   必须人工补齐后另记 **human_confirmed_pass**。
-#   证据等级: 【实测】D:\clawsjoy_v9 · Windows 11 + PowerShell 5.1 + Python 3.12 · 2026-09-17。
+#   证据等级: 【实测】<main-repo> · Windows 11 + PowerShell 5.1 + Python 3.12 · 2026-09-17。
 #
 # X-03 防复发(2026-09-18 · 老板拍定「做」):
 #   新增「文件编码显式化债务」AST 扫描(tools/check_encoding_explicit.py), 同样**只告警不改判定**;

@@ -1,0 +1,13 @@
+{
+    "enabled": true,
+    "channels": {
+        "dingtalk": {"webhook": "", "enabled": false},
+        "wecom": {"webhook": "", "enabled": false},
+        "email": {"to": "you@example.com", "enabled": false}
+    },
+    "thresholds": {
+        "service_restart": 10,
+        "error_rate": 0.1,
+        "disk_usage": 80
+    }
+}

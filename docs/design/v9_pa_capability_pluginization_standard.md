@@ -413,7 +413,7 @@
 
 ## 十一、上位对齐（**v1.2 新增**）：本件是 M3 的**落地面**，不是另立一套标准
 
-- **上位文档**：《PA / V9 总任务书 · 工程版 v1 · 20260917》 = `8c29abc6` / 9,343 B（仓外：`D:\Obsidian\ClawsJoy\ClawsJoy\开发区\架构与路线图\`）。该文原文声明：**不改产品口径**（P0–P5 / L1–L5 / 状态所有权三层均沿用），只做**工程落地面拆解**。
+- **上位文档**：《PA / V9 总任务书 · 工程版 v1 · 20260917》 = `8c29abc6` / 9,343 B（仓外：`<vault>\开发区\架构与路线图\`）。该文原文声明：**不改产品口径**（P0–P5 / L1–L5 / 状态所有权三层均沿用），只做**工程落地面拆解**。
 - **本件的位置**：总任务书 §五 MVP 路线的 **M3「能力注册」**之**落地面标准**：
 
 | M3 判据（总任务书原文） | 本件对应 | 本遍判定 |
@@ -444,7 +444,7 @@
 ```text
 # 引用附表（机读：<sha8>  <字节>  <路径>）
 # 上位（仓外）
-8c29abc6  9343  D:\Obsidian\ClawsJoy\ClawsJoy\开发区\架构与路线图\PA_V9总任务书_工程版_v1_20260917.md
+8c29abc6  9343  <vault>\开发区\架构与路线图\PA_V9总任务书_工程版_v1_20260917.md
 # PES 五层 + 外围
 31d60491  2327  core\pes\__init__.py
 9337dc82  33178  core\pes\state_integrity.py
@@ -509,14 +509,14 @@ bdec8989  17032  data\tmp\wps_v1_shadow\wps_office_v1_adapter.py
 aab25b0d  18270  data\tmp\kb_insert\fixtures\wps_office_v2retry_before_aab25b0d.py
 2eb8f165   9862  data\tmp\kb_insert\fixtures\wps_retry_control_v2_before_2eb8f165.py
 6375c017   3503  data\tmp\kb_insert\fixtures\wps_retry_control_vs_v1_before_6375c017.py
-38286268   9055  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-初审二轮_灵犀桥重试v2.md
-53f2292b  11645  D:\Obsidian\ClawsJoy\ClawsJoy\codex\2026-09-19-codex-修法件v2_PA侧宿主未命中重试_收窄与未覆盖面.md
-526e999f   9319  D:\Obsidian\ClawsJoy\ClawsJoy\codex\2026-09-19-codex-修法件v3_写类硬闸与三处修复.md
-198a63b8  13633  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-初审_灵犀桥宿主未命中重试.md
-7d9893aa  9983  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-提案初审二轮_插件化标准v1.2.md
-45695ce7  8335  D:\Obsidian\ClawsJoy\ClawsJoy\codex\2026-09-19-codex-送审_插件化标准v1.2初审_DS两裁与待并入.md
-497f3888  4479  D:\Obsidian\ClawsJoy\ClawsJoy\codex\2026-09-19-codex-修法件_PA侧宿主未命中重试兼容层.md
-e4a99587  4218  D:\Obsidian\ClawsJoy\ClawsJoy\codex\2026-09-19-codex-根因件_灵犀桥多宿主轮流派发_wpp工具50%假失败.md
+38286268   9055  <vault>\dsh-windows\2026-09-19-dsh-windows-初审二轮_灵犀桥重试v2.md
+53f2292b  11645  <vault>\codex\2026-09-19-codex-修法件v2_PA侧宿主未命中重试_收窄与未覆盖面.md
+526e999f   9319  <vault>\codex\2026-09-19-codex-修法件v3_写类硬闸与三处修复.md
+198a63b8  13633  <vault>\dsh-windows\2026-09-19-dsh-windows-初审_灵犀桥宿主未命中重试.md
+7d9893aa  9983  <vault>\dsh-windows\2026-09-19-dsh-windows-提案初审二轮_插件化标准v1.2.md
+45695ce7  8335  <vault>\codex\2026-09-19-codex-送审_插件化标准v1.2初审_DS两裁与待并入.md
+497f3888  4479  <vault>\codex\2026-09-19-codex-修法件_PA侧宿主未命中重试兼容层.md
+e4a99587  4218  <vault>\codex\2026-09-19-codex-根因件_灵犀桥多宿主轮流派发_wpp工具50%假失败.md
 # 外部线引用件 —— **Owner = DSH(WSL) 线**（不是 `dsh-windows\`；DSH-windows 三轮 §四-2 已指出本线署错）。
 #   随对岸更新而漂移；本表记**现行**（v1.3 时 6b5cb048/5491，18:42:54 被对岸改成现行值 ⇒ v1.4 首遍复算精确报行 :404）。
 #   再漂时的通知对象 = **DSH(WSL) 线**（`dsh-windows\` 收到也做不了主）。
@@ -524,9 +524,9 @@ e26a1b5d  7928  data\tmp\kb_insert\fixtures\V9PA_可复用能力插件化设计�
 # v1.6 本批（并入 DSH 差异清单 5 条裁定；来源件 + 新增引用）
 cee31c11  10420  core\lib\v8\roster_engine.py
 ebf2bf56  16162  data\tmp\tools\mcp_bridge_probe.py
-9b761945   5038  D:\Obsidian\ClawsJoy\ClawsJoy\codex\2026-09-19-codex-裁_DSH差异清单5条_并否与节号.md
-77234fe2   2936  D:\Obsidian\ClawsJoy\ClawsJoy\dsh\2026-09-19-dsh-差异清单_我独有正本未见.md
-5c6dfecd   8704  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-初审_owner裁定五条与活件换版65c323a4.md
+9b761945   5038  <vault>\codex\2026-09-19-codex-裁_DSH差异清单5条_并否与节号.md
+77234fe2   2936  <vault>\dsh\2026-09-19-dsh-差异清单_我独有正本未见.md
+5c6dfecd   8704  <vault>\dsh-windows\2026-09-19-dsh-windows-初审_owner裁定五条与活件换版65c323a4.md
 # v1.7 本批（初审修复 + 换版登记）
 695cb764   8354  data\tmp\kb_insert\fixtures\mcp_bridge_probe.before_695cb764.py
 # v1.8 本批（DS 复审两条裁定落地：渲染面锚 + 自指机锚；来源 = DS 复审帖 + DSH 第 4 轮初审件）
@@ -535,24 +535,24 @@ c2533654  6672  data\tmp\tools\selfref_sha_check.py
 c6324f94  47351  data\tmp\kb_insert\fixtures\v9_pa_capability_pluginization_standard.before_c6324f94.md
 aa09ef97  422  data\tmp\kb_insert\fixtures\selfref_bad_selfvalue.md
 854ce7c5  246  data\tmp\kb_insert\fixtures\selfref_bad_noslot.md
-d1f9ed2b  12266  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-初审_正本v1.6并入5条件_6bc61621.md
+d1f9ed2b  12266  <vault>\dsh-windows\2026-09-19-dsh-windows-初审_正本v1.6并入5条件_6bc61621.md
 # v1.9 本批（DSH 初审 v1.8 的四条修复：自指尺 64-hex 假绿 + 渲染尺口径 + §十四 可复算化 + 件头「本版」）
-36532516  13021  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-初审_正本v1.8_渲染面锚与自指机锚_49a07fb8.md
+36532516  13021  <vault>\dsh-windows\2026-09-19-dsh-windows-初审_正本v1.8_渲染面锚与自指机锚_49a07fb8.md
 fa6f5a69  7047  data\tmp\tools\sec14_check.py
 fe8deb84  429  data\tmp\kb_insert\fixtures\selfref_bad_selfvalue64.md
 49a07fb8  55558  data\tmp\kb_insert\fixtures\v9_pa_capability_pluginization_standard.before_49a07fb8.md
 # v1.10 本批（DSH 复核 v1.9 §四 残留 + 机制化成尺）
-95a252df  9574  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-复核_正本v1.9_四修一残留与我认错_e2263b3b.md
+95a252df  9574  <vault>\dsh-windows\2026-09-19-dsh-windows-复核_正本v1.9_四修一残留与我认错_e2263b3b.md
 e2263b3b  59951  data\tmp\kb_insert\fixtures\v9_pa_capability_pluginization_standard.before_e2263b3b.md
 719211cf  63231  data\tmp\kb_insert\fixtures\v9_pa_capability_pluginization_standard.before_719211cf.md
 # v1.11 本批（修 DSH 初审 v1.10 的「件头尺假绿」+ 三条裁的落点登记）
-89ede8cb  12784  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-初审_正本v1.10_件头尺假绿与provider降级_719211cf.md
+89ede8cb  12784  <vault>\dsh-windows\2026-09-19-dsh-windows-初审_正本v1.10_件头尺假绿与provider降级_719211cf.md
 1dcbed8c  47314  data\tmp\tools\head_version_check.py
 2132081e  41299  data\tmp\fixtures\head_version_check.py.before_2132081e.py
 6a13e4b4  8135  data\tmp\restored\head_version_check.py.6a13e4b4
 90b31831  5807  data\tmp\kb_insert\fixtures\head_version_check.before_90b31831.py
 89084dc7  63231  data\tmp\kb_insert\fixtures\dsh_ctl_head_v14.md
-1558a2d4  10864  D:\Obsidian\ClawsJoy\ClawsJoy\codex\2026-09-19-codex-方案_wps_office_provider静默降级_不落地.md
+1558a2d4  10864  <vault>\codex\2026-09-19-codex-方案_wps_office_provider静默降级_不落地.md
 8bfcd97c  6044  data\tmp\dsh_audit\_inbox\codex_送审_插件化标准v1.10_DSH初审_8bfcd97c.md
 # v1.12 本批（自抓第 3 处读数错 · 换版夹具 · 方案件升 v1.1）
 9efc49ca  67784  data\tmp\kb_insert\fixtures\v9_pa_capability_pluginization_standard.before_9efc49ca.md
@@ -568,7 +568,7 @@ e5a76e51  10003  data\tmp\kb_insert\fixtures\codex_方案_wps_office_provider静
 # v1.16 本批（DS 裁② 机化 + 裁④ 附表口径与计数尺；**夹具件不入本表 = 口径本身**）
 23c42319  12070  data\tmp\tools\fixture_registry_check.py
 # v1.18 本批（修 DSH 初审 v1.17「层 B 第二条路四条」＋ v5.1 / v5.2 两处自曝假红；**夹具件不入本表 = 口径本身**）
-334b8e04  8731  D:\Obsidian\ClawsJoy\ClawsJoy\dsh-windows\2026-09-19-dsh-windows-初审_正本v1.17_层B第二条路四条_ae693d64.md
+334b8e04  8731  <vault>\dsh-windows\2026-09-19-dsh-windows-初审_正本v1.17_层B第二条路四条_ae693d64.md
 92c5e987  30406  data\tmp\restored\head_version_check.py.92c5e987
 # v1.19 本批（换锚：`rec` 注释键 ＋ `:8` 拆 6 条 ＋ 层 B 末版改从键解析 ＋ 旧 zone 退役；**尺的夹具不入本表 = 裁④口径本身**）
 1e3480fe  37770  data\tmp\restored\head_version_check.py.1e3480fe

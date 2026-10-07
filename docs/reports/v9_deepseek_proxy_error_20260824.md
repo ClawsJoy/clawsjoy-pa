@@ -71,7 +71,7 @@ config/.env: HTTP_PROXY=http://127.0.0.1:7890   ← #27 为沙箱 yt-dlp/下载�
 
 ## 四、待同步到线上（必须，否则 live 仍报错）
 
-需手动同步 sandbox → /home/flybo/clawsjoy_v5 并**重启网关**:
+需手动同步 sandbox → /home/<user>/clawsjoy_v5 并**重启网关**:
 - agent_gateway_enhanced.py（L1818/L1926 加固 + 此前 max_bridge_rounds 16 改动）
 - core/lib/v8/adapters/deepseek_adapter.py
 - core/lib/code_indexer.py

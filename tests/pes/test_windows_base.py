@@ -86,7 +86,7 @@ def test_信任域分类_沙箱与金库与仓库():
 def test_信任域分类_系统与外部分开():
     if os.name == "nt":
         assert classify_path("C:/Windows/System32/drivers") == "system"
-    assert classify_path("C:/Users/flybo/Documents/x") == "external"
+    assert classify_path("C:/Users/someone/Documents/x") == "external"
 
 
 def test_沙箱_git_与真项目_git_必须区分(tmp_path, monkeypatch):
@@ -105,7 +105,7 @@ def test_沙箱_git_与真项目_git_必须区分(tmp_path, monkeypatch):
 # ---------------------------------------------------------------- WSL 边界
 def test_回归_wsl_绝对路径必须被认出():
     """回归：先归一化会把 ``/home/x`` 变成 ``D:/home/x`` ⇒ 守卫静默失效。"""
-    for p in ("/home/flybo/x", "/mnt/d/Obsidian", "/usr/bin/python3", "/etc/passwd", "/tmp/a", "/var/log"):
+    for p in ("/home/alice/x", "/mnt/d/data", "/usr/bin/python3", "/etc/passwd", "/tmp/a", "/var/log"):
         assert is_wsl_path(p) is True, p
 
 
@@ -129,7 +129,7 @@ def test_wsl_改契约即改行为(monkeypatch):
     """
     monkeypatch.setitem(WSL_BOUNDARY, "wsl_markers", ("/zzz-x18-probe/",))
     assert is_wsl_path("/zzz-x18-probe/x") is True
-    assert is_wsl_path("/home/flybo/x") is False
+    assert is_wsl_path("/home/alice/x") is False
 
 
 # ---------------------------------------------------------------- PowerShell

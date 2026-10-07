@@ -36,5 +36,5 @@
 - C. 保持现状 + 回复提示"请 @计划经理"
 
 ## 发布流程缺口（新增发现）
-线上网关（/home/flybo/clawsjoy_v5）与沙箱代码不同步：v5_execute.py / task_orchestrator.py / agent_gateway_enhanced.py 3 文件待同步；线上进程运行旧代码（探测：@编排Agent 返回旧错误）。
+线上网关（/home/<user>/clawsjoy_v5）与沙箱代码不同步：v5_execute.py / task_orchestrator.py / agent_gateway_enhanced.py 3 文件待同步；线上进程运行旧代码（探测：@编排Agent 返回旧错误）。
 建议：建立同步脚本 + 重启验证流程（部署管道）。

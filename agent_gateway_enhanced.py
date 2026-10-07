@@ -42,7 +42,7 @@ _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 def _resolve_project_root():
     """解析项目根目录。
 
-    PROJECT_ROOT 可能来自 .env（历史 WSL 绝对路径 /home/flybo/...）。
+    PROJECT_ROOT 可能来自 .env（历史 WSL 绝对路径 /home/<user>/...）。
     Windows 副本下该路径不存在，此时必须回退到本文件所在目录，
     否则 config/system_config.yaml 读取失败、进程无法启动。
     """
@@ -68,7 +68,7 @@ if not os.path.isabs(_env_path):
 load_dotenv(_env_path, override=True)
 
 # load_dotenv 会把 .env 里的 PROJECT_ROOT 灌进 os.environ；若它是历史 WSL 路径
-# （/home/flybo/clawsjoy_v5），下游 security / shared_state / context_manager /
+# （/home/<user>/clawsjoy_v5），下游 security / shared_state / context_manager /
 # execute_command 拿到的项目根就是无效路径。这里统一校正为实际存在的根目录。
 if not os.path.isdir(os.environ.get("PROJECT_ROOT", "")):
     os.environ["PROJECT_ROOT"] = _PROJECT_ROOT

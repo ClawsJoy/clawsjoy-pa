@@ -214,7 +214,7 @@ def _normalize_path(filepath: str, user_id: str, session_id: str, base_override=
         _inner = _fp_norm.split("/clawsjoy_dev/", 1)[1]
         return _main_base / _inner
     # 1) 统一处理各种路径格式 → clawsjoy_dev/xxx
-    # 处理绝对路径 /home/flybo/.../clawsjoy_dev/xxx
+    # 处理绝对路径 /home/<user>/.../clawsjoy_dev/xxx
     if "/clawsjoy_dev/" in filepath_str:
         filepath_str = "clawsjoy_dev/" + filepath_str.split("/clawsjoy_dev/", 1)[1]
     # 处理 data/projects/.../clawsjoy_dev/xxx

@@ -1,6 +1,6 @@
 # Harness 自我认知报告 — 三根柱子
 
-> 日期：2026-08-17 | 依据：/home/flybo/deepseek-harness 源码（vendored Cordis 插件系统）
+> 日期：2026-08-17 | 依据：/home/<user>/deepseek-harness 源码（vendored Cordis 插件系统）
 > 结论：我不是"agent 程序"，而是事件溯源 + 插件化接缝 + 结构化失败三根柱子上搭起的 agent 框架。
 
 ---

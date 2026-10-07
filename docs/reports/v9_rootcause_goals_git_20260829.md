@@ -84,7 +84,7 @@ fatal: no submodule mapping found in .gitmodules for path 'clawsjoy-ai-extension
 - reason==completed 且 goal 为 active/paused → 无条件 complete_goal（不再依赖 done>=total）
 - reason in (error, paused, budget_limit, max_tokens) 且 active → update_goal_status failed（不再永久堆积）
 - 标记日志: [GOAL_FIX] completed 置 complete / {reason} 置 failed
-- 已同步 live（/home/flybo/clawsjoy_v5/agent_gateway_enhanced.py，diff 仅此 18 行，语法 OK）
+- 已同步 live（/home/<user>/clawsjoy_v5/agent_gateway_enhanced.py，diff 仅此 18 行，语法 OK）
 **语义修正**（同日 2nd pass，回归测试暴露边界问题）：
 - 初版把 max_tokens/paused 也置 failed → 前端自动续跑依赖 goal_active(L730) 被杀 → 多轮任务断裂
 - 修正后：max_tokens/paused 保持原状态(可续跑); 仅 error/budget_limit → failed; completed 含 failed 翻转
@@ -94,7 +94,7 @@ fatal: no submodule mapping found in .gitmodules for path 'clawsjoy-ai-extension
 **存量清理**（跨 session 全部路径）：
 - 第一次：workspace 嵌套 goals 484 个 → failed
 - 第二次：workspace os.walk 44 个 → failed（部分被 except:pass 吞掉，未真正落盘）
-- 第三次（定位）：live 目录 /home/flybo/clawsjoy_v5/data/projects/ 下 44 个跨 session active（user-mt0q7ws8-*、ext-integration、zhihu-test、bili_calib_* 等）→ 全部 failed + archive_note
+- 第三次（定位）：live 目录 /home/<user>/clawsjoy_v5/data/projects/ 下 44 个跨 session active（user-mt0q7ws8-*、ext-integration、zhihu-test、bili_calib_* 等）→ 全部 failed + archive_note
 - **验证：REMAINING active: 0**（全量扫描 live + workspace）
 
 > 关键教训：之前两次清理的 cwd 在 workspace，os.walk('data/projects') 只扫到 workspace 嵌套路径；

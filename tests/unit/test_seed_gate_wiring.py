@@ -5,7 +5,7 @@
 反例（本门要治的真事）：`sandbox_seed.seed_sandbox` 长期**零调用者** ⇒ 闸在、口不在 ⇒
   每个会话每个回合被短路 ⇒ 前端「服务暂不可用」＋无回执（2026-09-29 一手实测）。
 
-夹具说明：⛔ 不用 pytest 的 `tmp_path`（本机 %TEMP%\\pytest-of-flybo 拒绝访问，WinError 5）；
+夹具说明：⛔ 不用 pytest 的 `tmp_path`（本机 %TEMP%\\pytest-of-<user> 拒绝访问，WinError 5）；
   改用仓内 `data/tmp/` 下自建 scratch，用例结束只清**本用例自建**的目录。
 """
 import io

@@ -6,11 +6,11 @@
 
 | 环境 | 路径 |
 |---|---|
-| Windows | D:\\Obsidian\\ClawsJoy |
-| WSL | /mnt/d/Obsidian/ClawsJoy |
+| Windows | <vault>\\ClawsJoy |
+| WSL | /mnt/d/vault/ClawsJoy |
 | V9 配置 | config/v9/execution_policy.yaml → obsidian.vault_path |
 
-当前 vault 状态: /mnt/d/Obsidian/ClawsJoy/ClawsJoy (已初始化, .obsidian + 欢迎.md)
+当前 vault 状态: /mnt/d/vault/ClawsJoy/ClawsJoy (已初始化, .obsidian + 欢迎.md)
 写权限: V9 网关(danger-full-access 环境)可写 /mnt/d (实测 WRITE OK); 普通 sandbox 只读
 
 ## 二、vault 结构（obsidian-skills 最佳实践 + ClawsJoy 需求）

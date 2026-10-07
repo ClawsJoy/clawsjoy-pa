@@ -1,5 +1,5 @@
 <!-- 批180：本文件有**两份副本**（同一内容）。真源 = dev 检出：
-     /home/flybo/clawsjoy_v5/data/projects/web_1783219071801/session_1783388196051/clawsjoy_dev/core/gateway/v9_chat/AGENTS.md
+     /home/<user>/clawsjoy_v5/data/projects/web_1783219071801/session_1783388196051/clawsjoy_dev/core/gateway/v9_chat/AGENTS.md
      live 侧副本（本文件同目录）是为了让**在 live 树里动手的人**也能读到第一现场规约（批180 老板拍板 ①）。
      改规则时请**两份一起改**；核对：diff <dev路径> <live路径>（或比 sha256sum）。 -->
 # v9_chat/ 目录规则（批173 起 · 第一现场规约）
@@ -8,7 +8,7 @@
 
 ## 真源（批173 A 段未完全对齐 ⇒ 按批173 执行卡 B-1 的 else 分支）
 
-- **当前真源 = live 树**（`/home/flybo/clawsjoy_v5/core/gateway/v9_chat/`）。
+- **当前真源 = live 树**（`/home/<user>/clawsjoy_v5/core/gateway/v9_chat/`）。
   - 依据：批173 A-1 实测 —— dev 与 live 存在**真实差异**（bridge_call 291 / recovery 407 / entry 138 / archive 67 行「代码类」差异），
     且 **dev 侧存在 live 中没有的内容**（token 多重集判据：dev 独有 token 种类 archive 3 / entry 1 / recovery 66 / bridge_call 5）
     ⇒ **不能**用「整文件复制」任一方向对齐；A 段（逐文件反向收割）**因判据无法排除逻辑丢失而手动停止**。

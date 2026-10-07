@@ -37,7 +37,7 @@ def _default_health_lib():
         return str(vault_root() / "收件箱" / "体检项库_V9.md")
     except Exception:
         # 兜底只留给「真源不可 import」的环境；⛔ 它**不是**权威值（真源在上）
-        return "/mnt/d/Obsidian/ClawsJoy/ClawsJoy/收件箱/体检项库_V9.md"
+        return "/mnt/d/vault/ClawsJoy/ClawsJoy/收件箱/体检项库_V9.md"
 
 
 DEFAULT_TARGETS = [

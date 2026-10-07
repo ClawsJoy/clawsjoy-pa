@@ -151,8 +151,8 @@ class V9GatewayExecutor:
 
 
 # ---- 席轴之投递（T2-刀1 ③ · 2026-10-05）--------------------------------------
-# 形之真源（技术总监一手读 2026-10-05 · `D:\paseo-workspace\_tools\wake_send.py`）：
-#   powershell -NoProfile -ExecutionPolicy Bypass -File D:\npm-global\paseo.ps1 agent send <席> --prompt-file <件> --no-wait
+# 形之真源（技术总监一手读 2026-10-05 · `<workspace>\_tools\wake_send.py`）：
+#   powershell -NoProfile -ExecutionPolicy Bypass -File <npm-global>\paseo.ps1 agent send <席> --prompt-file <件> --no-wait
 # ⇒ 本器**同形复用**（同一入口 · 同一 rc 语义：0 已投递 ／ 1 该刻被拒 ／ 2 用法错 ／ 3 件不存在）。
 # ⛔ 另造运输 ／ ⛔ 直连他方平台 ／ ⛔ 静默兜底。
 # ⭐ 承 pm_1399 §二.3（批一）：组织物之径 ⇒ env ＋ 组织版开关（缺 ⇒ None ⇒ **明报** · ⛔ 静默兜底）

@@ -270,7 +270,7 @@ def _pptx_from_md_wpsai(pages, out_path):
 
     win_out = _win_path(out_path)
     if not win_out:
-        win_out = os.getenv("WPS_AI_OUT_DIR", "C:\\Users\\flybo\\Desktop") + "\\" + Path(out_path).name
+        win_out = os.getenv("WPS_AI_OUT_DIR", os.path.join(os.path.expanduser("~"), "Desktop")) + "\\" + Path(out_path).name
 
     total = len(pages)
     try:

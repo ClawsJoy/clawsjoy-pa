@@ -1,0 +1,9 @@
+{
+  "admin_email": "you@example.com",
+  "report_hour": 9,
+  "alert_thresholds": {
+    "cpu_percent": 80,
+    "memory_percent": 80,
+    "disk_percent": 85
+  }
+}

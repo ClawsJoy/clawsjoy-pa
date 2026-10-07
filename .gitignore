@@ -160,3 +160,7 @@ scripts/win_pa/*.xml
 
 # ===== BOM 闸之基线（本机之面之快照 · --rebase 可再生 ⇒ 派生 · 承 PM 1221 §二.⒜）=====
 core/lib/scan_bom_baseline.json
+
+# ===== 本机之活配置（含个人邮箱 ⇒ ⛔ 入仓 · 出包亦剔 · pm_1580 §二.1）=====
+config/alert_config.json
+config/scheduler_config.json

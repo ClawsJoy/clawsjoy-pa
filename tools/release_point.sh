@@ -14,7 +14,7 @@ if [ -f "$_REPO/tools/check_ledger_numbering.py" ]; then
   fi
   echo "  [编号检查-通过]"
 fi
-LIVE="/home/flybo/clawsjoy_v5"
+LIVE="/home/<user>/clawsjoy_v5"
 ACC="$LIVE/data/sync_state/live_accumulation.jsonl"
 REL="$LIVE/data/sync_state/release_points.jsonl"
 TAG="${1:-}"
@@ -55,7 +55,7 @@ PYEOF
 
 # 第 5 步：归档「本次发布清单」→ 收件箱/发布_<tag>_<日期>.md（人可读）
 OUT_DIR="$LIVE/../收件箱"
-[ -d "/mnt/d/Obsidian/ClawsJoy/ClawsJoy/收件箱" ] && OUT_DIR="/mnt/d/Obsidian/ClawsJoy/ClawsJoy/收件箱"
+[ -d "/mnt/d/vault/ClawsJoy/ClawsJoy/收件箱" ] && OUT_DIR="/mnt/d/vault/ClawsJoy/ClawsJoy/收件箱"
 if [ "$APPLY" = "--apply" ]; then OUT_MD="$OUT_DIR/发布_${TAG}_$(date +%Y%m%d).md"; else OUT_MD="/tmp/发布_${TAG}_preview.md"; fi
 python3 - "$ACC" "$LAST_AT" "$TAG" "$OUT_MD" <<'PYEOF2'
 import json, sys, datetime

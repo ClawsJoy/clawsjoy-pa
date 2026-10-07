@@ -34,7 +34,7 @@ r"""X-03 防复发扫描器（**只报不改**）：文件编码显式化债务�
   python tools/check_encoding_explicit.py --strict        # 有新增债务时退出码 1（默认恒 0，只报）
 退出码: 默认 **0**（报告器）；`--strict` 时发现「未在基线 allow 内」的债务 ⇒ 1。
 
-证据等级: 【实测】D:\clawsjoy_v9 · Windows 11 + Python 3.12 · 2026-09-18。
+证据等级: 【实测】<main-repo> · Windows 11 + Python 3.12 · 2026-09-18。
 """
 from __future__ import annotations
 

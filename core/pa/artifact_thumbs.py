@@ -20,7 +20,7 @@ MAX_TOTAL = 32 * 1024 * 1024
 
 
 def thumb_root():
-    """以**本进程实际加载的代码根**为基准 —— live 进程 => /home/flybo/clawsjoy_v5，
+    """以**本进程实际加载的代码根**为基准 —— live 进程 => /home/<user>/clawsjoy_v5，
     sandbox 进程 => .../clawsjoy_dev。两者各自落到自己的 web/ 下，互不干扰。"""
     here = os.path.abspath(__file__)  # core/pa/artifact_thumbs.py
     root = os.path.dirname(os.path.dirname(os.path.dirname(here)))

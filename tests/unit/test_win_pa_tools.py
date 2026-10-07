@@ -102,7 +102,7 @@ def test_check_ps1_declares_param_and_port():
 def test_shims_do_not_hardcode_dev_path():
     r"""⭐ 净机自足（pm_1450 §二.2）：器之壳 ⛔ **硬编开发机之径**。
 
-    由：包在净机下解到他处 ⇒ `cd /d D:\clawsjoy_v9` ⛔ 得 ⇒
+    由：包在净机下解到他处 ⇒ `cd /d <main-repo>` ⛔ 得 ⇒
     后续 `python scripts\win_pa\*.py` ⛔ 得⇒ **装必败**。
     形：取**本件位置**（bat ⇒ `%~dp0..\..` · ps1 ⇒ `$PSScriptRoot`）。
     反控：本件亦不许出现 `clawsjoy_build` （同族：二台之根各异）。

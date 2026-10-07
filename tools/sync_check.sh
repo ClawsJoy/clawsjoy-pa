@@ -2,14 +2,14 @@
 # ============================================================
 # ClawsJoy 发布流程：线上同步 + 重启核对清单
 # 用法: bash tools/sync_check.sh [--restart-check]
-#   - 对比 sandbox(会话工作区) 与 live(/home/flybo/clawsjoy_v5) 的关键文件 md5
+#   - 对比 sandbox(会话工作区) 与 live(/home/<user>/clawsjoy_v5) 的关键文件 md5
 #   - 输出待同步文件清单 + 重启提示
 #   - 系统文件双写检查（live 正本 → sandbox 镜像）
 #   - 可选 --restart-check: 检查 gateway 进程是否在跑
 # ============================================================
 set -u
 
-LIVE_ROOT="/home/flybo/clawsjoy_v5"
+LIVE_ROOT="/home/<user>/clawsjoy_v5"
 # 会话工作区（sandbox）：
 # 1) 优先用环境变量 SANDBOX_ROOT（在 live 目录运行时必须显式指定）
 # 2) 否则从脚本位置推导（脚本在沙箱 tools/ 下时正确）
@@ -25,7 +25,7 @@ if [ "$SANDBOX_ROOT" = "$LIVE_ROOT" ]; then
   echo "   正确用法（在沙箱会话工作区运行）："
   echo "     bash tools/sync_check.sh"
   echo "   或在 live 目录运行时显式指定沙箱路径："
-  echo "     SANDBOX_ROOT=/home/flybo/clawsjoy_v5/data/projects/web_1783219071801/session_1783388196051/clawsjoy_dev bash tools/sync_check.sh"
+  echo "     SANDBOX_ROOT=/home/<user>/clawsjoy_v5/data/projects/web_1783219071801/session_1783388196051/clawsjoy_dev bash tools/sync_check.sh"
   echo ""
 fi
 

@@ -120,7 +120,7 @@ source: docs/reports/fanqie_promotion_sop.md
 - Agent 无法自动过验证 → **必须用户手动**
 - 流程：
   ```
-  Agent 填好 xlsx + 上传（upload 用 Windows 路径 C:\Users\flybo\Downloads\...）
+  Agent 填好 xlsx + 上传（upload 用 Windows 路径 %USERPROFILE%\Downloads\...）
   → 点提交（触发审批门 → 用户放行）
   → 弹机器人验证 → Agent 提示「请过验证」→ 用户 Windows 浏览器手动滑
   → Agent 继续提交/确认

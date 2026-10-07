@@ -4,7 +4,7 @@ r"""scan_path_names.py —— **名面之常闸**：扫一棵树，找「件名�
 ⭐ 为何须此器（PM b136893 令 2026-10-05 · `1193 §三.⑤`「准将其并入常闸」）：
   源 ＝ `11_实验室\探针_坑形扫描.py` 之 **N-6/N-7**（D16 探测器）—— ⚠ 彼为**事后探针**；
   ⇒ 承「**探针 ≠ 活闸**」⇒ 并入 `core/lib` 之常扫一族（与 `scan_subprocess_calls.py` 同族）。
-  实证（2026-10-05 · B2）：`D:\clawsjoy_v9\%SystemDrive%\ProgramData\Microsoft\Windows\Caches\`
+  实证（2026-10-05 · B2）：`<main-repo>\%SystemDrive%\ProgramData\Microsoft\Windows\Caches\`
   —— `%SystemDrive%` **未展开**之环境变量被当作**逐字目录名**写在盘上 ⇒ 三 `.db`（988,256 B）
   ＝ **伪件污染真源**（⛔ 产品件 · ⛔ 宜入库）。
 

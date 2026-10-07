@@ -2,7 +2,7 @@
 
 - 日期: 2026-08-18
 - 方式: 只读排查(不改代码), 基于 live session_log 事件流 + 代码路径逐段核对
-- 证据源: /home/flybo/clawsjoy_v5/data/session_logs/session_1783388196051.jsonl (32 事件)
+- 证据源: /home/<user>/clawsjoy_v5/data/session_logs/session_1783388196051.jsonl (32 事件)
 
 ---
 

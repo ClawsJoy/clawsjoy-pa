@@ -366,7 +366,7 @@
 ## 附 · 现行方式（批202 补，指向真正在用的东西）
 
 - **唯一出口**：`core/tools/browser_runtime.py`（launch / 会话 / **CDP** 都在这里）；产品树内不允许第二处 `chromium.launch(`（门内 `tests/unit/test_p197_browser_exit.py` 拦截）。
-- **CDP 真同源模式（当值）**：起**长驻专用实例** `bash tools/start_dedicated_chrome.sh`（`--remote-debugging-port=9222 --user-data-dir=C:\Users\flybo\.clawsjoy\chrome_cdp`）后，`export CLAWSJOY_BROWSER_CDP=http://127.0.0.1:9222` ⇒ `connect_over_cdp` 连它；**连不上明确报错、绝不静默回退 launch**。
+- **CDP 真同源模式（当值）**：起**长驻专用实例** `bash tools/start_dedicated_chrome.sh`（`--remote-debugging-port=9222 --user-data-dir=%USERPROFILE%\.clawsjoy\chrome_cdp`）后，`export CLAWSJOY_BROWSER_CDP=http://127.0.0.1:9222` ⇒ `connect_over_cdp` 连它；**连不上明确报错、绝不静默回退 launch**。
 - **不需要 portproxy**：WSL 为 mirrored 网络（WSL `127.0.0.1` 直达 Windows `127.0.0.1`，实测可连；宿主 IP `192.168.3.11:9222` 实测不通）⇒ CDP 只绑本机。
 - **真机 L3 复跑**：`CLAWSJOY_BROWSER_CDP=http://127.0.0.1:9222 python3 tools/p202_cdp_l3.py`。
 - 本文上半部分描述的「浏览器扩展 + 专属标签页」**已废弃**（无扩展目录、`chrome.runtime.sendMessage` 0 命中）。

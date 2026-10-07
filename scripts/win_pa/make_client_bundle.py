@@ -62,6 +62,9 @@ EXCLUDE = (
     "scripts/win_pa/ClawsJoy_PA_Boot.xml",     # 机器相关（由安装器生）
     "web/pa/ui_state.json",                    # 运行态（前端读不到 ⇒ 显「未知」 · ⛔ 崩）
     "web/ppt_thumbs/manifest.json",            # 生成物
+    # ⭐ pm_1580 §二.1：本机之活配置（含个人邮箱）⇒ ⛔ 入包
+    "config/alert_config.json",
+    "config/scheduler_config.json",
 )
 _EXCLUDE_SET = frozenset(EXCLUDE)
 #: 真源之必需节（⛔ 手拟 · 与 requirements.txt 同源）
@@ -573,7 +576,7 @@ def self_test():
     say(len(live_org_paths(os.path.join(t, "pl"), ["core/pa/b.py", "core/pa/c.py"])) == 0,
         u"反控：唯注 ／ docstring ⇒ 活∧组织物 空（⛔ 假红）")
     io.open(os.path.join(pd, "d.py"), "w", encoding="utf-8").write(
-        'U = "C:' + "/Users/" + 'flybo/x.pdf"' + chr(10))
+        'U = "C:' + "/Users/" + 'alice/x.pdf"' + chr(10))
     _lo = live_offenders(os.path.join(t, "pl"), ["core/pa/d.py"])
     say(len(_lo) == 1 and _lo[0]["开发机"] and not _lo[0]["组织物"],
         u"正控：开发机活径（用户目录之式）必逮 ／ 且判「开发机」（⛔ 混组织物）")

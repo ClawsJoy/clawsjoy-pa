@@ -12,4 +12,4 @@ actions:
   - 收拾
   - robotics
 entry: robotics_agent.RoboticsAgent
-module_path: /home/flybo/clawsjoy_robotics
+module_path: /home/<user>/clawsjoy_robotics

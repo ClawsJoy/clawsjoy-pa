@@ -11,12 +11,12 @@
 ### 阶段 1（轮 1-2）: 探索迷失, 32 上限被低价值调用耗尽
 - 任务核心是"打开抖音发布页上传视频", 但前两轮 60+ 调用几乎全是 list_dir/read_file/execute_command 目录侦察。
 - **全盘 find 找视频**: `find / -name "fanqie_hepairenshu.mp4"` — 根目录遍历被拦(正确), 但 data/videos 在第 1 轮第 2 个 list_dir data 就已暴露, Agent 没有直接列 data/videos。
-- **臆测不存在路径**: `data/vault/Reviews/...`、`data/vault/Prompts/...`(vault 从不在沙箱 data/vault/), 以及 `/mnt/d/Obsidian/...` 绝对路径(越权被拦)。
+- **臆测不存在路径**: `data/vault/Reviews/...`、`data/vault/Prompts/...`(vault 从不在沙箱 data/vault/), 以及 `/mnt/d/vault/...` 绝对路径(越权被拦)。
 - **跨轮重复读取同一批文件**: draft_weiren.md / script_weiren.md / promotion_log.md / fanqie_fawen_leixing_diagnosis.md 在轮 1/2/3 反复读取 — 跨轮 dup_read 计数被 turn_id 重置, 防重复失效。
 - **工具内查询失败后放弃**: "search 未返回内容片段。改用行范围读取沙箱内 SOP 副本" — 说明 obsidian_knowledge search 结果缺内容, Agent 转去越权读沙箱副本。
 
 ### 阶段 2（轮 3）: 进入发布页, 但达人中心不可达
-- 抖音发布页 navigate 通过白名单成功; 视频已复制到 /mnt/c/Users/flybo/Downloads/(符合 SOP Windows 路径要求)。
+- 抖音发布页 navigate 通过白名单成功; 视频已复制到 /mnt/c/Users/<user>/Downloads/(符合 SOP Windows 路径要求)。
 - 但先尝试 `daren.fanqienovel.com`(番茄达人中心)被白名单拦截 — **回填环节的平台根本不可达**。
 
 ### 阶段 3（轮 4-5）: 表单操作反复失败
