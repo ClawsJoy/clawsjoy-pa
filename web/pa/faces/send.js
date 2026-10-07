@@ -39,6 +39,35 @@ async function paSend(){
     let _askMeta = null;   /* ⭐ pm 1184 §一.⒝：本轮答之**源标**（知其实方传 · ⛔ 冒） */
     if(paLooksLikeKnowledgeQuestion(text)){
       const g = await paAskGate(text);
+      /* ⭐⭐ pm_1617 §二.3 ＝ pm_1614 §二.1（合办 · **一处定形**）：`gate.decision = not_applicable`
+         （库根未接 ∨ 检索面为空）—— 闸判「拒答与否皆不成立」⇒ **显后端之 canon** ∧ **⛔ 落模型**。
+         病（净机 · 老板之屏一手）：该支 `refused=false ∧ grounded=false` ⇒ 直落 `sendPA` ⇒ `/v9/pa/dialog`
+           ⇒ 屏上现「模型调用失败：本机与云端皆不可用（[WinError 2] …）」（＝ pm_1614 §〇 之的）。
+         ⚠ 字面**唯取后端**（`answer_canon` ⇒ `answer` ⇒ `verdict`）· ⛔ 前端自造文。
+         ⚠ 二支之别（一手）：`gateway_routes.py:2565`（库根未接）**无** `answer_canon` ／
+           `:2618`（检索面空）**有** ⇒ 故取三键之首个非空（全缺 ⇒ 明书「无字可显」· ⛔ 造辞）。 */
+      if(g && g.gate && String(g.gate.decision || '') === 'not_applicable'){
+        const _canon = [g.answer_canon, g.answer, g.verdict]
+          .map(function(x){ return (typeof x === 'string') ? x.trim() : ''; })
+          .filter(function(x){ return !!x; })[0] || '';
+        const _r = (_canon || '（后端未给「不适用」之辞 ⇒ 如实无字可显 —— 见判据行）')
+          + '\n\n（判据 /v9/pa/ask ｜ 检索面 '+((g.scope||[]).join(' / ')||'—')
+          + ' ｜ 实搜 '+g.searched+' 件 ｜ 阈值 '+g.threshold+' ｜ 读数 '+g.read_at+'）'
+          + '\n⛔ 本问未进模型：闸判「不适用」（检索面为空 ⇒ 拒答与否皆不成立）'
+          + ' · 后端判词：' + (String(g.verdict||'').trim() || '（未给）')
+          + ' · 见「判据」行。';
+        try{ window.PASelfRouteLast = {
+          label: {text: 'src: 本机不适用（检索面空 · 未调用模型）', key: '不适用', kind: 'self', model: ''},
+          at: String(g.read_at || ''), url: '/v9/pa/ask'}; }catch(e){}
+        addMsg('assistant', _r);
+        /* 照实落盘（**⛔ 造标**）：`answer_source` 逐字取后端 `not_applicable`；`origin` **⛔ 冒** ——
+           其封闭集（core/pa/dialog.py:39-42）唯 model ／ grounded ／ refused ／ unspecified
+           ⇒ 无「不适用」之值 ⇒ 唯传 `answer_source` ＋ `grounded:false`（⇒ 行落 `unspecified` ＝ 照实「未标」）。 */
+        paRun.receipt = await recordPaTurn(t.id, text, _r,
+          {grounded:false, answer_source:(g.answer_source || 'not_applicable')});
+        paSetState('done');
+        return;
+      }
       if(g && g.refused){
         /* ⭐ pm 1184 §一.⒜（承 pm 21:20 §二.处3）：canonical 引**后端** `g.refusal_canon`（真源）；
            后端之辞留其**径**（判据行）。
@@ -130,12 +159,28 @@ async function sendPA(text, t, meta){
     }
     const r = await fetch(API+'/v9/pa/dialog', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(_b)});
-    if(r.status===404){ addMsg('assistant','（PA 通道暂不可用：/v9/pa/dialog 未挂载）\n已记录：'+text); paSetState('failed','PA 通道未挂载(404)'); return; }
-    const d = await r.json();
+    if(r.status===404){ addMsg('assistant','（PA 通道暂不可用：/v9/pa/dialog 未挂载）\n已记录：'+text+'\n（去处：确认服务版本 ∨ 看服务窗口之日志）'); paSetState('failed','PA 通道未挂载(404)'); return; }
+    const d = await r.json().catch(function(){ return null; });
+    /* ⭐ pm_1617 §二.2（令二 · 要）：不可用 ⇒ **因 ＋ 去处** —— 后端之人话（`LLM_UNAVAILABLE_TEXT`
+       ＝「模型不可用：本机与云端皆未接（…）⇒ 请到「模型配置」配云端密钥，或装上本机模型。」
+       · 已含因与去处）**逐字优先**；⛔ 唯书「失败」二字 ∧ ⛔ 裸异常上屏（原始因已入后端机器字段
+       `last_error` · ⛔ 上屏 —— 承 TD `1612` 令三）。⛔ 前景 ⛔ 重说后端已书之因（免叠）。 */
+    const _why = (d && (d.error || d.message)) ? String(d.error || d.message).trim() : '';
+    if(!d || (!d.reply && _why)){
+      addMsg('assistant', (_why || '（后端回执不可取：无回执 ∨ 体不可解）')
+        + '\n（去处：设置 →「模型配置」配云端密钥 ∨ 装上本机模型；仍不成 ⇒ 看服务窗口之日志）');
+      paSetState('failed', _why ? ('PA 通道：' + _why).slice(0, 48) : 'PA 通道无回复');
+      return;
+    }
     addMsg('assistant', d.reply || '（无回复）');
     paRun.receipt = d.persisted || null;   /* P9 · BUG-1：落盘回执**由后端给**，前端不复述 */
     paSetState('done');
-  }catch(e){ addMsg('assistant','PA 通道请求失败：'+e.message); paSetState('failed','PA 通道请求失败'); }
+  }catch(e){
+    /* 令二：⛔ 裸异常 —— 逐字附「因（逐字）＋ 去处」。 */
+    addMsg('assistant','PA 通道请求失败：'+((e && e.message) || e)
+      + '\n（因：请求未达后端 ∨ 连接中断 · 见上字；去处：确认服务在跑 ∨ 看服务窗口之日志）');
+    paSetState('failed','PA 通道请求失败（未达）');
+  }
   loadSide();
 }
 /* PM-011（2026-09-30）· 响应**分型**：⛔ 不再拿一句话兜住所有载荷。

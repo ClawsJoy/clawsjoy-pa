@@ -224,3 +224,27 @@ details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(-
   background:rgba(210,153,34,.14);border:1px solid rgba(210,153,34,.55);color:#d29922;font-weight:600}
 #paStaleBar[hidden]{display:none}
 #paRefreshBtn{font-variant-numeric:tabular-nums}
+
+/* —— 首屏之「准备中 ／ 不可用」之面（CW b2a5182 · 2026-10-07 · pm_1617 令一 ／ 令二）——
+   常显（⛔ 白屏）：JS 未跑亦见「正在准备…」；就绪 ⇒ `data-state="ready"` 由 startup.js 收（display:none）。
+   ⚠ 唯外框 ／ 配色 —— 变量逐字沿用 pa.css 之 :root（⛔ 另立主题）。 */
+.prep{display:flex;align-items:center;gap:8px;padding:6px 14px;font-size:12px;line-height:1.5;flex-shrink:0;
+  background:rgba(210,153,29,.14);color:var(--amber);border-bottom:1px solid rgba(210,153,29,.38)}
+.prep[data-state="failed"]{background:rgba(248,81,73,.14);color:var(--red);border-bottom-color:rgba(248,81,73,.42)}
+.prep[data-state="ready"]{display:none}
+.prep .prep-ic{flex:0 0 auto}
+.prep .prep-tx{flex:0 0 auto;font-weight:600}
+.prep .prep-bar{flex:0 0 140px;height:6px;border-radius:3px;background:rgba(139,148,158,.28);overflow:hidden}
+.prep .prep-bar > i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
+.prep .prep-note{flex:1;min-width:0;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:900px){ .prep .prep-bar{flex-basis:80px} }
+
+/* —— 版行（pm_1621 令一 · 版本可见）：真源 /health.version ＋ 更新端 · 常显不占横幅 —— */
+.verrow{color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:290px}
+@media (max-width:1180px){ .verrow{max-width:190px} }
+
+/* —— 横幅之各态配色（pm_1621 令二：更新之「完成 ／ 需重启」与「准备中」须别形）—— */
+.prep[data-state="done"]{background:rgba(63,185,80,.14);color:var(--green);border-bottom-color:rgba(63,185,80,.4)}
+.prep[data-state="unreachable"]{background:rgba(139,148,158,.14);color:var(--sub);border-bottom-color:rgba(139,148,158,.35)}
+.prep[data-state="restart"]{background:rgba(88,166,255,.16);color:var(--blue);border-bottom-color:rgba(88,166,255,.42)}

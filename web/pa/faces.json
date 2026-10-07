@@ -1,6 +1,6 @@
 {
  "version": "v1",
- "updated": "2026-10-04",
+ "updated": "2026-10-07",
  "product": "ClawsJoy PA 客户端（Windows 壳 + web 面）",
  "note": "私面（private:true）⇒ open:false ⇒ ① boot.js 里其启动步经 PA_FACES.guard 跳过 ② 其 DOM（dom 选择器）收起。一开关关全体私面＝把 private:true 的面 open 置 false。v3 页为 3 主面（今日上下文／会话／任务）。",
  "license": {
@@ -284,6 +284,28 @@
     "#pane-cfg",
     "#pane-collect",
     "#paQuotaBanner"
+   ],
+   "boot": []
+  },
+  {
+   "id": "startup",
+   "title": "首屏准备态（起服之进度 · 唯读 /health）",
+   "file": "faces/startup.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paPrep"
+   ],
+   "boot": []
+  },
+  {
+   "id": "update",
+   "title": "版本与更新之态（唯读 /health）",
+   "file": "faces/update.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paVerRow"
    ],
    "boot": []
   }
