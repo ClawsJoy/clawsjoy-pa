@@ -6,7 +6,10 @@ u"""P2 ② 之钉：`llm_brain(model=…)` ⇒ 传至 `LLMClient.generate(model=
 
 判据：
   ⒜ 传 `model` ⇒ `generate` 收到**同值**（唯加一参之链）
-  ⒝ 缺省（⛔ 传）⇒ `generate` 收到 `None`（**反控**：⛔ 改既有行为 · ⛔ 硬编其名）
+  ⒝ 缺省（⛔ 传）⇒ **改约（pm_1609 §二.1 令一）**：唯 `providers.default_route()` 一处出
+      （可用者优先）⇒ ⛔ 硬编本机之名（旧形尽付 `config.default_model` ＝ 本机 7B
+      ⇒ 净机无 Ollama 仍取本机 ⇒ `[WinError 2]` —— pm_1609 §〇 之逐字）
+  ⒞ 皆不可用 ⇒ **⛔ 调模型** ＋ 出人话（`PA_NO_PROVIDER_TEXT` · ⛔ 以失败充答）
 """
 import sys
 from pathlib import Path
@@ -54,10 +57,35 @@ def test_brain_passes_model_when_given(monkeypatch):
     assert seen["model"] == "deepseek-flash", seen
 
 
-def test_brain_reverse_control_model_defaults_none(monkeypatch):
-    u"""⒝ 反控：缺省 ⇒ `None`（⛔ 硬编远端之名 ⇒ 本机之默认⛔破）。"""
+def test_brain_default_route_is_single_source(monkeypatch):
+    u"""⒝ 缺省 ⇒ 唯 `providers.default_route()` 一处出（pm_1609 §二.1 令一）。
+
+    反控之义（⛔ 硬编 `config.default_model` ＝ 本机 7B）：取路由之实名 ⇒ 与路由**同值**。
+    """
+    from core.pa import providers as P
+    _exp, _ = P.default_route()
     seen, _ = _run(monkeypatch)
-    assert seen["model"] is None, seen
+    assert seen["model"] == _exp.get("model"), seen
+    assert seen["model"] is not None, seen
+
+
+def test_brain_no_provider_never_calls_model(monkeypatch):
+    u"""⒞ 皆不可用 ⇒ **⛔ 调模型** ⇒ 出人话（pm_1609 §二.1／§二.3）。"""
+    from core.pa import providers as P
+    monkeypatch.setattr(P, "default_route",
+                        lambda: ({"provider": "remote:deepseek", "model": "deepseek-flash",
+                                  "thinking": None}, u"亦无可用者（照实）"))
+    monkeypatch.setattr(P, "available_state", lambda pid: (u"未配钥", u"密钥 ⛔ 在"))
+    _made = []
+
+    def _ctor(*a, **kw):
+        _made.append(1)
+        return _Fake(*a, **kw)
+
+    monkeypatch.setattr(LC, "LLMClient", _ctor)
+    out = G.llm_brain()("ctx")
+    assert _made == [], u"皆不可用 ⇒ ⛔ 调模型（承「⛔ 以失败充答」）"
+    assert out == G.PA_NO_PROVIDER_TEXT, out
 
 
 def test_brain_passes_max_tokens(monkeypatch):

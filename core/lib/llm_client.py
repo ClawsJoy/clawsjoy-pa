@@ -97,7 +97,23 @@ def _calc_token_budget(model="deepseek-v4-flash", tools=None):
     return max(_budget, 0)
 
 
+# ⭐⭐ pm_1609 §二.3（令三 · 一处定形）：**模型不可用之人话 ＋ 去处**。
+#   病（净机之屏 · 逐字）：`模型调用失败：本机与云端皆不可用（[WinError 2] 系统找不到指定的文件。）`
+#     ⇒ 原始异常入屏（承 pm_1609 §三.2 立规「真读数 ⛔ ＝ 原始异常」）。
+#   ⇒ 用户面唯此一句（⛔ 含原始异常）；原始因走 `LLMClient.last_error`（机器面）。
+LLM_UNAVAILABLE_TEXT = (
+    u"模型不可用：本机与云端皆未接（本机未装模型 ／ 云端未配密钥）"
+    u"⇒ 请到「模型配置」配云端密钥，或装上本机模型。")
+
+
+def llm_unavailable_text():
+    u"""模型不可用之人话（一处定形 · pm_1609 §二.3）。"""
+    return LLM_UNAVAILABLE_TEXT
+
+
 @dataclass
+
+
 class LLMConfig:
     provider: str = "ollama"
     base_url: str = "http://127.0.0.1:11434"
@@ -139,6 +155,8 @@ class LLMClient:
         # ⭐ PM 034 §三.ⓝ：走径标之真源 —— 记**实际**所走之 provider/model（⛔ 猜）
         self.last_route = {}
         self._fb_reason = ""
+        # ⭐ pm_1609 §二.3：**原始异常唯入此**（机器诊断面 · ⛔ 用户面）
+        self.last_error = ""
 
     def _ensure_ollama(self):
         """确保 Ollama 运行"""
@@ -148,7 +166,14 @@ class LLMClient:
             logger.warning(f"[LLM] Ollama 探测失败，尝试拉起服务: {e}")
             import subprocess as _sp
 
-            _proc.popen_hidden(["ollama", "serve"], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
+            try:
+                _proc.popen_hidden(["ollama", "serve"], stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
+            except Exception as _se:
+                # ⭐⭐ pm_1609 §二.1／§二.3（缺陷之族 · 即刻办）：本机无 Ollama（`ollama.exe` ⛔ 在）
+                #   ⇒ 旧形此异常**逸出** `_ensure_ollama`（其 `except` 块**内含**本调用）⇒ 逸出 `_call`
+                #   ⇒ `generate` 捕而**直曝原始异常**（净机之屏 ＝ `[WinError 2] 系统找不到指定的文件。`
+                #   —— pm_1609 §〇 之逐字）。今：就地**收**住 ＋ 留日志（本机路不可用，云路仍可试）。
+                logger.warning("[LLM] 本机 Ollama ⛔ 起（%s: %s）⇒ 本机路不可用", type(_se).__name__, _se)
 
     def _ollama_available(self, timeout: float = 1.5) -> bool:
         """#24 探测 Ollama 本地是否可用（带结果缓存，避免每次请求都探测）"""
@@ -197,7 +222,10 @@ class LLMClient:
             except Exception as _e:
                 if _chunks:
                     return "".join(_chunks)
-                return "模型调用失败：本机与云端皆不可用（%s）" % _e
+                # ⭐⭐ pm_1609 §二.3（令三 · 错误之面）：**原始异常 ⛔ 入用户面** ——
+                #   转**人话 ＋ 去处**；原始之因入机器字段 `self.last_error`（供诊断 · ⛔ 上屏）。
+                self.last_error = "%s: %s" % (type(_e).__name__, _e)
+                return llm_unavailable_text()
         return result
 
     def generate_stream(self, prompt, model=None, timeout=120, api_key=None, **kwargs):

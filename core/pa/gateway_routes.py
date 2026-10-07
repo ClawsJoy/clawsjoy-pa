@@ -145,6 +145,25 @@ def llm_brain(system_prompt=None, model=None, max_tokens=None):
 
             prompt = "%s\n\n%s\n\n【上下文(画像/账本/本会话)】\n%s" % (
                 system_prompt or PA_SYSTEM, PA_CAPABILITY_BRIEF, context_text)
+            # ⭐⭐ pm_1609 §二.1（令一 · 路由须依「可用性」）：PA 之路旧以 `model=None` 尽付
+            #   `LLMClient._call` 之 `model or config.default_model`（＝**本机 Ollama 之 7B**）
+            #   ⇒ **⛔ 问可用性**（净机无 Ollama ⇒ 仍取本机 ⇒ [WinError 2]）∧ 与 `GET /v9/pa/providers`
+            #   所报之默认（`remote:deepseek`）**二处不一**（pm_1609 §一.5 之铁证）。
+            #   今：**缺省之路唯 `providers.default_route()` 一处出**（可用者优先 · 与 providers 同源）；
+            #       并「皆不可用 ⇒ ⛔ 调模型」＋ 显形其由（⛔ 静默换 · 承 pm_1471 §三.2）。
+            _model_use = model
+            _route_note = u""
+            if _model_use is None:
+                from core.pa.providers import AVAIL_OK, available_state, default_route
+                _r0, _route_note = default_route()
+                _model_use = _r0.get("model")
+                _st0, _why0 = available_state(_r0.get("provider"))
+                if _st0 not in AVAIL_OK:
+                    _brain.last_route = {"provider": _r0.get("provider"), "model": _model_use,
+                                         "fell_back": False, "reason": "no_provider_available",
+                                         "provider_state": _st0, "provider_why": _why0,
+                                         "route_note": _route_note}
+                    return PA_NO_PROVIDER_TEXT
             _c = LLMClient()
             # ⭐ §二.4 裁：max_tokens 入注册表（一处配 · ⛔ 魔数散落）
             #   ⚠ 用新名 `_mt`：直赋 `max_tokens` 会令其成为 `_brain` 之局部 ⇒ 首读即 UnboundLocalError
@@ -157,11 +176,19 @@ def llm_brain(system_prompt=None, model=None, max_tokens=None):
                     _mt = 1600
             # ⭐ pm_1447 §二.3②（P2 最小缝）：`model=` 之链（`llm_brain` ⇒ `generate` · **唯加一参** · ⛔ 改 `_call` 骨架）
             #   ⚠ 缺省 `None` ⇒ `generate` 之默认路（行为 ⛔ 变）。
-            out = _c.generate(prompt, model=model, max_tokens=_mt)
+            out = _c.generate(prompt, model=_model_use, max_tokens=_mt)
             try:
                 _brain.last_route = _c.get_last_route()
             except Exception:
                 _brain.last_route = {}
+            # ⭐ pm_1609 §二.1：**显形**「默认之 X 不可用 ⇒ 由 Y 代之」之由（⛔ 静默换）
+            if _route_note:
+                _brain.last_route["route_note"] = _route_note
+            # ⭐ pm_1609 §二.3：原始异常唯入**机器面**（⛔ 用户面）
+            try:
+                _brain.last_route["last_error"] = getattr(_c, "last_error", "") or ""
+            except Exception:
+                pass
             # ⭐ P8 之闸（§二.2：提示内 ⛔ 列字面 ⇒ 兑换必在提示**外**扫描）
             #   以码扫答体之三标（转义写 ⇒ ⛔ 把字面带进提示）
             _brain.last_route["label_hits"] = [
@@ -382,6 +409,17 @@ PA_KB_ASK_SCOPES = ("收件箱", "知识库")
 #     ⇒ 今定 canonical 于**后端**（唯此一处），前端改**引用**（响应键 `refusal_canon` · 见 `pa_ask` 之 base）⇒ ⛔ 二处各写。
 #   ⚠ 界（照 PM 之限）：⛔ 不改闸之判据；⛔ 不改「判据行」（verdict）之实 —— 唯「答话」之辞正。
 PA_ASK_REFUSAL = "本机无据 ⇒ 我不答此问。"
+# ⭐⭐ pm_1609 §二.1／§二.3（缺陷之族 · 即刻办）：**「皆不可用」之人话 ＋ 去处**（一处定形）。
+#   病（净机之屏 · 逐字 · pm_1609 §〇）：三问皆走 `local:qwen2.5:7b-instruct-q4_0-gpu` 而本机无模型
+#     ⇒ 屏上 ＝ `模型调用失败：本机与云端皆不可用（[WinError 2] 系统找不到指定的文件。）`。
+#   ⇒ 凡「⛔ 可调模型」⇒ 出此一句（⛔ 原始异常 · ⛔ 以失败充答）。
+PA_NO_PROVIDER_TEXT = (u"模型不可用：本机与云端皆未接（本机未装模型 ／ 云端未配密钥）"
+                       u"⇒ 请到「模型配置」配密钥，或装本机模型。")
+# ⭐⭐ pm_1609 §二.2（令二 · 该拒答而未拒）：**检索面为空 ⇒ 亦须有人话**（⛔ 直落模型）。
+#   病（净机之屏 · 逐字 · pm_1609 §一.2）：`答源 not_applicable（不适用（检索面为空 ⇒ 拒答与否皆不成立））`
+#     ⇒ `answer` 空 ⇒ 前端**直落模型** ⇒ 屏上唯「模型调用失败」（⛔ 以失败充答）。
+#   ⇒ 不适用亦出人话（与「拒答」分键：`refused=False` ／ `answer_source="not_applicable"` ⛔ 变）。
+PA_KB_EMPTY_ANSWER = u"本机还没有可检索的资料（检索面为空）⇒ 我不答此问。"
 # ⭐ 旧辞（失实 · ⛔ 勿再入 answer）：留名以**识别旧痕**（前端词形闸之旁证 · 承 PM 22:34 §三）
 PA_ASK_REFUSAL_STALE = "查不到（知识库里没有相关内容）"
 # ⭐⭐ pm_1500 §二：库根未接 ⇒ **早返**（⛔ `Path("")` ⇒ **误扫 CWD** · 潜在假有据）
@@ -2564,8 +2602,9 @@ def register_pa_routes(app, brain=None):
                           "face_snapshot_at": res.get("face_snapshot_at"),
                           "judge_at": _at}}
         if res["searched"] == 0:
-            return ok({"grounded": False, "refused": False, "answer": "",
+            return ok({"grounded": False, "refused": False, "answer": PA_KB_EMPTY_ANSWER,
                        "answer_source": "not_applicable", "ask_domain": "retrieve",
+                       "answer_canon": PA_KB_EMPTY_ANSWER,
                        "verdict": "不适用（搜索面为空：知识库目录不可达 ⇒ 拒答与否都不成立）",
                        "gate": pa_gate_view(decision="not_applicable", fact_family=_fact_family), **base})
         if not res["hits"]:
