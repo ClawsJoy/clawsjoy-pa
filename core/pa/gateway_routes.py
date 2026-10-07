@@ -3028,6 +3028,24 @@ def register_pa_routes(app, brain=None):
         r = pa.handle("todo_done", {"id": p["id"]})
         return ok(r) if r.get("ok") else err(r.get("error"))
 
+    # ⭐⭐ pm_1824 §二.2（令）：**逐条撤回**（一件一撤回 ＋ 留痕）—— 产品态 §五.1
+    #   「凡积累必可查、可导出、可撤回」；今唯 add ／ done ⇒ **缺撤回**（一手：全路由 .gitignore 外无 revoke）。
+    #   ⚠ 撤 ＝ **标 cancelled**（⛔ 删行 —— 承账本之「⛔ 删行」律；行仍在盘 ⇒ 可查）。
+    @bp.route("/v9/pa/ledger/revoke", methods=["POST"])
+    def pa_ledger_revoke():
+        """逐条撤回一件待办（`{id, reason?, user_id?}`）：落 cancelled ＋ 刻 ／ 因，并记事件留痕。"""
+        pa = _core((request.json or {}).get("user_id"))
+        p = request.json or {}
+        if not p.get("id"):
+            return err("ledger/revoke 需要 id")
+        r = pa.handle("todo_revoke", {"id": p["id"], "reason": p.get("reason", "")})
+        if not r.get("ok"):
+            return err(r.get("error"))
+        if r.get("item") is None:
+            # 查不到 ⇒ **404 载因**（⛔ 返 ok:true 假装已撤 —— 承「空 ⛔ 混 缺」）
+            return err("ledger/revoke 查不到该件：%s（⛔ 未撤）" % p["id"], 404)
+        return ok(r)
+
     @bp.route("/v9/pa/dispatch", methods=["POST"])
     def pa_dispatch():
         pa = _core((request.json or {}).get("user_id"))
@@ -4518,6 +4536,21 @@ def register_pa_routes(app, brain=None):
         _fresh = str(request.args.get("fresh") or "").strip() in ("1", "true", "yes")
         out = _sf.build(pid, fresh=_fresh)
         out["印"] = _code_sha16(pa_sys_panel, _sf)
+        return ok(out)
+
+    # ---- 「今日」四行（一处出四类）—— pm_1824 §二.1 ----
+    #   四类之判据**唯在** core/pa/today.py 一处（⛔ 前端各判 ⇒ 必歧）；本处唯接线（**薄壳**）。
+    @bp.route("/v9/pa/today", methods=["GET"])
+    def pa_today():
+        """四行合体：要我拍的 ／ 今天该做的 ／ 在等的 ／ 近来之痕（各带 数 ／ 源 ／ 去处）。
+
+        ⚠ 只读；某源读不动 ⇒ 该源 `读数: null` ＋ `因`（**⛔ 以 0 充「没有」**）。
+        """
+        from core.pa import today as _TDY
+        out = _TDY.build(data_dir=_data_dir(),
+                         user_id=request.args.get("user_id"),
+                         session_id=request.args.get("session_id"))
+        out["印"] = _code_sha16(pa_today, _TDY)
         return ok(out)
 
     app.register_blueprint(bp)

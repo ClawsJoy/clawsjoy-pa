@@ -90,6 +90,22 @@ class TodoStore:
                 return it
         return None
 
+    def revoke(self, item_id, reason=""):
+        u"""逐条撤回（pm_1824 §二.2）：**标 cancelled** ＋ 留痕（刻 ／ 因）—— ⛔ 删行（行仍在盘 ⇒ 可查）。
+
+        撤回非「完成」：`done` ＝ 办成；`cancelled` ＝ 不再要（用户收回）⇒ 二义 ⛔ 混。
+        得 ⇒ 该行（含 `revoked_at` ／ `revoke_reason`）；⛔ 得 ⇒ None（调用方须报**查不到**，⛔ 假装已撤）。
+        """
+        for it in self.items:
+            if it.get("id") == item_id:
+                it["status"] = "cancelled"
+                it["revoked_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                if reason:
+                    it["revoke_reason"] = str(reason)[:200]
+                self.save()
+                return it
+        return None
+
     def open_items(self, kinds=None):
         ks = kinds or list(KINDS)
         return [i for i in self.items if i.get("status") not in ("done", "cancelled") and i.get("kind") in ks]

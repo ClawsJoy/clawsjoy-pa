@@ -82,6 +82,13 @@ class PaCore:
                 return {"ok": True, "item": it}
             if action == "todo_done":
                 return {"ok": True, "item": self.ledger.set_status(p["id"], "done")}
+            if action == "todo_revoke":
+                it = self.ledger.revoke(p["id"], reason=p.get("reason", ""))
+                if it is not None:
+                    self.events.append("ledger", "revoke",
+                                       {"id": p["id"], "title": it.get("title")},
+                                       source=p.get("source", "pa/ledger/revoke"))
+                return {"ok": True, "item": it}
             if action == "ledger_brief":
                 return {"ok": True, "brief": self.ledger.brief()}
             # ---- 对话运行时 ----
