@@ -18,11 +18,41 @@ def client(tmp_path, monkeypatch):
 
 
 def test_context(client):
+    """`/v9/pa/context` 之 `counts` 须与**真源同源**（⛔ 硬编常数 · ⛔ 空断言）。
+
+    ⚠ 9.0.6「去种子」（`pm_1770 §二.1⒝` · `core/pa/seed.py`）后，空库之真值**本即为 0**
+      （画像 0 ／ 账本 0）⇒ 旧判据 `ledger >= 3`（依首启灌注之 3 条）已**陈旧**
+      —— 其红与「去种子」**同源**（⛔ 无关之红）。
+    ⇒ 判据之形须改「**与真源一致**」：先由**公开口**写真值 ⇒ 再核 `counts` 与之逐数同源。
+      （⛔ 只把 `3` 改 `0` —— `>= 0` 永真 ＝ **空判** ＝ 「改数凑绿」。）
+    """
+    # 写真值 · 账本：经 `/v9/pa/ledger/add` 造二条未结事项（`todo` ／ `verify` 皆在 `KINDS`）
+    for _t, _k in ((u"上下文真源甲", "todo"), (u"上下文真源乙", "verify")):
+        _r = client.post("/v9/pa/ledger/add", json={"title": _t, "kind": _k})
+        assert _r.status_code == 200 and _r.get_json()["ok"]
+    # 写真值 · 画像：经 `/v9/pa/sediment` 沉淀一条（缺省 `status=confirmed`）
+    _r = client.post(
+        "/v9/pa/sediment",
+        json={"domain": "style", "value": u"上下文真源探针", "source": "test", "confidence": "high"},
+    )
+    assert _r.status_code == 200 and _r.get_json()["ok"]
+
+    # 真源（逐数之尺）：账本之「未结」／ 画像之 `confirmed`
+    #   （`/v9/pa/profile` 之 `active()` 亦含 `proposed` ⇒ 须滤，⛔ 以「非空」充「已确」）
+    _led_src = client.get("/v9/pa/ledger").get_json()["open"]
+    _prof_src = [e for e in client.get("/v9/pa/profile").get_json()["entries"]
+                 if e.get("status") == "confirmed"]
+
     r = client.get("/v9/pa/context")
     assert r.status_code == 200
     d = r.get_json()
-    assert d["ok"] and d["counts"]["ledger"] >= 3
-    assert d["counts"]["profile"] >= 1 and d["counts"]["profile"] <= 20
+    assert d["ok"] is True
+    # 器病先辨器：自造之数须合（不合 ⇒ 器 ∨ 真源之病，⛔ 面之病）
+    assert len(_led_src) == 2 and len(_prof_src) == 1
+    # 同源逐数（`counts` ⇔ 真源 ⇔ 面内逐条）
+    assert d["counts"]["ledger"] == len(_led_src) == len(d["ledger"])
+    assert d["counts"]["profile"] == len(_prof_src) == len(d["profile"])
+    assert d["counts"]["profile"] <= 20                      # 面之上限（`_conf[:20]`）
     assert all(e.get("status") == "confirmed" for e in d["profile"])
 
 

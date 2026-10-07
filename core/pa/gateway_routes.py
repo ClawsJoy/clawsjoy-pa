@@ -70,8 +70,41 @@ PA_SYSTEM_TAIL = (
     "（接口名照抄），⛔ 不泛泛而谈、⛔ 不承诺清单外的东西；\n"
     "7) ⛔ 无出处不许下事实判断 —— 系统会先跑一次知识库检索，检索结果会随上下文给出；"
     "无命中时**只许**说「查不到」，⛔ 不许给具体数字／无出处的判断。\n"
-    "回复简洁，控制在 160 字内，中文。"
 )
+
+# ⭐⭐ pm_1802 §一.2／§一.3 ＋ pm_1804 §一（令）：**本通道 ＝「陪伴」**（只商量 · ⛔ 出手）。
+#   ⭐ **正名之真源（页上之两名）**：`web/pa/faces/selfdesc.js:2868-2869` 之 `VAL`
+#     ＝ { companion: 陪伴 ／ work: 办事 }；`web/pa/faces/tasks.js:51` 之**通道**映射
+#     ＝ 陪伴 ⇒ `POST /v9/pa/dialog` ／ 办事 ⇒ `POST /v9/agent/chat`
+#     ⇒ 提示词内**⛔ 自带一套辞**（旧书写「聊天 ／ 工作」＝ pm_1804 §一.1 之「两套辞」）。
+#   ⭐ **两轴分书**（⛔ 混为一谈 · 模型旧病：「在能力面 ⟺ 我能做」）：
+#     ⒜ **陪伴轴**（本通道）＝ 只商量 · ⛔ 不出手（⛔ 开只读动作之路 —— pm_1802 §二 之界）；
+#     ⒝ **办事轴**（另通道）＝ 真动手 —— 其**许可面**逐条列（见下 9）。
+#   ⚠ 办事轴之辞之**真源 ⛔ 在本件**：前端 `web/pa/faces/send.js:212`（CW 域）之 `sys`
+#     被服务端模板 `config/prompts/agent_system.md` **覆盖**（`core/gateway/v9_chat/recovery.py:795`
+#     `messages[0]["content"] = filled_prompt`）⇒ 本处所列为**镜像**（⛔ 二套真源 ⇒ 宜并为一处 · 报 PM）。
+#   ⚠ 「禁辞」之字面**转义写**（承 L56-57：三标之字面唯入闸之码 · 源内 ⛔ 现字面）；
+#     运行期之提示**含**此表（PM 令「系统提示须明书」）—— 故源内 `rg` ⛔ 命中（可核）。
+PA_CHANNEL_CLAUSE = (
+    "8) ⭐ **本通道 ＝「陪伴」**（页上之「陪伴」档）＝ **只商量 · 不出手**：你在这里**只出话** —— "
+    "⛔ 执行动作、⛔ 调接口、⛔ 落记录；你说的话**不会**让任何事发生。\n"
+    "9) ⭐ **两轴分书**（一名一义 · ⛔ 混为一谈）：\n"
+    "   · **陪伴轴**（本通道 · 页上「陪伴」· `POST /v9/pa/dialog`）：**只商量 · ⛔ 不出手**；\n"
+    "   · **办事轴**（页上「办事」· `POST /v9/agent/chat`）：**真动手** —— 其许可面逐条 ＝"
+    " ⒜ 办公类 computer use：文档 ／ 表格 ／ 浏览器 ／ 图文 ／ 演示；"
+    "⒝ 项目开发：代码 ／ 工程（权限最高）；工具用完须汇报**产物**与**待核实**项。\n"
+    "10) ⭐ **「在能力面」⛔ 等于「我现在能做」**：上面那份清单答的是「本 PA **有**哪些接口」；"
+    "**能不能动手**看**轴**。被问能否动手 ⇒ **照实**：陪伴轴只商量；要真跑 ⇒ 切「办事」。\n"
+    "11) ⛔ **禁辞**（「未做而似做」之辞）：⛔ 输出 \u5df2\u53d7\u7406 ／ \u5df2\u5b89\u6392 ／ "
+    "\u5df2\u8f6c\u529e ／ \u6b63\u5728\u5904\u7406 之类**暗示你已替老板办了事**之辞"
+    "（用户眼里 ⛔ 可分 ⇒ 违诚实底线）。\n"
+    "12) ⭐ 每逢「能不能动手 ／ 能不能查」之问 ⇒ **末句须逐字带上此去处**（**照抄 · 一字不省** · "
+    "⚠ 此句**非**「备选式回执」之列 —— 承 L62 之禁**不涉**此句）；"
+    "⛔ 以「自然口语」或「简洁」为由省略："
+    "「要真跑 ⇒ 点 `\U0001fa7a 本机体检`（只读）∨ 切「办事」」。\n"
+)
+
+PA_SYSTEM_CLOSE = "回复简洁，控制在 160 字内，中文。"
 
 
 def pa_mode_name(mode=None):
@@ -81,23 +114,81 @@ def pa_mode_name(mode=None):
 
 
 def pa_system_for(mode=None):
-    """按**显式 mode** 组装系统提示（PM 043 §二.1 · 单源）。"""
-    return PA_SYSTEM_HEAD + PA_MODE_CLAUSE[pa_mode_name(mode)] + PA_SYSTEM_TAIL
+    """按**显式 mode** 组装系统提示（PM 043 §二.1 · 单源）。
+
+    ⭐ pm_1802 §一.2／§一.3：**通道节**（`PA_CHANNEL_CLAUSE`）**逐档皆附** ——
+      「只商量 · 不出手」＋「能力面 ⟷ 本通道」分书 ＋ 禁辞表 ＋ 可执行之去处。
+    """
+    return (PA_SYSTEM_HEAD + PA_MODE_CLAUSE[pa_mode_name(mode)]
+            + PA_SYSTEM_TAIL + PA_CHANNEL_CLAUSE + PA_SYSTEM_CLOSE)
 
 
 PA_SYSTEM = pa_system_for("work")   # 兼容既有引用（`system_prompt or PA_SYSTEM`）· ⛔ 破
 
-# P9 · BUG-2/BUG-3 的**真实能力面**（手写常量；⚠ 未解决项：宜下一步由路由表自动生成，防漂）
-PA_CAPABILITY_BRIEF = (
-    "【本 PA 的真实能力面（照抄，⛔ 不许加清单外的东西）】\n"
-    "· 知识库映射 kb_mapping（知识库↔沙箱：已镜像/过期/缺失/未镜像/未知；判据＝内容指纹 sha256_16）\n"
-    "· 口径卡 caliber（GET 列卡；POST caliber/change 变更单，必填 id/status/owner/why；POST caliber/check 联动检查）\n"
-    "· 权限 permission（GET 读档 / POST 改档）· 本地浏览器 local_client（status/start）\n"
-    "· 对话 dialog（POST 落一轮 / GET 读回，读面默认取最近会话）· 事件 events.jsonl · 账本 ledger\n"
-    "· 分派 dispatch + dispatch/history · 拍板 decision + decision/log · 画像 profile · 编队 roster\n"
-    "· 审核 audit/preflight + audit/postcheck · 动作 act · 检索有据才答（POST /v9/pa/ask）\n"
-    "· 检索范围（当前）：收件箱 / 知识库 两类目录下的 .md"
-)
+# ⭐⭐ pm_1802 §一.1（令）：能力面清单 ⇒ **由路由表生成**（⛔ 手写常量 ⇒ 防漂）。
+#   ⚠ 旧病（一手 · 两条自证其漂）：
+#     ⒜ 手写清单列 `local_client` 而 **⛔ 列** `/v9/pa/sys/*` —— 真路由随 9.0.6 上
+#        ⇒ 模型照实回「不在授权面」（**它 ⛔ 说谎 · 是表旧了**）；
+#     ⒝ 末行「检索范围（当前）：收件箱 / 知识库 两类」亦旧 —— 真扫面早经 `pa_ask_scan_specs`
+#        扩至 `pa_faces()` 之面（`pa_kb_search` 之注：「2026-10-04 … 增扫 PA_FACES 之面」）
+#        ⇒ **手写一次 · 漂两处**（此即「防漂须自动生成」之据）。
+#   ⭐ 二义**分书**（一名一义 · pm_1802 §一.3）：本节 ＝ **能力面**（本 PA **有**哪些接口）；
+#      `PA_CHANNEL_CLAUSE` ＝ **本通道能不能动手**（聊天 ⇒ ⛔ 不能）。
+_PA_ROUTE_PREFIX = "/v9/pa/"
+_CAP_BRIEF_METHODS = ("GET", "POST", "PUT", "DELETE", "PATCH")
+
+
+def build_capability_brief(url_map):
+    u"""由**路由表**（`app.url_map`）生成能力面清单（⛔ 手写 · pm_1802 §一.1）。
+
+    ⚠ 须于 `app.register_blueprint` **之后**取：注册前蓝图之路由尚在 `deferred_functions`
+      之列，⛔ 现于 `url_map` 之 `Rule` ⇒ 早取 ＝ **空表**（假绿）。
+    """
+    rows = []
+    for _r in url_map.iter_rules():
+        _rule = str(getattr(_r, "rule", "") or "")
+        if not _rule.startswith(_PA_ROUTE_PREFIX):
+            continue
+        _ms = sorted(_m for _m in (getattr(_r, "methods", None) or set())
+                     if _m in _CAP_BRIEF_METHODS)
+        rows.append((_rule, u"/".join(_ms) or u"-"))
+    rows.sort()
+    _head = (u"【本 PA 的真实能力面（**由路由表自动生成** · pm_1802 §一.1）】\n"
+             u"· 接口共 %d 条（前缀 `%s`）—— **照抄**，⛔ 不许加清单外的东西。\n"
+             u"· ⚠ 此清单答的是「本 PA **有**什么」（供你**如实作答**之料）；\n"
+             u"  **⛔ 不等于你此刻能调它** —— 能不能动手**看轴**（见系统提示之「两轴分书」）。\n"
+             % (len(rows), _PA_ROUTE_PREFIX))
+    return _head + u"".join(u"  [%s] %s\n" % (_m, _p) for _p, _m in rows)
+
+
+# 生成前之占位（**⛔ 以手写清单充数**）：真值由 `register_pa_routes` 于挂载时落（见下之门）。
+PA_CAPABILITY_BRIEF = u""
+
+
+def capability_brief():
+    u"""**门**（一处定形）：取当前能力面清单 —— 未挂载过 ⇒ 以**临时 app** 现生一次。
+
+    ⚠ 由：`llm_brain()` 可于**任何 app 之外**被构造（单测直调）⇒ 全局尚空；
+      临时 app 与真 app 走**同一套蓝图** ⇒ 清单同源（⛔ 二套读者）。
+    """
+    global PA_CAPABILITY_BRIEF
+    if not PA_CAPABILITY_BRIEF:
+        try:
+            from flask import Flask as _Flask
+            register_pa_routes(_Flask("pa_capability_standalone"), brain=None)
+        except Exception as _e:
+            print("[PA] ⚠ 能力面清单（临时 app 生）未成：%s: %s" % (type(_e).__name__, _e), flush=True)
+    return PA_CAPABILITY_BRIEF
+
+
+def _set_capability_brief(app):
+    u"""挂载即定形：由**本次挂载后**之路由表现生 ⇒ 新路由一上，清单自跟（pm_1802 §一.1）。"""
+    global PA_CAPABILITY_BRIEF
+    try:
+        PA_CAPABILITY_BRIEF = build_capability_brief(app.url_map)
+    except Exception as _e:
+        print("[PA] ⚠ 能力面清单未生成：%s: %s" % (type(_e).__name__, _e), flush=True)
+    return PA_CAPABILITY_BRIEF
 
 
 # ⭐ 058 §一.3（裁）：`/v9/pa/ask` 复问缓存（进程级 · 只读检索面）。
@@ -144,7 +235,7 @@ def llm_brain(system_prompt=None, model=None, max_tokens=None):
             from core.lib.llm_client import LLMClient
 
             prompt = "%s\n\n%s\n\n【上下文(画像/账本/本会话)】\n%s" % (
-                system_prompt or PA_SYSTEM, PA_CAPABILITY_BRIEF, context_text)
+                system_prompt or PA_SYSTEM, capability_brief(), context_text)
             # ⭐⭐ pm_1609 §二.1（令一 · 路由须依「可用性」）：PA 之路旧以 `model=None` 尽付
             #   `LLMClient._call` 之 `model or config.default_model`（＝**本机 Ollama 之 7B**）
             #   ⇒ **⛔ 问可用性**（净机无 Ollama ⇒ 仍取本机 ⇒ [WinError 2]）∧ 与 `GET /v9/pa/providers`
@@ -2145,13 +2236,23 @@ def register_pa_routes(app, brain=None):
         root = _US.root_dir()
         if act == "start" and _UR.phase(root).get("phase") != "running":
             _UR.begin(root)                                   # 起态先落 ⇒ 轮询即见 running
+            # ⭐ pm_1799 §二.3⒜（**「停／起服务」归壳** · ⛔ 由页内后端自行停／起）：
+            #   本端昔以默认之器起（其第 ⑥ 步停网关 · 第 ⑨ 步起 —— 而净机「起」⛔ 成 ⇒
+            #   正控 ⛔ 过 ⇒ 回滚 ⇒ rc=2 ⇒ 页内「一键」恒败）。同机之 `fix-update2.cmd`
+            #   唯多一个 `--no-restart` ⇒ **成** —— 两条路之**唯一**差别即此。
+            #   ⇒ 今同其形：换完即止 ⇒ 页显「已就位 · 请关窗重开」（生效归壳之「重启服务」）。
+            #   ⚠ 由之要：**停／起之能归壳**（生命周期是壳之物）⇒ 后端 ⛔ 越俎自停自起。
             argv = [_sys.executable, u"-X", u"utf8", u"-B",
                     os.path.join(root, u"scripts", u"win_pa", u"pa_update.py"),
-                    u"--root", root, u"--go", u"--json"]
+                    u"--root", root, u"--go", u"--json", u"--no-restart"]
             # 起法与 `pa_nowindow.cmd_start` 同族（`NO_WINDOW ｜ DETACHED ｜ BREAKAWAY`）：
-            #   器须**后于**网关而存 —— 其第 ⑥ 步即「停网关」⇒ ⛔ 随之亡。
+            #   器须**后于**调用者而存。昔之由为「第 ⑥ 步停网关」；今路已改 `--no-restart`
+            #   ⇒ 仍留此旗者：老板若于更新**中途关窗** ⇒ 器亦须⛔ 随之亡（序未完 ⇒ 半成品）。
             # pm_1791 §三.3：⛔ 于调用处手写 `creationflags` —— 旗唯 `_proc`
             #   一处定形（`_proc.DETACH_FLAGS` · 承「窗隐唯 `_proc` 出口」）。
+            # ⚠ 流之 `DEVNULL` **非「弃其真因」**（pm_1799 §二.2）：器**自落**其全部输出
+            #   （`<upd_dir>/log-<目标版>.txt` · `pa_update._Sink`）⇒ 端弃不掉它；
+            #   且 ⛔ 宜以「不读之管道」接之（器之输出可溢 ⇒ 器自阻）。
             try:
                 _proc.popen_detached(argv, cwd=root, stdin=_sp.DEVNULL,
                                      stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
@@ -2312,6 +2413,13 @@ def register_pa_routes(app, brain=None):
                                       "origin": p.get("origin"), "grounded": p.get("grounded"),
                                       "answer_source": p.get("answer_source")})
         reply = (r.get("dialog") or {}).get("reply") or "（PA 脑暂不可用：已记录本条，稍后可继续商量）"
+        # ⭐⭐ pm_1802 §一.2（令）：**⛔ 不实之辞入屏** —— 本通道只商量（⛔ 出手）
+        #   ⇒ 答体若现「未做而似做」之辞（**字面逐条见 `PA_CHANNEL_CLAUSE` 之禁辞表**）
+        #   ⇒ **结构化标出**（⛔ 静默放行 · ⛔ 改用户面之辞）：`channel.untrue_wording` 载逐条。
+        #   ⚠ 字面**转义写**（承 L56-57 · 与 `label_hits` 同族）。
+        _untrue_hits = [_s for _s in (u"\u5df2\u53d7\u7406", u"\u5df2\u5b89\u6392",
+                                      u"\u5df2\u8f6c\u529e", u"\u6b63\u5728\u5904\u7406")
+                        if _s in (reply or "")]
         # ⭐ PM 038 §一.1（老板令 2026-10-05）：聊天 ＝ **陪伴** ⇒ ⛔ 以聊天为采集器。
         #   旧路（detect_fields ⇒ collect_fields(source="chat")）已**撤** —— 画像之新源
         #   ＝ 全部会话上下文之抽取器（R3 · 另规格）。表单路 /v9/pa/profile 仍为显式入口。
@@ -2417,6 +2525,8 @@ def register_pa_routes(app, brain=None):
                 # ⭐ pm_1486 §二.1：闸之实 ⇒ 结构化判据（一处定形 · 唯加键）
                 "gate": pa_gate_view(decision=p.get("gate_decision"), origin=p.get("origin"), grounded=p.get("grounded"), answer_source=p.get("answer_source"), fact_family=p.get("fact_family")),
                 "cost": _cost,
+                # ⭐ pm_1802 §一.2／§一.3：本通道**能不能动手**之结构化据（唯加键 · ⛔ 破既有）。
+                "channel": {"kind": "dialog", "acts": False, "untrue_wording": _untrue_hits},
                 "activity": _activity,
             }
         )
@@ -4411,6 +4521,9 @@ def register_pa_routes(app, brain=None):
         return ok(out)
 
     app.register_blueprint(bp)
+    # ⭐⭐ pm_1802 §一.1（令）：**挂载即定形** —— 能力面清单由**本次挂载后**之路由表现生
+    #   （新路由一上 ⇒ 清单自跟 · ⛔ 手写常量 ⇒ 防漂）。
+    _set_capability_brief(app)
     return bp
 
 

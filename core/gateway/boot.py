@@ -13,10 +13,31 @@ from core.gateway.state_persist import _load_retrieval_cache, _persist_retrieval
 from core.lib.unified_config import unified_config
 
 
+# ⭐⭐ pm_1802 §三（裁 · 安全）：网关监听之**绑形**默认**唯本机**。
+#   ⚠ 旧病：此处硬编 `0.0.0.0` ⇒ **局网可达**（CW 一手：`netstat` 见 `0.0.0.0:5102`）；
+#     `_loopback`（`core/pa/gateway_routes.py`）之鉴权守**唯**本机路由 ⇒ 绑形一松，
+#     守即成了唯一之闸（承「安全洞 ⇒ 即刻办」）。
+#   ⚠ **有意不读** `services.gateway.host` —— 该键之名同义不同：`core/lib/port_config.py:10`
+#     逐字立口径「**绑定地址 != 连接地址**」，`core/lib/config.py:19` 之 `GATEWAY_HOST` 属**连接**方
+#     ⇒ 改其值 ＝ **静默改连接目标**（⛔ 本件之径 · 亦其未被本处所读之由）。
+#   ⭐ 开关：env `CJ_PA_BIND`（**有意**跨机者显式填，如 `0.0.0.0`）⇒ ⛔ 静默放宽。
+_BIND_ENV = "CJ_PA_BIND"
+_BIND_DEFAULT = "127.0.0.1"
+
+
+def _bind_host():
+    u"""监听址（一处定形 · pm_1802 §三）—— 默认 `127.0.0.1`；env `CJ_PA_BIND` 可覆（显式）。"""
+    return str(os.environ.get(_BIND_ENV) or "").strip() or _BIND_DEFAULT
+
+
 def _serve_http(app, port):
-    u"""⭐ pm_1608 §二.2 ⒜「门先开」：HTTP 监听之唯一驻点（后台线程）。"""
+    u"""⭐ pm_1608 §二.2 ⒜「门先开」：HTTP 监听之唯一驻点（后台线程）。
+
+    ⭐ pm_1802 §三：绑形经 `_bind_host()` **一处出**（默认唯本机 · ⛔ 硬编字面）。
+    """
+    _host = _bind_host()
     try:
-        app.run(host="0.0.0.0", port=port, debug=False, threaded=True, use_reloader=False)
+        app.run(host=_host, port=port, debug=False, threaded=True, use_reloader=False)
     except Exception as _e:
         print("[BOOT] ⛔ HTTP 监听异常终止：%s: %s" % (type(_e).__name__, _e), flush=True)
 
