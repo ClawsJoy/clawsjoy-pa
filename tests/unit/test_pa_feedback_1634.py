@@ -231,3 +231,28 @@ def test_read_one_place_health_carries_feedback(fed):
     assert h[u"feedback"][u"outbound"] is False
     assert u"只存在你这台机器上" in h[u"feedback"][u"notice"]
     assert h[u"feedback"][u"consent_buses"] == list(FS.CONSENT_BUSES)
+
+
+def test_diag_health_member_is_json_object_with_note_why(tmp_path):
+    u"""(g2) 我裁（pm_1643 §一.2）：诊断包之 `health.json` ⇒ **一 JSON 对象**（`json.loads` **一次**即得
+    `dict` —— ⛔ 双重编码）∧ 机器面之因（`boot.download.note_why`）**⛔ 丢**。
+    正控：所传 `/health` 之键（尤 `note` ／ `note_why`）逐字在包之对象中。
+    反控（**我自逮之旧病**）：旧稿 ＝ `json.dumps(scrub(json.dumps(...)))` ⇒ 件为「JSON **字串**」
+      ⇒ 客服席直读即败（其 `type` 为 `str` · ⛔ `dict`）。
+    """
+    import zipfile
+    root = tmp_path / "pa_h"
+    root.mkdir()
+    h = {u"status": u"healthy",
+         u"boot": {u"download": {u"measured": True, u"done_bytes": 83178821, u"total_bytes": None,
+                                 u"frac": None, u"eta_s": None,
+                                 u"note": u"总长不可量（后端未给）", u"note_why": u"TimeoutError"}}}
+    zp, rows = DG.build(root=str(root), health=h, port=5102, out_root_dir=str(tmp_path / "out_h"))
+    assert os.path.isfile(zp), rows
+    with zipfile.ZipFile(zp) as z:
+        doc = json.loads(z.read(u"health.json").decode(u"utf-8"))
+    assert isinstance(doc, dict), u"`health.json` 须为**对象**（⛔ 双重编码）：%r" % type(doc)
+    dl = doc[u"boot"][u"download"]
+    assert dl[u"note_why"] == u"TimeoutError", dl
+    assert dl[u"note"] == u"总长不可量（后端未给）", dl
+    assert dl[u"done_bytes"] == 83178821, dl

@@ -19,9 +19,13 @@
 以何形调用（判通 / 断须附）：
   python -X utf8 -B -m pytest tests/unit/test_boot_progress_1616.py tests/unit/test_boot_progress_1632.py -q
 """
+import logging
 import os
 import threading
 import time
+
+#: 日志（**一处定形**）—— pm_1643 §一.2：技术因（`note_why`）**须入机器面之「日志」**（⛔ 唯内存）。
+_LOG = logging.getLogger(__name__)
 
 ONNX_TOTAL_ENV = "PA_ONNX_TOTAL_BYTES"
 #: 「总长不可量」之明书（一处定形 · pm_1632 §二.1）—— 面（web）据此显「已下 X · 总长不可量」。
@@ -200,6 +204,17 @@ class BootProgress(object):
 
         def _run():
             tot, note, why = probe_total_bytes(url, timeout)
+            # ⭐ pm_1643 §一.2（技术因 ⇒ 入机器面）：探之果须入**日志** —— 客服席 ／ 诊断之据
+            #   （尤「不可量」之因：`URLError` ／ `TimeoutError` ／「后端未给 Content-Length」）。
+            #   ⚠ 日志 ⛔ 阻态（⛔ 成「准备」之门）。
+            try:
+                if tot:
+                    _LOG.info(u"[BOOT_PROGRESS] 总长探得 total_bytes=%s（一次 HEAD · 门后）", tot)
+                else:
+                    _LOG.info(u"[BOOT_PROGRESS] 总长不可量 note=%s ｜ note_why=%s",
+                              note or UNMEASURABLE_TOTAL_NOTE, why or u"（未给）")
+            except Exception:                                    # noqa: BLE001 — 日志 ⛔ 阻态
+                pass
             with self._lock:
                 if tot:
                     self._dl_total = int(tot)

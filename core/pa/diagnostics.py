@@ -135,6 +135,27 @@ def _update_channel(root, env):
         return u"（⛔ 读）"
 
 
+def _health_member(health_doc, sen):
+    u"""`health.json` 之文（**一处定形**）：脱敏后**仍须为一 JSON 对象**（`json.loads` **一次**即得
+    `dict`）—— 供客服席 ／ 诊断之器**直读**（承 pm_1643 §一.2「技术因 ⇒ 入机器面」：尤
+    `boot.download.note_why` 须可读 · ⛔ 掩）。
+
+    ⚠ 我自逮（2026-10-07）：旧稿 ＝ `json.dumps(scrub(json.dumps(...)))` ⇒ **双重编码**
+      ⇒ 件是一「JSON 字串」而非对象（读者须 `loads` 二次 · 客服席直读即败）⇒ 一处之改。
+    ⚠ 脱敏若破其形（罕见：哨兵之值含引号 ／ 反斜杠）⇒ 兜底仍以**对象**载其文（⛔ 丢 ∧ ⛔ 破形）。
+    """
+    if health_doc is None:
+        return u"（⛔ 得 —— 未传健康快照）"
+    txt = json.dumps(health_doc, ensure_ascii=False, indent=1)
+    out = FS.scrub(txt, sen)
+    try:
+        json.loads(out)                                        # 仍为一对象 ⇒ 直用其文
+        return out
+    except ValueError:                                          # 脱敏破形 ⇒ 兜底（仍对象）
+        return json.dumps({u"note": u"（脱敏后 ⛔ 合 JSON 对象 ⇒ 原文以字串附之）", u"raw": out},
+                          ensure_ascii=False, indent=1)
+
+
 README = u"""ClawsJoy PA 诊断包（**唯落本机** · ⛔ 已上传 · ⛔ 自动发送）
 ============================================================
 内含（白名单 · 五源）：
@@ -170,9 +191,7 @@ def build(root=None, health=None, port=None, out_root_dir=None, now=None, env=No
         z.writestr(u"README.txt", README)
         z.writestr(u"version.json", json.dumps(ver, ensure_ascii=False, indent=1))
         z.writestr(u"装根清单.txt", u"\n".join(_root_listing(root, env)) + u"\n")
-        z.writestr(u"health.json", json.dumps(FS.scrub(json.dumps(health_doc, ensure_ascii=False, indent=1), sen),
-                                             ensure_ascii=False, indent=1) if health_doc is not None
-                   else u"（⛔ 得 —— 未传健康快照）")
+        z.writestr(u"health.json", _health_member(health_doc, sen))
         z.writestr(u"环境.txt", u"\n".join(_env_summary(root, port, env)) + u"\n")
         n = 0
         for nm, txt in _log_tails(root, env):

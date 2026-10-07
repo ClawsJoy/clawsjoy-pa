@@ -197,3 +197,37 @@ def test_note_never_empty_when_total_missing(tmp_path, monkeypatch):
     d = BP.boot_progress.snapshot()[u"download"]
     assert d[u"total_bytes"] is None and d[u"note"] == BP.UNMEASURABLE_TOTAL_NOTE, d
     assert d[u"note_why"], d
+
+
+def test_probe_result_lands_in_log(tmp_path, caplog):
+    u"""(j) pm_1643 §一.2（技术因 ⇒ 入机器面）：探之果**须入日志**（⛔ 唯内存）—— 客服席 ／ 诊断之据。
+    正控（得）：日志载 `total_bytes=<真数>`；反控（⛔ 得）：日志载 `note=` ＋ **`note_why=`**（其因）。
+    """
+    import logging
+    lg = BP.__name__
+    # 正控：本机临端之定长件 ⇒ 得
+    httpd, url = _serve(tmp_path, 2048)
+    try:
+        with caplog.at_level(logging.INFO, logger=lg):
+            assert BP.boot_progress.start_download_probe(url, timeout=2.0) is True
+            for _ in range(50):
+                if any(u"[BOOT_PROGRESS]" in r.getMessage() for r in caplog.records):
+                    break
+                time.sleep(0.1)
+        txt = u"\n".join(r.getMessage() for r in caplog.records)
+        assert u"[BOOT_PROGRESS]" in txt and u"total_bytes=2048" in txt, txt
+    finally:
+        httpd.shutdown()
+    # 反控：死端 ⇒ ⛔ 得 ⇒ 其因入日志
+    BP.boot_progress.reset()
+    caplog.clear()
+    with caplog.at_level(logging.INFO, logger=lg):
+        assert BP.boot_progress.start_download_probe(u"http://127.0.0.1:1/x", timeout=0.5) is True
+        for _ in range(50):
+            if any(u"[BOOT_PROGRESS]" in r.getMessage() for r in caplog.records):
+                break
+            time.sleep(0.1)
+    txt = u"\n".join(r.getMessage() for r in caplog.records)
+    assert u"[BOOT_PROGRESS]" in txt, txt
+    assert u"note=" in txt and u"note_why=" in txt, txt
+    assert BP.UNMEASURABLE_TOTAL_NOTE in txt, txt
