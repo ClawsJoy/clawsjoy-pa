@@ -28,6 +28,10 @@ u"""pm_1645 §二 令一（甲-P0）之齿 —— 增量包之二器 ＋ `/healt
   P5 正控：`make_update.plan` 之尺（⛔ 入 `tests/**` ／ `data/**` ∧ 逐件形合）
   U9 正反控：**态与「根」绑定**（二根 ⇒ 二件 ⇒ ⛔ 互覆 · pm_1659 §二.1 ／ CW_1663）
   U10 反控：「异根之态」投于今根 ⇒ 作「未查」（⛔ 充知）
+  U11 反控（pm_1848 §三.3）：**同版号 ∧ 戳 ⛔ 同 ⇒ 认「重发」** ⇒ `available` 须真
+     （⛔ 以 available=false 令页内之路**永不可达** —— 旧病）∧ 明书二戳。
+  U12 正控：同版号 ∧ 戳**同** ⇒ 「已是最新」∧ `available=False`（旧形照旧）。
+  U13 反控：装根之戳 ⛔ 读 ⇒ ⛔ 充「已是最新」（承「空 ⛔ 混 缺」）⇒ 认重发 ＋ 明书「⛔ 读」。
 """
 from __future__ import annotations
 
@@ -98,6 +102,16 @@ def _root(tmp_path, version=None):
             u"version": version, u"commit": u"c", u"tree": u"t",
             u"built_at": u"2026-10-07T00:00:00+0800", u"channel": u"internal"}),
             encoding=u"utf-8")
+    return r
+
+
+def _root_at(tmp_path, version, built_at):
+    u"""装根 ＋ 指定之造刻（pm_1848 §三 之齿之基 · ⛔ 覆旧形）。"""
+    r = tmp_path / u"root"
+    r.mkdir(exist_ok=True)
+    (r / u"version.json").write_text(json.dumps({
+        u"version": version, u"commit": u"c", u"tree": u"t",
+        u"built_at": built_at, u"channel": u"internal"}), encoding=u"utf-8")
     return r
 
 
@@ -308,6 +322,55 @@ def test_U10_态之根不符则作未查(tmp_path):
     f = UC.face(root=str(r), env=env)
     assert f[u"available"] is False, f
     assert u"未查" in f[u"note"], f
+
+
+def test_U11_同版号异戳_认重发(tmp_path):
+    u"""U11 反控（pm_1848 §三.3）：同版号 ∧ 戳 ⛔ 同 ⇒ 认「重发」⇒ available 须真
+    （⛔ 以 available=false 令页内之路**永不可达**）∧ 明书二戳。"""
+    httpd, base = _serve(tmp_path, _man_ok())
+    try:
+        r = _root_at(tmp_path, u"9.0.1", u"2026-10-08T03:53:17+0800")
+        f = UC.refresh(root=str(r), env=_env(tmp_path, base), timeout=3.0)
+        assert f[u"available"] is True, f
+        assert u"重发" in f[u"note"], f
+        assert u"2026-10-08T03:53:17+0800" in f[u"note"], f
+        assert u"2026-10-07T00:00:00+0800" in f[u"note"], f
+        assert f[u"current_built_at"] == u"2026-10-08T03:53:17+0800", f
+        assert f[u"latest_built_at"] == u"2026-10-07T00:00:00+0800", f
+        g = UC.face(root=str(r), env=_env(tmp_path, base))
+        assert g[u"available"] is True and u"重发" in g[u"note"], g
+    finally:
+        httpd.shutdown()
+
+
+def test_U12_同版号同戳_已是最新(tmp_path):
+    u"""U12 正控：同版号 ∧ 戳**同** ⇒ 「已是最新」∧ available False（旧形照旧）。"""
+    httpd, base = _serve(tmp_path, _man_ok())
+    try:
+        r = _root_at(tmp_path, u"9.0.1", u"2026-10-07T00:00:00+0800")
+        f = UC.refresh(root=str(r), env=_env(tmp_path, base), timeout=3.0)
+        assert f[u"available"] is False, f
+        assert f[u"note"] == u"已是最新", f
+        assert f[u"current_built_at"] == u"2026-10-07T00:00:00+0800", f
+        assert f[u"latest_built_at"] == u"2026-10-07T00:00:00+0800", f
+    finally:
+        httpd.shutdown()
+
+
+def test_U13_装根缺戳_不充已是最新(tmp_path):
+    u"""U13 反控：装根之戳 ⛔ 读（拟旧包）⇒ ⛔ 充「已是最新」⇒ 认重发 ＋ 明书「⛔ 读」。"""
+    httpd, base = _serve(tmp_path, _man_ok())
+    try:
+        r = tmp_path / u"root"
+        r.mkdir(exist_ok=True)
+        (r / u"version.json").write_text(json.dumps({
+            u"version": u"9.0.1", u"commit": u"c", u"tree": u"t", u"channel": u"internal"}),
+            encoding=u"utf-8")
+        f = UC.refresh(root=str(r), env=_env(tmp_path, base), timeout=3.0)
+        assert f[u"available"] is True, f
+        assert u"重发" in f[u"note"] and u"⛔ 读" in f[u"note"], f
+    finally:
+        httpd.shutdown()
 
 
 def test_P1_never点名():

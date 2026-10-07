@@ -14,6 +14,9 @@ u"""/health `update` 键之读数（**一处定形**）—— 承 pm_1640 §一.
   取不得  ⇒ `{available: false, …, note: <人话>, note_why: <技术因>}`（承 `boot.download` 之族）
   已是最新 ⇒ `{available: false, current_version, latest_version, size_bytes, files, channel, checked_at, note: "已是最新"}`
   有新版  ⇒ `{available: true, …同上…, note: ""}`
+  ⭐ 同版号之重发（pm_1848 §三.3）⇒ `{available: true, …, note: "有同版号之新册（重发）：<版> ｜ 戳 <装根> ⇒ <册>"}`
+     —— 由：版号同 ≠ 物同；旧判唯比版号 ⇒ 重发被误书「已是最新」⇒ 页内之路**永不可达**。
+     判据 ＝ 装根 `version.json` 之 `built_at` ⟷ 册之 `built_at`（戳**同** ⇒ 已是最新）。
 
 ⚠ 落处 ＝ `%LOCALAPPDATA%\\ClawsJoyPA\\update\\state-<根之印>.json`（与 `diagnostics.out_root` 同族）
   ⇒ **⛔ 入装根之 `data/`**（承 pm_1620 §三.8 之铁律：升级 ⛔ 动 `data/` —— 其印 ⛔ 变）。
@@ -110,17 +113,20 @@ def face(root=None, env=None):
     u"""`/health.update` 之体（**纯读** —— 唯读盘之态 ＋ 源之声明 · ⛔ 出网）。"""
     env = os.environ if env is None else env
     src = US.load(root, env)
+    _curd = BI.read(root)[0] or {}
     base = {"channel": src.get(u"channel"), "manifest_url": US.manifest_url(src),
-            "current_version": (BI.read(root)[0] or {}).get(u"version")}
+            "current_version": _curd.get(u"version"),
+            "current_built_at": _curd.get(u"built_at")}
     d = _read_state(root, env)
     if not d:
-        base.update({"available": False, "latest_version": None, "size_bytes": 0, "files": 0,
+        base.update({"available": False, "latest_version": None, "latest_built_at": None,
+                     "size_bytes": 0, "files": 0,
                      "checked_at": None, "note": u"未查（起服门后自之 ∨ 候甲-P0 之器）",
                      "note_why": u""})
         return base
     out = dict(base)
-    for k in (u"available", u"latest_version", u"size_bytes", u"files", u"checked_at",
-              u"note", u"note_why"):
+    for k in (u"available", u"latest_version", u"latest_built_at", u"size_bytes", u"files",
+              u"checked_at", u"note", u"note_why"):
         out[k] = d.get(k)
     for k in (u"channel", u"manifest_url"):
         if d.get(k):
@@ -138,11 +144,14 @@ def refresh(root=None, env=None, timeout=None, now=None):
     env = os.environ if env is None else env
     src = US.load(root, env)
     doc, note, why = UM.fetch(src, timeout=timeout or UM.FETCH_TIMEOUT)
-    cur = (BI.read(root)[0] or {}).get(u"version")
+    _curd = BI.read(root)[0] or {}
+    cur = _curd.get(u"version")
+    cur_stamp = _curd.get(u"built_at")
     d = {"checked_at": time.strftime(u"%Y-%m-%dT%H:%M:%S%z", time.localtime(now)) if now
          else time.strftime(u"%Y-%m-%dT%H:%M:%S%z"),
          "channel": src.get(u"channel"), "manifest_url": US.manifest_url(src),
-         "current_version": cur, "latest_version": None, "size_bytes": 0, "files": 0,
+         "current_version": cur, "current_built_at": cur_stamp,
+         "latest_version": None, "latest_built_at": None, "size_bytes": 0, "files": 0,
          "available": False, "note": u"", "note_why": u""}
     d[u"root"] = root_of(root)
     if doc is None:
@@ -151,6 +160,7 @@ def refresh(root=None, env=None, timeout=None, now=None):
     else:
         t = UM.totals(doc)
         d["latest_version"] = doc.get(u"version")
+        d["latest_built_at"] = doc.get(u"built_at")
         d["files"] = t["n"]
         d["size_bytes"] = t["bytes"]
         if doc.get(u"channel") != src.get(u"channel"):
@@ -158,7 +168,15 @@ def refresh(root=None, env=None, timeout=None, now=None):
                          % (doc.get(u"channel"), src.get(u"channel")))
             d["note_why"] = u"channel"
         elif cur and str(cur) == str(doc.get(u"version")):
-            d["note"] = u"已是最新"
+            # ⭐ pm_1848 §三.3：**同版号 ∧ 戳 ⛔ 同 ⇒ 重发** ⇒ available 须真
+            #   （⛔ 以「available false」令页内之路**永不可达** —— 旧病）。
+            doc_stamp = str(doc.get(u"built_at") or u"")
+            if str(cur_stamp or u"") and doc_stamp and str(cur_stamp) == doc_stamp:
+                d["note"] = u"已是最新"
+            else:
+                d["available"] = True
+                d["note"] = (u"有同版号之新册（重发）：%s ｜ 戳 %s ⇒ %s"
+                             % (cur, cur_stamp or u"⛔ 读", doc_stamp or u"⛔ 读"))
         else:
             d["available"] = True
             d["note"] = u"" if cur else u"有新版（本机之版号 ⛔ 读 ⇒ 照实）"
