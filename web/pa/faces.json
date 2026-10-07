@@ -335,6 +335,19 @@
    "boot": [
     "paKeyInit"
    ]
+  },
+  {
+   "id": "sys",
+   "title": "本机体检（只读 · 七面）",
+   "file": "faces/sys.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paSys",
+    "#paSysOpen",
+    "#paSysWhen"
+   ],
+   "boot": []
   }
  ]
 }

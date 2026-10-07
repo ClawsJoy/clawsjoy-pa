@@ -4380,6 +4380,36 @@ def register_pa_routes(app, brain=None):
                    "members": _dg.members(zp), "uploaded": False,
                    "hint": "唯落本机；由你自己决定交给谁（⛔ 自动上传）"})
 
+    # ---- 本机体检（只读 · 七面 · 一阶段）—— pm_1750 §二 ／ pm_1751 §一–§四 ／ pm_1753 §一–§二 ----
+    #   ⭐ 唯读：⛔ 写 ／ ⛔ 改注册表（`KEY_READ`）／ ⛔ 起停服务 ／ ⛔ 提权静默（须授权者明标）；
+    #   ⛔ 出机（全程本机）；本机闸 `_loopback`。实现在 `core/pa/sys_face.py`
+    #   （**薄壳**：本处唯接线 ⇒ ⛔ 主逻辑在此 · ⛔ 二套读者）。
+    @bp.route("/v9/pa/sys/snapshot", methods=["GET"])
+    def pa_sys_snapshot():
+        """七面之合体（一屏 ＝ 一次取）。`?fresh=1` ⇒ 真扫（有界）。"""
+        if not _loopback(request):
+            return err("本机体检唯本机可用（⛔ 远机）", 403)
+        from core.pa import sys_face as _sf
+        _fresh = str(request.args.get("fresh") or "").strip() in ("1", "true", "yes")
+        out = _sf.snapshot(fresh=_fresh)
+        out["印"] = _code_sha16(pa_sys_snapshot, _sf)
+        return ok(out)
+
+    @bp.route("/v9/pa/sys/<panel>", methods=["GET"])
+    def pa_sys_panel(panel):
+        """单面之盘（`disk ／ disk_c ／ windows ／ startup ／ perf ／ net ／ guard`）。"""
+        if not _loopback(request):
+            return err("本机体检唯本机可用（⛔ 远机）", 403)
+        from core.pa import sys_face as _sf
+        pid = str(panel or "").strip()
+        if pid not in _sf.PANELS:
+            return err("⛔ 未识之面：%s（白名单：%s）"
+                       % (pid, " ／ ".join(_sf.PANELS)), 400)
+        _fresh = str(request.args.get("fresh") or "").strip() in ("1", "true", "yes")
+        out = _sf.build(pid, fresh=_fresh)
+        out["印"] = _code_sha16(pa_sys_panel, _sf)
+        return ok(out)
+
     app.register_blueprint(bp)
     return bp
 

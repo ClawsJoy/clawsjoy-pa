@@ -25,6 +25,7 @@ import importlib
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -82,6 +83,7 @@ def test_B3_other_files_unchanged():
 def test_B4_manifest_entries_are_checkout_shape():
     r = subprocess.run([sys.executable, "-X", "utf8", "-B", str(SCRIPT),
                         "--base", BASE, "--new", "HEAD",
+                        "--out", str(Path(tempfile.gettempdir()) / "mu1688_b4"),
                         "--version", "9.0.5", "--base-version", "9.0.4", "--json"],
                        capture_output=True, cwd=str(ROOT), timeout=300)
     out = r.stdout.decode("utf-8", "replace")

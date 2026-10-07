@@ -16,6 +16,10 @@ u"""make_update.py -- 造**增量包**（甲-P0 之器一 · 承 pm_1620 §二.1
   python -X utf8 scripts\\win_pa\\make_update.py --base <旧 rev> [--new HEAD] --out <dir>   # 干跑
   python -X utf8 scripts\\win_pa\\make_update.py --base <旧 rev> --out <dir> --go --json    # 真造
   ... [--version <v>] [--base-version <bv>] [--channel internal] [--root <仓根>] [--self-test]
+缺省之出件（承 pm_1767 §三.1 ＋ pm_1770 §二.1⒟）：`--out` 之缺省 ≢ 仓内之 `dist/update`，
+  而 ≢ **仓外**之根（`PA_UPDATE_OUT` ∨ 仓之兄之 `clawsjoy_out/update`）＋ **版号戳**；
+  且**已存且非空 ⇒ 拒**（须 `--force`）—— 由：仓内之出件树 ⇒ daemon 之 git 服务逾 30 s 即瘫。
+
 退出码：0 成 ｜ 2 前置 ⛔ 足 ∨ 造败 ｜ 3 入口错
 """
 from __future__ import annotations
@@ -374,12 +378,52 @@ def self_test():
     return 0 if ok else 2
 
 
+#: 出件之根之覆（env）—— 承 pm_1767 §三.1「弃树 ⛔ 留仓内」：出件树**宜出仓**。
+OUT_ROOT_ENV = u"PA_UPDATE_OUT"
+
+
+def out_root(root):
+    u"""出件之根 ∈ **仓外**（`PA_UPDATE_OUT` ∨ 仓之兄之 `clawsjoy_out/update`）—— **绝对径**。
+
+    ⚠ 由（承 pm_1767 §一）：`dist/` 在仓内之未入仓之件（今 `32,432` 件）⇒ daemon 之
+      `workspace-git-service` 每轮皆数之 ⇒ 逾 `30 s` 即瘫 ⇒ 出件树**宜出仓**。
+    """
+    env = (os.getenv(OUT_ROOT_ENV) or u"").strip()
+    if env:
+        return os.path.abspath(env)
+    return os.path.join(os.path.dirname(os.path.abspath(root)), u"clawsjoy_out", u"update")
+
+
+def default_out(root, version):
+    u"""缺省之出件目录 ＝ `<出件之根>/<版号>`（**加戳** —— 一批一版号 · 承 pm_1770 §二.1⒟）。"""
+    return os.path.join(out_root(root), version or u"unstamped")
+
+
+def out_guard(out, force=False):
+    u"""出件目录之闸（治 pm_1760 §二 之坑）⇒ 报 ∨ None（过）。
+
+    ⒜ **已存且非空 ⇒ 拒**（唯 `--force` 可覆 —— ⛔ 静默覆旧包：那会令「一批一版号」失凭）；
+    ⒝ **干跑同此**（⛔ 二形 —— 干判与真办须同一尺）。
+    """
+    if os.path.isdir(out):
+        try:
+            names = os.listdir(out)
+        except OSError as e:                                  # noqa: BLE001 — 照实报因
+            return u"[FAIL] 出件目录 ⛔ 读（%s）：%s" % (out, e)
+        if names and not force:
+            return (u"[FAIL] 出件目录**已存且非空**（%d 件）：%s\n"
+                    u"       ⇒ 一批一版号 ⇒ 改 `--out`（∨ 换版号）∨ 明书 `--force` 覆之"
+                    % (len(names), out))
+    return None
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=u"造增量包（甲-P0 之器一）")
     ap.add_argument(u"--root", default=ROOT)
     ap.add_argument(u"--base", default=None, help=u"旧 rev（出货之刻 · 见装根 version.json 之 commit）")
     ap.add_argument(u"--new", default=u"HEAD")
-    ap.add_argument(u"--out", default=os.path.join(u"dist", u"update"))
+    ap.add_argument(u"--out", default=None,
+                    help=u"出件之目录（缺省 ⇒ **仓外**之根 ＋ 版号戳 —— 见 `default_out()`）")
     ap.add_argument(u"--version", default=None)
     ap.add_argument(u"--base-version", default=None)
     ap.add_argument(u"--channel", default=u"internal")
@@ -388,6 +432,8 @@ def main(argv=None):
     ap.add_argument(u"--allow-big", action="store_true",
                     help=u"明书：许超阈之增量（否则超阈 ⇒ 红 · pm_1656 §三.3）")
     ap.add_argument(u"--self-test", action="store_true")
+    ap.add_argument(u"--force", action="store_true",
+                    help=u"明书：许覆**已存且非空**之出件目录（否则 ⇒ 拒 · 治 pm_1760 §二 之坑）")
     a = ap.parse_args(argv)
     root = os.path.abspath(a.root)
     _add_core(root)
@@ -404,7 +450,14 @@ def main(argv=None):
     if not bver:
         print(u"[FAIL] base_version ⛔ 得（请 --base-version）")
         return 2
-    out = a.out if os.path.isabs(a.out) else os.path.join(root, a.out)
+    out = a.out if a.out else default_out(root, ver)
+    out = out if os.path.isabs(out) else os.path.join(root, out)
+    if not a.out:
+        print(u"[出件] 缺省之径（**仓外** ＋ 版号戳）：%s" % out)
+    _g = out_guard(out, a.force)
+    if _g:
+        print(_g)
+        return 2
     rc, rows, man = plan(root, a.base, a.new, ver, bver, a.channel, out,
                          allow_big=a.allow_big)
     print(u"\n".join(rows))

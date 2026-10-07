@@ -5,6 +5,7 @@
 handle(action, payload) 唯一入口, 返回 JSON。
 """
 import os
+import sys
 from pathlib import Path
 
 from core.pa.dialog import DialogRuntime
@@ -13,7 +14,7 @@ from core.pa.dispatch import (DispatchRecord, SeatExecutor, StubExecutor, V9Gate
 from core.pa.events import EventLog
 from core.pa.ledger import TodoStore
 from core.pa.profile import ProfileStore
-from core.pa.seed import SEED
+from core.pa.seed import purge as purge_legacy_seed
 
 
 def _default_dir():
@@ -30,16 +31,26 @@ class PaCore:
         self.dispatch_rec = DispatchRecord(self.dir / "dispatch.jsonl")
         self.artifacts_dir = self.dir / "artifacts"
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
-        self._ensure_seed()
+        self._purge_legacy_seed()
 
-    def _ensure_seed(self):
-        if not self.profile.entries:
-            for domain, value, source, conf, status in SEED:
-                self.profile.add(domain, value, source=source, confidence=conf, status=status)
-        if not self.ledger.items:
-            self.ledger.add("口径卡汇总: 甬创/OPC 待核实清单 #1-#10 逐项状态", kind="verify", note="vault 收件箱 OPC 调研/PPT 文案")
-            self.ledger.add("WPS-AI v1.4.7 插件内关闭自动更新(updater 拉作者 OSS)", kind="todo")
-            self.ledger.add("M3: A/B 双主题 3 页样张 -> 视觉确认 -> 审美沉淀", kind="todo")
+    def _purge_legacy_seed(self):
+        u"""清「已落之种子」（承 pm_1770 §二.1⒝⒞）—— 一次性 · 逐字比 · 留痕 · 幂等。
+
+        ⚠ 昔之 `_ensure_seed`（首启**灌注**）⇒ **拔**（同件）：⛔ 再灌 —— 其为本席之私记
+          （甬创 ／ OPC ／ WPS-AI 之属）⇒ 入用户之机 ＝ **以我方之记充机主之实**；
+          且「空库之诚」：净机之面当「空 ⇒ 拒答（**设计**）」。
+        此处唯「清」：老板之机（≥ `9.0.4`）已落种子 ⇒ **删码唯利新机**
+          （其记仍在）⇒ 非清不可。
+        ⚠ 清败 ⛔ 阻内核（PA 须能起）—— 然 **⛔ 静默**：以 stderr 显报（承「凡败须显」）。
+        """
+        try:
+            n_p, n_l = purge_legacy_seed(self.profile, self.ledger, events=self.events)
+        except Exception as e:                                    # noqa: BLE001 — 清败 ⛔ 阻内核
+            sys.stderr.write("[pa] 清「已落之种子」⛔ 成：%s\n" % str(e)[:200])
+            return
+        if n_p or n_l:
+            sys.stderr.write("[pa] 清「已落之种子」：画像 %d 条 ／ 账本 %d 条"
+                             "（昔之灌注 ⇒ 已去）\n" % (n_p, n_l))
 
     # ---- actions ----
     def handle(self, action, payload=None):

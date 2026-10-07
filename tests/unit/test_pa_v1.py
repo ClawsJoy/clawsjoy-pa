@@ -70,6 +70,7 @@ def test_vault_ledger_roundtrip(pa, tmp_path):
     from core.pa.vault_brain import BrainSync
 
     vault = tmp_path / "vault"
+    pa.ledger.add("M3: A/B 双主题 3 页样张(测)", kind="todo")   # ⭐ 去种子（pm_1770 §二.1⒝）后：本测自带其件
     brain = BrainSync(pa.ledger, vault_dir=str(vault))
     md = brain.sync_ledger()
     # 手工把一条 done

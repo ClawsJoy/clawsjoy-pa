@@ -13,12 +13,14 @@ def pa(tmp_path):
     return PaCore(data_dir=str(tmp_path / "pa"))
 
 
-def test_seed_on_first_init(pa):
-    assert len(pa.profile.entries) >= 10
-    assert len(pa.ledger.items) >= 3
-    # 种子含 lesson 域(试错教训)与 decision(principal)
-    assert any(e["domain"] == "lesson" for e in pa.profile.entries)
-    assert any(e["domain"] == "decision" and "principal" in e["value"] for e in pa.profile.entries)
+def test_no_seed_on_first_init(pa):
+    u"""去种子（承 pm_1770 §二.1⒝）：首启 **⛔ 灌** —— 画像 ／ 账本皆空（承「空库之诚」）。
+
+    ⚠ 昔之作 `test_seed_on_first_init`（断言 >= 10 条 ／ >= 3 条）⇒ **已拔** ——
+      那条**正控**恰是今天的病（以本席之私记充机主之实）。
+    """
+    assert pa.profile.entries == []
+    assert pa.ledger.items == []
 
 
 def test_sediment_adds_entry(pa):
@@ -29,14 +31,15 @@ def test_sediment_adds_entry(pa):
     assert r["ok"]
     e = r["entry"]
     assert e["status"] == "confirmed" and e["domain"] == "aesthetic"
-    # 旧候选条目应仍在(提案), 不覆盖历史
+    # ⚠ 昔此断言「旧候选条目仍在」（那来自种子）⇒ 去种子后改为：**唯新条**
     act = pa.profile.active("aesthetic")
-    assert any("候选主题" in x["value"] for x in act)
+    assert [x["value"] for x in act] == ["老板圈定 A Electric Studio"]
 
 
 def test_revise_supersedes(pa):
-    # 找一个 proposed 风格条目修正
-    tgt = next(e for e in pa.profile.entries if e["domain"] == "style" and e["status"] == "proposed")
+    # ⚠ 去种子后：本测自造一条 proposed（昔赖种子之 style 条）
+    tgt = pa.profile.add("style", "沟通: 结论先行 + 少开放式问卷",
+                         source="本测", confidence="medium", status="proposed")
     r = pa.handle("profile_revise", {"id": tgt["id"], "value": "沟通: 需要更多展开与上下文(修正版)", "source": "2026-09-10 老板校准"})
     assert r["ok"] and r["entry"]["supersedes"] == tgt["id"]
     # 旧条目不再 active
@@ -47,6 +50,10 @@ def test_revise_supersedes(pa):
 
 
 def test_context_brief(pa):
+    # ⚠ 去种子后：本测自带件（昔赖种子之 aesthetic ／ style ／ M3）
+    pa.profile.add("aesthetic", "(测) 双主题 A+B", source="本测", confidence="high", status="confirmed")
+    pa.profile.add("style", "(测) 结论先行", source="本测", confidence="high", status="confirmed")
+    pa.ledger.add("M3: (测) 三页样张", kind="todo")
     r = pa.handle("context")
     assert r["ok"]
     assert "【aesthetic】" in r["profile"] and "【style】" in r["profile"]

@@ -245,6 +245,19 @@
         </div>
       </section>
 
+      <!-- ⭐ 本机体检（只读 · 七面 · 一阶段）—— 入口 ＋ 承器（唯此一处 · ⛔ 动既有之面）：
+           真源 GET /v9/pa/sys/snapshot（唯本机 · ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默）；由 pa/faces/sys.js 收放。
+           ⛔ 后端写盘（唯前端之便）：文本块可全选复制。 -->
+      <section class="msec" id="paMoreSysFace"><h6>本机体检（只读 · 七面）</h6>
+        <p class="mnote">真源：<code>GET /v9/pa/sys/snapshot</code>（唯本机 · ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默 · 一阶段只读）。</p>
+        <div class="sysrow">
+          <span class="chip" id="paSysOpen" onclick="paSysOpen()" title="本机体检（只读 · 七面）：展开 ／ 收起（唯本机 · 取一次）">🩺 本机体检</span>
+          <span class="chip" onclick="paSysScan()" title="重扫（真扫 · 有界 6 s）">↻ 重扫</span>
+          <span class="src" id="paSysWhen">未取</span>
+        </div>
+        <div id="paSys" style="display:none"></div>
+      </section>
+
       <section class="msec" id="paMoreSettings"><h6>设置（老板 ／ 配置 ／ 建档）</h6>
         <p class="mnote">右栏三 tab ⇒ 归此一个入口。</p>
         <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_997 §四.4</div></details>
@@ -419,6 +432,7 @@
 <script src="pa/faces/update.js"></script>
 <script src="pa/faces/feedback.js"></script>
 <script src="pa/faces/keys.js"></script>
+<script src="pa/faces/sys.js"></script>
 <!-- ⭐ 首启引导（净机之「第一屏」· M1 余件之三 · 承 pm_1384 §三.3）：
      ⒜ 数据在本机（**人话** · ⛔ 行话）⒝ 模型三态 ＋ 修之门 ⒞ 数据目录 ⒟ ⛔ 静默（缺则显因）。
      读数源 ＝ GET /v9/pa/first_run（**只读**）；⛔ 后端 ⛔ 在答 ⇒ 明书「没读成」（⛔ 装成「已就绪」）。

@@ -529,6 +529,32 @@ def self_test():
     return 0 if ok else 2
 
 
+
+def _tail_stream(a):
+    u"""尾话之去处：`--json` ⇒ **stderr**（护「JSON 为末行」之机读之约 · 承 pm_1620 之回执）；否则 ⇒ stdout。"""
+    return sys.stderr if a.json else sys.stdout
+
+
+def _tail(a, rc, t0):
+    u"""尾话（**一处定形** · 承 pm_1762 §二.2）：昔生于 `pa-update.cmd` 之 `python -c` 字面 ⇒
+    其副本在用户机**永冻**（随 `.cmd` 而止）⇒ 今移入本器（**随版本更新**）。
+
+    ⚠ 干跑 ⛔ 称「成」（承「一名一义」：未动盘 ⇒ 「演毕」）。
+    """
+    sec = int(time.time() - t0)
+    if rc == 0 and not a.go:
+        line = u"[PA] 演毕（⛔ 动盘）—— 加 `--go` 真办"
+    elif rc == 0:
+        line = u"[PA] 成 —— 若上文言「已是最新」⇒ 未动一物。"
+    else:
+        line = u"[PA] [FAIL] ⛔ 成 —— 看上之诸行（若已回滚，诸件当复其旧；服之态见上）"
+    o = _tail_stream(a)
+    o.write(u"[PA] elapsed %d s\n" % sec)
+    o.write(u"[PA] exit=%d\n" % rc)
+    o.write(line + u"\n")
+    o.flush()
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=u"应用增量包（甲-P0 之器二）")
     ap.add_argument(u"--root", default=ROOT)
@@ -557,9 +583,11 @@ def main(argv=None):
             _ur = None
     if _ur is not None:
         _ur.begin(root)
+    _t0 = time.time()                                        # ⭐ 尾话之「时长」之源（一处出）
     rc = run(a)
     if _ur is not None:
         _ur.finish(root, rc)
+    _tail(a, rc, _t0)                                        # ⭐ 尾话：随版本更新（承 pm_1762 §二.2）
     return rc
 
 
