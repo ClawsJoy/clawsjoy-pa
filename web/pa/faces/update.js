@@ -144,7 +144,9 @@ function paUpdView(u, ctx){
     v.state = 'done'; v.phase = 'done';
     v.current = rec; v.latest = rec;
     v.text = '已更新至 ' + rec;
-    v.note = '服务已自重启并报此版本 ⇒ 更新已成（空窗之相位已复位 · 标记已清）';
+    /* ⭐ pm_1813 §三（要 · 照实）：⛔ 恒言「服务已自重启」—— 本支之**可验之实** ＝ `/health` 已答
+       **新版本**（版已前移 ⇒ 服务确已重起并应答）⇒ 书其实而 ⛔ 断其因（承「说一用一」· L142）。 */
+    v.note = '/health 已答新版本 ⇒ 本页发起之更新已成（服务已重起并应答 · 空窗之相位已复位 · 标记已清）';
     return v;
   }
   const bak = paPrepNum(o.since_s);
@@ -179,8 +181,14 @@ function paUpdView(u, ctx){
   if(rph === 'done' && rfresh){
     v.state = 'done';
     v.text = '更新已完成' + (rver ? ('：' + rver) : '') + ' · 已就绪';
-    v.note = (rnote ? (rnote + ' ／ ') : '')
-           + '服务已自重启；若本页仍旧 ⇒ 需重启本页（按 F5 刷新）· 本页会自动重试';
+    /* ⭐⭐ pm_1813 §三（要 · 照实）：其辞「服务已自重启」在**本机**为真（更新器确自起），
+       而**净机**之此路曾 `rc=2` **回滚**（承 pm_1796 ／ pm_1799）⇒ ⛔ 恒言。
+       ⇒ 重启与否**唯后端之辞为凭**：后端 `note` 有 ⇒ 照引（其辞归后端）；
+         无 ⇒ 只书**可验之实**（`/health` 已答此版本）∧ **明书「后端未给重启之辞」**。 */
+    v.note = (rnote ? (rnote + ' ／ ')
+                    : ('后端未给「已重启」之辞 ⇒ 唯可验者：/health 已答 ' + (rver || v.current || '本版本')
+                       + '（⛔ 断「服务已自重启」）。'))
+           + '若本页仍旧 ⇒ 需重启本页（按 F5 刷新）· 本页会自动重试';
     return v;
   }
   if(rph === 'failed' && rfresh){

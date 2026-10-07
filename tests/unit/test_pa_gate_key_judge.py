@@ -235,10 +235,10 @@ def _js_assert() -> str:
     m_grd = re.search(r"const PA_SELF_ASSERT_GUARD = .*?;", sd)
     m_say = re.search(r"const PA_SELF_ASSERT_SAY = .*?;", sd)
     m_sa = re.search(r"^ *const _sa = .*?;", sd, re.M)
-    m_ful = re.search(r"^ *const full = tag \+ '\\n' \+ \(_sa \? .*?;", sd, re.M)
+    m_ful = re.search(r"^ *const full = \(hs \? \(hs \+ '\\n'\) : ''\) \+ \(_sa \? .*?;", sd, re.M)
     for nm, m in ((u"PA_FACT_MARK", m_fact), (u"PA_DENY_WORD", m_deny),
                   (u"PA_SELF_ASSERT_GUARD", m_grd), (u"PA_SELF_ASSERT_SAY", m_say),
-                  (u"const _sa = …", m_sa), (u"const full = tag+…", m_ful)):
+                  (u"const _sa = …", m_sa), (u"const full = (hs ? …", m_ful)):
         assert m, u"未找到 " + nm
     decls = "\n".join(m.group(0) for m in (m_fact, m_deny, m_grd, m_say)).replace(
         u"const PA_SELF_ASSERT_GUARD = true;", u"let PA_SELF_ASSERT_GUARD = true;")
@@ -250,7 +250,7 @@ def _js_assert() -> str:
         {"q": u"台账里有哪些项目？", "raw": u"据本机素材：见下。"},
         {"q": u"台账里有哪些项目？", "raw": None},
     ], ensure_ascii=False)
-    return (decls + "\n" + _fn(sd, "paSelfFactFamily") + "\n" + _fn(sd, "paSelfModelAssertDenied") + "\n"
+    return (decls + "\n" + _fn(sd, "paSelfFactFamily") + "\n" + _fn(sd, "paSelfModelAssertDenied") + "\n" + _fn(sd, "paSelfTagSay") + "\n"
             + u"const CASES = " + cases + ";\n"
             + u"function saOf(paSelfLastUser, raw){\n  " + sa_line + u"\n  return _sa; }\n"
             + u"function saOff(paSelfLastUser, raw){ PA_SELF_ASSERT_GUARD = false;\n  " + sa_line
@@ -259,7 +259,8 @@ def _js_assert() -> str:
             + u"  const tag = " + json.dumps(u"【本机素材（据 3 条）】", ensure_ascii=False) + ";\n"
             + u"  const wa = function(s){ return s; };\n"
             + u"  const b = {u: " + json.dumps(u"本机素材（据 3 条）：台账.md ／ 决策.md", ensure_ascii=False) + "};\n"
-            + u"  const _sa = saOf(paSelfLastUser, raw);\n  " + ful_line + u"\n  return full; }\n"
+            + u"  const _sa = saOf(paSelfLastUser, raw);\n"
+            + u"  const hs = paSelfTagSay('local', 3);\n  " + ful_line + u"\n  return full; }\n"
             + u"const o = {sa: [], off: [], screen: '', screen_plain: ''};\n"
             + u"for(const c of CASES) o.sa.push(saOf(c.q, c.raw));\n"
             + u"o.off = CASES.map(function(c){ return saOff(c.q, c.raw); });\n"
@@ -343,4 +344,5 @@ def test_k10_no_dead_guard_in_fbf_branch():
     sd = _read(SD)
     assert "_forbid" not in sd, u"恒假守 `_forbid` 仍在（死码之患 · pm_1533 §一.⒝）"
     assert u"(_forbid ? _canon : wa(raw))" not in sd, u"旧三歧（`_forbid ? _canon : wa(raw)`）仍在"
-    assert u"wa(raw) + (_arcF" in sd, u"无据支须恒取 `wa(raw)`（¬族 ∧ 无据 ⇒ 回落 ⇒ 显模型之答 · 正当）"
+    assert u"wa(raw) + '\\n' + paSelfScanSay(fbf)" in sd, u"无据支须恒取 `wa(raw)`（¬族 ∧ 无据 ⇒ 回落 ⇒ 显模型之答 · 正当）—— 唯接一行人话之检索摘要（pm_1822 §二.4⒟）"
+    assert u"+ (_arcF ? '\\n（档案面另有旁证" in sd, u"档案面之旁证行仍须**据回执**（⛔ 恒挂 · ⛔ 无据而书有）"

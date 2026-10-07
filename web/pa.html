@@ -32,6 +32,13 @@
     <span class="verrow" id="paVerRow" title="版本 ＋ 更新之态：真源 GET /health（可得性）＋ POST /v9/pa/update（跑之相位）· 前端唯显示 ⇒ ⛔ 自算｜有新版时本行可点（＝右侧「⬆ 更新到 X」）">版本 —（读后端 /health）</span>
   </div>
   <div class="top-right" style="flex:0 0 auto">
+    <!-- ⭐⭐ pm_1801 §一（主件 · 一步可达）：本机体检之**顶栏入口** —— 旧唯在「更多 ▾ → ③ 设」之内
+         （二级菜单）⇒ 老板「一头撞上（不知道它在）」＝ 我 `1771 §二.2` 之 UX 债之活证 ⇒ 今入
+         `.top-right` 之**首**（与 pm_1792 之更新钮同一族律：**凡老板须点得到者，⛔ 藏于二级菜单**）。
+         点 ⇒ `paSysTopOpen()`（`web/pa/faces/sys.js` · 一处定形）：开「更多」⇒ 开 ③ 组 ⇒ 展开体检面
+         ＋ 滚入视口 ⇒ **一点即开**（⛔ 二跳 · ⛔ 只翻菜单不展面）。唯本机 ∧ 只读 ∧ 取一次
+         （⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默）—— 其界之辞载于 `title`（⛔ 因显眼而失其界）。⛔ 样式另写。 -->
+    <span class="chip" id="paSysTop" onclick="paSysTopOpen()" title="本机体检（只读 · 七面）：唯本机 · 取一次 —— 点即展开（⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默）">🩺 本机体检</span>
     <!-- ⭐⭐ pm_1789 §三⒝ ＋ pm_1792 §二.1：真按钮**移出 `.statusline`**（彼 `flex:1;min-width:0;overflow:hidden`
          ⇒ 同排挤满时**末位子件被裁** —— 老板「没发现这颗按钮」之真因）⇒ 入 `.top-right` 之**首**（`.top-right`
          `flex:0 0 auto` ⇒ 其左端永在视口内）⇒ **任何宽度皆不被压**。点 ⇒ POST /v9/pa/update 体 {"action":"start"}
@@ -48,6 +55,13 @@
   </div>
 </div>
 
+<!-- ⭐⭐ pm_1807 §一.1（主件 · 两态「陪伴 ／ 办事」**一步可达**）：**常驻轴栏** —— 居顶栏之下、
+     主面（`.main`）之上 ⇒ 首屏常驻 ∧ ⛔ 藏于抽屉（「更多 ▾」）∧ ⛔ 被首启盒所覆（其盒锚于底）。
+     ⚠ 其控件**唯有一处** ＝ `web/pa/faces/selfdesc.js` 之 `#paModeBar`（本栏即其**宿主**：
+       `mount()` 依 `#paAxisBar` 取槽 ⇒ ⛔ 另造一套控件）。两名之真源 ＝ 其 `VAL`
+       （技术总监 `core\pa\gateway_routes.py:75-79` 之逐字所指）。
+     ⭐ 本栏为**空壳**（无骨 · ⛔ 静默占位）：JS 未跑 ⇒ 不见（如实：⛔ 以空栏充「已接」）。 -->
+<div class="axisbar" id="paAxisBar" aria-label="两态：陪伴 ／ 办事"></div>
 <div class="drawer-mask" id="drawerMask" onclick="closeDrawers()"></div>
 <span class="chip" id="topRestoreBtn" onclick="toggleTop()" title="展开顶栏">⋯ 展开顶栏</span>
 
@@ -126,7 +140,7 @@
           <span style="margin-left:auto" id="connDot">● 就绪</span>
           <span class="chip" id="connStart" onclick="paStartLocalClient()" title="启动 Windows 桌面 agent_client（命令与参数由后端硬编码，页面改不了）" style="display:none;cursor:pointer">🚀 启动本地浏览器</span>
         </div>
-        <div class="row2"><span id="modeHint2"></span><span><span id="modelText" class="chanbadge pa" title="当前通道：聊天=只商量不出手；工作/项目开发=真执行">⛔ 聊天（只商量 · 不出手）</span><button class="chanswitch" id="chanSwitch" onclick="setMode('work')" title="切到「工作」模式：PA 会真的动手执行任务">切到工作模式（可执行）→</button></span></div>
+        <div class="row2"><span id="modeHint2"></span><span><span id="modelText" class="chanbadge pa" title="当前通道：陪伴（聊天）＝只商量 · ⛔ 替你动手；办事（工作／项目开发）＝真动手 · 有交付 · 可验收">🫂 陪伴 · 陪着 · 只商量 · ⛔ 替你动手</span><button class="chanswitch" id="chanSwitch" onclick="paAxisGo('work')" title="切到「办事」（工作模式）：PA 会真的动手执行任务">切到办事（真动手）→</button></span></div>
       </section>
 
       <section class="msec" id="paMoreDuty"><h6>常驻（F5 形态与口径）</h6>
@@ -136,7 +150,7 @@
           <div class="r"><span class="k">托盘</span><span>⛔ 不接（无后端面：常驻的是壳与调度 · ⛔ 模型 · 真源 ＝ Electron 壳（HKCU\...\Run ／ 壳之菜单）· PA 后端 ⛔ 持此值 ⇒ ⛔ 冒真读数）</span></div>
           <div class="r"><span class="k">自启</span><span>⛔ 不接（无后端面：默认开 ＋ 设置里一键关（首启问一次）· 其面已读（GET /v9/pa/resume · version 2026-10-05.2 · 22 键）· 唯不含自启之值（其键皆断点续）⇒ 真源 ＝ 壳 ／ 注册表（HKCU\...\Run）⇒ 候「壳行为之实做」立项 ⇒ 一并开面）</span></div>
           <div class="r"><span class="k">关窗</span><span>⛔ 不接（无后端面：真源 ＝ Electron 壳（默认隐到托盘 · ≠退出）· PA 后端 ⛔ 持此值）</span></div>
-          <div class="r"><span class="k">夜间整合</span><span title="真源 ＝ Electron 壳 ／ 调度（轻量路径 · ⛔ 抢显卡 · 与出图互斥检测）· PA 后端 ⛔ 持此值｜运行期之文见 today.js:413（paLoadToday 内）⇒ 本行静文 ≡ 其渲形（承 pm 1297 §三①）">未知 —— ⒜ 未接 · 待办（M1）｜为何未接：无源（夜间整合无后端面 · 承 pm 18:00 批一） · ⛔ 编</span></div>
+          <div class="r"><span class="k">夜间整合</span><span title="真源 ＝ Electron 壳 ／ 调度（轻量路径 · ⛔ 抢显卡 · 与出图互斥检测）· PA 后端 ⛔ 持此值｜运行期之文见 today.js:413（paLoadToday 内）⇒ 本行静文 ≡ 其渲形（承 pm 1297 §三①）">暂无（本机版还没接这一项）</span></div>
           <div class="r"><span class="k">退出</span><span>须显式（退出前提示「夜间整合将停止」）</span></div>
           <div class="foot">纪律：任何载模型 ⇒ 过显存门 ＋ 用后即卸（⛔ keep_alive -1）；自启只查更新并提示（⛔ 静默安装）。</div>
         </div>
@@ -321,16 +335,16 @@
   <div class="left">
     <h4>本机画像 · 1 个客户</h4>
     <!-- 承 pm_997 §四.2：⛔ 平铺 7 行 ⇒ 收 1 行摘要，展开才见逐面 -->
-    <div class="srcsum" id="paSrcSummary" onclick="paSrcToggle()" title="本机全上下文＝素材库（只索引）；点开看逐面读数">素材 7 面 ⇒ <b id="paSrcSum">⚠ 无 JS：无读数（须运行期）</b> <span class="caret" id="paSrcCaret">▾</span></div>
+    <div class="srcsum" id="paSrcSummary" onclick="paSrcToggle()" title="本机全上下文＝素材库（只索引）；点开看逐面读数"><b id="paSrcSum">⚠ 无 JS：无读数（须运行期）</b> <span class="caret" id="paSrcCaret">▾</span></div>
     <div class="srclist" id="paSrcList" hidden>
-      <div class="it">💬 会话（含席）<span class="n" id="srcChat">⚠ 无 JS：无读数（须运行期）</span></div>
-      <div class="it">📄 文件<span class="n na">不可达（读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实））</span></div>
-      <div class="it">🧾 台账（机账）<span class="n na">⚠ 无 JS：无读数（须运行期 · 三本机账：dispatch/history ／ deliver/authz ／ lines）</span></div>
-      <div class="it">🌐 平台<span class="n na">⛔ 不接（红线：⛔ 代操作他方平台）</span></div>
-      <div class="it" id="srcRowDispatch">🧰 作业（调度件）<span class="n">⚠ 无 JS：无读数（须运行期）</span></div>
-      <div class="it" id="srcRowRuns">🧰 作业（PES 运行）<span class="n" id="srcRuns">⚠ 无 JS：无读数（须运行期）</span></div>
-      <div class="it">🎨 出图<span class="n na">不可达（读源未给（GET /v9/pa/source_faces 未应答 ∨ 未载 ⇒ 照实））</span></div>
-      <div class="it">🧠 记忆自身·二次提取<span class="n" id="srcCtx">⚠ 无 JS：无读数（须运行期）</span></div>
+      <div class="it">💬 会话<span class="n" id="srcChat">⚠ 无 JS：无读数（须运行期）</span></div>
+      <div class="it">📄 文件<span class="n na">暂时读不到</span></div>
+      <div class="it">🧾 台账<span class="n na">暂时读不到</span></div>
+      <div class="it">🌐 平台<span class="n na">不会代你操作（这是红线）</span></div>
+      <div class="it" id="srcRowDispatch">🧰 待办作业<span class="n">⚠ 无 JS：无读数（须运行期）</span></div>
+      <div class="it" id="srcRowRuns">🧰 在办作业<span class="n" id="srcRuns">⚠ 无 JS：无读数（须运行期）</span></div>
+      <div class="it">🎨 出图<span class="n na">暂时读不到</span></div>
+      <div class="it">🧠 记忆<span class="n" id="srcCtx">⚠ 无 JS：无读数（须运行期）</span></div>
       <div class="foot">素材只索引；画像只存摘要条，每条可回指素材。⛔ 编数。</div>
     </div>
   </div>
@@ -347,20 +361,35 @@
       <!-- 主面 ① · 今日上下文（首屏主体 · 三行） -->
       <div class="facePane on" data-face="ctx" id="paFaceToday">
         <div class="today" id="paToday">
-          <div class="h">🌤 今日上下文<span class="when" id="paTodayWhen">读数中…</span></div>
-          <div class="mline"><span class="ic">🧠</span><span class="k">画像</span><span class="v" id="paTodayProfile">读数中…</span>
+          <div class="h">🌤 今日<span class="when" id="paTodayWhen">读数中…</span></div>
+          <!-- ⭐⭐ pm_1823 §二（要 · 产品态之令 · 承《「今日」一屏之定义 v1》§二 ／ §三）：
+               四行 · **按此序** —— 每行必带三物：**数 ／ 源 ／ 去处**（缺「去处」＝ 未做完）；
+               「画像」（我是谁）⛔ 占主位 ⇒ 降为**四行之下**（`.sub`）。 -->
+          <div class="mline"><span class="ic">✋</span><span class="k">要我拍的</span><span class="v" id="paTodayAsk">读数中…</span><span class="w" id="paTodayAskWhere"></span>
+            <button class="go" id="paTodayAskGo" onclick="paTodayGo('ask')" title="点 ⇒ 就地展开：批 ／ 退回 ／ 选一个">去办 ›</button></div>
+          <div class="xbody" id="paTodayAskBody" hidden>
+            <div class="src" id="paTodayAskSrc"></div>
+            <button class="go" id="paTodayAskMore" onclick="paTodayGo('tasks')" title="去「任务」面逐条办">去「任务」面逐条办 ›</button>
+          </div>
+          <div class="mline"><span class="ic">📌</span><span class="k">今天该做的</span><span class="v" id="paTodayDo">读数中…</span><span class="w" id="paTodayDoWhere"></span>
+            <button class="go" id="paTodayDoGo" onclick="paTodayGo('do')" title="点 ⇒ 去办：派活 ／ 打开该件">去办 ›</button></div>
+          <div class="xbody" id="paTodayDoBody" hidden><div class="src" id="paTodayDoSrc"></div></div>
+          <div class="mline"><span class="ic">⏳</span><span class="k">在等的</span><span class="v" id="paTodayWait">读数中…</span><span class="w" id="paTodayWaitWhere"></span>
+            <button class="go" id="paTodayWaitGo" onclick="paTodayGo('wait')" title="点 ⇒ 看进度 ／ 催一下">看进度 ›</button></div>
+          <div class="xbody" id="paTodayWaitBody" hidden><div class="src" id="paTodayWaitSrc"></div></div>
+          <div class="mline"><span class="ic">🧾</span><span class="k">近来之痕</span><span class="v" id="paTodayTrace">读数中…</span><span class="w" id="paTodayTraceWhere"></span>
+            <button class="go" id="paTodayTraceGo" onclick="paTodayGo('trace')" title="点 ⇒ 看当日之事（会话 ／ 产出之痕）">去看 ›</button></div>
+          <div class="xbody" id="paTodayTraceBody" hidden><div class="src" id="paTodayTraceSrc"></div></div>
+          <!-- —— 画像：第二屏（四行之下 · 承定义页 §二「降为第二屏」）—— -->
+          <div class="mline sub"><span class="ic">🧠</span><span class="k">画像</span><span class="v" id="paTodayProfile">读数中…</span>
             <button class="x" onclick="paTodayToggle('profile')" aria-expanded="false" aria-controls="paTodayProfileBody" title="展开：真源 ＋ 画像摘要">▾</button></div>
           <div class="xbody" id="paTodayProfileBody" hidden>
             <div class="src" id="paTodayProfileSrc"></div>
             <pre class="brief" id="paTodayProfileText"></pre>
-          </div>
-          <div class="mline"><span class="ic">📋</span><span class="k">待你裁</span><span class="v" id="paTodayPending">读数中…</span>
-            <button class="x" onclick="paTodayToggle('pending')" aria-expanded="false" aria-controls="paTodayPendingBody" title="展开：真源 ＋ 后端自报降级">▾</button></div>
-          <div class="xbody" id="paTodayPendingBody" hidden>
-            <div class="src" id="paTodayPendingSrc"></div>
+            <div class="src">昨夜整合 <span id="paTodayNight"></span></div>
+            <div class="src" id="paTodayBuild"></div>
             <div id="paTodayDeg"></div>
           </div>
-          <div class="mline"><span class="ic">🕒</span><span class="k">昨夜整合</span><span class="v" id="paTodayNight">—</span></div>
         </div>
       </div>
 
@@ -400,11 +429,23 @@
 
     <!-- 首屏块 ③ · 输入区（常驻 · 承 pm_984 行为闸：受理门永不关） -->
     <div class="composer">
+      <!-- ⭐⭐ pm_1803 §一（主件 · 两态「陪伴 ／ 办事」）：本页之两态控件**唯有一处** ——
+           `#paModeBar`（`web/pa/faces/selfdesc.js` 之 `mount()` ⇒ 本 `.composer` 之**首子**：
+            一行 ／ 两钮 ／ 一句实辞 ／ 一点即换）。⛔ 此处 ⛔ 另立一套控件（那正是「两处各写」之病）。
+           ⭐ 其**两名之真源 ＝ `selfdesc.js` 之 `VAL`**（技术总监 `core\pa\gateway_routes.py:75-79`
+             之逐字所指）⇒ 本件之静态骨 ⛔ 载该两名（⛔ 复燃 pm_1804 §一.1 之「两套辞」）。
+           ⭐ 态之渲（分段控件 ＋ 更多 ▾ 之模式条 ＋ 下方「不出手」行）＝ **唯一出口** `paAxisRender`
+             （`selfdesc.js` 之 `paint()`）⇒ `chat.js` 之 `setMode` 唯转调（⛔ 造辞 · ⛔ 判态）。 -->
       <div class="box">
         <textarea id="input" placeholder="和 PA 说点什么…（Enter 发送 / Shift+Enter 换行）"></textarea>
         <button id="sendBtn" onclick="paSend()">发送</button>
         <button class="stop" id="stopBtn" style="display:none" onclick="paStop()">■ 停止</button>
       </div>
+      <!-- ⭐ pm_1801 §一（并办 · 聊天面之可点入口）：聊天 ＝ **只商量、不出手**（`web/pa/core.js:4` 之界）
+           ⇒ 老板「要真跑」时须有**可点之去处** ⇒ 此行给之。守：**静态真话**（⛔ 猜意图 ／ ⛔ 造「要动作」
+           之判）∧ ⛔ 动提示词（`core/**` 归 TD · 承 pm_1801 §一）⇒ 唯前端之便。其钮走与顶栏**同一函数**
+           `paSysTopOpen()`（**一处定形** · ⛔ 二套）。⛔ 后端写（一阶段 ⛔ 写）。 -->
+      <div class="chatnohand" id="paChatNoHand">聊天只商量 · 不出手 —— 要真跑本机之事 ⇒ 点<span class="chip" id="paChatSysGo" onclick="paSysTopOpen()" title="本机体检（只读 · 七面）：唯本机 · 取一次 —— 点即展开（⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默）">🩺 本机体检</span></div>
     </div>
   </div>
 </div>
@@ -468,26 +509,73 @@
     },function(){return null;}).then(function(j){cb(j);});
   }
   function box(d){
-    var b=el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#0f172a;color:#e8eef7;border:1px solid #334155;border-radius:10px;padding:12px 14px;font:13px/1.75 system-ui,Segoe UI,Microsoft YaHei,sans-serif;box-shadow:0 8px 26px rgba(0,0,0,.35);max-height:48vh;overflow:auto');
+    /* ⭐⭐ pm_1807 §二（一手之证 · CDP）：本盒原锚 `bottom:10px` ⇒ **覆住 `.composer`**（其 rect 1208×29.25
+       @y747 与 `#sendBtn` rect 53×38 @y790 皆在其 rect 之内）⇒ 其内诸件（含两态栏 ∧ 「发送」）
+       **⛔ 可点**（`elementFromPoint` 之命中之真身 ＝ 本盒之 `<div style=…>· 面之源…`）⇒ 于**首次用**
+       （净机 ／ 无 localStorage）之屏即「一片可看不可点」。今：**锚于 composer 之上** ⇒ 本盒 ⛔ 与
+       `.composer` 相覆（二者皆可见 · 皆可点 · ⛔ 以 z 力压 ／ ⛔ 以 `pointer-events` 掩）。
+       ⚠ 高随视口：`max-height` 以「composer 之上」为界 ⇒ 盒高不逾其可用面（逾则盒内自滚）。 */
+    /* ⭐⭐ pm_1808 §二.1（主件 · 用户面之净化）：**首屏只留人话** ——
+       旧形逐字平铺工程话（`PA_*` 键 ／ `file:line` ／ 「弱保证」／「据 …」／「义：…」／「口径」）
+       ⇒ 一手之证（CDP · 我处）：用户面可见之「内部话」共 **12** 处，其中 **8** 处出本盒。
+       今：**人话在外**（须知 ／ 模型之路 ／ 数据目录 ／ 面之源之「有／无」），**工程话入 `details.eng`**
+       （默认收起 · 点开即见全部原字）—— ⛔ 删其数（数据一字不减 · 承 pm_1012 §二「⛔ 丢信息」）。
+       ⚠ 本盒 ⛔ 覆 `.composer`（覆则其诸钮 ⛔ 可点 —— 一手见：CDP hit-test 命中盒内之「面之源」行）。
+         旧形于 box() 之**刻**即量 `.composer` 之高 ⇒ 布局未定则得 0 ⇒ 盒落底 ⇒ **覆**（时序之病）。
+         今：以「视口底 − composer 之顶」为距 ＋ `requestAnimationFrame` 补量 ＋ `resize` 重锚
+         ⇒ 与布局时序**无涉**（⛔ 以 z 力压 ／ ⛔ 以 `pointer-events` 掩）。 */
+    /* ⚠ 原语（承本件之器 · pm_1810）：**唯用** `el()`（createElement ＋ setAttribute ＋ innerHTML）
+       ＋ `appendChild` —— ⛔ `document.querySelector` ／ ⛔ `createTextNode` ／ ⛔ `.style` ／ ⛔ `window`
+       （本件之器取以 DOM 桩跑`box()`：桩唯给 `createElement` ／ `setAttribute` ／ `getAttribute` ／
+       `appendChild` ／ `innerHTML` ⇒ 用桩外之 API ⇒ box() 抛 ⇒ 落 `fallback()` ＝ 14 齿红）。 */
+    var _cp=null;
+    try{ if(document.querySelector) _cp=document.querySelector('.composer'); }catch(e){}
+    var b=el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#0f172a;color:#e8eef7;border:1px solid #334155;border-radius:10px;padding:12px 14px;font:13px/1.75 system-ui,Segoe UI,Microsoft YaHei,sans-serif;box-shadow:0 8px 26px rgba(0,0,0,.35);max-height:60vh;overflow:auto');
+    /* 锚：盒须居 `.composer` **之上**（⛔ 覆其控件 —— 覆则其诸钮 ⛔ 可点）。以「视口底 − composer 之顶」
+       为距 ＋ rAF 补量 ＋ resize 重锚 ⇒ 与布局时序**无涉**（⛔ 以 z 力压 ／ ⛔ 以 pointer-events 掩）。 */
+    var _place=function(){
+      try{
+        var cp=_cp; if(!cp && document.querySelector) cp=document.querySelector('.composer');
+        if(!b.style) return;
+        var ih=(typeof window!=='undefined' && window.innerHeight)?window.innerHeight:0;
+        var top=(cp&&cp.getBoundingClientRect)?cp.getBoundingClientRect().top:ih;
+        var bt=Math.max(10,Math.round(ih-top)+8);
+        b.style.bottom=bt+'px';
+        b.style.maxHeight='calc(100vh - '+(bt+22)+'px)';
+      }catch(e){}
+    };
+    _place();
+    try{ if(typeof window!=='undefined' && window.requestAnimationFrame) window.requestAnimationFrame(_place); }catch(e){}
+    try{ if(typeof window!=='undefined' && window.addEventListener) window.addEventListener('resize',_place); }catch(e){}
     b.appendChild(el('div','font-weight:700;margin:0 0 6px','🔰 第一次用（只读 · 数来自本机后端）'));
     var need=(d['须知']||[]);
     for(var i=0;i<need.length;i++){
-      b.appendChild(el('div','margin:2px 0','• '+esc(q(need[i]['话']))+' <span style="opacity:.62">［据 '+esc(need[i]['据'])+'］</span>'));
+      b.appendChild(el('div','margin:2px 0','• '+esc(q(need[i]['话']))));
     }
     var m=d['模型']||{};
-    b.appendChild(el('div','margin-top:6px','• 模型之路：'+esc(q(SAID[m['态']]||m['态']))+' <span style="opacity:.62">［'+esc(m['因']||'')+'］</span>'));
+    b.appendChild(el('div','margin-top:6px','• 模型之路：'+esc(q(SAID[m['态']]||m['态']))));
     var dir=d['数据目录']||{};
-    b.appendChild(el('div','margin-top:2px','• 数据目录：'+esc(dir['值']||'（未接）')+' <span style="opacity:.62">［'+esc(dir['源']||'')+'］</span>'));
+    b.appendChild(el('div','margin-top:2px','• 数据目录：'+esc(dir['值']||'（未接）')));
     var fs=d['面之源'],_vk=null;
     if(fs&&fs['键']){for(var vj=0;vj<fs['键'].length;vj++){if(fs['键'][vj]['键']==='PA_VAULT_DIR'){_vk=fs['键'][vj];}}}
+    /* —— 以下皆「工程注记」（默认收起 · 原字不减） —— */
+    var det=el('details','',''); det.setAttribute('class','eng');
+    det.appendChild(el('summary','','工程注记（技术细节 · 一般不必看 · 点开即见全部来源）'));
+    var eng=el('div','engbody','');
+    var _elin=function(host,t){ host.appendChild(el('div','margin:2px 0',esc(t))); };
+    for(var i2=0;i2<need.length;i2++){ _elin(eng,'• 依据：'+String(need[i2]['据']||'')); }
+    _elin(eng,'• 模型：态＝'+String(m['态']||'')+(m['因']?(' ／ 因：'+String(m['因'])):''));
+    _elin(eng,'• 数据目录之源：'+String(dir['源']||''));
     if(fs&&fs['键']&&fs['键'].length){
-      b.appendChild(el('div','margin-top:6px','• 面之源（面数由三键定 · ⛔ 静默）：'));
+      _elin(eng,'• 面之源（面数由三键定）：');
       for(var j=0;j<fs['键'].length;j++){
         var kk=fs['键'][j];
-        b.appendChild(el('div','margin:2px 0 2px 16px','· '+esc(kk['键'])+'＝'+esc(kk['今'])+' <span style="opacity:.62">［义：'+esc(q(kk['义']||''))+'］</span>'));
+        _elin(eng,'  · '+String(kk['键']||'')+'＝'+String(kk['今']||'')+'  ［义：'+String(kk['义']||'')+'］');
       }
-      b.appendChild(el('div','margin-top:2px;opacity:.62','［'+esc(fs['口径']||'')+'］'));
+      _elin(eng,'  ［'+String(fs['口径']||'')+'］');
     }
+    det.appendChild(eng);
+    b.appendChild(det);
     if(paVaultNote){ b.appendChild(el('div','margin-top:4px;color:#fbbf24',esc(paVaultNote))); }
     var _vs=String((_vk||{})['态']||'');var _vm=(!_vk)||_vs==='no_root'||_vs==='empty';
     if(_vk&&_vm){

@@ -5,12 +5,16 @@ u"""P2 ⑥ · 「出机」之显形（承 pm_1454 §一 ／ §二 ／ §三 · C
 ⇒ 老板/用户**不知内容已出机**（红线之隐）。
 
 判据（逐条 · 与齿共用同一条断言，⛔ 写两份）：
-  J1 正控：`kind ∈ 远端集` ⇒ 屏有「本轮经云端 · 内容将出机 · 模型 <实名>」；⭐ 实名**取回执**
+  J1 正控：`kind ∈ 远端集` ⇒ **折叠内**有「本轮经云端 · 内容将出机 · 模型 <实名>」；⭐ 实名**取回执**
           （换回执之名 ⇒ 屏上之名随换 ⇒ 实证 ⛔ 前端硬编）
   J2 反控：`kind = local ／ local_model ／ 本机 ／ 无 kind ／ 无回执` ⇒ **⛔ 有**（实证其无）；
           ⚠ 走径标**仍须在**（⛔ 连走径一并吞 ＝ 假红）
   J3 三控：回执**无 `model`** ⇒ 「（后端未给）」之明标（⛔ 空 ／ ⛔ 崩 · 承 `paRouteLine` 之式）
-  J4 位：出机之标**先于**「🔌 走径」行 —— **文与 html 二面**皆核（红线先入目 · 承 §一.2）
+  J4 位：出机之标**先于**「🔌 走径」行（折叠体内 · 红线先入目 · 承 §一.2）∧ ⭐ **用户面（纯文）二标皆无**
+
+⭐ pm_1812 §二.1 ／ pm_1822 §二.4⒟（去壳 · 要）：二标**皆入折叠**（`<details class="eng paroute">`）——
+  用户面（纯文 `content`）**⛔ 载**此二标（工程话 ⛔ 入目）；其**原文照录**在折叠体内（⛔ 删真源）。
+  ⇒ 故本条各判之**耳**：位判取 `html`（折叠体）＋ 并断**用户面净化**（`content` 无此二标）。
   J5 齿：把「唯远端」之守挖掉 ⇒ J2 **必红**（⛔ 挖了还能过）
   J6 静态：出机之器**⛔ 含具体模型名**（硬编之戒）；kind 之二集**一处定形**（⛔ 二份字面）
   J7 不回归：`paRouteFromObj` 之渲形与**底件**（`more.js.before_e653b6e030aa9ce3`）之实读**逐字相等**
@@ -169,16 +173,19 @@ def test_J1_正控_远端必有出机标且实名取回执():
     out = _run({"a": {"rec": REMOTE, "at": "2026-10-06 12:00:00"},
                 "b": {"rec": {"answer_route": {"kind": "remote", "provider": "deepseek",
                                                "model": "qwen-max-2025"}}, "at": ""}})
-    t = out["msg"]["a"]["content"]
+    t = out["msg"]["a"]["html"]
     assert LEAVES + "deepseek-flash" in t, t
     # ⭐ 实名**取回执**（⛔ 前端硬编）：换回执之名 ⇒ 屏上之名随换
-    t2 = out["msg"]["b"]["content"]
+    t2 = out["msg"]["b"]["html"]
     assert LEAVES + "qwen-max-2025" in t2, t2
-    assert "deepseek" not in t2.split("\n")[0], \
-        u"出机之实名不听回执 ⇒ 硬编之嫌：%r" % t2.split("\n")[0]
-    # 走径标**⛔ 动**（唯加一行 · 承「一处定形」）
+    assert LEAVES + "deepseek-flash" not in t2, \
+        u"出机之实名不听回执 ⇒ 硬编之嫌：%r" % t2
+    # 走径标**⛔ 动**（唯改其位 ⇒ 折叠 · 承「一处定形」）
     assert ROUTE + u"src: remote:deepseek:deepseek-flash（键 answer_route · 采于 2026-10-06 12:00:00）" in t, t
-    assert u"paleaves" in out["msg"]["a"]["html"], out["msg"]["a"]["html"]
+    assert u'data-pa-route="1"' in t and u"engbody" in t, t
+    # ⭐ 用户面（纯文）⛔ 载此二标（去壳之要）
+    c = out["msg"]["a"]["content"]
+    assert u"出机" not in c and ROUTE not in c, c
 
 
 # ============================ J2 反控 ============================
@@ -189,11 +196,17 @@ def test_J2_反控_非远端必无出机标():
                 "ben": {"rec": {"kind": u"本机", "model": "m"}, "at": ""},
                 "unk": {"rec": {"answer_route": {"provider": "p", "model": "m"}}, "at": ""},
                 "none": {"rec": None, "at": ""}})
-    for k in ("loc", "lok", "ben", "unk", "none"):
+    for k in ("loc", "lok", "ben", "unk"):
         m = out["msg"][k]
         assert "出机" not in m["content"], u"%s：本机之轮竟有出机标：%r" % (k, m["content"])
         assert "出机" not in m["html"], u"%s：html 亦⛔ 得有此标" % k
-        assert ROUTE in m["content"], u"%s：走径标被一并吞了（假红）" % k
+        assert ROUTE in m["html"], u"%s：走径标被一并吞了（假红）" % k
+    # ⚠ 「无回执」（`rec=None`）一例**别判**（承 pm_1076 §三 ／ pm_1812 §二.1⒟）：本轮真无回执
+    #    ⇒ 本层**原样**（⛔ 造 `src: —（后端未给）` 之**伪行**）—— 有回执者 ⛔ 吞走径标（上四例）；
+    #    无回执者 ⛔ 造标（本例）。二者之别即「空果 ≠ 空实」之落地。
+    mn = out["msg"]["none"]
+    assert "出机" not in mn["content"] and "出机" not in mn["html"], mn
+    assert ROUTE not in mn["html"], u"无回执之轮 ⛔ 得造走径伪行：%r" % mn["html"]
 
 
 # ============================ J3 三控 ============================
@@ -201,10 +214,11 @@ def test_J2_反控_非远端必无出机标():
 def test_J3_三控_无model之回执须明标后端未给():
     out = _run({"n": {"rec": {"kind": "remote", "provider": "deepseek"}, "at": ""}})
     m = out["msg"]["n"]
-    assert LEAVES + UNDEF in m["content"], m["content"]
-    assert m["content"].startswith(LEAVES), u"出机标须居首：%r" % m["content"]
-    assert ROUTE in m["content"], m["content"]
     assert LEAVES + UNDEF in m["html"], m["html"]
+    assert ROUTE in m["html"], m["html"]
+    # ⭐ 折叠体内「出机」居首（先于走径 · 承 §一.2）∧ 用户面无之（去壳）
+    assert m["html"].index(u"内容将出机") < m["html"].index(ROUTE), m["html"]
+    assert LEAVES not in m["content"] and UNDEF not in m["content"], m["content"]
 
 
 # ============================ J4 位 ============================
@@ -212,10 +226,12 @@ def test_J3_三控_无model之回执须明标后端未给():
 def test_J4_位_出机先于走径_文与html二面():
     out = _run({"r": {"rec": REMOTE, "at": ""}})
     m = out["msg"]["r"]
-    for name, s in ((u"content", m["content"]), (u"html", m["html"])):
-        assert "出机" in s and "走径" in s, (name, s)
-        assert s.index(u"内容将出机") < s.index(u"走径"), \
-            u"%s 面：红线 ⛔ 后于走径（须先入目）" % name
+    # ⭐ 去壳（pm_1812 §二.1）：二标皆入折叠 ⇒ 位判取**折叠体**（`html`）；用户面（纯文）须**无**此二标。
+    assert "出机" not in m["content"] and "走径" not in m["content"], m["content"]
+    s = m["html"]
+    assert "出机" in s and "走径" in s, s
+    assert s.index(u"内容将出机") < s.index(u"走径"), \
+        u"html（折叠体）：红线 ⛔ 后于走径（须先入目）"
 
 
 # ============================ J5 齿 ============================
@@ -227,7 +243,7 @@ def test_J5_齿_去唯远端之守则反控必红():
     mutant = src.replace(guard, u"if(!L) return null;")
     assert mutant != src, u"改不动 ⇒ 这条齿是假的"
     out = _run({"loc": {"rec": LOCAL, "at": ""}}, slice_body=mutant)
-    assert "出机" in out["msg"]["loc"]["content"], \
+    assert "出机" in out["msg"]["loc"]["html"], \
         u"齿失效：挖掉「唯远端」之守，本机之轮竟然还 ⛔ 无标"
 
 

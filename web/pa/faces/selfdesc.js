@@ -768,6 +768,22 @@ function paSelfTag(kind, n){
   return '📎 源之分标：模型生成（⛔ 非本机素材）' + at;
 }
 try{ window.paSelfTag = paSelfTag; }catch(e){}
+/* ⭐⭐ pm_1812 §二.1 ⒞（主件 · 去壳）：**用户面唯留一句人话** —— 原标（逐字 · 含面名 ／ 件数口径 ／ 采于）
+   入「本轮来源（技术细节）」折叠（⛔ 删真源 · 承 pm_1012 §二）。
+   ⛔ 二字面（人话 ／ 原标）**同源同判** —— 「该显何态之人话」唯此一处出（⛔ 各点各写 ⇒ 必漂）。 */
+function paSelfTagSay(kind, n){
+  if(kind === 'local')     return '（这条答的是本机素材：找到 ' + ((n == null || n === '') ? '—' : n) + ' 条。）';
+  if(kind === 'localmiss') return '（本机素材里没有对得上的。）';
+  if(kind === 'fallback')  return '（本机没查到 ⇒ 这句是模型说的，不是本机素材。）';
+  if(kind === 'none')      return '（这题不在本机素材的范围里 ⇒ 我没有回答。）';
+  if(kind === 'ctx')       return '（按本会话的上一句答的。）';
+  if(kind === 'ctxmiss')   return '（本会话没有可读的上一句。）';
+  if(kind === 'refuse')    return '（本机没查到依据 ⇒ 按「有据才答」我不答。）';
+  if(kind === 'undec')     return '（判据词表没取到 ⇒ 这轮判不了。）';
+  if(kind === 'nil')       return '';
+  return '（这句是模型说的，不是本机素材。）';
+}
+try{ window.paSelfTagSay = paSelfTagSay; }catch(e){}
 function paEngHit(s){ return PA_ENG_WORDS.test(String(s == null ? '' : s)); }
 function paEngHtml(eng){
   const t = String(eng == null ? '' : eng).trim();
@@ -1063,15 +1079,37 @@ function paEngCleanDrawer(){
     h.node.nodeValue = (h.after && !paEngHit(h.after)) ? h.after : '';
   }
   if(hits.length){
-    const d = document.createElement('details');
-    d.className = 'msub';
-    d.setAttribute('data-engskip', '1');
-    d.innerHTML = '<summary>来源 ／ 详情（抽屉之过程注记 · 原文照录）</summary><div class="t">'
-      + paSelfEsc(hits.map(function(h){ return h.before.trim(); }).filter(function(x){ return !!x; }).join('\n')) + '</div>';
-    (document.getElementById('paMoreBody') || root).appendChild(d);
+    const texts = hits.map(function(h){ return h.before.trim(); }).filter(function(x){ return !!x; });
+    /* ⭐⭐ pm_1813 §二.3（要）：旧形**每次入此支皆新建一条同名之折** ⇒ 抽屉里二 ／ 三条一模一样的
+       「来源 ／ 详情（抽屉之过程注记 · 原文照录）」—— 用户不知那是几条什么。
+       ⇒ 治：① **一条定形**（既有则并之 · ⛔ 二条）② 题须自带**面 ／ 件 ／ 刻**（各条可辨）。 */
+    let d = document.querySelector('#paMoreBody details[data-engskip="1"]');
+    if(d && d.querySelector('.engbody')){
+      const eb = d.querySelector('.engbody');
+      const add = texts.filter(function(x){ return eb.textContent.indexOf(x) < 0; });
+      if(add.length) eb.textContent = eb.textContent + '\n' + add.join('\n');
+    } else {
+      d = document.createElement('details');
+      d.className = 'msub';
+      d.setAttribute('data-engskip', '1');
+      d.innerHTML = '<summary></summary><div class="t engbody"></div>';
+      d.querySelector('.engbody').textContent = texts.join('\n');
+      (document.getElementById('paMoreBody') || root).appendChild(d);
+    }
+    paEngSkipSum(d);
   }
   return hits.length;
 }
+/* ⭐ 折叠之题（**一处定形**）：面 ／ 件 ／ 刻 —— ⛔ 三条同名（承 pm_1813 §二.3 · 照 1797 ／ 1798 之族）。 */
+function paEngSkipSum(d){
+  if(!d) return;
+  const eb = d.querySelector('.engbody');
+  const n  = String(eb ? eb.textContent : '').split('\n').filter(function(x){ return !!x.trim(); }).length;
+  const s  = d.querySelector('summary');
+  if(s) s.textContent = '过程注记（抽屉内文之工程引用 · ' + n + ' 条 · 刻 '
+    + new Date().toLocaleTimeString('zh-CN', {hour12:false}) + '）';
+}
+try{ window.paEngSkipSum = paEngSkipSum; }catch(e){}
 /* ⭐ pm_1074 §二.ⓜⓝ（承 §一 之更正：真病 ＝ **渲染漏** · ⛔ 判读漏）：
    `session.js:131` 之 `*〔非*〕*` 规则 ⇒ `<em>` 会**吃掉算式之乘号**（现场：`200 * 1.1 * 0.9 = 210.6`
    ⇒ 屏上 `200  1.1  0.9 = 210.6` ⇒ 算子不见）；`PA_UNC_TAIL` 之自示例同病。
@@ -1643,6 +1681,15 @@ function paSelfArchiveText(g){
   if(!a || !a.length) return '';
   return '档案面另有 ' + a.length + ' 条（⛔ 作据 —— 那是我们之报述，⛔ 世界之实）';
 }
+/* ⭐ pm_1822 §二.4⒟（要）：**检索侧之读数 ⇒ 用户面唯留一行人话** —— 旧形把「逐面件数」与
+   **内部面名**（「梦中月水中花」「死件账」）平铺在答体旁 ⇒ 一句问候换来一版内部面名与判词。
+   逐面之真读数（`scope ／ faces ／ searched ／ 阈值 ／ 判据`）仍逐字入注记（`paSelfJudgeText` ＋ `E2`）
+   ⇒ ⛔ 删其真源（承 pm_1012 §二）。⛔ 二字面（人话 ／ 原读数）**同源同判** —— 唯此一处出。 */
+function paSelfScanSay(g){
+  const j = paSelfJudgeOf(g);
+  if(j.cnt == null) return '（本机检索：未命中。）';
+  return '（本机检索：' + j.cnt + ' 面 ' + (j.tot == null ? '—' : j.tot) + ' 件 · 未命中。）';
+}
 function paSelfAnswerSourceText(g){
   const s = (g && g.answer_source) ? String(g.answer_source) : '';
   if(!s) return '';
@@ -1883,7 +1930,7 @@ function paPermRender(){
       /* ⭐ 源之分标（承 pm_1013 §二）：非自述类 ⇒ 问域 `other`（域外 ／ 非知识问）之答走**对话通道**
          （模型生成）⇒ 贴「模型生成（⛔ 非本机素材）」；`local` ／ `world` 由闸定（见 addMsg 之 gateInfo 支）。 */
       let dom0 = null; try{ dom0 = paAskDomain(text); }catch(e){}
-      paSelfLbl = (dom0 === 'other') ? paSelfTag('model', null) : null;
+      paSelfLbl = (dom0 === 'other') ? 'model' : null;   /* 今 ＝ **态之名**（旧为逐字之标 · 承 pm_1812 §二.1 ⒞） */
       if(dom0 === 'other'){ try{ paSelfAskBump('direct', text, '分类 other ⇒ 直走 /v9/pa/dialog（未过检索闸）'); }catch(e){} }
       try{ return await inner.apply(this, arguments); }
       finally { paSelfLbl = null; }   /* 一轮一清（⛔ 跨轮复用 ⇒ ⛔ 贴错） */
@@ -1914,7 +1961,9 @@ function paPermRender(){
     try{ window.PASelfRouteLast = {
       label: {text: 'src: 本机自述（未调用模型）', key: '本机自述', kind: 'self', model: ''},
       at: String(Date.now() / 1000), url: 'selfdesc'}; }catch(e){}
-    addMsg('assistant', ans, false, paSelfSayHtml(ans, sec.e), undefined);
+    /* ⭐ pm_1812 §一（兜底自述）：**⛔ 让用户以为问过模型** ⇒ 明书一句人话（承 pm_1808 §二 ／ pm_1810 §三）。 */
+    const ansU = '（这一轮没有问模型 —— 以下是我按本机自述直接答的。）\n' + ans;
+    addMsg('assistant', ansU, false, paSelfSayHtml(ansU, sec.e), undefined);
     try{
       const t = (typeof activeThread === 'function') ? activeThread() : null;
       /* ⭐ pm 1184 §一.⒝：本机自述之答 ＝ **本机有据**（源 paSelfSrc · ⛔ 模型 ／ ⛔ 拒答）。 */
@@ -2226,13 +2275,16 @@ function paSelfFailText(s){
           if(fx){ paSelfRefusalDone = true; }
           const arcU = paSelfArchiveText(fbf);
           const U2 = [];
-          U2.push(paSelfTag('refuse', null));
+          /* ⭐⭐ pm_1812 §二.1 ⒞（去壳）：原标（逐字）**⛔ 用户面** ⇒ 唯入注记（下 E2）；
+             用户面留下行之人话。 */
           U2.push('本机无据 ⇒ 拒答（⛔ 我编）。');
-          if(fbf.verdict) U2.push('后端判词：' + fbf.verdict);
-          U2.push(paSelfJudgeText(fbf));
-          if(arcU && (!fbf.verdict || String(fbf.verdict).indexOf('档案面另有') < 0)) U2.push(arcU);
+          /* ⭐ pm_1812 §二.1⒞ ＋ pm_1822 §二.4⒟：后端判词 ／ 判据 ／ 档案行（逐字）**⛔ 用户面**
+             ⇒ 唯入注记（下 E2，逐字仍在 `fe` ／ `E2`）；此处只留**一行人话**之检索摘要。 */
+          U2.push(paSelfScanSay(fbf));
+          if(arcU) U2.push('（档案面另有 ' + String((fbf.archive_hits || []).length) + ' 条旁证 —— 那是我们自己的汇报，⛔ 当世界之实。）');
           U2.push('⛔ 本问不予编答 —— 库里无依据 ⇒ 按「有据才答」不答（后端 200 · 拒答即正果）。');
           const E2 = [];
+          E2.push(paSelfTag('refuse', null));
           E2.push('判据：/v9/pa/ask ｜ grounded:false ｜ refused:true ｜ answer_source:' + (fbf.answer_source || '—')
             + ' ｜ 问域（前端轴）' + (fbf.domain || '—'));
           E2.push('检索侧读数（源 /v9/pa/ask）：范围 ' + fbf.scope + ' ｜ 逐面 ' + (fbf.facesText || '—')
@@ -2265,15 +2317,19 @@ function paSelfFailText(s){
         if(fbf){
           /* ⭐ pm_1032 §三.1/2/4：检索未命中 ⇒ 模型作答 ⇒ 用户面标「源之分标」（回落）＋判据回指。 */
           paSelfLbl = null;
-          const tl = paSelfTag('fallback', null);
+          const tl = paSelfTag('fallback', null);        /* 原标（逐字）⇒ 唯入注记（⛔ 用户面） */
+          const hs = paSelfTagSay('fallback', null);     /* 人话（用户面**唯一**之辞 · 承 pm_1812 §二.1 ⒞） */
           const _arcF = paSelfArchiveText(fbf);
           /* ⭐ pm_1531 §一.3 ＋ pm_1533 §一.⒝：本体收窄为「唯判辞」⇒ 前提（族 ∧ 有据）由**调用处**给（一处定形）。
              ⚠ 本处（无据之支 · `fbf`）之 `fbf.q` 必 ¬族（`:2107` 族判已早返；`paSelfFb` 之唯置点 `:2119` 在其后）
                ⇒ 旧守（`paSelfFactFamily(fbf.q) && …`）之值**恒假**（结构性 · 我 `1528` 一手）⇒ 其 `_canon` 支恒⛔达
                ⇒ **已删**（承「死码之患」· pm_1533 §一.⒝）；本支今恒取 `wa(raw)`（¬族 ∧ 无据 ⇒ 回落 ⇒ 显模型之答 · 正当）。
              ⚠ canonical 之引（旧 `_canon` ／ `paRefusalCanon`）随之而删 —— 本支今 ⛔ 引 canonical（其义为「本机无据」）。 */
-          const au = tl + '\n' + wa(raw) + (_arcF ? ('\n\n' + _arcF) : '');
-          const fe = ((!_gSay.ok) ? ('⚠ ' + _gSay.note + '\n') : '')   /* ⭐ pm_1492 §二.3：键 ⛔ 得 ⇒ 显形（⛔ 词形兜底） */
+          /* ⭐ pm_1822 §二.4⒟：答体旁 ⛔ 平铺工程读数（旧形 `_arcF` ＝「⛔ 作据 —— 那是我们之报述」
+             等之工程话）⇒ 折入 `fe`（其原字仍在 · 见下）；用户面留一行人话之检索摘要。 */
+          const au = (hs ? (hs + '\n') : '') + wa(raw) + '\n' + paSelfScanSay(fbf)
+            + (_arcF ? '\n（档案面另有旁证 —— 那是我们自己的汇报，⛔ 当世界之实。）' : '');
+          const fe = tl + '\n' + ((!_gSay.ok) ? ('⚠ ' + _gSay.note + '\n') : '')   /* ⭐ pm_1492 §二.3：键 ⛔ 得 ⇒ 显形（⛔ 词形兜底） */
             + '本问先过「有据才答」闸（/v9/pa/ask）⇒ ⭐ 闸判 **本机无据（拒答）**'
             + '（承 pm_1076 §三：与答体**两段并标** · ⛔ 单标）⇒ 已按 pm_1032 §三.1 **回落模型**'
             + '（POST /v9/pa/dialog · 分流同一出口 paAskDomain）⇒ 此处之答由模型生成（⛔ 非本机素材）。'
@@ -2292,10 +2348,11 @@ function paSelfFailText(s){
           const ev = paSelfEvidText(raw);
           const dmk = (a && a.domain);
           const kind = (dmk === 'local') ? 'localmiss' : ((dmk === 'self') ? 'nil' : 'none');
-          const tl = paSelfTag(kind, null);
-          const au = (tl ? (tl + '\n') : '') + a.u;
+          const tl = paSelfTag(kind, null);                 /* 原标（逐字）⇒ 唯入注记（⛔ 用户面） */
+          const hs = paSelfTagSay(kind, null);              /* 人话（用户面**唯一**之辞 · 承 pm_1812 §二.1 ⒞） */
+          const au = (hs ? (hs + '\n') : '') + a.u;
           try{ paSelfLocalRecord(paSelfLastUser, au); }catch(e){}   /* ⭐ pm_1111 §二：本地作答（本机素材未命中）亦须落盘 */
-          return emit.call(this, 'assistant', au, skipStore, paSelfSayHtml(au, a.e + (ev ? ('\n原读数：' + ev) : '')), tid);
+          return emit.call(this, 'assistant', au, skipStore, paSelfSayHtml(au, tl + '\n' + a.e + (ev ? ('\n原读数：' + ev) : '')), tid);
         }
           /* ⭐ pm_1531 §一（裁 · 合成）：有据轮之守 —— 触发**取窄**（族 ∧ 词形命中；判辞唯
              `paSelfModelAssertDenied` · 「何时问之」在此处）⇒ 命中 ⇒ 以**显形之果**（`PA_SELF_ASSERT_SAY`）
@@ -2304,11 +2361,14 @@ function paSelfFailText(s){
         if(gateInfo){
           const g = gateInfo; gateInfo = null;
           const b = paSelfEvidBlock(g);
-          const tag = paSelfTag(g.n > 0 ? 'local' : 'model', g.n);
+          /* ⭐⭐ pm_1812 §二.1 ⒞（去壳）：原标（逐字）⇒ 唯入注记；用户面唯留**一句人话**（一处出）。 */
+          const _knd = (g.n > 0) ? 'local' : 'model';
+          const tag = paSelfTag(_knd, g.n);
+          const hs  = paSelfTagSay(_knd, g.n);
           const _sa = PA_SELF_ASSERT_GUARD && paSelfFactFamily(paSelfLastUser) && paSelfModelAssertDenied(raw);
-          const full = tag + '\n' + (_sa ? PA_SELF_ASSERT_SAY : wa(raw)) + '\n\n' + b.u;
+          const full = (hs ? (hs + '\n') : '') + (_sa ? PA_SELF_ASSERT_SAY : wa(raw)) + '\n\n' + b.u;
           return emit.call(this, 'assistant', full, skipStore,
-            say(full, b.e + (_sa ? ('\n⚠ 模型之辞（本条已拦 · ⛔ 采信 · 承 pm_1531 §一.2）：' + raw) : '')), tid);
+            say(full, tag + '\n' + b.e + (_sa ? ('\n⚠ 模型之辞（本条已拦 · ⛔ 采信 · 承 pm_1531 §一.2）：' + raw) : '')), tid);
         }
         /* ⭐ pm 22:34 §一.E ／ §四（CW 办「拒答话术」）＋ 承 pm 21:20 §二.处3 ＋ ⭐ pm 1184 §三：
            ⛔ 载入**后端 ／ 模型之拒答原辞**（「查不到（知识库里没有相关内容）」＝**「知识库」之辞** ——
@@ -2331,9 +2391,11 @@ function paSelfFailText(s){
         /* ⭐ pm_1492 §二.3：键 ⛔ 得（旧后端 ∨ 键缺）⇒ **显形**（⛔ 词形兜底）—— 唯闸之轮（`fbf` 在）报之 */
         const _gateNote = (fbf && !_gSay2.ok) ? ('⚠ ' + _gSay2.note) : '';
         if(paSelfLbl){
-          const l = paSelfLbl; paSelfLbl = null;
-          const full = l + '\n' + wa(raw);
-          return emit.call(this, 'assistant', full, skipStore, say(full, _gateNote || null), tid);
+          const l = paSelfLbl; paSelfLbl = null;        /* 今 ＝ 态之名 · 承 pm_1812 §二.1 ⒞ */
+          const hs = paSelfTagSay(l, null);             /* 人话（用户面**唯一**之辞） */
+          const full = (hs ? (hs + '\n') : '') + wa(raw);
+          return emit.call(this, 'assistant', full, skipStore,
+            say(full, [paSelfTag(l, null), _gateNote].filter(function(x){ return !!x; }).join('\n') || null), tid);
         }
         const lg = paSelfLegacySplit(raw);
         if(lg) return emit.call(this, 'assistant', wa(lg.u), skipStore, say(wa(lg.u), lg.e + (_gateNote ? ('\n' + _gateNote) : '')), tid);
@@ -2550,20 +2612,25 @@ function paSelfFailText(s){
     const trace = (m && m.source === 'context') && paSelfIsSelfTest(ans);
     const miss = !m || m.source !== 'context' || !ans || trace || undec;
     const L = [];
+    /* ⭐⭐ pm_1812 §二.1 ⒞（去壳）：**原标（逐字）⛔ 用户面** ⇒ 唯入注记（下 `e`）；
+       用户面唯留**一句人话**（同源同判 · `paSelfTagSay` **一处**出）。 */
+    const tkind = !miss ? 'ctx' : (undec ? 'undec' : 'ctxmiss');
     if(!miss){
-      L.push(paSelfTag('ctx'));
+      L.push(paSelfTagSay('ctx'));
       L.push(ans);                                    /* ⭐ 逐字（⛔ 增一字） */
-      L.push('源：本会话 ' + (at || '刻未给') + '（⛔ 检索面 · ⛔ 模型）');
+      L.push('来源：本会话上一句（刻 ' + (at || '刻未给') + '）。');
     } else if(undec){
-      L.push(paSelfTag('undec'));
+      L.push(paSelfTagSay('undec'));
       L.push('⛔ 引（本轮不判其是否为自测痕）。');
     } else {
-      L.push(paSelfTag('ctxmiss'));
+      L.push(paSelfTagSay('ctxmiss'));
       L.push('如实不答。');
       if(trace) L.push('（最近一句为本机自测记录 ⇒ ⛔ 引作你之上一句。）');
     }
-    L.push('据：本会话 ' + (sid || '未给') + ' · 上一句之刻 ' + (at || '未给') + ' ／ picked_by=' + (pick || '未给'));
+    L.push('据：本会话上一句（刻 ' + (at || '未给') + '）。');
     const e = [];
+    e.push(paSelfTag(tkind, null));
+    e.push('本会话：' + (sid || '未给') + ' · 上一句之刻 ' + (at || '未给') + ' ／ picked_by ' + (pick || '未给'));
     e.push('判据：/v9/pa/ask ｜ ask_domain:meta ｜ answer_source:' + ((m && m.source) || '未给')
       + ' ｜ grounded:false ｜ refused:false ｜ 读数 ' + (at || '未给'));
     e.push(paSelfJudgeText({judge:(m && m.judge) || null, read_at:at}));
@@ -2865,8 +2932,18 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
    ⒋ 读数取**后端回执**（承 L76 · ⛔ 前端自说）。 */
 (function(){
   var KEY = "pa_chat_mode";
-  var VAL = { companion: { label:"陪伴", hint:"自然口语 · 陪着说" },
-              work:      { label:"办事", hint:"结论先行 · 给建议" } };
+  /* ⭐⭐ pm_1803 §一（主件）：**两态 ＝ 陪伴 ／ 办事** —— 老板之令（逐字）「现在页面是陪伴和办事」。
+     ⭐ **页上两名之真源 ＝ 本件 `VAL`**：技术总监 `core\pa\gateway_routes.py:75-79` 之**逐字** ——
+     其「正名之真源（页上之两名）」直指 `selfdesc.js:2868-2869` 之 `VAL` ⇒ ⛔ 页上 ⛔ 另立一套辞
+     （旧书「聊天 ／ 工作」＝ `pm_1804 §一.1` 之「两套辞」· 已治）⇒ ⭐ 态之渲**唯**本件 `paint()`
+     （另名 `window.paAxisRender` · 一处定形）⇒ `web/pa/faces/chat.js` 之 `setMode` ⛔ 造辞 · 唯转调。
+     ⭐ `note` ＝ 其辞如实（PM 1803 §一 之逐字）：陪伴 ⇒ 陪着 · 只商量 · ⛔ 替你动手；
+        办事 ⇒ 真动手 · 有交付 · 可验收。`hint` ＝ 后端 `PA_MODE_CLAUSE` 之场合口吻（诊断之据）。
+     ⭐ `chan` ＝ 该态所属之**通道**（＝ `tasks.js:51`／`core.js:4` 之映射 ∧ PM 1803 §二.2 之「真发向」）。 */
+  var VAL = { companion: { label:"陪伴", hint:"自然口语 · 陪着说",
+                           note:"陪着 · 只商量 · ⛔ 替你动手", chan:"pa" },
+              work:      { label:"办事", hint:"结论先行 · 给建议",
+                           note:"真动手 · 有交付 · 可验收", chan:"agent" } };
   var cur = null;                       /* 本地缓存（无会话时之退路 · 默认 companion） */
   var last = null;                      /* 最近一轮**后端回执**之归一 mode（null ＝ 尚无） */
   var lastReq = null;                   /* 该轮请求所用之 mode（与 last 对账 ⇒ ✓／⚠） */
@@ -2901,7 +2978,14 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   function threadMode(){ var t = AT(); return norm(t && t.paMode); }
   /* ⭐ pm_1102 §二.1：档 ＝ **会话属性** —— 会话自存优先 ⇒ 否则**继承上次**（localStorage）
      ⇒ 否则默认 `companion`（老板令「聊天 ＝ 陪伴」）。⛔ 后端之判（`pa_mode_name` 仍归一之唯一）。 */
-  function eff(){ return threadMode() || readL() || "companion"; }
+  /* ⭐⭐ pm_1803 §二.2（要）：两态**真变** ⇒ 态之真源 ⛔ 唯本件之 localStorage —— 须并**通道**
+     （`state.mode` → `MODES[].chan` · `core.js` 一处）⇒ 否则「办事」态而仍发 `/v9/pa/dialog`
+     ⇒ ⭐ 拨杆**说谎**（承「⛔ 不实之辞入屏」）。故：**通道为主 ⇒ 档随之**（⛔ 反之）。 */
+  function chanMode(){
+    try{ var c = MODES[state.mode]; return (c && c.chan === "agent") ? "work" : "companion"; }
+    catch(e){ return null; }
+  }
+  function eff(){ return chanMode() || threadMode() || readL() || "companion"; }
   window.paChatMode = function(){ return eff(); };
   window.paChatModeLastReceipt = function(){ return last; };
   window.paSetChatMode = function(v){
@@ -2911,6 +2995,20 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     try{ if(typeof saveState === "function") saveState(); }catch(e){}
     paint();
   };
+  /* ⭐⭐ pm_1803 §一（主件 · 一键可换 · ⛔ 二步）：**唯一之切换出口**（`window.paAxisGo`）——
+     ⒜ 档：`paSetChatMode`（透传体之 `mode` ＋ 会话属性 ＋ 落盘）｜⒝ 通道：`setMode` ⇒ `MODES[].chan`
+     ⇒ **真发向之端**（陪伴 ⇒ `/v9/pa/dialog` ／ 办事 ⇒ `/v9/agent/chat` · 承 `tasks.js:51` ∧ `core.js:4`
+     ∧ PM 1803 §二.2 之要件）。
+     ⚠ **已在同一轴 ⇒ ⛔ 再调 `setMode`**（否则「办事」恒落 `work` ⇒ 会把用户所择之 `dev` 降级 ＝ 擅改）。 */
+  window.paAxisGo = function(v){
+    v = norm(v); if(!v) return;
+    var want = VAL[v].chan, curChan = null;
+    try{ var c = MODES[state.mode]; curChan = (c && c.chan) || null; }catch(e){}
+    window.paSetChatMode(v);
+    if(curChan !== want){ try{ setMode((v === "companion") ? "chat" : "work"); }catch(e){} }
+    paint();
+  };
+  window.paAxisRender = paint;   /* 态之渲之**唯一出口**（`web/pa/faces/chat.js` 之 setMode 唯转调本件） */
   /* ⭐ pm_1102 §二.3：诊断读数（供「更多 ▾ · 关于 PA」诊断区 · ⛔ 常驻用户面） */
   window.paChatModeDiag = function(){
     var t = AT();
@@ -2922,24 +3020,41 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
              labelHits: lastHits, rounds: stat.rounds, hitsByLabel: stat.hits, at: lastAt };
   };
 
+  /* ⭐⭐ 态之渲 · **唯一出口**（另名 `window.paAxisRender` · pm_1803 §一「一处定形」）：
+     ⒜ 分段控件（`#paModeBar` 之两钮）—— 当前态 ＝ 实底 ＋ 着色 ＋ `●` ＋ `aria-selected`
+        （⛔ 唯色差之辨 ⇒ 屏读器亦得）｜⒝ 更多 ▾ 之模式条（`#modelText` ／ `#chanSwitch`）｜
+     ⒞ 聊天面之「不出手」行 —— **唯陪伴态为真** ⇒ 办事态必隐（⛔ 显「只商量」而实则动手 ＝ 不实之辞）。
+     ⚠ ⛔ 第二处渲染 ∨ ⛔ 第二套辞（旧病：两处各写 ⇒ 必漂 · 承 TD 1802／1804）。 */
   function paint(){
     var v = window.paChatMode();
     [["paModeBtnCompanion","companion"],["paModeBtnWork","work"]].forEach(function(pr){
       var b = document.getElementById(pr[0]); if(!b) return;
       var on = (pr[1] === v);
+      b.textContent = (on ? "● " : "") + VAL[pr[1]].label;
       b.style.background = on ? "#1f6feb" : "transparent";
       b.style.color      = on ? "#0d1117" : "#8b949e";
       b.style.borderColor= on ? "#1f6feb" : "#30363d";
+      b.style.boxShadow  = on ? "inset 0 0 0 1px rgba(255,255,255,.28)" : "none";
       b.setAttribute("data-on", on ? "1" : "0");
+      b.setAttribute("aria-selected", on ? "true" : "false");
     });
     var h = document.getElementById("paModeHintText");
-    if(h) h.textContent = "· " + VAL[v].hint;
-    var sEl = document.getElementById("paModeSession");
-    if(sEl){
-      var _t = AT();
-      sEl.textContent = "会话 " + ((_t && _t.id) ? String(_t.id) : "—") + "（" + (threadMode() ? "自存" : "继承") + "）";
-    }
+    if(h){ h.textContent = "· " + VAL[v].note; h.style.color = "#c9d1d9"; }
+    /* ⭐⭐ pm_1813 §一（要）：**轴栏唯两态之名与切换** —— 会话 id ／ 回执 mode 之内部读数 ⇒ ⛔ 轴栏
+       （入「更多 ▾ → ③ 设 → 关于 PA」之诊断区 · `paSelfModeDiagHtml` **一处**出 · ⛔ 删真源）。 */
+    legacy(v);
     try{ document.documentElement.setAttribute("data-pa-chat-mode", v); }catch(e){}
+  }
+  /* ⭐ 更多 ▾ 之模式条 ＋ 聊天面之「不出手」行 —— **同源同渲**（⛔ 第二套辞 · ⛔ 第二处渲染）。 */
+  function legacy(v){
+    var A = VAL[v];
+    var mt = document.getElementById("modelText");
+    if(mt){ mt.textContent = (v === "companion" ? "🫂 " : "🧰 ") + A.label + " · " + A.note;
+            mt.className = "chanbadge " + (v === "companion" ? "pa" : "exec"); }
+    var cs = document.getElementById("chanSwitch");
+    if(cs){ cs.style.display = (v === "companion") ? "inline-block" : "none"; }
+    var cn = document.getElementById("paChatNoHand");
+    if(cn){ cn.style.display = (v === "companion") ? "" : "none"; }
   }
   function paintReceipt(backRaw, reqRaw, hits, requested){
     last = norm(backRaw);
@@ -2955,46 +3070,47 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         }
       });
     }
-    var el = document.getElementById("paModeReceipt"); if(!el) return;
-    var req = lastReq;
-    if(!last){
-      el.textContent = "回执 mode：—（后端未给）";
-      el.style.color = "#6e7681";
-      el.title = "本轮后端回执里没有可识别之 mode ⇒ ⛔ 前端自说（承 L76）";
-      return;
-    }
-    var same = (req === last);
-    el.textContent = (same ? "✓ " : "⚠ ") + "回执 mode：" + VAL[last].label
-      + (same ? "（与拨杆同）" : " ≠ 拨杆「" + (req ? VAL[req].label : "?") + "」");
-    el.style.color = same ? "#3fb950" : "#d29922";
-    el.title = (same ? "后端回执之 mode 与拨杆值一致（成对之证）"
-                     : "⚠ 后端回执之 mode 与拨杆值**不一致** ⇒ 视同谎（承 pm_1100 §三 要件 3）")
-      + " ｜ route.label_hits（诊断 · 逐标签）："
-      + THREE.map(function(k){
-          return k + ((lastHits && typeof lastHits.indexOf === 'function' && lastHits.indexOf(k) >= 0) ? "命中" : "未中");
-        }).join(" ／ ");
+    /* ⭐⭐ pm_1813 §一（要）：**轴栏唯两态之名与切换** —— 「回执 mode」之读数 ⛔ 轴栏
+       （入「更多 ▾ → ③ 设 → 关于 PA」之诊断区 · `paSelfModeDiagHtml` **一处**出 · ⛔ 删真源）。
+       ⇒ 本处唯留**对账之账**（`last` ／ `lastReq` ／ `lastAt` ／ `lastHits` ／ `stat`）—— 供诊断区取；
+         其与拨杆是否一致（✓ ／ ⚠）亦由诊断区出（承 pm_1100 §三 要件 3 · ⛔ 丢判）。 */
   }
+  /* ⭐⭐ pm_1803 §一（主件 · 「按钮可以明显一点」）：两钮加大（`padding` ／ 字号 ／ 圆角 ／ 描边）
+     ∧ 当前态之显眼形**归 `paint()` 一处**（⛔ 此处 ⛔ 再写着色 —— 二处各写 ⇒ 必漂）。
+     ⛔ 减首屏控件数之律**不适用**（老板点名要它可辨 · pm_1803 §一）。 */
   function btn(id, label){
     return '<button id="' + id + '" data-pa-mode="' + (id === "paModeBtnCompanion" ? "companion" : "work") + '"'
-      + ' style="cursor:pointer;border-radius:7px;padding:2px 10px;font-size:11px;font-weight:700;'
-      + 'height:auto;line-height:1.6;background:transparent;color:#8b949e;border:1px solid #30363d">'
+      + ' role="tab" aria-selected="false"'
+      + ' style="cursor:pointer;border-radius:999px;padding:3px 16px;font-size:12.5px;font-weight:700;'
+      + 'height:auto;line-height:1.7;background:transparent;color:#8b949e;border:1px solid #30363d">'
       + label + "</button>";
   }
+  /* ⭐⭐ pm_1807 §一.1（主件）：宿主**迁出** `.composer` ⇒ 入**常驻轴栏** `#paAxisBar`
+     （居顶栏之下 · 主面之上 · `pa.html` 之空壳）—— 由：⒜ 老板须**一眼可辨**（承 `1801 §一` 之族律：
+     「凡老板须点得到者，⛔ 藏于二级菜单」）⒝ 一手之证（CDP）：`.composer` 区在**首次用**之屏幕被
+     「🔰 第一次用」之固定盒（`z-index:9998` · 锚于底）**覆住** ⇒ 其内诸件（含本栏 ∧ `#sendBtn`）
+     ⛔ 可点 ⇒ 迁出即**离其覆**（该盒已另修：见 `pa.html` 之 `box()` · 锚于 composer 之上）。
+     ⚠ 宿主取槽唯**一处**（`#paAxisBar` ⇒ 旧壳回落 `.composer` 之首）；控件本体 ⛔ 另造。 */
   function mount(){
-    var c = document.querySelector(".composer"); if(!c) return;
+    var host = document.getElementById("paAxisBar");
+    var c = host || document.querySelector(".composer");
+    if(!c) return;
     if(document.getElementById("paModeBar")) { paint(); return; }
     var bar = document.createElement("div");
     bar.id = "paModeBar";
-    bar.setAttribute("data-src", "pm_1100 §三 · 场合拨杆（selfdesc.js 包装 · ⛔ 动共用件）");
-    bar.style.cssText = "display:flex;align-items:center;gap:6px;margin:0 0 7px;font-size:11px;color:#6e7681;flex-wrap:wrap";
-    bar.innerHTML = '<span style="color:#8b949e">场合</span>'
+    bar.setAttribute("data-src", "pm_1100 §三 ＋ pm_1803 §一 · 两态「陪伴 ／ 办事」（selfdesc.js · ⛔ 动共用件）");
+    bar.setAttribute("role", "tablist");
+    bar.setAttribute("aria-label", "两态：陪伴（只商量 · 不出手）／ 办事（真动手 · 有交付）");
+    bar.style.cssText = "display:flex;align-items:center;gap:6px;margin:0 0 7px;font-size:11px;color:#8b949e;flex-wrap:wrap";
+    /* ⭐⭐ pm_1813 §一（要）：轴栏 ＝ **两态之名与切换 ＋（必要时）一句人话提示**；
+       ⛔ 会话 id ／ ⛔ 回执 ／ ⛔ mode 之内部读数（其读数归「更多 ▾ → ③ 设 → 关于 PA」诊断区 ·
+       承 pm_1102 §二.3 之同法 —— 面板内可寻得，⛔ 删真源）。 */
+    bar.innerHTML = '<span style="color:#8b949e">通道</span>'
       + btn("paModeBtnCompanion", "陪伴") + btn("paModeBtnWork", "办事")
-      + '<span id="paModeHintText" style="color:#6e7681"></span>'
-      + '<span id="paModeSession" style="color:#6e7681"></span>'
-      + '<span id="paModeReceipt" style="margin-left:auto;color:#6e7681">回执 mode：—（尚未有本轮）</span>';
-    c.insertBefore(bar, c.firstChild);
+      + '<span id="paModeHintText" style="color:#c9d1d9"></span>';
+        if(host){ c.appendChild(bar); } else { c.insertBefore(bar, c.firstChild); }
     Array.prototype.forEach.call(bar.querySelectorAll("button[data-pa-mode]"), function(b){
-      b.addEventListener("click", function(){ window.paSetChatMode(b.getAttribute("data-pa-mode")); });
+      b.addEventListener("click", function(){ window.paAxisGo(b.getAttribute("data-pa-mode")); });
     });
     paint();
   }

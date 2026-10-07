@@ -111,8 +111,10 @@ def test_J1_甲_正控_探针须前置_label已置方归():
     assert run["seen"] == ["remote"], \
         u"甲：`await fetch` 归来之刻 label 未置（探针后置）⇒ %r" % (run["seen"],)
     m = run["msgs"][0]
-    assert LEAVES + "deepseek-flash" in m["content"], m["content"]
-    assert ROUTE in m["content"], m["content"]
+    # ⭐ 去壳（pm_1812 §二.1）：二标入折叠（`html` 之 `details.eng.paroute`）⇒ 耳移折叠体。
+    assert LEAVES + "deepseek-flash" in m["html"], m["html"]
+    assert ROUTE in m["html"], m["html"]
+    assert "出机" not in m["content"] and ROUTE not in m["content"], m["content"]
 
 
 # ============================ J2 反控 ============================
@@ -123,7 +125,8 @@ def test_J2_反控_本机轮必无出机标():
     assert run["seen"] == ["local"], run["seen"]
     m = run["msgs"][0]
     assert "出机" not in m["content"], u"本机之轮竟有出机标：%r" % m["content"]
-    assert ROUTE in m["content"], u"走径标被一并吞了（假红）"
+    assert "出机" not in m["html"], u"本机之轮竟有出机标（折叠内）：%r" % m["html"]
+    assert ROUTE in m["html"], u"走径标被一并吞了（假红）"
 
 
 # ============================ J3 乙 三控 ============================
@@ -132,11 +135,11 @@ def test_J3_乙_三控_云端后本机_残留须除():
     out = _run(_cloud_then_local())
     run = out["runs"][0]
     assert run["seen"] == ["remote", "local"], run["seen"]
-    assert "出机" in run["msgs"][0]["content"], run["msgs"][0]["content"]
+    assert "出机" in run["msgs"][0]["html"], run["msgs"][0]["html"]
     m2 = run["msgs"][1]
-    assert "出机" not in m2["content"], \
-        u"乙：本机轮取了甲所留之 remote 标（红线反向说谎）：%r" % m2["content"]
-    assert ROUTE in m2["content"], m2["content"]
+    assert "出机" not in m2["content"] and "出机" not in m2["html"], \
+        u"乙：本机轮取了甲所留之 remote 标（红线反向说谎）：%r" % m2["html"]
+    assert ROUTE in m2["html"], m2["html"]
 
 
 # ============================ J4 齿 ============================
@@ -152,7 +155,7 @@ def test_J4_齿_去前置则甲乙俱现():
         u"齿失效：挖掉前置，`await fetch` 归来之刻竟已有 label ⇒ %r" % (run["seen"],)
     assert run["seen"][1] == "remote", \
         u"齿失效：round2 竟未见甲之残留（乙未现）：%r" % (run["seen"],)
-    assert "出机" in run["msgs"][1]["content"], \
+    assert "出机" in run["msgs"][1]["html"], \
         u"齿失效：挖掉前置，本机轮竟 ⛔ 无甲所留之标（乙未现）"
 
 

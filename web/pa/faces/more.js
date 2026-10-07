@@ -470,11 +470,7 @@ function paRouteLine(box){
   if(!L) return '🔌 走径：src: —（后端未给）' + (at ? (' · 采于 ' + at) : '');
   return '🔌 走径：' + L.text + '（键 ' + L.key + (at ? (' · 采于 ' + at) : '') + '）';
 }
-function paRouteHtml(line){
-  return '<div class="paroute" data-pa-route="1" style="font-size:11px;line-height:1.6;color:#8b949e;margin:0 0 4px"'
-       + ' title="走径标：本答走哪一源（读数取后端回执 · ⛔ 前端自说）">' + paEsc(line) + '</div>';
-}
-/* ⭐⭐ 「出机」之标（承 pm_1454 §一 ／ §二）：**唯**本轮经云端（`kind ∈ 远端集`）⇒ 上此标；
+/* ⭐⭐ 「出机」之标（承 pm_1454 §一 ／ §二）：**唯**本轮经云端（`kind ∈ 远端集`）⇒ 有；
    本机模型之轮 **⛔ 上**（⛔ 恒挂）。实名**取回执**（`label.model` · ⛔ 前端硬编 ⇒ 其名由后端出）。
    缺（回执无 `model`）⇒ 「后端未给」之明标（承 `paRouteLine` 之上式 · ⛔ 空 ／ ⛔ 以猜之名充）。 */
 function paLeavesLine(box){
@@ -482,11 +478,96 @@ function paLeavesLine(box){
   if(!L || !paRouteIsRemote(L.kind)) return null;
   return '本轮经云端 · 内容将出机 · 模型 ' + (String(L.model || '').trim() || '（后端未给）');
 }
-function paLeavesHtml(line){
-  return '<div class="paroute paleaves" data-pa-route="1" style="font-size:11px;line-height:1.6;color:#d2991d;margin:0 0 4px"'
-       + ' title="出机标：本轮经云端 ⇒ 内容将出机（读数取后端回执 · ⛔ 前端自说）">' + paEsc(line) + '</div>';
+/* ⭐⭐ pm_1812 §二.1（主件 · 去壳）：**工程话 ⛔ 用户面** ——
+   ⒝ 走径之键 ＋ ⒜ 云端之告（**原文**）⇒ 皆入**折叠**「本轮来源（技术细节）」（⛔ 删真源 · 承 pm_1012 §二）；
+   ⒜ 之**人话**另出一句（唯首次 ∨ 通道切换后 · 见 `paCloudNotice`）＋ 一枚**常驻小标** `🔌 云端`。
+   ⚠ 本层唯改「**怎么显示**」—— `paRouteLine` ／ `paLeavesLine` 之**逐字** ∧ kind 之二集 ∧ 探针皆一字不动
+     （承「一处定形」· 旧齿之字面仍钉 · 唯位改「人话面 ⇄ 折叠面」）。 */
+function paCloudBadge(box){
+  const L = (box && box.label) ? box.label : null;
+  return (L && paRouteIsRemote(L.kind)) ? '🔌 云端' : '';
 }
-try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine; }catch(e){}
+function paEngLines(box){
+  const L = [];
+  const out = paLeavesLine(box);        /* ⒜ 原文（唯远端 ⇒ 有 · ⛔ 改字） */
+  if(out) L.push(out);
+  L.push(paRouteLine(box));             /* ⒝ 走径之键 */
+  return L;
+}
+function paNoteHtml(notice){
+  return notice ? ('<div class="paclnote">' + paEsc(notice) + '</div>') : '';
+}
+/* 折叠之壳（**一处定形** —— ⛔ 各点各拼）：常驻小标（唯远端）＋「本轮来源（技术细节）」。
+   ⚠ summary 之辞**须与** `selfdesc.js` 之「来源 ／ 详情」**可辨** —— 一条答里可能有两处折叠
+     （彼 ＝ 判据 ／ 检索读数；此 ＝ 走径 ／ 云端）⇒ 同名则用户不知那是二条什么（承 pm_1813 §二.3 之病）。 */
+const PA_SHELL_SUM = '本轮来源（技术细节）';
+function paShellHtml(box, engExtra){
+  const badge = paCloudBadge(box);
+  const extra = engExtra || [];
+  /* ⭐ 存量重渲（`box` 缺 · 其工程行已由 `paLegacyRouteTakeText` ／ `paLegacyRoutePull` 摘出）
+     ⇒ **⛔ 再添**同族之行 —— 否则折叠里会出现二条走径（`src: —（后端未给）` 之伪行 · 承 pm_1076 §三）。 */
+  const hasRoute  = extra.some(function(x){ return x.indexOf('🔌 走径：') === 0; });
+  const hasLeaves = extra.some(function(x){ return x.indexOf('本轮经云端 · ') === 0; });
+  const lines = [];
+  if(!hasLeaves){ const o = paLeavesLine(box); if(o) lines.push(o); }
+  if(!hasRoute) lines.push(paRouteLine(box));
+  const body  = lines.concat(extra).join('\n');
+  return (badge ? ('<span class="pacloude" title="本轮经云端模型 ⇒ 内容将出机（读数取后端回执 · ⛔ 前端自说）">' + badge + '</span>') : '')
+    + '<details class="eng paroute" data-pa-route="1"><summary>' + PA_SHELL_SUM
+    + '</summary><div class="engbody">' + paEsc(body) + '</div></details>';
+}
+/* ⒜ 之**人话** —— 唯**首次 ∨ 通道切换后**出一句（⛔ 每轮都喊 ⇒ 喊了等于没喊 · 承 pm_1812 §一.⒜）。
+   ⚠ 唯**本轮真有过回执**（`box` 在）方出 —— 存量重渲（无回执）**⛔ 造此句**（免一 F5 即冒一句 · 承 L76）。 */
+let paCloudSaid = null;   /* null ／ 'remote' ／ 'local'（上次所告之通道 · 一处定形） */
+function paCloudNotice(box){
+  if(!box) return '';
+  const L = (box && box.label) ? box.label : null;
+  const now = (L && paRouteIsRemote(L.kind)) ? 'remote' : 'local';
+  const first = (paCloudSaid !== now);
+  paCloudSaid = now;
+  /* ⚠ 唯**远端**之轮方喊此句 —— 本机之轮（local ／ 本机模型）**内容 ⛔ 出机** ⇒ 喊之 ＝ **不实之辞入屏**
+     （承「⛔ 不实之辞入屏」· 我一手逮：旧形对本机之轮亦喊「内容将出机」）。 */
+  if(now !== 'remote') return '';
+  return first ? '（提醒：本轮内容会发给云端模型 · 内容将出机。此提醒只在首次 ／ 切换通道后出现一次。）' : '';
+}
+/* ⭐ 存量消息之**工程行**（旧存档把走径 ／ 云端行**平铺**在正文里 · 承 pm_1012 §二 · ⛔ 丢信息）：
+   摘出 ⇒ 入折叠；用户面一行不动（原文照录 · ⛔ 删）。 */
+const PA_LEG_DIV = /<div class="paroute(?:[^"]*)"[^>]*>([\s\S]*?)<\/div>/g;
+const PA_LEG_TXT = /^\s*(?:🔌 走径：[^\n]*|本轮经云端 · [^\n]*)\s*$/;
+function paUnesc(s){
+  return String(s == null ? '' : s).replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+}
+function paLegacyRoutePull(html){
+  const got = [];
+  const rest = String(html || '').replace(PA_LEG_DIV, function(_m, inner){ got.push(paUnesc(inner)); return ''; });
+  return {html:rest, eng:got};
+}
+function paLegacyRouteTakeText(content){
+  const t = String(content == null ? '' : content);
+  if(t.indexOf('🔌 走径：') < 0 && t.indexOf('本轮经云端 · ') < 0) return null;
+  const keep = [], eng = [];
+  t.split('\n').forEach(function(x){ (PA_LEG_TXT.test(x) ? eng : keep).push(x); });
+  if(!eng.length) return null;
+  return {text:keep.join('\n').replace(/^[\n\s]+/, ''), eng:eng};
+}
+/* 纯文之路（无 html · `send.js` 之答）⇒ 造壳 ＋ 转义正文（并**复刻** `chat.js` 之 KB 胶囊渲 · ⛔ 丢功能）。 */
+function paPlainHtml(shell, text){
+  let body = null;
+  try{
+    if(typeof paKbExtractPaths === 'function' && typeof paKbCapsuleHtml === 'function'){
+      const paths = paKbExtractPaths(text);
+      if(paths.length){
+        try{ if(typeof paKbLoad === 'function' && !paKbCache) paKbLoad(false); }catch(e){}
+        body = paKbCapsuleHtml(text, (paKbCache || {}).rows);
+      }
+    }
+  }catch(e){ body = null; }
+  if(body == null) body = paEsc(text);
+  return body + shell;
+}
+try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine;
+     window.paShellHtml = paShellHtml; window.paCloudNotice = paCloudNotice; }catch(e){}
 
 /* 回执探针（**被动** · ⛔ 改行为）：唯记 `/v9/pa/dialog|turn|ask` 之**走径** ⇒ 供上屏。
    ⭐ P0 修（pm_1467 §一.3 · 式⒈「探针前置」）：原实现**返原始 `p`** ⇒ 探针之 `resp.clone().json()`
@@ -519,30 +600,38 @@ try{ window.paRouteLabel = paRouteLabel; window.paRouteLine = paRouteLine; }catc
   };
 })();
 
-/* 答体「走径标」：挂在共用件 `addMsg` **之下**（本件早于 selfdesc.js 载入 ⇒ 其包装在外）
-   ⇒ ⛔ 动 selfdesc.js ／ chat.js 一字（承「⛔ 动原行为」）。 */
+/* ⭐⭐ 答体之**去壳**（pm_1812 §二.1 ⒜⒝）：挂在共用件 `addMsg` **之下**（本件早于 selfdesc.js 载入
+   ⇒ 其包装在外）⇒ ⛔ 动 selfdesc.js ／ chat.js 一字（承「⛔ 动原行为」）。
+   四处旧病与今治：
+     ⒜ 云端之告（每轮必现）⇒ **首次 ∨ 通道切换**一句 ＋ **常驻小标**；原文入折叠（⛔ 删真源）。
+     ⒝ 走径之键 ⇒ ⛔ 用户面（入折叠）。
+     ⒞ 存量消息（`data-pa-route` 之 html ／ 走径行开头之纯文）⇒ 摘入折叠（**重渲之幂等** ·
+        承 pm_1539 §二.1 ／ pm_1543 §二.⒜ —— ⛔ 行倍增）。
+     ⒟ 存量重渲**无本轮回执** ⇒ **原样**（⛔ 造 `src: —（后端未给）` 之伪行 · 承 pm_1076 §三）。 */
 (function(){
   const orig = window.addMsg;
   if(typeof orig !== 'function') return;
   window.addMsg = function(role, content, skipStore, html, tid){
     if(role !== 'assistant') return orig.apply(this, arguments);
-    const box  = paRouteTake();                        /* 一轮一清（⛔ 取二次） */
-    /* ⭐ pm_1539 §二.1 ／ pm_1543 §二.⒜（重渲之幂等 · 一处定形）：本包装在共用件 `addMsg` **之外层**
-       ⇒ `renderThread()`（`chat.js:53` · 启动 ／ 切线程 ／ 续会话 ／ 新建）会**重喂**已含走径行之存档
-       ⇒ 再前置一次 ⇒ 行倍增（`reload` 实测 `.paroute` 2 ⇒ 4 · 我 `1543` 一手器取）。
-       凡本件已渲之标（`data-pa-route` 之 HTML ∨ 以走径行 ／ 出机行开头之纯文）⇒ **⛔ 再前置**。
-       ⚠ 唯改本件（⛔ 动 `chat.js` 一字 · 承 L162）。 */
-    const marked = ((typeof html === 'string') && html.indexOf('data-pa-route') >= 0)
-                || ((typeof content === 'string')
-                    && (content.indexOf('🔌 走径：') === 0 || content.indexOf('本轮经云端 · ') === 0));
-    if(marked) return orig.call(this, role, content, skipStore, html, tid);
-    const line = paRouteLine(box);
-    const out  = paLeavesLine(box);                    /* ⭐ 唯远端 ⇒ 有（红线**先于**走径入目 · 承 §一.2） */
-    const c = (typeof content === 'string') ? ((out ? (out + '\n') : '') + line + '\n' + content) : content;
-    const h = (typeof html === 'string' && html) ? ((out ? paLeavesHtml(out) : '') + paRouteHtml(line) + html) : html;
-    return orig.call(this, role, c, skipStore, h, tid);
+    const box     = paRouteTake();                     /* 一轮一清（⛔ 取二次） */
+    const hasMark = (typeof html === 'string') && html.indexOf('data-pa-route') >= 0;
+    const lp = ((typeof html === 'string') && html && !hasMark) ? paLegacyRoutePull(html) : null;
+    const lt = (typeof content === 'string') ? paLegacyRouteTakeText(content) : null;
+    const legEng = (lp ? lp.eng : []).concat(lt ? lt.eng : []);
+    /* ⒟ 存量重渲（无回执 ∧ 无存量工程行）⇒ 原样（⛔ 伪行 · ⛔ 添字）。 */
+    if(!box && !legEng.length) return orig.apply(this, arguments);
+    const notice = paCloudNotice(box);
+    const shell  = paShellHtml(box, legEng);
+    if(typeof html === 'string' && html){
+      const body = (lp ? lp.html : html);
+      const out  = (hasMark || !(box || legEng.length)) ? body : (body + shell);
+      return orig.call(this, role, (lt ? lt.text : content), skipStore, paNoteHtml(notice) + out, tid);
+    }
+    const text = lt ? lt.text : String(content == null ? '' : content);
+    return orig.call(this, role, text, skipStore, paNoteHtml(notice) + paPlainHtml(shell, text), tid);
   };
 })();
+
 
 /* —— 面 A · 模型供应商（只读 · P0）：设置面（#pane-cfg · 运行配置）内新起一节 —— */
 function paProvMount(){

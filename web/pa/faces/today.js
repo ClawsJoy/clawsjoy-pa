@@ -50,12 +50,85 @@ document.addEventListener('keydown', function(e){
 
 /* —— 展开 ／ 收起（首屏只留三行；明细按需展开 · 承 pm_997 §三）—— */
 function paTodayToggle(which){
-  const map = {profile:'paTodayProfileBody', pending:'paTodayPendingBody'};
+  const map = {profile:'paTodayProfileBody',
+               ask:'paTodayAskBody', do:'paTodayDoBody', wait:'paTodayWaitBody', trace:'paTodayTraceBody'};
   const el = document.getElementById(map[which]); if(!el) return;
   const btn = document.querySelector('.today .mline .x[aria-controls="' + map[which] + '"]');
   const open = el.hasAttribute('hidden');
   if(open){ el.removeAttribute('hidden'); } else { el.setAttribute('hidden',''); }
   if(btn) btn.setAttribute('aria-expanded', String(open));
+}
+/* ⭐⭐ pm_1823 §二 ＋ pm_1827 §一.2（要）：四行之**去处** —— 点它 ⇒ **真到办之处**（承定义页 §二「去处」列）。
+   ⛔ 空跳 ｜ ⛔ 二步。后端 `去处[].端` 所标：要我拍的 ／ 近来之痕 ⇒ `#paToday`（就地展开）；
+   今天该做的 ／ 在等的 ⇒「任务」面。 */
+function paTodayGo(kind){
+  if(kind === 'ask' || kind === 'trace'){ paTodayToggle(kind); return; }   /* 就地展开：件在行下现出 */
+  try{ setFaceById('tasks'); }catch(e){}                                   /* 去办 ／ 看进度 ⇒「任务」面 */
+}
+/* —— 今日四行（取数 ／ 渲之**一处定形** · 承 pm_1827 §一）——
+   ⭐ 取数唯走 `GET /v9/pa/today`（⛔ 前端自拼各端 —— 四类之判据唯在 `core/pa/today.py` 一处 ·
+     `pm_1824 §二.1`）。每行三物照定义页 §三：**数**（后端 `数` ∨ 其 `空态` 之人话）／
+     **源**（唯取 `GET /v9/…` 之端 · ⛔ 内部径）／**去处**（后端 `去处[].标`）。
+   ⛔ 内部缩写与编号 ｜ ⛔ 自曝之辞 ｜ ⛔ 照抄 `file:line`（承 pm_1822 §二.1 ／ §二.2）。 */
+const PA_TODAY_ROWS = [{cap:'Ask',kind:'ask'}, {cap:'Do',kind:'do'},
+                       {cap:'Wait',kind:'wait'}, {cap:'Trace',kind:'trace'}];
+const PA_TODAY_SRC_HUMAN = {        /* 端 ⇒ 人话（⛔ 编端名：唯此表 · 表外 ⇒「本机」）—— pm_1829 §二.3 */
+  '/v9/pa/context': '本机上下文',
+  '/v9/pa/deliver/authz': '待授权交付',
+  '/v9/pa/ledger': '本机待办',
+  '/v9/pa/dispatch/history': '作业记录',
+  '/v9/pes/runs': '运行记录',
+  '/v9/pa/threads': '会话记录',
+  '/v9/pa/profile': '本机画像'
+};
+function paTodaySrcEnd(s){          /* 源之**真形**（端名 ∨ 读盘）—— 唯入「详情」／`title`（⛔ 上首屏） */
+  const m = String((s && s['面']) || '').match(/GET\s+(\/v9\/[A-Za-z0-9_\/]+)/);
+  return m ? ('GET ' + m[1]) : '本机档案';
+}
+function paTodaySrcLabel(s){        /* 行内之「源」＝**人话**（pm_1829 §二.3：一名二形 ⇒ 统一 · ⛔ 端名上屏） */
+  const e = paTodaySrcEnd(s);
+  return (e.indexOf('GET ') === 0) ? (PA_TODAY_SRC_HUMAN[e.slice(4)] || '本机') : '本机档案';
+}
+function paTodaySrcTip(r){          /* 悬停一句：真源之端名（一处 `title` 释之 · pm_1829 §二.3） */
+  const out = [];
+  ((r && r['源']) || []).forEach(function(s){ const e = paTodaySrcEnd(s); if(out.indexOf(e) < 0) out.push(e); });
+  return out.length ? ('源：' + out.join(' ＋ ')) : '';
+}
+function paTodaySrcName(r){         /* 行内之「源」：去重之标签（定义页 §三.2） */
+  const out = [];
+  ((r && r['源']) || []).forEach(function(s){ const L = paTodaySrcLabel(s); if(out.indexOf(L) < 0) out.push(L); });
+  return out.join(' ＋ ');
+}
+function paTodayDetail(r){          /* 行下展开之内容：逐源读数 ＋ 件 ＋（缺 ⇒ 人话 · ⛔ 载内部径） */
+  const P = [];
+  const S = ((r && r['源']) || []).map(function(s){
+    return paTodaySrcEnd(s) + ' ' + ((s && s['读数'] != null) ? s['读数'] : '—') + ' 件';
+  });
+  if(S.length) P.push('逐源：' + S.join(' ／ '));
+  const it = (r && r['件']) || [];
+  if(it.length){
+    P.push('件：' + it.slice(0, 3).map(function(x){
+      return [x['类'], x['刻'], x['题']].filter(function(v){ return !!v; }).join(' · ');
+    }).join(' ／ ') + (it.length > 3 ? (' …（共 ' + it.length + ' 件）') : ''));
+  }
+  ((r && r['缺']) || []).forEach(function(m){ P.push((m && m['源'] ? (m['源'] + ' ') : '') + '这一项暂时读不到'); });
+  return P.join(' ｜ ');
+}
+function paTodayRenderRows(d){
+  const rows = (d && d['ok'] && Array.isArray(d['行'])) ? d['行'] : null;
+  PA_TODAY_ROWS.forEach(function(R, i){
+    const r = rows ? (rows.filter(function(x){ return x && x['序'] === (i + 1); })[0] || rows[i]) : null;
+    const n = r ? r['数'] : null;
+    paV3Txt('paToday' + R.cap, (!r || n == null) ? '暂时读不到'      /* 空 ⛔ 混 缺：数 ⛔ 得 ⇒ ⛔ 落「空态」 */
+      : (n ? (n + ' 件') : (r['空态'] || '—')));
+    paV3Txt('paToday' + R.cap + 'Where', r ? ('源：' + paTodaySrcName(r)) : '');
+    const wh = document.getElementById('paToday' + R.cap + 'Where');
+    if(wh) wh.title = r ? paTodaySrcTip(r) : '';   /* 悬停 ⇒ 真源之端名（⛔ 上首屏 · pm_1829 §二.3） */
+    const g = r && (r['去处'] || [])[0];
+    const btn = document.getElementById('paToday' + R.cap + 'Go');
+    if(btn && g && g['标']) btn.textContent = g['标'] + ' ›';
+    paV3Txt('paToday' + R.cap + 'Src', r ? paTodayDetail(r) : '');
+  });
 }
 function paSrcToggle(){
   const el = document.getElementById('paSrcList'), c = document.getElementById('paSrcCaret');
@@ -188,7 +261,8 @@ async function paLoadSrcFaces(o){
   /* ① 一词之性质（⛔ 以「未接」盖「红线」） */
   /* ⚠ why 归**值格**（⛔ 源行）—— 源行之义 ＝ 源之径（承 today.js:111）；且「⛔ 以「未接」暗许「将来会接」＝ 软性虚诺」
      属**辨义**类 ⇒ ⛔ 上屏（承 pm 1272 §三）。平台面 ⛔ 后端源 ⇒ 源行 ＝ **空**。出处 ＝ PM 17:47 §二改①。 */
-  paSrcWrite('srcRowPlatform', '🌐 平台', PA_GAP.off('⛔ 代操作他方平台'));
+  paSrcWrite('srcRowPlatform', '🌐 平台', '不会代你操作（这是红线）',
+    '设计如此：⛔ 代操作他方平台（红线 · 承 pm 18:00 批一）');
   /* ⭐ 素材面两行（承 pm 20:16 §三.⒞）：自 GET /v9/pa/source_faces 取（⛔ 硬编码 · ⛔ 手搓数）。
      ⛔ 缺读源 ／ 缺面 ⇒ 照实「⒜ 未接 · 待办（M1）＋ 为何未接」—— 读源一落 ⇒ 自动转绿（⛔ 装绿）。 */
   const _sf = (o && o.sf) || null;
@@ -207,11 +281,11 @@ async function paLoadSrcFaces(o){
   /* ② 作业轴：两名分列（⛔ 一词盖两义） */
   const cD = (o.d && o.d.counts) ? o.d.counts : null;
   const fD = paLedgerFold('作业账', o.d, 'data\\v9\\pa\\dispatch.jsonl', null);
-  paSrcEnsureRow('srcRowRuns', 'srcRowDispatch', '🧰 作业（调度件）',
+  paSrcEnsureRow('srcRowRuns', 'srcRowDispatch', '🧰 待办作业',
     cD ? ('rows ' + cD.rows + ' · 已收口 ' + cD.closed + ' · 待外部回执 ' + cD.awaiting_receipt + ' · 席轴 ' + cD.seat_axis + ' ／ 池路 ' + cD.no_seat_axis)
        : (o.d ? '（后端应答无 counts ⇒ 照实缺）' : PA_GAP.down('后端无应答')),
     '源：GET /v9/pa/dispatch/history ｜ 面之径 ' + fD.src + ' ｜ 刻 ' + fD.atTxt);
-  paSrcWrite('srcRowRuns', '🧰 作业（PES 运行）', (o.nR === null) ? PA_GAP.down('后端无应答') : (o.nR + ' 件'),
+  paSrcWrite('srcRowRuns', '🧰 在办作业', (o.nR === null) ? PA_GAP.down('后端无应答') : (o.nR + ' 件'),
     '源：GET /v9/pes/runs ｜ 刻 ' + ((o.runs && o.runs.generated_at) || '⚠ 刻缺（后端未给 generated_at）'));
   /* ③ 台账轴（机账 · 三本）⇒ 一码读四键（⛔ 逐面特判）｜⛔ 一词盖两义 */
   const books = [
@@ -221,20 +295,25 @@ async function paLoadSrcFaces(o){
   ];
   const missAll = [];
   books.forEach(function(b){ if(b.miss.length) missAll.push(b.name + ' 缺 ' + b.miss.join(' ／ ')); });
-  paSrcWrite('srcRowLedger', '🧾 台账（机账）',
+  paSrcWrite('srcRowLedger', '🧾 台账',
     books.map(function(b){ return b.name + ' ' + b.value; }).join(' ｜ ')
       + (missAll.length ? (' ⚠ 四键 ⛔ 齐（' + missAll.join(' · ') + '）⇒ 已报 PM · ⛔ 静默降级') : ''),
     '⛔ ≠ `context.counts.ledger`（＝ **PA 待办** · 同名异域 ⇒ 两名分列）｜源（皆 GET · 唯读 · 逐面读其数）：'
       + books.map(function(b){ return b.name + ' ⇒ ' + b.src + '（' + b.stamp + ' · 刻 ' + b.atTxt + '）'; }).join(' ｜ '),
     missAll.length > 0);
-  /* 左栏摘要（素材七面 ⇒ 一行） */
-  paV3Txt('paSrcSum', '会话 ' + (o.nThr === null ? PA_GAP.down() : o.nThr + ' 条')
-    + ' · 作业 调度 ' + (cD ? cD.rows : PA_GAP.down()) + ' ／ PES ' + (o.nR === null ? PA_GAP.down() : o.nR)
-    + ' · 台账 ' + books.length + ' 本' + (missAll.length ? '（⚠ 四键 ⛔ 齐）' : '')
-    + ' · 记忆 ' + (o.nLine === null ? PA_GAP.down() : o.nLine + ' 行')
-    + ' · 素材面 ' + (_sf ? ('2 面（文件 ' + (_fFile ? (paSrcFaceValue(_fFile) || '缺量') : '缺') + ' ／ 出图 ' + (_fDraw ? (paSrcFaceValue(_fDraw) || '缺量') : '缺') + ' · 刻 ' + PA_STAMP.fmt(_sf.at || '刻缺') + '）') : PA_GAP.todo())
-    + ((_sf && _fFile && _fDraw) ? '' : (' ／ ' + (_sf ? '待办 ' : '缺 ') + (2 - ((_fFile ? 1 : 0) + (_fDraw ? 1 : 0))) + ' 面'))
-    + ' ＋ ⒝ ' + PA_GAP.off() + ' 1（平台 · 红线）');
+  /* 左栏摘要（一句人话 ⇒ 一行 · ⛔ 数字墙） */
+  /* ⭐ pm_1822 §二.⒈ ＋ pm_1829 §二.2（要）：左栏**只留人话** ∧ **⛔ 数字墙** —— 旧形（「素材 7 面」
+     ／「全载 0 条」／「3 根」／「按目录聚合」／「运行中 0 件」／`PES` ／「⒝ ⛔ 不接（红线）」）
+     为我辈之数与器之名 ⇒ 用户读之如乱码。⛔ 丢信息：逐面之真数 ／ 真源 ／ 取数刻 ⇒ 仍在其**源行**
+     （`#paSrcList` · 一点「▾」即见 · 承 pm_1012 §二）。 */
+  paV3Txt('paSrcSum', '画像 1 位'
+    + ' · 在办 ' + (cD ? (cD.rows + ' 件') : '暂时读不到')
+    + ' · 记忆 ' + (o.nLine === null ? '暂时读不到' : o.nLine + ' 条')
+    + ' · 素材 ' + (_sf
+        ? ('文件 ' + (_fFile ? ((_fFile['量'] != null) ? (_fFile['量'] + ' 件') : '暂时读不到') : '暂无')
+           + ' ／ 出图 ' + (_fDraw ? ((_fDraw['量'] != null) ? (_fDraw['量'] + ' 张') : '暂时读不到') : '暂无'))
+        : '暂时读不到')
+    + ' · 平台：不会代你操作（这是红线）');
   /* ⭐ pm 19:05 令 §一：活面之数 ⇒ 同屏附「取数刻」＋逾阈显陈旧（第四态）。
      ⛔ 以屏刻充数刻（承 L76）—— 后端未给 `at` 者 ⇒ 照实「⚠ 取数刻未给」（承 pm 19:05 §四界：报 PM 转 TD）。 */
   if(window.PA_STALE){
@@ -340,6 +419,8 @@ async function paLoadToday(){
   const bkAuthz    = await paGetJson(API + '/v9/pa/deliver/authz?limit=200&usage=all');
   const bkLines    = await paGetJson(API + '/v9/pa/lines');
   const bkSrcFaces = await paGetJson(API + '/v9/pa/source_faces');
+  /* ⭐ pm_1823 §二：四行之一「今天该做的」之真源 ＝ `GET /v9/pa/ledger` 之 `open` */
+  const bkLedger   = await paGetJson(API + '/v9/pa/ledger?usage=all');
   /* ⭐ pm_1061 §五：上屏「实到 `num_ctx`」（真源 ＝ **本函数同一** `GET /v9/pa/context` 之新键 `num_ctx` ⇒ 单源 · ⛔ 另取 ／ ⛔ 硬编 · 承 `L83` ／ `L102`）。
      ＋ 明标「超此值 ⇒ 本机截断」（承「⛔ 静默截断」）｜⭐ 真窗键（如 `context_length`）后端**未落** ⇒ **只报 `num_ctx`**（⛔ 编真窗）。
      ⭐ 用**既有行内文案**（`#paTodayWhen` ＝ `.today .h .when` · `pa_v3.css:28` ⛔ `nowrap` ／ ⛔ `overflow:hidden` ⇒ 可容）
@@ -357,9 +438,12 @@ async function paLoadToday(){
   const psplit = paTodayBrief(brief);
   /* ⭐ pm_刀10 §一.3：**屏刻须取数刻并显陈旧度** —— 本行 ＝ 「本屏读数（前端取刻）」＋
      「画像件刻（后端现算之 mtime）」＋ 陈旧度；⛔ 以「本屏读数刻」顶「件之刻」（承 L76 ／ 刀11p §零）。 */
-  paV3Txt('paTodayWhen', '本屏读数 ' + now + ' ｜ 画像件刻 ' + (pstamp || '未知')
-    + (paged && paged.stale ? ('（⚠ 已陈旧 ' + paged.days + ' 天）') : '')
-    + ' ｜ 上下文窗 num_ctx ' + (nctx ? (nctx + '（本次 · 为上限 ⇒ 超此值 本机截断 · ⛔ 静默 · 源 GET /v9/pa/context）') : '未知（后端未应答 ／ 无该键 ⇒ ⛔ 编）'));
+  /* ⭐ pm_1808 §二.1：本行**只留人话**（读数刻 ＋ 陈旧之警）；「画像件刻 ／ `num_ctx` ／ 接口径」
+     ＝ 工程话 ⇒ 折入「画像 ▾」之源行（`#paTodayProfileSrc` · 原字不减）。 */
+  var _whenRaw = '画像件刻 ' + (pstamp || '未知')
+    + ' ｜ 上下文窗 num_ctx ' + (nctx ? (nctx + '（本次 · 为上限 ⇒ 超此值 本机截断 · ⛔ 静默 · 源 GET /v9/pa/context）') : '未知（后端未应答 ／ 无该键 ⇒ ⛔ 编）');
+  paV3Txt('paTodayWhen', '本屏读数 ' + now
+    + (paged && paged.stale ? ('（⚠ 画像已陈旧 ' + paged.days + ' 天）') : ''));
   /* ⭐ pm_刀10 §一：**`confirmed` ／ `proposed` 两态分列** ＋ 「待裁」数 ＝ `proposed`（后端 status 轴）。
      ⚠ 病（PM 实测）：旧面以「brief 非空行数 − 节头数」充「已定」⇒ 显 12，后端 status 轴实 8；
         「待裁」旧显 0，实 4。⇒ 真数取 `GET /v9/pa/profile` 之 `entries[].status`（承 L83 单源）；
@@ -383,8 +467,9 @@ async function paLoadToday(){
   const statOk = (nConf !== null);
   const xBad = (statOk && (nConf !== psplit.fact.length || nProp !== psplit.prop.length))
             || (statOk && pendOk && nPendCtx !== nProp);
-  paV3Txt('paTodayProfile', brief
-    ? (nLine + ' 行（式：brief 非空行数 · 含 ' + (secs === null ? '未知' : secs) + ' 节头）'
+  /* ⭐ pm_1808 §二.1：用户面只留人话（已定 ／ 待你裁 ／ 摘要行数）；「式：…」／「源：GET /v9/pa/profile」
+     ／「面内派生」／「待裁之两源」＝ 工程话 ⇒ 折入本行之**源行**（「▾」展开即见 · 原字不减）。 */
+  var _profRaw = (nLine + ' 行（式：brief 非空行数 · 含 ' + (secs === null ? '未知' : secs) + ' 节头）'
        + ' · 已定 ' + (statOk ? (nConf + ' 条') : PA_GAP.down()) + ' ／ 待裁 ' + (statOk ? (nProp + ' 条') : PA_GAP.down())
        + '（源：GET /v9/pa/profile · status 轴）'
        + ' · 面内派生（brief 文）：无「(提案)」标 ' + psplit.fact.length + ' 行 ／ 带标 ' + psplit.prop.length + ' 行'
@@ -392,9 +477,12 @@ async function paLoadToday(){
        + ' · 待裁之两源：profile ' + (statOk ? (nProp + ' 条') : PA_GAP.down())
        + ' ⟷ context.counts.pending ' + (pendOk ? (nPendCtx + ' 条') : pendGap)
        + ((statOk && pendOk) ? (nPendCtx === nProp ? ' ≡' : ' ⚠ ⛔ 齐（显红）') : ' ⚠ 缺一源')
-       + ' · 单例（本机 1 个客户）')
+       + ' · 单例（本机 1 个客户）');
+  paV3Txt('paTodayProfile', brief
+    ? ('已定 ' + (statOk ? (nConf + ' 条') : PA_GAP.down()) + ' ／ 待你裁 ' + (statOk ? (nProp + ' 条') : PA_GAP.down())
+       + ' · 摘要 ' + nLine + ' 行' + (xBad ? '（⚠ 两处读数 ⛔ 齐 · 见「▾」）' : ''))
     : '未知（后端未应答 ／ 无读数）');
-  paV3Txt('paTodayProfileSrc', '源：GET /v9/pa/context（brief）｜已定 ／ 待裁 之真源：GET /v9/pa/profile（字段 status · '
+  paV3Txt('paTodayProfileSrc', _whenRaw + ' ｜ ' + _profRaw + ' ｜ 源：GET /v9/pa/context（brief）｜已定 ／ 待裁 之真源：GET /v9/pa/profile（字段 status · '
     + (statOk ? ('实 entries ' + nEnt + ' ⇒ confirmed ' + nConf + ' ／ proposed ' + nProp + ' ／ revised ' + nRev) : '**' + PA_GAP.down('后端未应答') + '**')
     + '）｜⛔ 不以「行数 − 节数」自算充之（承 pm_刀10）｜待裁之第二源：GET /v9/pa/context 之 counts.pending（'
     + (pendOk ? (nPendCtx + ' 条') : '**' + pendGap + '**')
@@ -406,22 +494,17 @@ async function paLoadToday(){
   if(ptxtEl){ ptxtEl.innerHTML = brief ? paTodayBriefHtml(brief, statOk ? {conf: nConf, prop: nProp, revised: nRev, entries: nEnt, pend: nPendCtx} : null) : '（后端未应答 ⇒ 无摘要可显 · ⛔ 不编）'; }
   paV3Txt('srcCtx', brief ? (nLine + ' 行（非空 · 含节头）') : PA_GAP.down('后端未应答'));
 
-  /* ② 待你裁（源 /v9/audit/approvals ＋ /v9/pes/runs） */
-  const nA = (appr && Array.isArray(appr.approvals)) ? appr.approvals.length : null;
+  /* ② 待你裁（旧行）⇒ 已并入「要我拍的」（四类之判据唯在 `GET /v9/pa/today` 一处 · 承 pm_1827 §一）——
+     旧二格（`paTodayPending` ／ `paTodayPendingSrc`）已不在盘 ⇒ 其死写销。
+     本处唯留「在办之数」：左栏源行（`srcRuns`）仍取之。 */
   const nR = (runs && Array.isArray(runs.runs)) ? runs.runs.length : null;
-  paV3Txt('paTodayPending',
-    (nA === null ? PA_GAP.down('后端未应答') : (nA === 0 ? '0 件（后端 approvals: []）' : nA + ' 件'))
-    + '（式：approvals[] 长 · **审批**待审 ⛔ ≠ 画像「待裁」' + (statOk ? ('＝ ' + nProp + ' 条') : '＝ ' + PA_GAP.down()) + '）'
-    + ' · runs ' + (nR === null ? PA_GAP.down() : nR + ' 件'));
-  paV3Txt('paTodayPendingSrc',
-    '源：GET /v9/audit/approvals（session_id=' + curSession() + '）｜GET /v9/pes/runs'
-    + (runs && runs.generated_at ? ('（**数之刻** ' + runs.generated_at + '）') : '（⚠ 后端未给 generated_at ⇒ 刻缺 · ⛔ 以屏刻充数刻）'));
-  /* ⭐ pm 1346 §二.2（枚举同族）：本行亦持后端取数刻（`runs.generated_at`）而上屏（上行「数之刻」）⇒ 同族 ⇒ 须标。 */
-  if(window.PA_STALE){ PA_STALE.mark(document.getElementById('paTodayPendingSrc'), (runs && runs.generated_at) ? runs.generated_at : null, '待你裁（源 GET /v9/pes/runs）'); PA_STALE.tick(); }
   paV3Txt('srcRuns', (nR === null) ? PA_GAP.down() : (nR + ' 件'));
 
-  /* ③ 昨夜整合：无真源 ⇒ 明说未接（⛔ 编） */
-  paV3Txt('paTodayNight', '未知 —— ' + PA_GAP.todo('无源（夜间整合无后端面 · 承 pm 18:00 批一）') + ' · ⛔ 编');
+  /* ③ 昨夜整合：本机版尚无此面 ⇒ 值取**人话**（「暂无」· pm_1822 §二.⒉）；其工程注记（含令号）
+     入 `title` —— ⚠ `title` 亦屏上之面 ⇒ **⛔ 载自曝之辞**（承定义页 §四.3 · pm_1827 §三）。 */
+  var _nightEl = document.getElementById('paTodayNight');
+  paV3Txt('paTodayNight', '暂无');
+  if(_nightEl) _nightEl.title = '工程注记：无源（夜间整合无后端面 · 承 pm 18:00 批一）· ⛔ 编';
 
   /* 系统区：构建（源 /v9/pa/build）＋ 降级面（后端自报 ⇒ 显式列出 · ⛔ 藏失败） */
   paV3Txt('paTodayBuild', (bld && bld.sha16) ? (bld.sha16 + '（' + bld.bytes + ' B · mtime ' + (bld.mtime || '—') + '）') : '未知（后端未应答）');
@@ -437,6 +520,12 @@ async function paLoadToday(){
   if(thr){ nThr = Array.isArray(thr) ? thr.length : (Array.isArray(thr.threads) ? thr.threads.length : null); }
   paV3Txt('srcChat', (nThr === null) ? PA_GAP.down() : (nThr + ' 条'));
   const nSess = (sess && Array.isArray(sess.sessions)) ? sess.sessions.length : null;
+
+  /* ⭐⭐ pm_1823 §二 ＋ pm_1827 §一（要）：**今日一屏之四行** —— 取数**唯走 `GET /v9/pa/today` 一处**
+     （⛔ 前端自拼各端 —— 四类之判据唯在 `core/pa/today.py` 一处 · 承 pm_1824 §二.1）；
+     每行 数 ／ 源 ／ 去处 之渲在 `paTodayRenderRows`（一处定形）。 */
+  paTodayRenderRows(await paGetJson(API + '/v9/pa/today'));
+
   /* ⭐ 素材七面之三改（①②③ · 承 pm 17:47 令 ＋ 17:51 补令）⇒ 渲染 ＋ 左栏摘要皆在其内 */
   await paLoadSrcFaces({runs: runs, nR: nR, nThr: nThr, nLine: nLine, d: bkDispatch, a: bkAuthz, l: bkLines, sf: bkSrcFaces});
 

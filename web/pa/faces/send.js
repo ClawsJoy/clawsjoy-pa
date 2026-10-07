@@ -146,7 +146,17 @@ async function sendPA(text, t, meta){
     /* ⭐ pm 1184 §一.⒝（承 pm 1183 §五.3 ／ TD 1056 §五）：**源标三键**随本轮带上 ——
        `origin` ／ `grounded` ／ `answer_source`（后端 `/v9/pa/dialog` 已认 `origin` 之键）。
        ⚠ 知其实方传（闸判有据 ⇒ grounded）；未知 ⇒ **不发键** ⇒ 后端落其默认 `model`（⛔ 前端冒真）。 */
-    const _b = {user_id:curUser(), session_id:t.id, text:text, topic:null};
+    /* ⭐⭐ pm_1807 §一.3（PM 之裁 · 一行 · 本域）：**陪伴路须自带场合** —— 旧形无 `mode`
+       ⇒ 后端 `pa_mode_name(None)` 归一为 `work` ⇒ ⭐ 陪伴通道拿到「**办事**」之场合栏
+       ＝ 「页曰『陪伴』而提示曰『办事』」之根（技术总监一手逮 · `1805 §四.1`）。
+       ⛔ 改后端缺省（「缺省 ＝ `work`」是**已明书之契约** · `selfdesc.js:2860` ⇒ 改之 ＝
+       **静默改所有旧调用者之行为**）。
+       ⭐ 值取**一处之源** `window.paChatMode()`（＝ `selfdesc.js` 之 `eff()` ＝ 由**通道**定：
+          本路唯 `chan:'pa'` 可达 ⇒ `companion`）；旧页无该件 ⇒ **回落 `'chat'`**
+          （＝ PM 之逐字裁；后端 `pa_mode_name` 亦归一为 `companion`）。
+       ⭐ 二处同源：`selfdesc.js` 之 `wrapFetch` 见体已有 `mode` ⇒ **⛔ 覆**（幂等）。 */
+    const _b = {user_id:curUser(), session_id:t.id, text:text, topic:null,
+                mode: (typeof paChatMode === 'function' ? paChatMode() : 'chat')};
     /* ⭐ pm_1465 §二.1（说一用一）：本轮之模型 ⇒ **取用户所选**（自后端之表出 · `paModelSel` **一处出**）
        ⇒ ⛔ 硬编字面；⛔ 在表（表 ⛔ 得 ／ 值非实名）⇒ **⛔ 带此键** ⇒ 后端落会话档 ∨ 默认。 */
     const _mdl = paModelSel(); if(_mdl) _b.model = _mdl;

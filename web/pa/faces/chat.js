@@ -6,15 +6,12 @@ function setMode(m){
   $('modeTag').textContent = cfg.ic+' '+cfg.label;
   $('modeHint').textContent = cfg.hint;
   renderPermBadge();   /* PM-011 前置件：顶栏权限徽标改三态（⛔ 不再拿默认值当读数显示） */
-  // 批171：通道**常显且醒目**（聊天=不出手／工作·开发=执行），并在聊天模式给出「一键切工作模式」
-  const _mt = $('modelText');
-  if(_mt){
-    const _isPA = cfg.chan==='pa';
-    _mt.textContent = _isPA ? '⛔ '+cfg.label+'（只商量 · 不出手）' : '✅ '+cfg.label+'（真执行 · '+cfg.perm+'）';
-    _mt.className = 'chanbadge ' + (_isPA ? 'pa' : 'exec');
-  }
-  const _cs = $('chanSwitch');
-  if(_cs){ _cs.style.display = (cfg.chan==='pa') ? 'inline-block' : 'none'; }
+  /* ⭐⭐ pm_1803 §一（主件）：两态「陪伴 ／ 办事」之渲 —— **唯转调** `selfdesc.js` 之 `paAxisRender`
+     （＝ 本页两态之**唯一渲出口**）。⛔ 本件 ⛔ 造辞 · ⛔ 判态 · ⛔ 二处各写 —— 其**两名之真源 ＝
+     `selfdesc.js` 之 `VAL`**（技术总监 `core\pa\gateway_routes.py:75-79` 之逐字所指）⇒ 旧书
+     「聊天 ／ 工作」＝ `pm_1804 §一.1` 之「两套辞」（⛔ 复燃）。其载入次序在 `chat.js` 之后 ⇒
+     运行时方取（`typeof` 守 ⇒ 旧页无此件亦 ⛔ 抛）。 */
+  try{ if(typeof paAxisRender === "function") paAxisRender(); }catch(e){}
   const ph = { chat:'就事论事：目标 / 决策 / 口径 / 审美 / 在意的点…', work:'要办的活：文档、表格、浏览器、图文、演示…', dev:'要开发/修改/验证的代码或工程…' };
   $('input').placeholder = ph[m] || '描述你的目标…';
   if(cfg.chan==='pa'){ $('timeline').classList.remove('show'); stopPlanTimer(); }

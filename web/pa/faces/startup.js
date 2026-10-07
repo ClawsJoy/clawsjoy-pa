@@ -181,10 +181,36 @@ function paPrepView(h, ctx){
 }
 
 /* 渲（**唯此一处**写 `#paPrep`）—— 幂等：⛔ 加节点 · 唯改文本 ／ 宽 ／ display。 */
+/* ⭐⭐ pm_1808 §二.3（要）：横幅之**终态** ⛔ 长挂 —— `done` 之「显报窗」（`update.js` 之
+   `PA_UPD_RECENT_S` ＝ 3600 s · 承 pm_1693 §四.3）⛔ 动；本处只加**面之自动退**：终态入屏 ⇒
+   逾 `PA_PREP_TERM_HOLD_MS` ⇒ 自隐（其数仍在 `#paVerRow` 与折叠处 ⇒ ⛔ 丢信息）。
+   一手之证（PM · 老板屏）：更新毕（约 00:48）四十余分钟仍挂「✅ 更新已完成 · 已就绪」。
+   一处定形：本阈唯此一处（⛔ 散数）。 */
+const PA_PREP_TERM_HOLD_MS = 20000;
+let paPrepTermT = null;
+/* ⭐⭐ pm_1813 §三（要 · 一手逮）：上版之阈**形同虚设** —— 本页之钟（`paPrepTickClock` · 1 s）每跳
+   皆重渲 ⇒ 旧形「每次入此支即重设钟」⇒ **钟恒被重置 · 终态永不自退**（我一手：更新毕于 00:48，
+   至 01:50 仍挂「✅ 更新已完成 · 已就绪」，而其 `data-state` 正 ＝ `done`）。
+   ⇒ 治：阈之起算唯取**终态首次入屏之刻**（`paPrepTermAt` · 一处定形）；重渲只**读**它，⛔ 重置。
+   ⚠ 逾阈之判**每渲皆查**（钟被环境所扰亦不失退 —— ⛔ 只靠 `setTimeout`）。 */
+let paPrepTermAt = 0;
 function paPrepRender(v){
   const el = paPrepEl(); if(!el || !v) return v;
   el.setAttribute('data-state', v.state);
   el.style.display = (v.state === 'ready') ? 'none' : '';
+  /* pm_1808 §二.3 ／ pm_1813 §三：终态（done）⇒ 逾阈自退；非终态 ⇒ 清账 ＋ 撤钟（免误隐在办之相）。 */
+  if(v.state === 'done'){
+    if(!paPrepTermAt) paPrepTermAt = Date.now();          /* 终态**首次**入屏 ⇒ 起算（⛔ 重渲重置） */
+    const _left = PA_PREP_TERM_HOLD_MS - (Date.now() - paPrepTermAt);
+    if(_left <= 0){ el.style.display = 'none'; }
+    else if(!paPrepTermT){
+      paPrepTermT = setTimeout(function(){ paPrepTermT = null;
+        const _e2 = paPrepEl(); if(_e2) _e2.style.display = 'none'; }, _left);
+    }
+  } else {
+    paPrepTermAt = 0;
+    if(paPrepTermT){ clearTimeout(paPrepTermT); paPrepTermT = null; }
+  }
   const ic = document.getElementById('paPrepIc');
   if(ic) ic.textContent = PA_PREP_ICON[v.state] || '⚠';
   const tx = document.getElementById('paPrepTx'); if(tx) tx.textContent = String(v.text || '');

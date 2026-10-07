@@ -10,6 +10,13 @@
 .statusline .uis{color:var(--sub);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 .statusline .perm{color:var(--sub)}
 @media (max-width:1180px){ .statusline .uis{display:none} }
+/* —— 常驻轴栏（pm_1807 §一.1 · 两态「陪伴 ／ 办事」之宿主）——
+   ⭐ 居顶栏之下 ∧ 主面（`.main`）之上 ⇒ **首屏常驻** ⇒ ⛔ 藏于抽屉 ∧ ⛔ 被首启盒所覆（其盒锚于底）。
+   ⭐ 本栏为**空壳**：控件由 `web/pa/faces/selfdesc.js` 之 `#paModeBar` 入此 ⇒ JS 未跑 ⇒ `:empty`
+      ⇒ **不见**（⛔ 以空栏充「已接」· 承「用户看不到等于没有」之反）。 */
+.axisbar{flex-shrink:0;padding:1px 16px 0;border-bottom:1px solid var(--border);background:var(--card)}
+.axisbar:empty{display:none}
+.axisbar #paModeBar{margin:0;padding:4px 0 6px}
 
 /* —— 主面环（3 主面）—— */
 .mtabs{display:flex;gap:3px;padding:7px 16px 0;flex-shrink:0;overflow-x:auto;border-bottom:1px solid var(--border)}
@@ -34,6 +41,12 @@
   font-size:10px;line-height:1;padding:2px 6px;cursor:pointer;flex:0 0 auto}
 .today .mline .x[aria-expanded="true"]{color:var(--text);border-color:var(--blue)}
 .today .xbody{margin:6px 0 0 98px}
+/* ⭐ pm_1823 §二 ／ §三：四行之「数（`.v`）／ 源（`.w`）／ 去处（`.go`）」与「画像」之降位（`.sub`）。 */
+.today .mline .w{flex:0 0 auto;font-size:10.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38%}
+.today .mline .go{margin-left:6px;background:none;border:1px solid var(--blue);color:var(--blue);border-radius:6px;padding:1px 8px;font-size:11px;cursor:pointer;white-space:nowrap}
+.today .mline .go:hover{background:rgba(88,166,255,.14)}
+.today .xbody .go{margin-top:6px;display:block}
+.today .mline.sub{margin-top:14px;padding-top:10px;border-top:1px dashed var(--border)}
 .today .xbody .src{font-size:10.5px;color:var(--sub)}
 .today .xbody .brief{margin:6px 0 0;max-height:190px;overflow:auto;white-space:pre-wrap;font-size:11px;
   line-height:1.65;color:var(--sub);background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 10px}
@@ -182,6 +195,12 @@ details.eng>summary::-webkit-details-marker{display:none}
 details.eng>summary::before{content:"\25B8";display:inline-block;width:12px;color:var(--sub)}
 details.eng[open]>summary::before{content:"\25BE"}
 details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(--sub);white-space:pre-wrap;word-break:break-word}
+/* ⭐⭐ pm_1812 §二.1（去壳）：⒜ 云端之告之**常驻小标** ＋ 其**人话提醒**（首次 ／ 切换通道后一次）；
+   ⒝ 走径之键之折叠（`details.eng.paroute` —— 与 `selfdesc.js` 之「来源 ／ 详情」**同名不同物**
+   ⇒ 二者之 summary ⛔ 同名 · 承 pm_1813 §二.3）。 */
+details.eng.paroute{margin:0 0 5px}
+.pacloude{display:inline-block;font-size:10.5px;color:#d2991d;border:1px solid rgba(210,153,29,.45);border-radius:999px;padding:0 7px;margin:0 6px 4px 0;vertical-align:middle;cursor:default}
+.paclnote{font-size:11px;color:#d2991d;margin:0 0 5px}
 
 /* —— 输入区 · 两钮坐标分离（承 pm_1020 §二① ／ L76 之族）—— */
 /* 病（本刻）：在办时 stopBtn 入流 ⇒ sendBtn 左移 ~71px ⇒ 同坐标第二击落「停止」⇒ 误停（比重复提交更险）。
@@ -190,6 +209,10 @@ details.eng>.engbody{margin-top:3px;font-size:10.5px;line-height:1.7;color:var(-
 .composer .box > #stopBtn{order:1}
 .composer .box > #sendBtn{order:2}
 
+/* —— 聊天面之「不出手」明书 ＋ 可点之去处（pm_1801 §一 并办）——
+   ⭐ 静文（⛔ 动态猜意图）：一行小字 ＋ 一颗 chip（⇒ 与顶栏同一函数 paSysTopOpen）。 */
+.chatnohand{margin:6px 0 0;font-size:10.5px;line-height:1.9;color:var(--sub)}
+.chatnohand .chip{cursor:pointer;margin-left:3px}
 /* —— 子代理面 · 独立窗口钮（承 pm_1024 §二.3 · 按现有 .x 之形）—— */
 .ch > .pachbtn{margin-left:6px;background:none;border:1px solid var(--border);color:var(--sub);border-radius:5px;font-size:10.5px;padding:0 6px;cursor:pointer;line-height:1.6}
 .ch > .pachbtn:hover{color:var(--text);border-color:var(--blue)}

@@ -100,9 +100,12 @@ def test_K1_正控_首渲照旧前置一行():
     out = _run_more({"a": {"rec": REMOTE, "at": "2026-10-06 12:00:00",
                            "content": "BODY", "html": "<p>BODY</p>"}})
     c = out["a"]["content"]; h = out["a"]["html"]
-    assert _count(c, ROUTE) == 1, c
-    assert u"本轮经云端 · 内容将出机 · 模型 deepseek-flash" in c, c
-    assert _count(h, "data-pa-route") == 2, h          # 出机标 ＋ 走径标（二处皆带哨）
+    # ⭐ 去壳（pm_1812 §二.1）：走径 ／ 出机 二标皆入**折叠**（一处定形）
+    #    ⇒ 用户面（纯文 `content`）⛔ 载；原文照录在折叠体内（`_count(h, …) == 1`）。
+    assert _count(c, ROUTE) == 0, c
+    assert u"本轮经云端 · 内容将出机 · 模型 deepseek-flash" in h, h
+    assert _count(h, ROUTE) == 1, h
+    assert _count(h, "data-pa-route") == 1, h
 
 
 def test_K2_反控_重渲不增行():
@@ -110,11 +113,13 @@ def test_K2_反控_重渲不增行():
                              "content": "BODY", "html": "<p>BODY</p>"}})["a"]
     second = _run_more({"b": {"rec": None, "at": "",
                               "content": first["content"], "html": first["html"]}})["b"]
-    assert _count(second["content"], ROUTE) == 1, second["content"]
     assert _count(second["html"], ROUTE) == 1, second["html"]
-    # 纯文之路（无 html）：重喂以走径行开头之串 ⇒ ⛔ 再前置（boss 之「二伪行」之源）
+    assert _count(second["html"], "data-pa-route") == 1, second["html"]   # ⛔ 折上加折
+    assert second["content"] == first["content"], (first["content"], second["content"])
+    # 纯文之路（无 html）：重喂以走径行开头之串 ⇒ 摘入折叠（⛔ 再前置 · boss 之「二伪行」之源）
     plain = _run_more({"c": {"rec": None, "at": "", "content": ROUTE + UNDEF + "\nBODY"}})["c"]
-    assert _count(plain["content"], ROUTE) == 1, plain["content"]
+    assert _count(plain["html"], ROUTE) == 1, plain["html"]
+    assert plain["content"] == "BODY", plain["content"]
 
 
 # ============================ K3 拒答之标 ＋ 字面 ============================

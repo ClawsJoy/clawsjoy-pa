@@ -781,10 +781,13 @@ function paXMoreHost(){
   if(!box){
     box = document.createElement('details');
     box.className = 'mgrp'; box.id = 'paXMoreFaces'; box.open = true;
-    box.innerHTML = '<summary>④ 面 · 产品线 ／ 开机（主面环 ≤5 ⇒ 此折叠 · 各一步可达）</summary>'
+    /* ⭐ pm_1813 §二.1 ／ §二.2（要）：**令号 ⛔ 上屏 ∧ 实现细节 ⛔ 上屏** ——
+       旧书「（承 pm_裁_主面环≤5）」＝ **内部令号**；「pane 与 data-face 一字未删」＝ **实现细节**
+       ⇒ 皆改**人话**（其义一字不失：这两面收在此处 · 功能一字未减）。 */
+    box.innerHTML = '<summary>④ 面 · 产品线 ／ 开机（这两面不占主面环 ⇒ 收在此处）</summary>'
       + '<section class="msec" id="paXMoreTabs" style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 2px"></section>'
       + '<p class="mnote">源：<code>GET /v9/pa/lines</code>（产品线）｜<code>GET /v9/pa/resume</code>（开机）。'
-      + '此二面 ⛔ 占主面环（承 pm_裁_主面环≤5）· ⛔ 丢功能（pane 与 data-face 一字未删）。</p>';
+      + '这两面只是收在此处 · 功能一字未减。</p>';
     body.insertBefore(box, body.firstChild);
   }
   return document.getElementById('paXMoreTabs');

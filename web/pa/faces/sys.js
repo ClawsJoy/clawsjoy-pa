@@ -223,7 +223,25 @@ function paSysCopy(){
   if(!done) paSysFlash('已全选 —— 请按 Ctrl+C 复制');
 }
 
+/* ⭐ pm_1801 §一（主件 · 一步可达）：顶栏之「🩺 本机体检」入口 ⇒ **一处定形**于此。
+   由：老板「一头撞上（不知道它在）」⇒ 旧入口唯在「更多 ▾ → ③ 设」之内 ＝ 二级菜单。
+   本函数唯做三件（皆**已存之能** · ⛔ 新造）：开「更多」⇒ 开 ③ 组 ⇒ 展开体检面 ＋ 滚入视口。
+   ⛔ 取数（取数唯由 `paSysFetch` ⇒ 展开即取 · 幂等）；⛔ 写；⛔ 出机。再点 ⇒ 收起（幂等）。 */
+function paSysTopOpen(){
+  const box = document.getElementById('paSys');
+  const shown = !!(box && box.style.display !== 'none');
+  if(paSysRun.open && shown){ paSysOpen(); return; }   /* 已开 ⇒ 再点收起 */
+  try{ if(typeof paMore === 'function') paMore(true); }catch(e){}
+  try{ const g = document.getElementById('paMoreGrpSet'); if(g) g.setAttribute('open',''); }catch(e){}
+  if(!paSysRun.open) paSysOpen();
+  try{
+    const s = document.getElementById('paMoreSysFace');
+    if(s && s.scrollIntoView) s.scrollIntoView({block:'start'});
+  }catch(e){}
+}
+
 try{
   window.paSysOpen = paSysOpen; window.paSysScan = paSysScan; window.paSysCopy = paSysCopy;
+  window.paSysTopOpen = paSysTopOpen;
   window.paSysFetch = paSysFetch; window.paSysRender = paSysRender; window.PA_SYS_ORDER = PA_SYS_ORDER;
 }catch(e){}
