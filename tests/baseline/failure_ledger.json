@@ -265,17 +265,6 @@
    "platform": "Windows(wsl 副本)"
   },
   {
-   "id": "tests/unit/test_pa_routes.py::test_dialog_collects_fields_and_recaps",
-   "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
-   "scope": "dialog 未收字段: assert set() == {'industry', 'report_detail'}(断言在 :171)",
-   "solo_reproducible": true,
-   "evidence": "本刻(2026-10-06 · <main-repo>)单跑 1 failed(-q -p no:cacheprovider · --basetemp 在工作区内) ∧ 全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)同红 ⇒ 非批序/平台所致(断言对象是仓内源码 ／ 接口行为之字节)。承 pm_1385 §三 二约①: 补登 ⛔ ＝ 修 ⇒ 唯记其存",
-   "owner": "老板",
-   "plan": "待拍板: 先定位是守卫新口径还是重构回归, 再决定改测试 seed 还是改产品",
-   "registered": "2026-10-06",
-   "platform": "Windows(wsl 副本)"
-  },
-  {
    "id": "tests/unit/test_screenshot_media.py::test_media_missing_params",
    "nature": "平台无关 · 行为契约(疑似重构未完 / 守卫新口径)",
    "scope": "缺参提示与断言口径不一致: assert (False is False and 'path' in 'v9/media: 缺 session_id')(断言在 :41)",
@@ -680,6 +669,12 @@
    "nature": "平台无关 · 真病（前端 ⛔ 处理后端之状态）· ⛔ cls: env",
    "fix": "TD 39ad4ea 修（chat.js 补 seed_failed ／ approval_exempt 二态 · +15 ins）⇒ 该测今绿 ⇒ 按门之律移桶（tools/check_test_baseline.py:414）＋ pm_1410 §二 ⇒ 销登（承 pm_1402 §三 之令）",
    "evidence": "壳＝CW（本机 · 标准壳 · platform win32 · Python 3.12.10 · pytest-9.1.1 · --basetemp 置仓外 D:\\cw_tmp_out\\bas1410 · 承 pm_1410 §三.4 之新律）；批＝tests/integration/test_frontend_protocol.py ⇒ 2 passed（0.25s）；刻＝2026-10-06 11:0x；树＝b5cf608 ｜ 修＝TD 39ad4ea（web/static/js/chat.js 补 seed_failed ／ approval_exempt 二态 · +15 ins · node --check rc 0 · 底 46596caeb4dac359 ≡ HEAD blob · 落形 8431f97a83f59c71 ／ 54,950 B）⇒ 该测今绿 ⇒ 依门之律 tools/check_test_baseline.py:414（已登记而当前非失败 ⇒ 摘到 resolved）＋ pm_1410 §二 ⇒ 销登"
+  },
+  {
+   "id": "tests/unit/test_pa_routes.py::test_dialog_collects_fields_and_recaps",
+   "nature": "平台无关 · 守卫新口径（聊天⛔采集 · PM 038 §一.1 老板令）· 非回归",
+   "fix": "TD 治（pm_1625 §三.2 裁二 · 入队治）：改测试以守新口径 —— 断言回执 collected 三键恒空 ∧ ⛔「记下了」∧ 画像⛔落（旧断言「聊天即采集」已废）",
+   "evidence": "旧登 2026-10-06（owner 老板 · plan 待拍板）。本刻 TD 一手定因：core/pa/gateway_routes.py 之 pa_dialog 已撤「detect_fields ⇒ collect_fields(source=chat)」（注在案 · 聊天＝陪伴 ⇒ ⛔ 采集器）；属守卫新口径非回归 ⇒ 改测试。复跑 tests/unit/test_pa_routes.py ⇒ 绿。依门之律 tools/check_test_baseline.py:414（已登记而当前非失败 ⇒ 摘到 resolved）。"
   }
  ],
  "flaky_watch": [

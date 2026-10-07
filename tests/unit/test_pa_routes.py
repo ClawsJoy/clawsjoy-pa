@@ -165,13 +165,19 @@ def test_profile_correction_keeps_supersedes_chain(client):
 
 
 def test_dialog_collects_fields_and_recaps(client):
-    """聊天层收集：说到字段 -> 落库 + 复述一句让老板当场纠正。"""
+    """聊天层⛔采集：说字段 ⛔ 落库 ∧ ⛔ 复述（PM 038 §一.1 老板令：聊天＝陪伴）。
+
+    旧路（detect_fields ⇒ collect_fields(source="chat")）已撤 —— 见 core/pa/gateway_routes.py
+    之 pa_dialog 注；画像之显式入口 ＝ POST /v9/pa/profile（表单路）。本齿守「撤后之形」：
+    ⛔ 以聊天为采集器 ∧ 回执之 collected 三键仍在（形不变 · 前端半 pm_1091）。
+    承 pm_1625 §三.2（裁二 · 入队治）＋ tests/baseline/failure_ledger.json 之旧登。
+    """
     d = client.post("/v9/pa/dialog", json={"session_id": "s20", "text": "我是做光电的，汇报详细一点"}).get_json()
     assert d["ok"]
-    assert {w["key"] for w in d["collected"]["written"]} == {"industry", "report_detail"}
-    assert "记下了" in d["reply"] and "行业 = 光电" in d["reply"]
+    assert d["collected"] == {"written": [], "unchanged": [], "rejected": []}
+    assert "记下了" not in d["reply"]
     vals = client.get("/v9/pa/profile/schema").get_json()["values"]
-    assert vals["industry"] == "光电"
+    assert vals.get("industry") != "光电"
 
 
 def test_dialog_without_fields_does_not_recap(client):
