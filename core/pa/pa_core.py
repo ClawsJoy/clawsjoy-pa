@@ -100,6 +100,9 @@ class PaCore:
                     brain=p.get("brain"),
                     profile_brief=p.get("profile_brief", self.profile.chat_brief(p.get("text", ""))),
                     ledger_brief=p.get("ledger_brief", ""),
+                    # ⭐ 附件之本机端（pm_1847 §三）：块由 core/pa/attach.py 一处定形
+                    #   ⇒ 本层唯透传（⛔ 自判何者入体）。
+                    attach_brief=p.get("attach_brief", ""),
                     # ⭐ PM 2026-10-05 22:34 §四⒝-2：源标之透传（⛔ 本层自造值 · ⛔ 覆盖后端之判）
                     origin=p.get("origin"), grounded=p.get("grounded"),
                     answer_source=p.get("answer_source"),

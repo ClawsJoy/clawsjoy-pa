@@ -2409,7 +2409,23 @@ def register_pa_routes(app, brain=None):
                   if getattr(brain, "_is_pa_brain", False) else brain)
         # 就事论事: 把"目标/议题"一起带给对话脑, 不是闲聊
         # ⭐ PM 2026-10-05 22:34 §四⒝-2：**源标透传**（档行外加性键 · ⛔ 改答话体）
+        # ⭐⭐ 附件之本机端（pm_1847 §三 ／ pm_1852 §四.3）：`attachments:[id]`（陪伴 ／ 办事**同键同义**）
+        #   块由 `core/pa/attach.py` **一处定形**（本处唯接）：唯「文」且**逐件已勾**（`attach_out`）者入体；
+        #   图 ／ 档恒 ⛔ 入体（唯本机指路）；**缺省 ⛔ 出机** ⇒ 无 `attachments` 键 ⇒ 空块（⛔ 报错）。
+        _att_brief, _att_rep = "", None
+        _att_ids = p.get("attachments") or []
+        if _att_ids:
+            try:
+                from core.pa import attach as _AT
+                _ab = _AT.model_block(_data_dir(), _att_ids, p.get("attach_out") or [])
+                _att_brief = _ab.get("块") or ""
+                _att_rep = {"载": _ab.get("载"), "略": _ab.get("略"), "明书": _ab.get("明书"),
+                            "出机之律": _ab.get("出机之律")}
+            except Exception as _e_att:
+                _att_rep = {"载": [], "略": [], "明书": u"附件 ⛔ 入体（读源失败 —— 照实报因）",
+                            "因": u"%s: %s" % (type(_e_att).__name__, str(_e_att)[:200])}
         r = pa.handle("dialog_post", {"sid": sid, "text": text, "topic": p.get("topic"), "brain": _brain,
+                                      "attach_brief": _att_brief,
                                       "origin": p.get("origin"), "grounded": p.get("grounded"),
                                       "answer_source": p.get("answer_source")})
         reply = (r.get("dialog") or {}).get("reply") or "（PA 脑暂不可用：已记录本条，稍后可继续商量）"
@@ -2504,8 +2520,7 @@ def register_pa_routes(app, brain=None):
             _activity["recorded"] = True
         except Exception as _e_act:
             _activity["error"] = str(_e_act)[:200]
-        return ok(
-            {
+        _resp = {
                 # ⭐ pm_1478 §二：本轮之**取数刻**（回执必给 · 唯加键）——
                 #   前端走径行刻（`more.js` 探针取 `read_at || at`）之真源。
                 "read_at": _pa_read_at(),
@@ -2528,8 +2543,10 @@ def register_pa_routes(app, brain=None):
                 # ⭐ pm_1802 §一.2／§一.3：本通道**能不能动手**之结构化据（唯加键 · ⛔ 破既有）。
                 "channel": {"kind": "dialog", "acts": False, "untrue_wording": _untrue_hits},
                 "activity": _activity,
-            }
-        )
+        }
+        if _att_rep is not None:            # ⭐ 附件之本机端（唯加键 · ⛔ 破既有字段）
+            _resp["附件"] = _att_rep
+        return ok(_resp)
 
     @bp.route("/v9/pa/dialog", methods=["GET"])
     def pa_dialog_history():
@@ -4559,6 +4576,32 @@ def register_pa_routes(app, brain=None):
         out["器印"] = _code_sha16(pa_sys_act, _sa)
         return ok(out)
 
+    # ---- 附件之本机端（pm_1852 §四.3 ／ 准形 ＝ pm_1847 §三）----
+    #   ⛔ 出机：本路由**唯落本机** ⇒ `data/v9/pa/attach/<刻>/<名>`；模型侧唯取抽取之文
+    #   （`.txt .md .log .json` · 有界）且须**逐件勾**（`POST /v9/pa/dialog` 之 `attach_out`）；
+    #   图 ／ 档**恒 ⛔ 入体**（唯本机指路）。实现在 `core/pa/attach.py`（**薄壳**：本处唯接线 · ⛔ 二套判）。
+    @bp.route("/v9/pa/attach", methods=["POST"])
+    def pa_attach():
+        """附件上传（**唯本机** · `multipart/form-data` · 字段 `files` 可多）。
+
+        ⇒ `{ok, 附件:[{id,名,字节,sha16,类,落点}], 略, 落点, 唯本机, 明书}`；
+        ⛔ 出机 —— 本路唯落本机（模型侧另由 `attach_out` 逐件勾 · 见 `POST /v9/pa/dialog`）。
+        """
+        if not _loopback(request):
+            return err("附件唯本机可用（⛔ 远机）", 403)
+        from core.pa import attach as _AT
+        _fs = list(request.files.getlist("files") or []) or list(request.files.getlist("file") or [])
+        if not _fs:
+            return err("须载 files（multipart · 一件以上）", 400)
+        items = []
+        for f in _fs:
+            try:
+                items.append((f.filename or "", f.stream.read(int(_AT.MAX_FILE_BYTES) + 1)))
+            except Exception as e:
+                return err("读上传件失败：%s" % type(e).__name__, 400)
+        out = _AT.save(_data_dir(), items)
+        out["器印"] = _code_sha16(pa_attach, _AT)
+        return ok(out)
     # ---- 「今日」四行（一处出四类）—— pm_1824 §二.1 ----
     #   四类之判据**唯在** core/pa/today.py 一处（⛔ 前端各判 ⇒ 必歧）；本处唯接线（**薄壳**）。
     @bp.route("/v9/pa/today", methods=["GET"])

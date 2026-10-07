@@ -97,7 +97,7 @@ class DialogSession:
                 return r["topic"]
         return ""
 
-    def context_text(self, profile_brief="", ledger_brief=""):
+    def context_text(self, profile_brief="", ledger_brief="", attach_brief=""):
         rows = self._read()
         tail = []
         for r in rows[-6:]:
@@ -107,6 +107,10 @@ class DialogSession:
             parts.append("【老板画像】\n" + profile_brief)
         if ledger_brief:
             parts.append("【待办/跟进】\n" + ledger_brief)
+        # ⭐ 附件之本机端（pm_1847 §三 · 一处定形在 core/pa/attach.py）——
+        #   本处**唯接**（⛔ 自判何者入体）；空 ⇒ ⛔ 加块（免空标题）。
+        if attach_brief:
+            parts.append(attach_brief)
         parts.append("【本会话(%s)最近上下文】\n%s" % (self.sid, "\n".join(tail)))
         return "\n".join(parts)
 
@@ -120,10 +124,10 @@ class DialogRuntime:
         return DialogSession(sid, self.data_dir)
 
     def respond(self, sid, user_text, topic=None, brain=None, profile_brief="", ledger_brief="",
-                origin=None, grounded=None, answer_source=None):
+                attach_brief="", origin=None, grounded=None, answer_source=None):
         s = self.session(sid)
         s.post("user", user_text, topic=topic)
-        ctx = s.context_text(profile_brief, ledger_brief)
+        ctx = s.context_text(profile_brief, ledger_brief, attach_brief)
         if brain is None:
             reply = "PA(%s): 议题【%s】已记录; 待办见账本, 需要商量或分派就说。" % (sid, topic or s.latest_topic())
         else:
