@@ -326,7 +326,7 @@ def cmd_start():
     print('[OK] started pid=%d (no window) at %s  detach=%s'
           % (p.pid, time.strftime('%Y-%m-%d %H:%M:%S'), _detach))
     print('[OK] console log: %s' % console_path())
-    print('[OK] boot takes ~30s; probes fail before that')
+    print('[OK] door is open now; first-run warmup (vector model download, 2-4 min) continues in background')
     # ⭐ 058 §一.4（裁）：起服成本以**时间**记 —— 「不可用窗」＝ 停刻 → 起刻（钱面 0 ／ 用户面 0）。
     _gap_s = None
     try:

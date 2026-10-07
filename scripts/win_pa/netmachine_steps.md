@@ -13,9 +13,14 @@
 | J3 | `python -X utf8 scripts\win_pa\install_win_pa.py --go --offline --pip-install` | 立 ＋ 装（**无网**）· rc 0 | 全文 |
 | J4 | `scripts\win_pa\start_win_pa.bat` | 网关起（`127.0.0.1:5102`） | 窗之文 |
 | J5 | `python -X utf8 scripts\win_pa\probe_alive.py` | 探活之读（三态） | 全文 |
-| J6 | 开 `http://127.0.0.1:5102/pa` | 首屏 ＋ **四态**之显形（未接 ／ ⛔ 不接 ／ 不可达 ／ 陈旧） | 截屏 |
+| J6 | 开 `http://127.0.0.1:5102/pa` | 首屏 ＋ **四态**之显形（未接 ／ ⛔ 不接 ／ 不可达 ／ 陈旧）；**首启须见「正在准备」**（见下注） | 截屏 |
 | J7 | `python -X utf8 scripts\win_pa\uninstall_win_pa.py --go` | 已删 ∨「无物可卸」· rc 0 | 全文 |
 | J8 | 覆 J0（`netmachine_check.py`） | 判 ＋ **痕迹**（起后 ／ 卸后之异 —— 照实） | 全文 |
+
+⚠ **首启之「正在准备」（承 pm_1608 §二.2 ⒝）**：⭐ **门先开**（HTTP 监听先起）⇒ 页面**即刻可开**；
+但**首启 2–4 分钟**在后台准备向量模型（`all-MiniLM-L6-v2` · 约 `79 MB` · **首启须联网下载**）
+⇒ 页面此时显 **「正在准备」**（`/health` 之 `status = starting`），**属常**（⛔ 非故障）；
+**其后启动为秒级**。⚠ 若**断网** ⇒ 向量检索降级并明报，然**页面仍可开**（门先开）。
 
 ## 校验（J0 之前 · 一跳）
 

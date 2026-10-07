@@ -289,6 +289,19 @@ def probe_start(exe, payload, timeout=300):
         #   ⇒ 起服之探会把界面态快照**写进载荷**（⇒ 随 zip 入包）。令其落探之临时根（与 `APPDATA` 同族）
         #   ⇒ 随 `shutil.rmtree(tmp)` 而亡（⛔ 留痕）。
         env[u"CJ_UI_STATE"] = os.path.join(tmp, u"ui_state.json")
+        # ⭐⭐ pm_1608 §二.2 ⒞（冷启入闸 · 本件之的）：闸之面**须含冷启** —— 我一手核（pm_1608 §三）：
+        #   建机有 `%USERPROFILE%\.cache\chroma\onnx_models\all-MiniLM-L6-v2`（onnx.tar.gz 83178821 B）
+        #   ⇒ 旧闸之「起服正控」20.3 s 之过**即由此缓存** ⇒ ⛔ 见净机之首启（空缓存 ⇒ 下 ~79 MB ⇒ 数分钟不听端口）。
+        #   令：`HOME` ／ `USERPROFILE` ／ `XDG_CACHE_HOME` 指探之临时根（**空缓存**）＋ 出网指死端（**断网**）
+        #   ⇒ **正控唯二态**：⒜ 门先开 ⇒ 空缓存 ／ 断网下 `/health` 仍**速** 200（本修之证）；
+        #      ⒝ 旧序 ⇒ 起服之探必超时 ／ ⛔ 达（闸即红）。
+        env[u"USERPROFILE"] = tmp
+        env[u"HOME"] = tmp
+        env[u"XDG_CACHE_HOME"] = os.path.join(tmp, u".cache")
+        env[u"HTTP_PROXY"] = u"http://127.0.0.1:9"
+        env[u"HTTPS_PROXY"] = u"http://127.0.0.1:9"
+        env[u"ALL_PROXY"] = u"http://127.0.0.1:9"
+        env[u"NO_PROXY"] = u"127.0.0.1,localhost"
         try:
             r = run([exe, u"-X", u"utf8", pn, u"start"], cwd=payload, timeout=timeout, env=env)
             rc = r.returncode

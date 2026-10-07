@@ -12,8 +12,33 @@ from core.gateway.state_persist import _load_retrieval_cache, _persist_retrieval
 from core.lib.unified_config import unified_config
 
 
+def _serve_http(app, port):
+    u"""⭐ pm_1608 §二.2 ⒜「门先开」：HTTP 监听之唯一驻点（后台线程）。"""
+    try:
+        app.run(host="0.0.0.0", port=port, debug=False, threaded=True, use_reloader=False)
+    except Exception as _e:
+        print("[BOOT] ⛔ HTTP 监听异常终止：%s: %s" % (type(_e).__name__, _e), flush=True)
+
+
+def _wait_listen(port, timeout=30.0):
+    u"""有界等 127.0.0.1:port 可连（⛔ 长阻）：得 ⇒ 秒数；⛔ 得 ⇒ None。"""
+    import socket
+
+    _t0 = time.time()
+    while time.time() - _t0 < timeout:
+        _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _s.settimeout(0.5)
+        try:
+            if _s.connect_ex(("127.0.0.1", port)) == 0:
+                return round(time.time() - _t0, 3)
+        finally:
+            _s.close()
+        time.sleep(0.05)
+    return None
+
+
 def run_gateway_startup(app):
-    """P3-A 启动：守卫挂载 / SAG / 回填 / 队列恢复 / 脏数据清理 / 平台 / 浏览器 / run。"""
+    u"""P3-A 启动：**门先开**（监听先起）⇒ 重初始化（守卫 / SAG / 回填 / 队列 / 平台 / 浏览器）。"""
 
     # Windows 副本(2026-09-19): loopback 不得走代理。
     # 背景: config/.env:14-15 注入 HTTP_PROXY/HTTPS_PROXY=http://127.0.0.1:7890(Clash)。
@@ -24,6 +49,19 @@ def run_gateway_startup(app):
         _pv = os.environ.get(_pk, "")
         if "127.0.0.1" not in _pv:
             os.environ[_pk] = ",".join([x for x in (_pv, "127.0.0.1", "localhost", "::1") if x])
+
+    # ⭐⭐ pm_1608 §二.2 ⒜（门先开 · 本件之的）：**HTTP 监听须先起**，重初始化（向量 ／ LLM ／ KB）
+    #   一律在其后。旧序「重初始化 ⇒ app.run」令「门」被初始化堵住：净机首启须下向量模型
+    #   （all-MiniLM-L6-v2 · ~79 MB）⇒ 数分钟不听端口 ⇒ 页面 ERR_CONNECTION_REFUSED（pm_1607 §〇）。
+    #   今：监听先起（后台线程）⇒ 页面 ／ `/health` 即刻可答（`/health` 自报 status=starting）。
+    _port = unified_config.get("services.gateway.port", 5002)
+    _door = _threading.Thread(target=_serve_http, args=(app, _port), daemon=False, name="gw-http")
+    _door.start()
+    _open_s = _wait_listen(_port, timeout=30.0)
+    if _open_s is None:
+        print("[BOOT] ⚠ 门 ⛔ 开（%s 于 30 s 内 ⛔ 可连）—— 重初始化续，然页面必 ⛔ 达（见下之数行）" % _port, flush=True)
+    else:
+        print("[BOOT] 门先开：HTTP 监听已起 http://127.0.0.1:%d/ （%.1f s）" % (_port, _open_s), flush=True)
 
     from core.lib.hook_manager import HookManager
     from core.lib.startup import startup_manager
@@ -148,7 +186,7 @@ def run_gateway_startup(app):
     except Exception as _q314_exc:
         print(f"⚠ 任务脏数据清理失败: {_q314_exc}")
 
-    port = unified_config.get("services.gateway.port", 5002)
+    port = _port  # 门先开时已取（一处定形 · pm_1608 §二.2 ⒜）
     # 平台连接：启动 PlatformClient
     try:
         from core.lib.platform_client import platform
@@ -199,5 +237,6 @@ def run_gateway_startup(app):
     except Exception as _ui_exc:
         print(f"[UI_STATE] ⛔ 快照之落 ⛔ 起（{type(_ui_exc).__name__}: {_ui_exc}）")
 
-    print(f"🚀 ClawsJoy Gateway v6.0 启动在端口 {port}")
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    print(f"🚀 ClawsJoy Gateway v6.0 重初始化毕（端口 {port}）")
+    # ⭐ 门先开（pm_1608 §二.2 ⒜）：监听之线程为主 —— 主线程并之（⛔ 进程即退）
+    _door.join()
