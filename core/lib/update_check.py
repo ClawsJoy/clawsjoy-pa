@@ -15,14 +15,19 @@ u"""/health `update` 键之读数（**一处定形**）—— 承 pm_1640 §一.
   已是最新 ⇒ `{available: false, current_version, latest_version, size_bytes, files, channel, checked_at, note: "已是最新"}`
   有新版  ⇒ `{available: true, …同上…, note: ""}`
 
-⚠ 落处 ＝ `%LOCALAPPDATA%\\ClawsJoyPA\\update\\state.json`（与 `diagnostics.out_root` 同族）
+⚠ 落处 ＝ `%LOCALAPPDATA%\\ClawsJoyPA\\update\\state-<根之印>.json`（与 `diagnostics.out_root` 同族）
   ⇒ **⛔ 入装根之 `data/`**（承 pm_1620 §三.8 之铁律：升级 ⛔ 动 `data/` —— 其印 ⛔ 变）。
+⭐ **态与「根」绑定**（承 pm_1659 §二.1 —— 跨根污染 · CW 一手）：
+  **按根分片**（件名带根之印 ⇒ 二根 ⛔ 互覆）∧ 态中记 `root` ∧ 读时以「今之根」校之
+  （不符 ⇒ 视为无效 ⇒ 未查 ⇒ 重探）。由：沙箱 ／ 器 ／ 活端可共处同一 `LOCALAPPDATA`
+  ⇒ 一文件 ⇒ 沙箱之探覆活端之态 ⇒ 活端渲「已是最新」＝「未知 ⛔ 充知」之面形。
 
 以何形调用（判通 ／ 断须附）：
   python -X utf8 -B -m pytest tests/unit/test_win_pa_update_1645.py -q
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -33,11 +38,29 @@ from core.lib import build_info as BI
 from core.lib import update_manifest as UM
 from core.lib import update_source as US
 
-STATE_NAME = u"state.json"
+#: 态之件名之干（**一处定形** · pm_1659 §二.1）：`state-<根之印>.json`
+STATE_STEM = u"state"
+#: 旧形（无根之绑）—— **⛔ 读**（免跨根之误）：CW_1663 一手之「污」即落此件。
+LEGACY_STATE = u"state.json"
 #: 守护之周（秒）—— 内测之节奏（面之轮询为 30 s ⇒ 此周够鲜 ∧ 出网够疏）
 REFRESH_S = 300.0
 _boot_lock = threading.Lock()
 _started = False
+
+
+def root_of(root=None):
+    u"""今之根（**一处定形**）—— 规范化之绝对径（大小写 ／ 斜杠归一）⇒ ⛔ 空。"""
+    return os.path.abspath(os.path.normcase(str(root or US.root_dir())))
+
+
+def root_key(root=None):
+    u"""根之印（**一处定形**）—— `root_of` 之 sha256 前 16 hex ⇒ 态之件名之凭。"""
+    return hashlib.sha256(root_of(root).encode(u"utf-8")).hexdigest()[:16]
+
+
+def state_name(root=None):
+    u"""态之件名（**一处定形**）—— `state-<根之印>.json`（二根 ⇒ 二件 ⇒ ⛔ 互覆）。"""
+    return STATE_STEM + u"-" + root_key(root) + u".json"
 
 
 def out_dir(root=None, env=None):
@@ -50,7 +73,8 @@ def out_dir(root=None, env=None):
 
 
 def state_path(root=None, env=None):
-    return os.path.join(out_dir(root, env), STATE_NAME)
+    u"""态之径（**一处定形**）：`out_dir()` ⊕ `state_name(root)`。"""
+    return os.path.join(out_dir(root, env), state_name(root))
 
 
 def _read_state(root=None, env=None):
@@ -60,7 +84,12 @@ def _read_state(root=None, env=None):
             d = json.loads(fh.read())
     except Exception:                                         # noqa: BLE001 — 未见 ／ 坏 ⇒ 未查
         return None
-    return d if isinstance(d, dict) else None
+    if not isinstance(d, dict):
+        return None
+    r = d.get(u"root")
+    if r and str(r) != root_of(root):                         # 根不符 ⇒ 视为无效
+        return None
+    return d
 
 
 def _write_state(doc, root=None, env=None):
@@ -115,6 +144,7 @@ def refresh(root=None, env=None, timeout=None, now=None):
          "channel": src.get(u"channel"), "manifest_url": US.manifest_url(src),
          "current_version": cur, "latest_version": None, "size_bytes": 0, "files": 0,
          "available": False, "note": u"", "note_why": u""}
+    d[u"root"] = root_of(root)
     if doc is None:
         d["note"] = note
         d["note_why"] = why

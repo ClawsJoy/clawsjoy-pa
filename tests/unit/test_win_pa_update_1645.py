@@ -26,6 +26,8 @@ u"""pm_1645 §二 令一（甲-P0）之齿 —— 增量包之二器 ＋ `/healt
   P3 正控：`/health` 顶键含 `update`（一处读数 —— ⛔ 新端）
   P4 反控：清单若含 `data/` 之件 ⇒ 应用器**拒**（承 pm_1620 §三.8 之铁律）
   P5 正控：`make_update.plan` 之尺（⛔ 入 `tests/**` ／ `data/**` ∧ 逐件形合）
+  U9 正反控：**态与「根」绑定**（二根 ⇒ 二件 ⇒ ⛔ 互覆 · pm_1659 §二.1 ／ CW_1663）
+  U10 反控：「异根之态」投于今根 ⇒ 作「未查」（⛔ 充知）
 """
 from __future__ import annotations
 
@@ -258,6 +260,54 @@ def test_U8_非ASCII之名之取件(tmp_path):
         assert raw == u"中文之件·内容".encode(u"utf-8"), (note, why)
     finally:
         httpd.shutdown()
+
+
+def test_U9_态与根绑定_二根不互覆(tmp_path):
+    u"""pm_1659 §二.1 之齿（承 CW_1663 一手之「跨根污染」）—— 二根交叠 ⇒ ⛔ 互覆。
+
+    病：态唯落一文件 ⇒ 沙箱之探覆活端之态 ⇒ 活端渲「已是最新」（而其根无 `version.json`）。
+    治：按根分片 ∧ 态记 `root`。
+    """
+    httpd, base = _serve(tmp_path, _man_ok())
+    try:
+        a = tmp_path / u"rootA"
+        b = tmp_path / u"rootB"
+        a.mkdir()
+        b.mkdir()
+        (a / u"version.json").write_text(json.dumps({
+            u"version": u"9.0.1", u"commit": u"c", u"tree": u"t",
+            u"built_at": u"2026-10-07T00:00:00+0800", u"channel": u"internal"}),
+            encoding=u"utf-8")
+        env = _env(tmp_path, base)
+        assert UC.state_name(root=str(a)).startswith(u"state-"), UC.state_name(root=str(a))
+        assert UC.state_path(root=str(a), env=env) != UC.state_path(root=str(b), env=env)
+        fa = UC.refresh(root=str(a), env=env, timeout=3.0)
+        assert fa[u"note"] == u"已是最新", fa
+        fb = UC.refresh(root=str(b), env=env, timeout=3.0)
+        assert fb[u"available"] is True, fb
+        assert fb[u"current_version"] is None, fb
+        assert fb[u"note"] != u"已是最新", fb
+        fa2 = UC.face(root=str(a), env=env)
+        assert fa2[u"note"] == u"已是最新", (u"⛔ 互覆：A 之态被 B 所覆", fa2)
+    finally:
+        httpd.shutdown()
+
+
+def test_U10_态之根不符则作未查(tmp_path):
+    u"""反控（修前之形 ⇒ 必红）：把「异根之态」投于今根之件名 ⇒ **须作未查**（⛔ 充知）。"""
+    env = {u"LOCALAPPDATA": str(tmp_path / u"la")}
+    r = tmp_path / u"rootA"
+    r.mkdir()
+    p = UC.state_path(root=str(r), env=env)
+    Path(p).parent.mkdir(parents=True, exist_ok=True)
+    Path(p).write_text(json.dumps({u"root": str(tmp_path / u"rootB"), u"available": True,
+                                   u"latest_version": u"9.9.9", u"note": u"",
+                                   u"size_bytes": 1, u"files": 1,
+                                   u"checked_at": u"2026-10-07T00:00:00+0800"}),
+                       encoding=u"utf-8")
+    f = UC.face(root=str(r), env=env)
+    assert f[u"available"] is False, f
+    assert u"未查" in f[u"note"], f
 
 
 def test_P1_never点名():
