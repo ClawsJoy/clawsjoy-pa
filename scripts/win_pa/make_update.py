@@ -59,7 +59,10 @@ def git(root, *args, binary=False):
 
 def changed(root, base, new):
     u"""二 rev 之改（**⛔ 认重命名** —— 一律拆为 `del` ＋ `add`）⇒ `[(status, posix path)]`。"""
-    rc, out = git(root, u"diff", u"--name-status", u"--no-renames", base, new)
+    # ⚠ `core.quotepath` 默认真 ⇒ 非 ASCII 之名被 **八进制之转义**（`"scripts/\345\207..."`
+    #   ⇒ 清单之 `path` 成谎（下件必 404）—— 故**逐次关之**（真读数 · ⛔ 猜）。
+    rc, out = git(root, u"-c", u"core.quotepath=false", u"diff", u"--name-status",
+                  u"--no-renames", base, new)
     if rc != 0:
         return None, out.strip()[:300]
     rows = []
