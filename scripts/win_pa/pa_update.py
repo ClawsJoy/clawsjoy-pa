@@ -33,6 +33,41 @@ import subprocess
 import sys
 import time
 
+# ⭐ 窗隐（pm_1865 §二.1 · **一处定形**）：本层之 spawn ⇒ 一律经 `_proc`（⛔ 手写 creationflags）。
+#   由：本层器常由**无控制台之父**起（任务宿主 `svchost` ／ `DETACHED_PROCESS` 之器）⇒ 裸 spawn
+#   ⇒ Windows **新开**一个控制台窗（屏上一闪 · pm_1862 §一② ／ §一① 之一手）。
+#   真源 ＝ `core/pa/_proc.py`；本层器 `scripts/win_pa/_proc.py` ① 同目录 `import _proc`
+#   （常路）—— ⛔ 成 ⇒ ② 按**文件路径**载（⛔ 倚 sys.path · 同 `boot_resume.py:94-122` 之形）；
+#   皆败 ⇒ `None`（caller 退**本地等价** · 并落警 · ⛔ 静默）。
+def _load_proc():
+    try:
+        import _proc
+        return _proc
+    except Exception:                                     # noqa: BLE001 — 照实退下一步
+        pass
+    try:
+        import importlib.util as _ilu
+        _s = _ilu.spec_from_file_location("_win_pa_proc", os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "_proc.py"))
+        _m = _ilu.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        return _m
+    except Exception as _e:                               # noqa: BLE001 — 照实报因
+        sys.stderr.write(u"⚠ 窗隐器皆载不到（%s: %s）\n" % (type(_e).__name__, str(_e)[:120]))
+    return None
+
+
+_PROC = _load_proc()
+
+
+def run_hidden(cmd, **kw):
+    u"""本器之 spawn 出口（窗隐 · ⛔ 各处手写 creationflags）。真源载不到 ⇒ 本地等价。"""
+    if _PROC is not None:
+        return _PROC.run_hidden(cmd, **kw)
+    kw["creationflags"] = int(kw.get("creationflags", 0) or 0) | getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return subprocess.run(cmd, **kw)
+
+
 if sys.stdout is not None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -402,7 +437,7 @@ def ctl(root, act, timeout=180):
     if not os.path.isfile(p):
         return None, u"未见 %s（⛔ 起停 ⇒ 报「停而可换」之支）" % STOPPER
     try:
-        r = subprocess.run([sys.executable, u"-X", u"utf8", u"-B", p, act],
+        r = run_hidden([sys.executable, u"-X", u"utf8", u"-B", p, act],
                            cwd=(root or None),
                            capture_output=True, text=True, encoding=u"utf-8",
                            errors=u"replace", timeout=timeout)

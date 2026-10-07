@@ -36,7 +36,7 @@ u"""(甲′) Win-PA 一键安装器 —— 净机「装得上」（承 pm_1384 �
 """
 from __future__ import annotations
 
-import importlib
+import importlib.util
 import io
 import json
 import os
@@ -47,6 +47,34 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 BS = chr(92)
 VERSION = 1
+
+#: ⭐ 窗隐出口（**一处定形** · pm_1865 §二.1）：本层之 subprocess 皆经 `scripts/win_pa/_proc.py`
+#:   （其真源 ＝ `core/pa/_proc.py`）。⛔ 倚 `import _proc`（本器可能被他器**按文件路径**载 ⇒
+#:   sys.path ⛔ 定）⇒ 亦按文件路径载之；载不到 ⇒ 本地等价（并落警 · ⛔ 静默）。
+def _load_proc():
+    _p = os.path.join(HERE, "_proc.py")
+    try:
+        _s = importlib.util.spec_from_file_location("_win_pa_proc", _p)
+        _m = importlib.util.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        if callable(getattr(_m, "run_hidden", None)):
+            return _m
+        sys.stderr.write(u"⚠ 窗隐器形不符（无 run_hidden）：%s\n" % _p)
+    except Exception as _e:                                          # noqa: BLE001 — 照实报因
+        sys.stderr.write(u"⚠ 窗隐器载入失败（%s: %s）：%s\n"
+                         % (type(_e).__name__, str(_e)[:120], _p))
+    return None
+
+
+_PROC = _load_proc()
+
+
+def run_hidden(cmd, **kw):
+    u"""本器之 subprocess 出口（窗隐 · ⛔ 各处手写 creationflags）。载不到真源 ⇒ 本地等价。"""
+    if _PROC is not None:
+        return _PROC.run_hidden(cmd, **kw)
+    kw["creationflags"] = int(kw.get("creationflags", 0) or 0) | getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return subprocess.run(cmd, **kw)
 
 #: ⭐ 唯**立目录**（⛔ 写文件）—— 皆相对 ROOT；幂等之的
 DIRS = ("data", "data/tmp", "data/v9/pa", "logs")
@@ -123,13 +151,17 @@ def install_deps(wheel_dir, offline):
         cmd += ["--no-index", "--find-links", wheel_dir]
     cmd += ["-r", os.path.join(ROOT, "requirements-runtime.txt")]
     print(u"[install] pip（%s）: %s" % (u"离线" if offline else u"**须网**", u" ".join(cmd)))
+    # ⚠ **本处故意 ⛔ 走 `run_hidden`**（pm_1865 §二.1 之一处例外 · 已明书）：pip 之进度须**用户可见**，
+    #   而 `CREATE_NO_WINDOW` ⇒ 子之 stdio **断**（⛔ 承父之控制台）⇒ 用户将「⛔ 见任何输出」。
+    #   而本器**恒由可见之控制台起**（`install_pa.cmd` ／ `install_win_pa.bat`）⇒ 子承父之控制台
+    #   ⇒ **⛔ 新开窗** ⇒ ⛔ 闪（承 `_proc` 之律：旗唯「无控制台之父」下所需）。
     return subprocess.run(cmd).returncode
 
 
 def _vram():
     u"""显存（MiB）—— `nvidia-smi` 只读；⛔ 有 ⇒ (None, 人话之因)。"""
     try:
-        r = subprocess.run(["nvidia-smi", "--query-gpu=memory.total",
+        r = run_hidden(["nvidia-smi", "--query-gpu=memory.total",
                             "--format=csv,noheader,nounits"],
                            capture_output=True, timeout=25)
     except Exception as e:
@@ -252,7 +284,7 @@ def preflight_gates(offline=False, wheel_dir=None):
 def _is_registered(task):
     u"""schtasks /query（只读）—— ⛔ 例外外溢（schtasks 不在 ⇒ 视作「不在」）。"""
     try:
-        r = subprocess.run(["schtasks", "/query", "/tn", task], capture_output=True)
+        r = run_hidden(["schtasks", "/query", "/tn", task], capture_output=True)
     except Exception:
         return False
     return r.returncode == 0
@@ -261,7 +293,7 @@ def _is_registered(task):
 def _env_user_get(name):
     u"""用户级 env（`HKCU\\Environment`）之现值 —— **只读**（`reg query`）。⛔ 例外外溢。"""
     try:
-        r = subprocess.run(["reg", "query", "HKCU" + BS + "Environment", "/v", name],
+        r = run_hidden(["reg", "query", "HKCU" + BS + "Environment", "/v", name],
                            capture_output=True)
     except Exception:
         return None
@@ -310,7 +342,7 @@ def vault_item(vault_dir=None):
 
 def _apply_vault(value):
     u"""设用户级 `PA_VAULT_DIR`（`setx`）⇒ (rc, line)。caller 已校验。"""
-    r = subprocess.run(["setx", VAULT_ENV, value], capture_output=True)
+    r = run_hidden(["setx", VAULT_ENV, value], capture_output=True)
     return (0 if r.returncode == 0 else 2), \
         u"  [env] %s ⇒ %s（用户级 · rc=%s）" % (VAULT_ENV, value, r.returncode)
 
@@ -330,15 +362,57 @@ def dir_items():
     return out
 
 
+def _q(s):
+    u"""cmd 行之一段（裹半角双引号 —— 装根之径可含空格 ／ 非 ASCII）。"""
+    return u'"%s"' % s
+
+
+def silent_task_cmd(argv):
+    u"""计划任务之动作（**一处定形** · pm_1865 §二.1⒟ ⇒ 采 ⒝「既存之静默壳」）。
+
+    形：`wscript.exe //B "<此处>\\静默启动.vbs" "<exe>" "<arg>" …`（与既有 `8` 条任务同形 ——
+      一手：`\\ClawsJoy_PA_Boot` 之 XML 逐字如此）。
+
+    由（pm_1862 §一② · 我 `1863` 一手复现）：任务之宿主 ＝ `svchost.exe`（**无控制台**）⇒
+      昔以裸 `cmd /c …` 为动作 ⇒ Windows **新开**控制台（`conhost` ＋ 窗）⇒ 老板见「CMD 闪屏」。
+      `wscript.exe` 为 GUI 子系统（自身无控制台）∧ 其 `WshShell.Run(cmd, 0, True)` ＝ `SW_HIDE`
+      于 **CreateProcess 时** ⇒ 子进程之控制台**自始即隐** ⇒ 0 可见帧（壳头自书「实测 4x」）。
+
+    ⚠ ⛔ 直指 `pythonw.exe`（⒜）：`<装根>\\runtime\\pythonw.exe` 本机 ∧ 净机之装根**皆无**
+      （一手：`D:\\clawsjoy_v9\\runtime\\` 目录本身 ⛔ 在）⇒ 采 ⒝。
+
+    ⭐ **一手之测**（`D:\\pa_tmp\\flash1865_taskform.py` · 自 `pythonw` 之父逐刻采
+      「新见之**可见** console 窗」· 4 形）：
+        甲 旧形（裸 `cmd /c cd /d <根> && python … status`）⇒ **2 见**（**正控**：探器能见窗）；
+        乙 新形（`wscript //B <壳> python … status`）⇒ **0 见**；
+        丙 新形 ＋ 其**孙**裸调（`cmd /c echo`）⇒ **2 见** ⇒ ⭐ **壳唯护其直系之子 —— 孙之裸调仍闪**
+           （故 `_proc` 之窗隐出口**仍不可省** —— 二事**非**可互替）；
+        丁 对照（`pythonw -c` 内裸调）⇒ **2 见** ⇒ ⭐ **机理仍在**（⛔ 探器已瞎）。
+      ⚠ 并测：壳之子 `GetConsoleWindow() == 0` ∧ **`sys.stdout is None`** ⇒ 壳之子**无控制台 ∧ 无 stdio**
+        （⛔ 「stdio 全在」—— 我首稿之误 ／ 已自正）⇒ `python.exe` ⟷ `pythonw.exe` 于壳下**等价**；
+        取 `sys.executable` 唯因其为**注册时之解释器**（净机之 `runtime\\python.exe`）∧ 二器
+        （`boot_resume` ／ `pa_nowindow`）唯用 `print`（`stdout is None` ⇒ no-op · 一手核：二者
+        **皆无** `sys.stdout.reconfigure` · ⛔ 触 `sys.stdout.write`）。
+    """
+    vbs = os.path.join(HERE, u"静默启动.vbs")
+    return u" ".join([u"wscript.exe", u"//B", _q(vbs)] + [_q(x) for x in argv])
+
+
 def task_items():
-    u"""二任务之式（与 `ClawsJoy_PA_Boot.xml` ／ `pa_nowindow.START_TASK` 同物 · ⛔ 另造）。"""
-    _boot_cmd = u"%s -X utf8 %s" % (sys.executable, os.path.join(HERE, "boot_resume.py"))
-    _once_cmd = u"%s -X utf8 %s start" % (sys.executable, os.path.join(HERE, "pa_nowindow.py"))
+    u"""二任务之式（与 `ClawsJoy_PA_Boot.xml` ／ `pa_nowindow.START_TASK` 同物 · ⛔ 另造）。
+
+    ⭐ 动作经**静默壳**（`silent_task_cmd` · pm_1865 §二.1⒟ ⒝）：宿主 `svchost` 无控制台
+      ⇒ 裸 `cmd` ／ 裸 `python.exe` 必**新开**控制台窗（pm_1862 §一② 之真闪）⇒ 今唯 wscript。
+    """
+    _boot_argv = [sys.executable, u"-X", u"utf8", u"-B", os.path.join(HERE, "boot_resume.py")]
+    _once_argv = [sys.executable, u"-X", u"utf8", u"-B", os.path.join(HERE, "pa_nowindow.py"), u"start"]
     return [
         {"item": "task", "name": TASK_BOOT, "registered": _is_registered(TASK_BOOT),
-         "cmd": _boot_cmd, "sched": ["/sc", "minute", "/mo", "5"]},
+         "cmd": silent_task_cmd(_boot_argv), "cmd_argv": _boot_argv,
+         "sched": ["/sc", "minute", "/mo", "5"]},
         {"item": "task", "name": TASK_ONCE, "registered": _is_registered(TASK_ONCE),
-         "cmd": _once_cmd, "sched": ["/sc", "once", "/st", "00:00"]},
+         "cmd": silent_task_cmd(_once_argv), "cmd_argv": _once_argv,
+         "sched": ["/sc", "once", "/st", "00:00"]},
     ]
 
 
@@ -402,7 +476,7 @@ def render_and_maybe_apply(p, dry, register_tasks=False):
                 continue
             _cmd = ["schtasks", "/create", "/tn", t["name"], "/tr", t["cmd"],
                     "/f"] + list(t["sched"])
-            r = subprocess.run(_cmd, capture_output=True)
+            r = run_hidden(_cmd, capture_output=True)
             lines.append(u"  [task] %s -> rc=%s" % (t["name"], r.returncode))
             if r.returncode != 0:
                 rc = 2

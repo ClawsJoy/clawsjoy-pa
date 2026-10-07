@@ -40,6 +40,35 @@ import os
 import subprocess
 import sys
 
+# ⭐ 窗隐（pm_1865 §二.1）：本器由**无控制台之父**起（网关 detached ／ 任务宿主 svchost）
+#   ⇒ 裸 `subprocess` 必**新开**控制台窗（屏上一闪）。真源 ＝ `core/pa/_proc.py`
+#   （按**文件路径**载 · ⛔ `from core.pa import _proc`：`core/pa/__init__.py` 拉向量库 ⇒ 慢）。
+def _load_proc():
+    import importlib.util as _ilu
+    _p = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                      "core", "pa", "_proc.py")
+    try:
+        _s = _ilu.spec_from_file_location("_pa_proc_hidden", _p)
+        _m = _ilu.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        if callable(getattr(_m, "run_hidden", None)):
+            return _m
+    except Exception:                                             # noqa: BLE001 — 照实退本地等价
+        pass
+    return None
+
+
+_PROC = _load_proc()
+
+
+def run_hidden(cmd, **kw):
+    u"""本器之 spawn 出口（窗隐 · ⛔ 各处手写 creationflags）。真源载不到 ⇒ 本地等价。"""
+    if _PROC is not None:
+        return _PROC.run_hidden(cmd, **kw)
+    kw["creationflags"] = int(kw.get("creationflags", 0) or 0) | getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return subprocess.run(cmd, **kw)
+
+
 # ---- 动作白名单 ----
 # 只读: 只看不动, 可以放开
 READ_OPS = (
@@ -188,7 +217,7 @@ def _rpc(op, args, helper, timeout):
     env.setdefault("CODEX_HOME", _home)
     env.setdefault("CODEX_CLI_PATH_FALLBACK", _cli)
     try:
-        p = subprocess.run(
+        p = run_hidden(
             [helper], input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout, env=env
         )
     except subprocess.TimeoutExpired:

@@ -25,6 +25,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import shutil
@@ -58,6 +59,13 @@ INBOX = PADIR / "inbox"
 INBOX_DONE = INBOX / "_done"
 RESUME = PADIR / "resume.json"
 BOOTLOG = PADIR / "boot_log.jsonl"
+
+#: ⭐ 控制台日志（pm_1865 §二.1⒟ · 内移）：任务动作昔经**域外**之 `_boot_resume_silent.cmd`
+#:   （含「落 `data\tmp\boot_resume_console.log` ＋ >2 MiB 轮转」）—— 今经**静默壳**
+#:   ⇒ 直起本器（`stdout is None`）⇒ 其落日志／轮转之责须**内移**（⛔ 静默丢日志）。
+#:   ⚠ 轮转之窗（2 MiB）照旧壳（PM 2026-10-05 立）。
+CONSOLE_LOG = V9 / "data" / "tmp" / "boot_resume_console.log"
+CONSOLE_LOG_MAX = 2 * 1024 * 1024
 LEDGER = PADIR / "ledger.json"
 DISPATCH = PADIR / "dispatch.jsonl"
 NOWINDOW = V9 / "scripts" / "win_pa" / "pa_nowindow.py"
@@ -83,6 +91,71 @@ def say(msg):
 def warn(msg):
     FAILD.append(msg)
     say("⚠ " + msg)
+
+
+def _console_visible():
+    u"""是否有**可见**之控制台窗（＝人正看着）。⛔ 有 ⇒ 照旧打屏（⛔ 夺人眼）。"""
+    try:
+        import ctypes
+        h = ctypes.windll.kernel32.GetConsoleWindow()
+        return bool(h) and bool(ctypes.windll.user32.IsWindowVisible(h))
+    except Exception:                                                    # noqa: BLE001 — 照实退「不可判」
+        return False
+
+
+class _Tee(object):
+    u"""二路同写（原流 ＋ 日志件）—— 原流为 `None`（无 stdio）则**唯**落件。"""
+
+    def __init__(self, a, b):
+        self._a, self._b = a, b
+
+    def write(self, s):
+        for w in (self._a, self._b):
+            if w is not None:
+                try:
+                    w.write(s)
+                except Exception:                                        # noqa: BLE001
+                    pass
+        return len(s)
+
+    def flush(self):
+        for w in (self._a, self._b):
+            if w is not None:
+                try:
+                    w.flush()
+                except Exception:                                        # noqa: BLE001
+                    pass
+
+    def isatty(self):
+        return False
+
+
+def _tee_console_log():
+    u"""无**可见**之控制台（计划任务之静默壳 ⇒ 有控制台但窗被 `SW_HIDE` 掩）⇒ **自落** console 日志。
+
+    由（pm_1865 §二.1⒟）：任务动作改经**仓内之静默壳** ⇒ 域外之 `_boot_resume_silent.cmd`
+      （机器相关 · 含 python 之绝对径）既废 ⇒ 其「落日志 ＋ >2 MiB 轮转」须内移（⛔ 丢）。
+    ⚠ **一手之自正**（我 1866 · ⛔ 以推充证）：昔以 `sys.stdout is None` 为判 ⇒ 实测**误** ——
+      壳之子 `GetConsoleWindow() != 0` ∧ `sys.stdout` 有（皆指**隐藏**之控制台）⇒ 该判**恒不中**
+      ⇒ 日志**静默丢**（一手：`data\\tmp\boot_resume_console.log` 于新形三个任务跑后 mtime 不动）。
+      今以「窗**可见**否」为判（`IsWindowVisible`）：人正看着 ⇒ ⛔ 动（照旧打屏 ⛔ 夺人眼）；
+      否则（隐藏 ／ 无控制台 ／ 无 stdio）⇒ **二路同写**（原流 ＋ 日志件）。
+    """
+    if _console_visible():
+        return None
+    try:
+        CONSOLE_LOG.parent.mkdir(parents=True, exist_ok=True)
+        if CONSOLE_LOG.is_file() and CONSOLE_LOG.stat().st_size > CONSOLE_LOG_MAX:
+            try:
+                os.replace(str(CONSOLE_LOG), str(CONSOLE_LOG) + ".1")   # 照旧壳之 `move /y`（覆盖 .1）
+            except OSError:
+                pass
+        fh = io.open(str(CONSOLE_LOG), "a", encoding="utf-8", errors="replace")
+        sys.stdout = _Tee(getattr(sys, "stdout", None), fh)
+        sys.stderr = _Tee(getattr(sys, "stderr", None), fh)
+        return fh
+    except Exception:                                                    # noqa: BLE001 — 照实退「无日志」
+        return None
 
 
 def sha16(p):
@@ -418,6 +491,7 @@ def status(argv):
 
 
 def main():
+    _tee_console_log()                    # ⭐ 无控制台 ⇒ 自落日志（见上）
     argv = sys.argv[1:]
     if "--status" in argv:
         return status(argv)

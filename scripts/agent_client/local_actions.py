@@ -14,6 +14,35 @@ import os
 import subprocess
 import sys
 
+# ⭐ 窗隐（pm_1865 §二.1）：本器由**无控制台之父**起（网关 detached ／ 任务宿主 svchost）
+#   ⇒ 裸 `subprocess` 必**新开**控制台窗（屏上一闪）。真源 ＝ `core/pa/_proc.py`
+#   （按**文件路径**载 · ⛔ `from core.pa import _proc`：`core/pa/__init__.py` 拉向量库 ⇒ 慢）。
+def _load_proc():
+    import importlib.util as _ilu
+    _p = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                      "core", "pa", "_proc.py")
+    try:
+        _s = _ilu.spec_from_file_location("_pa_proc_hidden", _p)
+        _m = _ilu.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        if callable(getattr(_m, "run_hidden", None)):
+            return _m
+    except Exception:                                             # noqa: BLE001 — 照实退本地等价
+        pass
+    return None
+
+
+_PROC = _load_proc()
+
+
+def run_hidden(cmd, **kw):
+    u"""本器之 spawn 出口（窗隐 · ⛔ 各处手写 creationflags）。真源载不到 ⇒ 本地等价。"""
+    if _PROC is not None:
+        return _PROC.run_hidden(cmd, **kw)
+    kw["creationflags"] = int(kw.get("creationflags", 0) or 0) | getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return subprocess.run(cmd, **kw)
+
+
 ALLOWED_EXTS = {".pptx", ".ppt", ".docx", ".doc", ".xlsx", ".xls", ".pdf"}
 WPS_PROCS = ("wps.exe", "wpp.exe", "et.exe")
 # computer_use(2026-09-10, 路径C前置): 桌面级白名单动作, 桥接 Codex CUA helper。
@@ -84,7 +113,7 @@ def close_wps(params=None):
     killed = []
     for name in WPS_PROCS:
         try:
-            r = subprocess.run(["taskkill", "/IM", name, "/F"], capture_output=True, text=True, timeout=20)
+            r = run_hidden(["taskkill", "/IM", name, "/F"], capture_output=True, text=True, timeout=20)
             msg = (r.stdout or r.stderr or "").strip().replace("\n", " ")[:120]
             killed.append({"proc": name, "rc": r.returncode, "msg": msg})
         except Exception as e:
