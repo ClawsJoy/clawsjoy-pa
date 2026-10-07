@@ -4538,6 +4538,27 @@ def register_pa_routes(app, brain=None):
         out["印"] = _code_sha16(pa_sys_panel, _sf)
         return ok(out)
 
+    # ---- 本机管理（二阶段 · 授权之动作）—— pm_1852 §四.2（准形 ＝ pm_1847 §一）----
+    #   ⭐ 二段：`dry_run`（**缺省 true**）⇒ 预案 ＋ 一次性 `token`（TTL `120 s` ·
+    #   绑 `act` ／ `target` ／ **预案之印**）⇒ `dry_run:false` ＋ `token` ⇒
+    #   真跑 ⇒ 回执四件 ＋ **撤之径**。⛔ 提权静默 ／ ⛔ 出机 ／ 可撤（入 `_trash`）／ 幂等 ／ 审计。
+    #   实现在 `core/pa/sys_act.py`（**薄壳**：本处唯接线 · ⛔ 二套读者）。
+    @bp.route("/v9/pa/sys/act", methods=["POST"])
+    def pa_sys_act():
+        """本机管理之一处入口（唯本机 · ⛔ 远机 403 · ⛔ 出机）。"""
+        if not _loopback(request):
+            return err("本机管理唯本机可用（⛔ 远机）", 403)
+        from core.pa import sys_act as _sa
+        _b = request.get_json(silent=True) or {}
+        out = _sa.act(act=_b.get("act"), target=_b.get("target"),
+                      dry_run=_b.get("dry_run", True), token=_b.get("token") or "",
+                      axis=str(_b.get("axis") or "sys"), data_dir=_data_dir())
+        if not out.get("ok"):
+            return err(out.get("因") or "⛔ 未成", int(out.get("code") or 400))
+        # ⚠ 用 `器印`（⛔ `印`）—— 顶层之 `印` 是**预案之印**（绑 token）· ⛔ 覆。
+        out["器印"] = _code_sha16(pa_sys_act, _sa)
+        return ok(out)
+
     # ---- 「今日」四行（一处出四类）—— pm_1824 §二.1 ----
     #   四类之判据**唯在** core/pa/today.py 一处（⛔ 前端各判 ⇒ 必歧）；本处唯接线（**薄壳**）。
     @bp.route("/v9/pa/today", methods=["GET"])
