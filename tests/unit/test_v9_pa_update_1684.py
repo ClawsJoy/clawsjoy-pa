@@ -5,7 +5,8 @@ u"""pm_1684 §四 之齿：`POST /v9/pa/update` 之端 ＋ `core/lib/update_run.
 判据（正 ／ 反控）：
   E1 唯读（`status` ／ 缺 action）⇒ 200 ∧ `phase=idle`（明书「未跑」—— 空 ⛔ 混 缺）
   E2 反控：未知 action ⇒ 400；非本机（REMOTE_ADDR 非环回）⇒ 403（⛔ 外网）
-  E3 正控：`start` ⇒ 200 ∧ `phase=running` ∧ **起一器**（argv 逐字：器之径 ＋ `--go --json`）
+  E3 正控：`start` ⇒ 200 ∧ `phase=running` ∧ **起一器**（argv **逐字列全**：器之径 ＋
+       `--root <根> --go --json --no-restart` —— ⭐ pm_1799 §二.3⒜：「停／起服务」归壳）
   E4 ⭐反控（幂等）：再 `start`（犹 running）⇒ **⛔ 起第二支**（spawn 计数 ⛔ 增）
   E5 正控：器终为成（`finish(rc=0)`）⇒ `status` ⇒ `done`（跨「停→换→起」之可察）
   E6 反控：器终为败（`finish(rc=2)`）⇒ `status` ⇒ `failed` ∧ 明书（⛔ 冒「成」）
@@ -97,9 +98,12 @@ def test_E3_start_positive(env):
     assert d["phase"] == "running", d
     assert len(sp) == 1, sp
     argv = sp[0]["argv"]
-    assert argv[-4:] == ["--root", str(US.root_dir()), "--go", "--json"], argv
+    # ⭐ pm_1799 §二.3⒜（**逐字列全** · ⛔ 唯尾四）：页内之路**须**带 `--no-restart`
+    #   （「停／起服务」归壳）—— 昔之「默认起」（器自停自起）在净机恒败：正控 ⛔ 过 ⇒ 回滚 ⇒ rc=2。
+    assert argv[1:4] == ["-X", "utf8", "-B"], argv
+    assert argv[4].replace("\\", "/").endswith("scripts/win_pa/pa_update.py"), argv
     assert argv[0].lower().endswith("python.exe") or "python" in argv[0].lower(), argv
-    assert argv[-5].replace("\\", "/").endswith("scripts/win_pa/pa_update.py"), argv
+    assert argv[5:] == ["--root", str(US.root_dir()), "--go", "--json", "--no-restart"], argv
     assert sp[0]["kw"].get("cwd") == US.root_dir()
     # 落盘之态亦为 running（跨重启可读）
     assert UR.phase(US.root_dir())["phase"] == "running"

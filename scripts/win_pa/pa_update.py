@@ -52,6 +52,126 @@ PROBE_TICK_S = 10.0
 #: 回滚后「验旧版之服已重起」之短窗（秒）—— pm_1713 §二.2（唯「探得」方称「回」）
 RESTART_WAIT_S = 12.0
 
+#: 器之输出落件（**一处定形** · pm_1799 §二.2）：`<upd_dir>/log-<目标版>.txt`
+LOG_STEM = u"log-"
+
+
+class _Sink(object):
+    u"""器之输出**落件** ＋ 「首败」之录（**一处定形** · pm_1799 §二.1 ／ §二.2）。
+
+    由（一手 · 净机页内 `rc=2` 之查）：器之真因**全机无一处记着** ——
+      ⒜ 端起器时 `stdout=DEVNULL, stderr=DEVNULL` ⇒ 器印之 `[FAIL]` 全弃；
+      ⒝ 终态之册唯泛辞（`update_run.finish` 之默认 `note`）。
+    ⇒ 今：器**自落**其输出（端之 `DEVNULL` 弃不掉它）∧ 录**首行 `[FAIL]` 之原辞**
+      ⇒ 终态之 `note_why` 载之（逐条可查 · ⛔ 泛辞）。
+
+    ⚠ **一路一柄**：stdout ／ stderr **共**此 sink —— 二柄同写一径 ⇒ 各自之偏移互覆。
+    """
+
+    def __init__(self):
+        self.path = None
+        self.fh = None
+        self.buf = []
+        self.pending = u""
+        self.first_fail = u""
+
+    def open_at(self, path):
+        u"""落件之开（⛔ 阻器 —— 落不成 ⇒ 降「唯屏」· 照实）。"""
+        if self.fh is not None or not path:
+            return
+        self.path = path
+        try:
+            d = os.path.dirname(path)
+            if d:
+                os.makedirs(d, exist_ok=True)
+            self.fh = io.open(path, u"w", encoding=u"utf-8", newline=u"\n")
+        except OSError:
+            self.fh = None
+            return
+        try:
+            if self.buf:
+                self.fh.write(u"".join(self.buf))
+            self.buf = []
+            self.fh.flush()
+        except OSError:
+            pass
+
+    def feed(self, s):
+        if s is None:
+            return
+        if self.fh is None:
+            self.buf.append(s)
+        else:
+            try:
+                self.fh.write(s)
+                self.fh.flush()
+            except OSError:
+                pass
+        self._scan(s)
+
+    def _scan(self, s):
+        u"""录**首行** `[FAIL]`（原辞 · 一处）。"""
+        t = self.pending + s
+        lines = t.split(u"\n")
+        self.pending = lines.pop()
+        for l in lines:
+            if l.lstrip().startswith(u"[FAIL]") and not self.first_fail:
+                self.first_fail = l.strip()
+
+    def flush(self):
+        if self.fh is not None:
+            try:
+                self.fh.flush()
+            except OSError:
+                pass
+
+    def close(self):
+        self.flush()
+        if self.fh is not None:
+            try:
+                self.fh.close()
+            except OSError:
+                pass
+            self.fh = None
+
+
+_SINK = _Sink()
+
+
+class _Tee(object):
+    u"""原流 ＋ sink 之双写（**唯此一处** · 承「一处定形」）。"""
+
+    encoding = u"utf-8"
+    errors = u"replace"
+
+    def __init__(self, stream, sink):
+        self.stream = stream
+        self.sink = sink
+
+    def write(self, s):
+        try:
+            self.stream.write(s)
+        except Exception:                                     # noqa: BLE001 — 屏 ⛔ 阻器
+            pass
+        self.sink.feed(s)
+        return len(s) if s else 0
+
+    def flush(self):
+        try:
+            self.stream.flush()
+        except Exception:                                     # noqa: BLE001
+            pass
+        self.sink.flush()
+
+    def isatty(self):
+        try:
+            return bool(self.stream.isatty())
+        except Exception:                                     # noqa: BLE001
+            return False
+
+    def fileno(self):
+        return self.stream.fileno()
+
 
 def _add_core(root):
     for p in (root, HERE):
@@ -62,6 +182,59 @@ def _add_core(root):
 def say(i, n, msg, t0=None):
     el = (u"（%.1f s）" % (time.time() - t0)) if t0 else u""
     print(u"[更新] %d/%d %s%s" % (i, n, msg, el), flush=True)
+
+
+#: 器之「败于何处」＋「是否已动盘」（**一处定形** · pm_1799 §二.1）
+#:   —— 终态之 note ／ note_why 由此出：⛔ 泛辞（承「失败即报根」）。
+_DIAG = {u"step": u"", u"from": None, u"to": None, u"touched": False, u"rolled_back": False}
+
+
+def mark(step):
+    u"""记「今在何步」（败时即报之 · ⛔ 事后追猜）。"""
+    _DIAG[u"step"] = step
+
+
+def fail_why(rc):
+    u"""终态之「因」（**逐条可查** · pm_1799 §二.1）：败于何步 ＋ 首行 `[FAIL]` 之原辞
+    ＋ 是否已动盘／已回滚 ＋ rc ＋ 日志之径（⛔ 泛辞）。"""
+    if int(rc) == 0:
+        return u""
+    bits = []
+    if _DIAG[u"step"]:
+        bits.append(u"败于「%s」" % _DIAG[u"step"])
+    if _SINK.first_fail:
+        bits.append(_SINK.first_fail)
+    if _DIAG[u"touched"]:
+        bits.append((u"已回滚至 %s" % (_DIAG[u"from"] or u"原态")) if _DIAG[u"rolled_back"]
+                    else u"已动盘 · ⛔ 未回滚")
+    else:
+        bits.append(u"未动盘")
+    bits.append(u"rc=%d" % int(rc))
+    if _SINK.path:
+        bits.append(u"日志：%s" % _SINK.path)
+    return u" ｜ ".join(bits)
+
+
+def final_note(rc, a):
+    u"""终态之「辞」（**如实** · pm_1799 §二.4）：成 ⇒ 「已就位 ＋ 下一步」；
+    败 ⇒ 载**败步 ＋ 回滚之实**（⛔ 含混之「若已动盘 ⇒ …」）。
+    ⚠ 自动起服之路（`--no-restart` ⛔ 给）⇒ 仍走 `update_run` 之默认辞。"""
+    if int(rc) == 0:
+        if getattr(a, u"no_restart", False):
+            return (u"已就位（%s ⇒ %s）· 请关窗重开 ClawsJoy PA（∨ 菜单「重启服务」）以生效"
+                    % (_DIAG[u"from"] or u"（旧包）", _DIAG[u"to"] or u"新册"))
+        return None
+    tail = ((u"已回滚至 %s" % (_DIAG[u"from"] or u"原态")) if _DIAG[u"rolled_back"]
+            else (u"已动盘 · ⛔ 未回滚" if _DIAG[u"touched"] else u"未动盘"))
+    return (u"未成（rc=%d）· 败于「%s」· %s"
+            % (int(rc), _DIAG[u"step"] or u"前置", tail))
+
+
+def _log_open(root, version):
+    u"""落件之开（**一处定形**）：`<upd_dir>/log-<目标版>.txt` —— ⛔ 静默（印其径）。"""
+    _SINK.open_at(os.path.join(upd_dir(root), LOG_STEM + str(version) + u".txt"))
+    if _SINK.path:
+        print(u"[更新] 器之输出落件：%s" % _SINK.path, flush=True)
 
 
 def _mark_restart(root, to_version):
@@ -365,6 +538,7 @@ def run(a):
     from core.lib import update_manifest as UM
     root = os.path.abspath(a.root)
     _add_core(root)
+    mark(u"取清单（源之声明）")
     man, note, why, src = load_manifest(a, root)
     if man is None:
         print(u"[FAIL] 清单 ⛔ 得：%s（%s）" % (note, why))
@@ -372,6 +546,9 @@ def run(a):
         return 2
     t = UM.totals(man)
     cur, cnote = cur_version(root)
+    _DIAG[u"from"] = cur
+    _DIAG[u"to"] = man[u"version"]
+    _log_open(root, man[u"version"])
     say(1, 10, u"清单：v%s（基 %s · %s）｜件 %d（add %d ／ mod %d ／ del %d）｜%d B（%.2f MB）"
         % (man[u"version"], man[u"base_version"], man[u"channel"], t[u"n"],
            t[u"add"], t[u"mod"], t[u"del"], t[u"bytes"], t[u"bytes"] / 1048576.0))
@@ -400,10 +577,12 @@ def run(a):
         return 0
     stg = a.staged or stage_dir(man[u"version"], root)
     os.makedirs(stg, exist_ok=True)
+    mark(u"逐件下（取件）")
     want, rows = fetch_all(man, src, stg)
     print(u"\n".join(rows))
     if want is None:
         return 2
+    mark(u"逐件校（sha256 ＋ size）")
     ok, rows = verify_all(man, stg)
     print(u"\n".join(rows))
     if not ok:
@@ -412,10 +591,12 @@ def run(a):
     entries = man[u"files"]
     bdir = backup_dir(man[u"version"], root)
     os.makedirs(bdir, exist_ok=True)
+    mark(u"备份（装根之外）")
     rows, rec = backup(root, entries, bdir)
     print(u"\n".join(rows))
     if not a.no_restart:
         # ⭐ pm_1790 §二.2：**停之前**落 `restart` 相位（非则停后面无从察）
+        mark(u"停服务")
         _mark_restart(root, man[u"version"])
         rc, out = ctl(root, u"stop")
         if rc is None:
@@ -431,25 +612,31 @@ def run(a):
         if not a.no_restart:
             ctl(root, u"start")
         return 2
+    mark(u"换件（原子替换）")
+    _DIAG[u"touched"] = True                # ⭐ 自此**已动盘**（败 ⇒ 必报之）
     ok, rows, done = apply_all(entries, root, stg)
     print(u"\n".join(rows))
     if not ok:
         rows = rollback(root, rec, [])
+        _DIAG[u"rolled_back"] = True            # ⭐ 回滚之实（终态须报）
         print(u"\n".join(rows))
         print(u"[FAIL] **已回滚至 `%s`**（fail-loud · 承 pm_1620 §三.5）" % (cur or u"原态"))
         if not a.no_restart:
             ctl(root, u"start")
         return 2
     if not a.no_restart:
+        mark(u"起服务")
         rc, out = ctl(root, u"start")
         # ⭐ pm_1712 §三.3⒞（「重启：成」之假绿）：起令之 rc ⛔ 为「服已起」之据 ——
         #   唯其下之探活（`probe_health`）方是；故此处 ⛔ 称「成」。
         say(9, 10, u"起服令 rc=%s%s ⇒ 待探活（⛔ 以 rc 0 称「起」）"
             % (rc, u"" if rc == 0 else u"（%s）" % out[:80]))
+        mark(u"探活（/health 正控）")
         ok, rows = probe_health(root)
         print(u"\n".join(rows))
         if not ok:
             rows = rollback(root, rec, [])
+            _DIAG[u"rolled_back"] = True        # ⭐ 回滚之实（终态须报）
             print(u"\n".join(rows))
             print(u"[FAIL] 起服之正控 ⛔ 过（起令 rc=%s）⇒ **已回滚至 `%s`**" % (rc, cur or u"原态"))
             # ⭐ pm_1713 §二.2（探败之支 ⛔ 重起 ⇒ 服留「停」之态 · 老板之面必断）：
@@ -551,6 +738,58 @@ def self_test():
     ok &= n_ok
     print(u"[%s] 正控二：`del` 目标本缺 ⇒ 备「无」∧ 删不误（`ok`=%s）"
           % (u"OK" if n_ok else u"FAIL", e_ok))
+    # ⭐ pm_1799 §二.1 ／ §二.2 ／ §二.4（**真因可读 ＋ 辞如实**）：昔之盲（一手 · 净机 rc=2）——
+    #   器之真因**全机无一处记着**：端弃器之流（`DEVNULL`）∧ 终态唯泛辞。
+    #   ⇒ 正控＋反控逐条钉之（⛔ 自陈）。
+    _ns = type("_NS", (), {"no_restart": True})()
+    n_ok = final_note(0, _ns) or u""
+    nl_ok = (u"已就位" in n_ok) and (u"关窗重开" in n_ok)
+    ok &= nl_ok
+    print(u"[%s] 正控三：成（`--no-restart`）之辞 ＝ %s" % (u"OK" if nl_ok else u"FAIL", n_ok))
+    _save = dict(_DIAG)
+    _DIAG.update({u"step": u"探活（/health 正控）", u"from": u"9.0.6", u"touched": True,
+                  u"rolled_back": True})
+    _sf = _SINK.first_fail
+    _SINK.first_fail = u"[FAIL] 起服之正控 ⛔ 过（起令 rc=0）⇒ **已回滚至 9.0.6**"
+    w_ok = fail_why(2)
+    _SINK.first_fail = _sf
+    _DIAG.update(_save)
+    wk = (u"败于「探活" in w_ok) and (u"[FAIL] 起服之正控" in w_ok) and (u"已回滚至 9.0.6" in w_ok) \
+        and (u"rc=2" in w_ok)
+    ok &= wk
+    print(u"[%s] 正控四：败因可读（%s）" % (u"OK" if wk else u"FAIL", w_ok))
+    nn = final_note(2, _ns) or u""
+    nn_ok = (u"未成（rc=2）" in nn) and (u"败于「" in nn)
+    ok &= nn_ok
+    print(u"[%s] 正控五：败之辞如实（%s）" % (u"OK" if nn_ok else u"FAIL", nn))
+    f_ok = (fail_why(0) == u"")
+    ok &= f_ok
+    print(u"[%s] 反控一：rc=0 ⇒ ⛔ 报因（空 · 免泛辞）" % (u"OK" if f_ok else u"FAIL"))
+    z_ok = final_note(0, type("_NS", (), {"no_restart": False})()) is None
+    ok &= z_ok
+    print(u"[%s] 反控二：自动起服之路 ⇒ **⛔ 夺** `update_run` 之辞（返 None）" % (u"OK" if z_ok else u"FAIL"))
+    _sink = _Sink()
+    _lp = os.path.join(tmp, u"log-9.0.1.txt")
+    _sink.open_at(_lp)
+    _sink.feed(u"[更新] 1/10 明细\n")
+    _sink.feed(u"[FAIL] 印 ⛔ 合：core/a.txt（期 x ／ 实 y · 2 B）\n")
+    _sink.feed(u"尾话\n")
+    _sink.close()
+    _body = io.open(_lp, encoding=u"utf-8").read() if os.path.isfile(_lp) else u""
+    l_ok = (u"[FAIL] 印 ⛔ 合：core/a.txt" in _body) and (u"尾话" in _body) \
+        and (_sink.first_fail == u"[FAIL] 印 ⛔ 合：core/a.txt（期 x ／ 实 y · 2 B）")
+    ok &= l_ok
+    print(u"[%s] 正控六：输出落件（%s · %d B · 首败 ＝ %s）"
+          % (u"OK" if l_ok else u"FAIL", _lp, len(_body.encode(u"utf-8")), _sink.first_fail))
+    _w1 = os.path.join(tmp, u"log-a.txt")
+    _w2 = _Sink()
+    _w2.open_at(_w1)
+    _w2.feed(u"[FAIL] 早\n")
+    _w2.feed(u"[FAIL] 晚\n")
+    _w2.close()
+    w2_ok = (_w2.first_fail == u"[FAIL] 早")
+    ok &= w2_ok
+    print(u"[%s] 反控三：**首**行 FAIL（⛔ 末行）—— 首 ＝ %s" % (u"OK" if w2_ok else u"FAIL", _w2.first_fail))
     return 0 if ok else 2
 
 
@@ -596,6 +835,18 @@ def main(argv=None):
     _add_core(root)
     if a.self_test:
         return self_test()
+    # ⭐ pm_1799 §二.2（**器之输出落件**）：端以 `DEVNULL` 起本器 ⇒ 昔之 FAIL 全弃
+    #   ⇒ 真因无一处可查（净机 rc=2 之病）。今本器**自落**其输出（原流 ＋ sink）⇒ 端弃不掉。
+    _so, _se = sys.stdout, sys.stderr
+    sys.stdout, sys.stderr = _Tee(_so, _SINK), _Tee(_se, _SINK)
+    try:
+        return _real_main(a, root)
+    finally:
+        sys.stdout, sys.stderr = _so, _se
+        _SINK.close()
+
+
+def _real_main(a, root):
     # ⭐ pm_1684 §四：器为「跑」之态之**唯一写方**
     #   （起 ⇒ running；终 ⇒ done ／ failed）—— 端（`POST /v9/pa/update`）唯读之
     #   ⇒ 跨「停 → 换 → 起」可察终态（网关自停 ⇒ 本进程内 ⛔ 可察）。
@@ -622,7 +873,11 @@ def main(argv=None):
         print(u"[失败] 器崩（%s: %s）⇒ 相位已收（落 failed · 免得面长挂「正在重启」）"
               % (type(_e_run).__name__, _e_run), flush=True)
     if _ur is not None:
-        _ur.finish(root, rc)
+        # ⭐ pm_1799 §二.1 ／ 承 pm_1790 §二.3（**to 起时定死**）：清单一旦取到 ⇒ `to` 即其版；
+        #   `--no-restart` 之路 ⛔ 走 `restart()` ⇒ 昔 `to` 落回「今之盘号」＝ `from`
+        #   ⇒ 「从哪升到哪」不可考（9.0.7 ⇒ 9.0.7 之假记）。
+        _ur.finish(root, rc, note=final_note(rc, a), note_why=fail_why(rc),
+                   to_version=(_DIAG[u"to"] or None))
     _tail(a, rc, _t0)                                        # ⭐ 尾话：随版本更新（承 pm_1762 §二.2）
     return rc
 
