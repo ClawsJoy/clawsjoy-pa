@@ -2117,6 +2117,53 @@ def register_pa_routes(app, brain=None):
         print("[PA_LOCAL_CLIENT] 已请求启动桌面 agent_client user=%s（参数硬编码，未接受前端输入）" % uid)
         return ok({"started": True, "hint": "已在 Windows 侧启动；等 5~20 秒，状态会自动变为已连接"})
 
+    # ---- pm_1684 §四（契约）：更新之「动」之端 —— 读一处（/health）· 动分端 ----
+    @bp.route("/v9/pa/update", methods=["POST"])
+    def pa_update_run():
+        u"""更新之「动」（承 pm_1684 §四 契约 · 一处定形）。
+
+        体 `{"action": "start"}` ⇒ 起一支（**幂等**：已在跑 ⇒ 回 `running` ∧ ⛔ 起第二支）；
+        体 `{"action": "status"}` ∨ 缺 ⇒ **唯读**（⛔ 副作用 —— 面之轮询用之）。
+        回 `{ok, phase, note, note_why, …}`；`phase ∈ idle ／ running ／ done ／ failed`。
+        ⚠ `idle` ＝ 本席之补（pm_1684 之枚举唯三；「未曾跑」须有一值 —— 空 ⛔ 混 缺）。
+        唯本机（⛔ 外网）；正式期须**一次性令牌** —— 复用 `provider_keys` 之形（**记债**）。
+        器之状**落盘**（`core/lib/update_run.py`）⇒ 跨「停 → 换 → 起」可察终态
+          （网关自停 ⇒ 其进程内 ⛔ 可察 ⇒ 唯盘上之态可读）。
+        """
+        import subprocess as _sp
+        import sys as _sys
+
+        from core.lib import update_run as _UR
+        from core.lib import update_source as _US
+
+        if not _loopback(request):
+            return err("此端唯本机可用（来源 %s）" % (request.remote_addr or "?"), 403)
+        body = request.get_json(silent=True) or {}
+        act = str(body.get("action") or "status").strip().lower()
+        if act not in ("start", "status"):
+            return err("未知之 action：%s（唯 start ／ status）" % (act or "—"), 400)
+        root = _US.root_dir()
+        if act == "start" and _UR.phase(root).get("phase") != "running":
+            _UR.begin(root)                                   # 起态先落 ⇒ 轮询即见 running
+            argv = [_sys.executable, u"-X", u"utf8", u"-B",
+                    os.path.join(root, u"scripts", u"win_pa", u"pa_update.py"),
+                    u"--root", root, u"--go", u"--json"]
+            # 起法与 `pa_nowindow.cmd_start` 同族（`NO_WINDOW ｜ DETACHED ｜ BREAKAWAY`）：
+            #   器须**后于**网关而存 —— 其第 ⑥ 步即「停网关」⇒ ⛔ 随之亡。
+            _fl = (getattr(_sp, "DETACHED_PROCESS", 0)
+                   | getattr(_sp, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000))
+            try:
+                _proc.popen_hidden(argv, cwd=root, stdin=_sp.DEVNULL,
+                                   stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, creationflags=_fl)
+            except OSError:                                   # BREAKAWAY ⛔ 许（本进程在 job 中）⇒ 退
+                try:
+                    _proc.popen_hidden(argv, cwd=root, stdin=_sp.DEVNULL,
+                                       stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
+                except Exception as _e_up:                    # noqa: BLE001 — 照实报因
+                    _UR.finish(root, rc=2, note_why=u"%s: %s" % (type(_e_up).__name__, _e_up))
+                    return err("起器⛔ 成：%s" % _e_up, 500)
+        return ok(_UR.phase(root), 印=_code_sha16(pa_update_run, _UR))
+
     @bp.route("/v9/pa/context", methods=["GET"])
     def pa_context():
         pa = _core(request.args.get("user_id"))

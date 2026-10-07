@@ -265,15 +265,36 @@ def rollback(root, rec, rows):
     return rows
 
 
-def probe_health(port=None, wait_s=HEALTH_WAIT_S):
-    u"""探 `/health`（**起服之正控**）⇒ `(ok, rows)`；⛔ 得 ⇒ 照实报因 ＋ 去处。"""
+def _root_port(root):
+    u"""`<root>` 之端口（**与根绑定** · 一处定形）—— 唯取真源之薄径读（`port_lite`）；
+    ⛔ 以进程之 CWD 之配置充之（见 `probe_health` 之病）。⛔ 得 ⇒ raise。"""
+    import port_lite
+    return port_lite.read_port(root)
+
+
+def probe_health(root, port=None, wait_s=HEALTH_WAIT_S):
+    u"""探 `<root>` 之 `/health`（**起服之正控**）⇒ `(ok, rows)`；⛔ 得 ⇒ 照实报因 ＋ 去处。
+
+    ⭐ **端口与「根」绑定**（承 pm_1684 §一 一手所逮之跨根险 · TD f202f89）：
+      昔之误 —— `port = gateway_port()` 经 `unified_config`，其按 **CWD** 解件 ⇒
+      器自他处起（沙箱副本 · 端口 8994）而 CWD 在活端之树 ⇒ 竟探 `5102`（**活端之答**）
+      ⇒ 「他根之健康」充「本根之正控」＝「未知 ⛔ 充已知」之族
+      ⇒ 正控假绿；反则活端不答 ⇒ 假红（无端回滚）。
+      今唯取 `<root>` 之薄径读（`port_lite.read_port(root)` —— ⛔ CWD ／ ⛔ env ／ ⛔ 字面）。
+      显式 `port` ⇒ 仍优先（供齿 ／ 试）。
+    ⭐ **身份对证**（`/health.build.path` ⟷ `<root>/version.json`）：端口若为他根之服所占
+      （同端口之二根）⇒ 一问即辨 —— 不符 ⇒ **拒**（⛔ 以其健康充本根之正控）。
+    """
     import urllib.request
-    try:
-        from core.lib.port_config import gateway_port
-        port = port or gateway_port()
-    except Exception:                                         # noqa: BLE001 — 回落
-        port = port or 5102
+    if port is None:
+        try:
+            port = _root_port(root)
+        except Exception as e:                                # noqa: BLE001 — fail-loud
+            return False, [u"[FAIL] 端口取不得（须与根绑定）：%s: %s ⇒ 去处：看 %s"
+                           % (type(e).__name__, e,
+                              os.path.join(root, u"config", u"system", u"system_unified.yaml"))]
     url = u"http://127.0.0.1:%s/health" % port
+    want = os.path.normcase(os.path.join(root, u"version.json"))
     t0 = time.time()
     rows = [u"[..] 探 %s（窗 %.0f s）" % (url, wait_s)]
     last = u""
@@ -281,6 +302,11 @@ def probe_health(port=None, wait_s=HEALTH_WAIT_S):
         try:
             with urllib.request.urlopen(url, timeout=5.0) as r:
                 d = json.loads(r.read().decode(u"utf-8"))
+            got = (d.get(u"build") or {}).get(u"path")
+            if got and os.path.normcase(str(got)) != want:
+                rows.append(u"[FAIL] 探得之服⛔ 本根：/health.build.path=%s ⟷ 本根 %s"
+                            u" ⇒ 拒（⛔ 以他根之健康充本根）" % (got, want))
+                return False, rows
             rows.append(u"[OK] /health 200 ｜status=%s ｜version=%s ｜%.1f s"
                         % (d.get(u"status"), d.get(u"version"), time.time() - t0))
             return True, rows
@@ -372,7 +398,7 @@ def run(a):
     if not a.no_restart:
         rc, out = ctl(root, u"start")
         say(9, 10, u"重启：%s" % (u"成" if rc == 0 else u"⚠ rc=%s（%s）" % (rc, out[:80])))
-        ok, rows = probe_health()
+        ok, rows = probe_health(root)
         print(u"\n".join(rows))
         if not ok:
             rows = rollback(root, rec, [])
@@ -432,10 +458,26 @@ def main(argv=None):
     ap.add_argument(u"--json", action="store_true")
     ap.add_argument(u"--self-test", action="store_true")
     a = ap.parse_args(argv)
-    _add_core(os.path.abspath(a.root))
+    root = os.path.abspath(a.root)
+    _add_core(root)
     if a.self_test:
         return self_test()
-    return run(a)
+    # ⭐ pm_1684 §四：器为「跑」之态之**唯一写方**
+    #   （起 ⇒ running；终 ⇒ done ／ failed）—— 端（`POST /v9/pa/update`）唯读之
+    #   ⇒ 跨「停 → 换 → 起」可察终态（网关自停 ⇒ 本进程内 ⛔ 可察）。
+    #   ⚠ 惟真办（`--go`）落态：干跑 ⛔ 占「跑」之名（承「一名一义」）。
+    _ur = None
+    if a.go:
+        try:
+            from core.lib import update_run as _ur                       # noqa: N806
+        except Exception:                                             # noqa: BLE001 — 态 ⛔ 阻器
+            _ur = None
+    if _ur is not None:
+        _ur.begin(root)
+    rc = run(a)
+    if _ur is not None:
+        _ur.finish(root, rc)
+    return rc
 
 
 if __name__ == u"__main__":
