@@ -254,7 +254,14 @@ def rollback(root, rec, rows):
                 back += 1
         except Exception as ex:                               # noqa: BLE001 — 照实报因
             rows.append(u"    ⚠ 复原 %s 败：%s" % (it[u"path"], type(ex).__name__))
-    rows.append(u"[回滚] 已复原 %d 件" % back)
+        # ⚠ 原子替换之半成品（`<件>.new`）⇒ 一并清（本席一手 · 沙箱反控 P2 所见：
+        #   回滚毕而 `.new` 独留 ⇒ 「树净」⛔ 全）。
+        try:
+            if os.path.isfile(tgt + u".new"):
+                os.remove(tgt + u".new")
+        except Exception:                                     # noqa: BLE001 — 残件⛔ 阻回滚
+            pass
+    rows.append(u"[回滚] 已复原 %d 件（并清 `.new` 之残）" % back)
     return rows
 
 
