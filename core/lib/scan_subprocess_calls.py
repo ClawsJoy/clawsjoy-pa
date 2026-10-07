@@ -49,6 +49,28 @@ r"""scan_subprocess_calls.py —— **别名感知之扫器**：找出一棵树�
   优先级：3 > 5 > 4 > 2 > 0（“未跑完 / 无件” ‹‘净’ ⇒ → ⛔ 得报 `0`）
   ⚠ 读件一律 `utf-8-sig`（BOM 亦纳 —— 否则 BOM 之件入「坏件」而静默漏扫）。
 
+--- ⭐ pm_1791 §三.2／§三.3（2026-10-08 · PM b136893 令）---
+  ⒜ **射程须至全仓**（昔默认唯 `core/gateway` ＝ 69 件 ⇒ **域外之裸调不可见** ＝ 假绿）：
+     以 `--root .` 扫全仓 ∧ **派生 ／ 缓存 ／ 巨树显式剪枝**（`DEFAULT_PRUNE` ＋ `--prune`，
+     **由本器正面报出** —— 承「⛔ 藏」）。⚠ **剪枝 ⛔ ＝ 豁免**：所剪者**非源码面**
+     （`dist/` 为出包产物 · `_tmp/` 为弃树）；**归档 `.py`（`_v…_日期戳.py`）⛔ 剪** ——
+     仍入「归档桶」报数（器自识其「义」）。
+  ⒝ **四分类（逐处定性）**：
+     `proc`  ＝ 经**窗隐唯一出口** `core.pa._proc`（`run_hidden` ／ `popen_hidden` ／
+               `call_hidden` ／ `popen_detached`）⇒ **合规出口**（⛔ 计 rc）；
+     `body` ＝ **出口之本体**（本件**定义**了 `run_hidden` 等门 ——
+               今唯 `core/pa/_proc.py`）⇒ 其内之裸调**即那个出口** ⇒ **豁免**
+               （⛔ 计 rc · ⛔ 靠 `--exclude` 手排 ⇒ 必漂）；
+     ⚠ **出口有三路**（`core.pa._proc` 真源 ＋ `core.lib._proc` ／ `core.gateway/_proc.py` 二薄壳）
+       ⇒ **器须认三路**（`EXIT_MODULES`）—— 唯认一路 ⇒ 另二路**不可见** ⇒ 假绿。
+     `flags` ＝ 直接调 `subprocess` 而**自写** `creationflags=` ⇒ 非裸调，然**违「⛔ 各写
+               `creationflags`」**之令（计 `带旗数` 报出 · ⛔ 计 rc —— 由：`core/pa/**` 之外
+               尚有多处合法自持旗者）；
+     `bare`  ＝ 直接调 `subprocess` 而 **⛔ 旗** ⇒ **判红**（计 rc）。
+  ⚠ **「经出口」昔不可见**（器唯认 `subprocess` 之名）⇒ 合规者 0 报 ＝ 「面不可见」之假绿；
+     今 `_proc` 之绑定亦入册（`import core.pa._proc as X` ／ `from core.pa import _proc as X`
+     ／ `from core.pa._proc import run_hidden` 三形皆识）。
+
 唯读（⛔ 写任何件）· 附印（器印 ＋ 面之印 ＋ 取数刻）· 可唯读调。
 """
 import argparse
@@ -62,6 +84,21 @@ import re
 import sys
 
 FN_NAMES = ("run", "Popen", "call", "check_output", "check_call", "getoutput", "getstatusoutput")
+#: ⭐ `_proc`「窗隐唯一出口」之诸函（一处定形 · pm_1791 §三.3）—— 经此者 ＝ **合规出口**
+PROC_FNS = ("run_hidden", "popen_hidden", "call_hidden", "popen_detached")
+#: ⭐⭐ 出口之**诸路径**（一处定形 · pm_1791 §三.2）—— 真源 ＝ `core/pa/_proc.py`；
+#:   `core/lib/_proc.py` 与 `core/gateway/_proc.py` 为**按路径载真源之薄壳**（同源 · 零循环）。
+#:   ⚠ **昔器唯认 `core.pa._proc`** ⇒ 另二壳之调用**不可见** ⇒ **假绿**（一手所速：
+#:      `core/gateway/sandbox_ops.py` 之 5 处 `_proc.run_hidden` 竟不入册 —— 而它们**已在出口上**）。
+#:   ⚠ 增删壳 ⇒ 须同步此表（且诸壳须 re-export 真源之**全部**符 —— 否则「三壳不等价」）。
+EXIT_MODULES = ("core.pa._proc", "core.lib._proc", "core.gateway._proc")
+#: 诸壳之父（`from core.X import _proc` 之形 · 与 `EXIT_MODULES` 同序）
+EXIT_PARENTS = ("core.pa", "core.lib", "core.gateway")
+#: ⭐ 剪枝（**显式列册** · ⛔ 静默 · 承「⛔ 藏」）：派生 ／ 缓存 ／ 巨树 ⇒ ⛔ 算「全仓之源码面」。
+#:   ⚠ 归档 `.py`（`_v…_日期戳`）**⛔ 入此**（另入「归档桶」报数 —— 器自识其义）。
+DEFAULT_PRUNE = (".git", "__pycache__", ".pytest_cache", ".mypy_cache", "node_modules",
+                 ".venv", "venv", "dist", "_tmp", "data", "logs", "_share", "_pm",
+                 "_deploy", "codex", ".rollback_codex", ".rollback_dsh")
 
 RC_MEAN = {
     0: u"已扫且净",
@@ -81,6 +118,19 @@ ARCHIVE_RE = re.compile(r"_v[\d._]+_\d{8}\.py$")
 def is_archive(path):
     u"""归档件之判（⛔ 唯看文件名 ⇒ ⛔ 读内容 · ⛔ 起子进程）。"""
     return bool(ARCHIVE_RE.search(os.path.basename(path)))
+
+
+def _defines_exit_body(tree):
+    u"""本件是否**定义**了「窗隐唯一出口」之诸门（`run_hidden` 等）。
+
+    ⚠ 判据取「定义」（一处定形 · 以行为定 · 非以路径名定）
+    ⇒ 其内之直接调用**即那个出口** ⇒ 豁免（⛔ 计 rc）。
+    由：出口之本体**必须**直接调 `subprocess` —— 若计之则「凡出口皆判红」。
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in PROC_FNS:
+            return True
+    return False
 
 
 def sha16(path):
@@ -134,53 +184,96 @@ def _collect_scope_aliases(tree):
                 for a in node.names:
                     if a.name in FN_NAMES:
                         scope_fnalias.setdefault(id(sc), set()).add(a.asname or a.name)
-    return parent, scope_alias, scope_fnalias
+
+    # ⭐ pm_1791 §三.3：增识「窗隐唯一出口」`core.pa._proc` 之绑定 ——
+    #   ⛔ 唯 `subprocess` 之名：经出口者亦须入册（否则「合规出口」之面**不可见** ⇒ 假绿）。
+    def _scope_of(node):
+        p = node
+        while p is not None:
+            if isinstance(p, scope_types):
+                return p
+            p = parent.get(p)
+        return tree
+
+    scope_proc = {}
+    scope_procfn = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for a in node.names:
+                if a.name in EXIT_MODULES:
+                    scope_proc.setdefault(id(_scope_of(node)), set()).add(a.asname or a.name)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0:
+            if node.module in EXIT_PARENTS:
+                for a in node.names:
+                    if a.name == "_proc":
+                        scope_proc.setdefault(id(_scope_of(node)), set()).add(a.asname or a.name)
+            elif node.module in EXIT_MODULES:
+                for a in node.names:
+                    if a.name in PROC_FNS:
+                        scope_procfn.setdefault(id(_scope_of(node)), set()).add(a.asname or a.name)
+    return parent, scope_alias, scope_fnalias, scope_proc, scope_procfn
 
 
-def _aliases_visible(node, parent, scope_alias, scope_fnalias):
-    mods, fns = set(), set()
+def _aliases_visible(node, parent, scope_alias, scope_fnalias, scope_proc, scope_procfn):
+    u"""取该节点可见之别名（subprocess 模块 ／ 其函数 ／ 出口模块 ／ 出口函数）。"""
+    mods, fns, pmods, pfns = set(), set(), set(), set()
     p = node
     while p is not None:
         mods |= scope_alias.get(id(p), set())
         fns |= scope_fnalias.get(id(p), set())
+        pmods |= scope_proc.get(id(p), set())
+        pfns |= scope_procfn.get(id(p), set())
         p = parent.get(p)
-    return mods, fns
+    return mods, fns, pmods, pfns
 
 
 def scan_file(path):
     u"""扫一件 ⇒ 调用点清单（每点：行 ／ 形 ／ 分类 ／ shell）。"""
     src = io.open(path, encoding="utf-8-sig").read()
     tree = ast.parse(src)
-    parent, sa, sf = _collect_scope_aliases(tree)
+    parent, sa, sf, sp, spf = _collect_scope_aliases(tree)
+    exit_body = _defines_exit_body(tree)
     sites = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
-        mods, fns = _aliases_visible(node, parent, sa, sf)
+        mods, fns, pmods, pfns = _aliases_visible(node, parent, sa, sf, sp, spf)
         callee = None
+        kind = None
         if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
             if node.func.value.id in mods and node.func.attr in FN_NAMES:
                 callee = node.func.value.id + "." + node.func.attr
+            elif node.func.value.id in pmods and node.func.attr in PROC_FNS:
+                # ⭐ 经「窗隐唯一出口」⇒ 合规
+                callee = node.func.value.id + "." + node.func.attr
+                kind = "proc"
         elif isinstance(node.func, ast.Name):
             if node.func.id in fns:
                 callee = node.func.id + "()"
+            elif node.func.id in pfns:
+                callee = node.func.id + "()"
+                kind = "proc"
         if callee is None:
             continue
         kw = {k.arg for k in node.keywords if k.arg}
-        has_flags = "creationflags" in kw
+        if kind is None:
+            kind = "flags" if "creationflags" in kw else "bare"
+            if kind == "bare" and exit_body:
+                kind = "body"
         sites.append({
             "line": node.lineno,
             "callee": callee,
-            "kind": "flags" if has_flags else "bare",
+            "kind": kind,
             "shell": "shell" in kw,
         })
     return sites
 
 
-def walk_tree(root, include_all=False):
+def walk_tree(root, include_all=False, prune=DEFAULT_PRUNE):
+    u"""遍历 ⇒ `.py` 之件清单。`prune` 之目录名 ⇒ **剪**（由 `main` 正面报出 · ⛔ 静默）。"""
     out = []
     for dp, dn, fn in os.walk(root):
-        dn[:] = [d for d in dn if include_all or d != "__pycache__"]
+        dn[:] = [d for d in dn if d not in prune and (include_all or d != "__pycache__")]
         for name in sorted(fn):
             if not name.endswith(".py"):
                 continue
@@ -197,6 +290,8 @@ def main(argv=None):
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--exclude", action="append", default=[], metavar="SUBSTR",
                     help=u"排除路径含此子串之件（可重 · 如 -_-exclude _proc.py ⇒ 排「唯一出口」之本体）")
+    ap.add_argument("--prune", action="append", default=[], metavar="DIR",
+                    help=u"额外剪枝之目录名（可重）—— 默认已含：%s" % u"／".join(DEFAULT_PRUNE))
     a = ap.parse_args(argv)
 
     root = os.path.abspath(a.root)
@@ -204,7 +299,8 @@ def main(argv=None):
         sys.stderr.write(u"⛔ 路径不存在（闸没跑）：%s\n" % root)
         return 3
 
-    files = walk_tree(root, a.all)
+    prune = tuple(DEFAULT_PRUNE) + tuple(x for x in a.prune if x not in DEFAULT_PRUNE)
+    files = walk_tree(root, a.all, prune)
     if a.exclude:
         files = [f for f in files if not any(x in f.replace(os.sep, "/") for x in a.exclude)]
     live = [f for f in files if not is_archive(f)]   # ⭐ 活件（判 rc 之唯一据）
@@ -218,9 +314,12 @@ def main(argv=None):
         u"排除": list(a.exclude),
         u"件数": len(files),          # ⭐ 总（活 ＋ 归档 ⇒ 与老语义同 · ⛔ 只活件）
         u"活件数": len(live),
+        u"剪枝": list(prune),
         u"调用点": [],
         u"裸调数": 0,
         u"带旗数": 0,
+        u"出口数": 0,
+        u"出口本体数": 0,
         u"shell数": 0,
         u"坏件": [],
         u"归档件数": len(arch),
@@ -240,6 +339,10 @@ def main(argv=None):
             rep[u"调用点"].append(s)
             if s["kind"] == "bare":
                 rep[u"裸调数"] += 1
+            elif s["kind"] == "proc":
+                rep[u"出口数"] += 1
+            elif s["kind"] == "body":
+                rep[u"出口本体数"] += 1
             else:
                 rep[u"带旗数"] += 1
             if s["shell"]:
@@ -280,16 +383,17 @@ def main(argv=None):
         print(u"域定义: %s" % rep[u"域定义"])
         if rep[u"排除"]:
             print(u"排除: %s" % rep[u"排除"])
-        print(u"—— 件 %d（活 %d ＋ ⭐ 归档 %d）｜ 调用点 %d ｜ 裸调 %d ｜ 带旗 %d ｜ shell=True %d ｜ 坏件 %d"
-              " ｜ ⭐ 归档豁免 %d 处（内裸调 %d）"
+        print(u"—— 件 %d（活 %d ＋ ⭐ 归档 %d）｜ 调用点 %d ｜ 裸调 %d ｜ 带旗 %d ｜ ⭐ 经出口 %d"
+              " ｜ ⭐ 出口本体 %d ｜ shell=True %d ｜ 坏件 %d ｜ ⭐ 归档豁免 %d 处（内裸调 %d）"
               % (rep[u"件数"], rep[u"活件数"], rep[u"归档件数"], len(rep[u"调用点"]), rep[u"裸调数"],
-                 rep[u"带旗数"], rep[u"shell数"], len(rep[u"坏件"]),
+                 rep[u"带旗数"], rep[u"出口数"], rep[u"出口本体数"], rep[u"shell数"], len(rep[u"坏件"]),
                  rep[u"归档豁免调用点"], rep[u"归档豁免裸调"]))
+        print(u"   剪枝（显式列册 · ⛔ 计「全仓源码面」）：%s" % u"／".join(rep[u"剪枝"]))
         if rep[u"归档坏件"]:
             print(u"   ⚠ 归档坏件 %d（⛔ 计入 rc）：%s" % (len(rep[u"归档坏件"]), rep[u"归档坏件"][0]["file"]))
         print(u"rc: %d \uff1d %s" % (rep[u"rc"], RC_MEAN.get(rep[u"rc"], u"?")))
         for s in rep[u"调用点"]:
-            tag = "BARE" if s["kind"] == "bare" else "flags"
+            tag = {"bare": "BARE", "proc": "proc(出口)", "body": "出口本体"}.get(s["kind"], "flags")
             print(u"  %-46s :%-5d %-22s [%s]%s" % (s["file"], s["line"], s["callee"], tag, " shell=True" if s["shell"] else ""))
         for b in rep[u"坏件"]:
             print(u"  ⚠ 坏件 %s: %s" % (b["file"], b["err"]))

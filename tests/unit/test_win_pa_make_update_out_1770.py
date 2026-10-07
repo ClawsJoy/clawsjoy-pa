@@ -40,7 +40,8 @@ def _run(args, out_root=None):
 
 
 def _tail(r):
-    return (r.stdout or b"").decode("utf-8", "replace")[-900:]
+    # 宽之（pm_1793：旧为 900 → 本批之 PLAN 输出已长于此 ⇒ 「缺省之径」行被切在窗外 ⇒ 误红）
+    return (r.stdout or b"").decode("utf-8", "replace")[-4000:]
 
 
 def test_正控一_缺省之出件在仓外且加版号戳():

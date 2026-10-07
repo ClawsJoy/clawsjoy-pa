@@ -191,6 +191,7 @@ def process_youtube(source_url: str, note_path: str = "", title: str = "") -> Di
         import os
         import shutil
         import subprocess
+        from core.lib import _proc as _proc_xh   # ⭐ pm_1791 §三.2：窗隐唯「_proc」出口（⛔ 裸调）
         from pathlib import Path
 
         root = _vault_root()
@@ -233,7 +234,7 @@ def process_youtube(source_url: str, note_path: str = "", title: str = "") -> Di
             str(_tmp_dir / "audio.%(ext)s"),
             _url,
         ]
-        _dl = subprocess.run(_dl_cmd, capture_output=True, text=True, timeout=120, env=_env, encoding="utf-8", errors="replace")
+        _dl = _proc_xh.run_hidden(_dl_cmd, capture_output=True, text=True, timeout=120, env=_env, encoding="utf-8", errors="replace")
         _audio_cands = list(_tmp_dir.glob("audio.*"))
         if _dl.returncode == 0 and _audio_cands:
             _audio_path = _audio_cands[0]

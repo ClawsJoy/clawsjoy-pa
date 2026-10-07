@@ -68,8 +68,42 @@ def now_date():
     return datetime.date.today().strftime("%Y-%m-%d")
 
 
+def _load_proc():
+    u"""按**文件路径**载「窗隐唯一出口」之真源（`core/pa/_proc.py`）⇒ 模块 ∨ None。
+
+    ⚠ ⛔ 走 `from core.lib import _proc`：那会执行 `core/__init__.py`（拉 `chromadb` 之族）
+      ⇒ 每次投递多 ~1.5 s ∧ 无谓副作用（承 `core/lib/_proc.py` 自述之由）。
+      真源唯依赖 `subprocess` ⇒ 按路径载 ＝ **零副作用 ／ 零环 ／ 仍单源**。
+    """
+    import importlib.util
+    p = os.environ.get("CJ_PROC_PY") or r"D:\clawsjoy_v9\core\pa\_proc.py"
+    if not os.path.isfile(p):
+        print(u"⚠ 窗隐真源不可载（%s）⇒ 退朴素形（仍并 CREATE_NO_WINDOW）" % p)
+        return None
+    spec = importlib.util.spec_from_file_location("_cj_proc", p)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+_PROC = _load_proc()
+
+
 def run(cmd):
-    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    u"""跑一条外部命令 ⇒ `(rc, out)`。
+
+    ⭐⭐ pm_1793 §二.1（**窗隐**）：昔为**裸** `subprocess.run` —— 未带 `CREATE_NO_WINDOW`
+      ⇒ 本器每次投递起 3~4 个**控制台程序**（`落台账_行` ／ `wake_send` ／ `send_receipt_log`
+      皆 `python.exe`）⇒ 每个弹一个控制台窗（`conhost`）＝ 老板所报「投递一闪」之一源。
+      ⇒ 今唯走**窗隐唯一出口**（`run_hidden` ⇒ 并 `CREATE_NO_WINDOW`）。
+    """
+    if _PROC is not None:
+        r = _PROC.run_hidden(cmd, capture_output=True, text=True,
+                             encoding="utf-8", errors="replace")
+    else:
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
+                           errors="replace",
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     return r.returncode, (r.stdout or "") + (r.stderr or "")
 
 

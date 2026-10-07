@@ -2,6 +2,7 @@
 """用户沙箱 - 安全执行环境"""
 
 import subprocess
+from core.lib import _proc as _proc_xh   # ⭐ pm_1791 §三.2：窗隐唯「_proc」出口（⛔ 裸调）
 import tempfile
 import os
 import re
@@ -29,7 +30,7 @@ class UserSandbox:
                 f.write(code)
                 temp_file = f.name
             
-            result = subprocess.run(
+            result = _proc_xh.run_hidden(
                 ['python3', temp_file],
                 capture_output=True,
                 text=True,
@@ -72,7 +73,7 @@ class UserSandbox:
             return {"success": False, "error": f"命令 {cmd_name} 不允许执行"}
         
         try:
-            result = subprocess.run(
+            result = _proc_xh.run_hidden(
                 cmd.split(),
                 capture_output=True,
                 text=True,

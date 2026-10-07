@@ -2150,11 +2150,11 @@ def register_pa_routes(app, brain=None):
                     u"--root", root, u"--go", u"--json"]
             # 起法与 `pa_nowindow.cmd_start` 同族（`NO_WINDOW ｜ DETACHED ｜ BREAKAWAY`）：
             #   器须**后于**网关而存 —— 其第 ⑥ 步即「停网关」⇒ ⛔ 随之亡。
-            _fl = (getattr(_sp, "DETACHED_PROCESS", 0)
-                   | getattr(_sp, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000))
+            # pm_1791 §三.3：⛔ 于调用处手写 `creationflags` —— 旗唯 `_proc`
+            #   一处定形（`_proc.DETACH_FLAGS` · 承「窗隐唯 `_proc` 出口」）。
             try:
-                _proc.popen_hidden(argv, cwd=root, stdin=_sp.DEVNULL,
-                                   stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, creationflags=_fl)
+                _proc.popen_detached(argv, cwd=root, stdin=_sp.DEVNULL,
+                                     stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
             except OSError:                                   # BREAKAWAY ⛔ 许（本进程在 job 中）⇒ 退
                 try:
                     _proc.popen_hidden(argv, cwd=root, stdin=_sp.DEVNULL,

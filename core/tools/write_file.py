@@ -196,8 +196,8 @@ class WriteFilePlugin(ToolPlugin):
                     original_lines[line - 1] = content_str
                 _emit_vault_safe(target, "\n".join(original_lines))
                 if str(target).endswith('.js'):
-                    import subprocess as _sp
-                    _result = _sp.run(['node', '-c', str(target)], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
+                    from core.lib import _proc as _proc_xh   # ⭐ pm_1791 §三.2：窗隐唯「_proc」出口
+                    _result = _proc_xh.run_hidden(['node', '-c', str(target)], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
                     if _result.returncode != 0:
                         _emit_vault_safe(target, "\n".join(original_lines))
                         _key = str(target)

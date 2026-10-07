@@ -121,7 +121,11 @@ def _parts(dom: bool = False) -> list:
         _decl(s, u"const PA_PREP_ICON"), _decl(s, u"const PA_UPD_BUSY"),
         _fn(s, u"paPrepNum"), _fn(s, u"paPrepMB"), _fn(s, u"paPrepMeasuredNote"),
         _decl(t, u"const PA_UPD_SRC"), _decl(t, u"const PA_UPD_POST"),
-        _decl(t, u"const PA_UPD_RECENT_S"), _block(t, u"const PA_UPD_PHASE = {", u"};"),
+        _decl(t, u"const PA_UPD_RECENT_S"),
+        _decl(t, u"const PA_UPD_PENDING_KEY"), _decl(t, u"const PA_UPD_WINDOW_S"),
+        _decl(t, u"const PA_UPD_RETRY_MS"), _decl(t, u"const PA_UPD_RETRY_MAX_MS"),
+        _decl(t, u"const PA_UPD_RECOVER_S"),
+        _block(t, u"const PA_UPD_PHASE = {", u"};"),
         _decl(t, u"const PA_UPD_LOG"), _decl(t, u"const PA_UPD_OUTLET"),
         _decl(t, u"const PA_UPD_OUTLET_SELF"),
         _fn(t, u"paUpdAgeS"), _fn(t, u"paUpdView"), _fn(t, u"paUpdVerText"),
@@ -132,6 +136,7 @@ def _parts(dom: bool = False) -> list:
             _fn(t, u"paUpdCurFromHealth"), _fn(t, u"paUpdVerRender"), _fn(t, u"paUpdBtnRender"),
             _decl(t, u"const paUpdRun"),
             _fn(t, u"paUpdApply"), _fn(t, u"paUpdSetInterval"), _fna(t, u"paUpdPost"),
+            _fn(t, u"paUpdMarkRead"), _fn(t, u"paUpdMarkWrite"), _fn(t, u"paUpdWhyRender"),
             _fna(t, u"paUpdFetch"), _fna(t, u"paUpdGo"),
         ]
     return out

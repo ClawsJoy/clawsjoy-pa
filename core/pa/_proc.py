@@ -42,3 +42,18 @@ def popen_hidden(cmd, **kw):
 def call_hidden(cmd, **kw):
     u"""`subprocess.call` 之窗隐替身（今无 call site ⇒ 备而不用）。"""
     return subprocess.call(cmd, **_merge_flags(kw))
+
+
+#: 脱离之旗（**一处定形** · pm_1791 §三.3）：`DETACHED_PROCESS · CREATE_BREAKAWAY_FROM_JOB`
+#:   由：器须**后于**网关而存（其第 ⑥ 步即「停网关」）⇒ 須脱离起者之 job。
+#:   ⚠ 旗之合成唯此一处（⛔ 各写 `creationflags` · 承「窗隐唯 `_proc` 出口」之令）。
+DETACH_FLAGS = (getattr(subprocess, "DETACHED_PROCESS", 0)
+                | getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000))
+
+
+def popen_detached(cmd, **kw):
+    u"""脱离之起（**一处定形**）：并 `DETACHED_PROCESS · CREATE_BREAKAWAY_FROM_JOB · CREATE_NO_WINDOW`。
+    ⚠ 调用方**已给** `creationflags` ⇒ 并（⛔ 覆盖）。
+    """
+    kw["creationflags"] = int(kw.get("creationflags", 0) or 0) | DETACH_FLAGS
+    return popen_hidden(cmd, **kw)

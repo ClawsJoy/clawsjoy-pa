@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from core.lib import _proc as _proc_xh   # ⭐ pm_1791 §三.2：窗隐唯「_proc」出口（⛔ 裸调）
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -257,7 +258,7 @@ class ProcessLedger:
             return False
         if os.name == "nt":
             try:
-                out = subprocess.run(
+                out = _proc_xh.run_hidden(
                     ["tasklist", "/FI", "PID eq %d" % pid, "/NH"],
                     capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
                 )

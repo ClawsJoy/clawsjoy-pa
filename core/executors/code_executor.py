@@ -9,6 +9,7 @@
 
 import re
 import subprocess
+from core.lib import _proc as _proc_xh   # ⭐ pm_1791 §三.2：窗隐唯「_proc」出口（⛔ 裸调）
 import tempfile
 from pathlib import Path
 
@@ -78,7 +79,7 @@ class CodeExecutor:
             temp_file = f.name
 
         try:
-            result = subprocess.run(
+            result = _proc_xh.run_hidden(
                 ["python3", temp_file], capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace"
             )
             output = result.stdout

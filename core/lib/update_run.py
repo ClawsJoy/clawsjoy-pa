@@ -8,9 +8,11 @@ u"""更新之「跑」之态（**一处定形** · 与「根」绑定）—— �
      ⇒ 件名带「根之印」＋ 态中记 `root` ∧ 读时校（不符 ⇒ 视为无效 ⇒ 未跑）。
 
 形（一处定形）＝ `FIELDS`：
-  phase ∈ idle ／ running ／ done ／ failed
+  phase ∈ idle ／ running ／ **restart** ／ done ／ failed
     ⚠ `idle` 为本席之补：pm_1684 §四.1 之枚举唯三（running ／ done ／ failed），
       然「未曾跑」须有一值 —— 承「空 ⛔ 混 缺」⇒ 明书「未跑」，⛔ 充「成」。
+    ⭐ `restart` 为 pm_1790 §二.2 之补（2026-10-08）：「停 → 换 → 起」之窗内，应答之服
+      **已死** ⇒ 该相位**须落盘**方得跨进程可察（否则面**无从**显「正在重启」）。
   started_at ／ ended_at ／ from ／ to ／ note ／ note_why ／ files ／ root。
 
 落处 ＝ `%LOCALAPPDATA%\\ClawsJoyPA\\update\\run-<根之印>.json`（与 `state-<根之印>.json` 同处）。
@@ -32,7 +34,9 @@ from core.lib import update_check as UC
 #: 态之件名之干（一处定形）：`run-<根之印>.json`
 STATE_STEM = u"run"
 #: 相位之枚举（一处定形）
-PHASES = (u"idle", u"running", u"done", u"failed")
+#:   ⭐ `restart`（pm_1790 §二.2）：器「停之前」落之（`restart()`）—— 由：停后服即死，
+#:     该相位唯**落盘**方得跨进程可察（⛔ 唯内存）。
+PHASES = (u"idle", u"running", u"restart", u"done", u"failed")
 #: 「running」之陈阈（秒）—— 逾此而犹 running ⇒ 视「中断之未终」
 #:   （承「取不得 ⛔ 充已知」：中断 ⇒ 明书 failed，⛔ 长挂 running 而面恒转）
 STALE_S = 1800.0
@@ -112,7 +116,26 @@ def _version(root=None):
 
 
 def begin(root=None, from_version=None, env=None):
-    u"""器之起：落 `running`（`from` ＝ 今之版）⇒ `(径, note)`。"""
+    u"""器之起：落 `running`（`from` ＝ 今之版）⇒ `(径, note)`。
+
+    ⭐ **幂等**（pm_1790 §二.3）：本函**二处**皆调 —— 端（`POST /v9/pa/update` · 起器之前）
+      与器（`pa_update.main` · 起之后）。昔器再调 ⇒ **覆** `from` ／ `started_at` ⇒
+      「起时 `from=9.0.4`、终态 `from=9.0.6`（＝ `to`）」之**不可考**（病之实：器之
+      `_version(root)` 读**新盘** ⇒ 起讫二刻同名）。
+      ⇒ 今：**已在跑（`running` ／ `restart` ∧ ⛔ 陈）⇒ 唯更相位为 `running`，
+      ⛔ 动 `from` ／ `started_at`**（承 §二.3「`from` 须起时定死」）。
+    """
+    prev = _read(root, env) or {}
+    ph = str(prev.get(u"phase") or u"")
+    if ph in (u"running", u"restart"):
+        ts = _epoch(prev.get(u"started_at"))
+        if ts is not None and (time.time() - ts) <= STALE_S:
+            doc = dict(prev)
+            doc[u"phase"] = u"running"
+            if not doc.get(u"from") and from_version is not None:
+                doc[u"from"] = from_version
+            doc[u"root"] = UC.root_of(root)
+            return write(doc, root, env)
     doc = {u"phase": u"running", u"started_at": _now(), u"ended_at": None,
            u"from": from_version if from_version is not None else _version(root),
            u"to": None, u"note": u"更新中", u"note_why": u"", u"files": None,
@@ -120,11 +143,41 @@ def begin(root=None, from_version=None, env=None):
     return write(doc, root, env)
 
 
+def restart(root=None, to_version=None, note=None, env=None):
+    u"""器之「**停前**」之相位：落 `restart` ⇒ `(径, note)`（pm_1790 §二.2）。
+
+    由（一手之病 · 老板所见「版本更新无效」）：`restart` 之相位昔**唯在器之内存** ⇒
+      器第 ⑥ 步停网关 ⇒ 应答之服**即死** ⇒ 面（`POST /v9/pa/update` 之 `action:status`）
+      **无从**问 ⇒ 那约 40 s 之空窗，面唯能显「更新面未答」。
+    ⇒ **停之前先落盘**（`restart` ＋ `from` ／ `to` ／ `started_at`）⇒ 新进程起后**续读**之
+      ⇒ 相位**跨进程可察** ⇒ 面方得显「正在重启（已等 Ns）」。
+
+    ⚠ `started_at` ／ `from` **沿用起态**（⛔ 覆 —— 承 §二.3「起时定死」）；`to` 唯在
+      显式给时落（＝ 清单之版 · 起讫可考）。
+    """
+    d = _read(root, env) or {}
+    doc = dict(d)
+    if not doc.get(u"started_at"):
+        doc[u"started_at"] = _now()
+    if not doc.get(u"from"):
+        doc[u"from"] = _version(root)
+    if to_version is not None:
+        doc[u"to"] = to_version
+    doc[u"phase"] = u"restart"
+    doc[u"ended_at"] = None
+    doc[u"note"] = note or (u"更新已就位 · 正在重启服务（%s ⇒ %s）"
+                            % (doc.get(u"from") or u"（旧包）", doc.get(u"to") or u"?"))
+    doc[u"root"] = UC.root_of(root)
+    return write(doc, root, env)
+
+
 def finish(root=None, rc=0, note=None, note_why=u"", to_version=None, env=None):
     u"""器之终：落 `done`（rc==0）／ `failed`（余）＋ `to`（今之版）⇒ `(径, note)`。"""
     d = _read(root, env) or {}
     frm = d.get(u"from")
-    to = to_version if to_version is not None else _version(root)
+    # ⭐ pm_1790 §二.3：`to` 若已定（起态之 `restart()` 所落 ＝ 清单之版）⇒ **沿用**
+    #   （⛔ 以今之盘号覆之 —— 与 `from` 同理：一旦定死，终态 ⛔ 改）。
+    to = to_version if to_version is not None else (d.get(u"to") or _version(root))
     ph = u"done" if int(rc) == 0 else u"failed"
     if note is None:
         if int(rc) == 0:
@@ -165,7 +218,8 @@ def phase(root=None, env=None, now=None):
         out[k] = d.get(k)
     out[u"note"] = d.get(u"note") or u""
     out[u"note_why"] = d.get(u"note_why") or u""
-    if out[u"phase"] == u"running":
+    # ⭐ `restart` 亦须罩陈阈（pm_1790 §二.2）：⛔ 长挂「正在重启」而面恒转。
+    if out[u"phase"] in (u"running", u"restart"):
         ts = _epoch(d.get(u"started_at"))
         t = time.time() if now is None else float(now)
         if ts is not None and (t - ts) > STALE_S:

@@ -64,6 +64,29 @@ def say(i, n, msg, t0=None):
     print(u"[更新] %d/%d %s%s" % (i, n, msg, el), flush=True)
 
 
+def _mark_restart(root, to_version):
+    u"""器之「**停之前**」之相位落盘（**一处** · pm_1790 §二.2）。
+
+    由（一手 · 老板所见「版本更新无效」）：本器第 ⑥ 步停网关 ⇒
+      **应答之服即死** ⇒ 面（`POST /v9/pa/update` 之 `action:status`）**无从问**
+      ⇒ 那约 40 s 之空窗，面唯能显「更新面未答」（而非「正在重启」）。
+    → 停**之前**落盘（`restart` ＋ `from` ／ `to` ／ `started_at`）⇒ 新进程起后**续读**
+      ⇒ 相位**跟进程可察**。落盘之实体 ＝ `core/lib/update_run.py::restart`（一处定形）。
+
+    ⚠ 相位是「面」之利 · ⇔ 「换」之要 ⇒ **⛔ 阻器**；然⛔ **静默**
+      （落不成 ⇒ 面将退「未答」—— 顾客须知是器之失，⛔ 让其反复点）。
+    """
+    try:
+        from core.lib import update_run as _ur
+    except Exception as e:                                    # noqa: BLE001 — 照实报因
+        print(u"[更新] ⚠ restart 相位⛔ 落：载 update_run 败（%s: %s）—— 面将退「更新面未答」"
+              % (type(e).__name__, e), flush=True)
+        return
+    path, note = _ur.restart(root, to_version=to_version)
+    print(u"[更新] 相位 restart 已落盘（面跨空窗可察）：%s%s"
+          % (path, (u"｜%s" % note) if note else u""), flush=True)
+
+
 def never(rel):
     u"""⛔ 动之点名 ⇒ 因 ∨ 空串（**一处定形**）。"""
     if rel in NEVER:
@@ -392,6 +415,8 @@ def run(a):
     rows, rec = backup(root, entries, bdir)
     print(u"\n".join(rows))
     if not a.no_restart:
+        # ⭐ pm_1790 §二.2：**停之前**落 `restart` 相位（非则停后面无从察）
+        _mark_restart(root, man[u"version"])
         rc, out = ctl(root, u"stop")
         if rc is None:
             say(6, 10, u"⚠ 停：%s" % out)
@@ -584,7 +609,18 @@ def main(argv=None):
     if _ur is not None:
         _ur.begin(root)
     _t0 = time.time()                                        # ⭐ 尾话之「时长」之源（一处出）
-    rc = run(a)
+    try:
+        rc = run(a)
+    except SystemExit:
+        raise
+    except BaseException as _e_run:                          # noqa: BLE001 — 照实报因
+        # ⭐ pm_1793 §一（一手 · 本席之新病）：器若**崩**（⛔ 返）⇒ 其下之 finish 到不了
+        #   ⇒ 盘上之 restart（_mark_restart 所落）／running 相位**长挂**
+        #   ⇒ 面恒显「正在重启…」（唯 STALE_S ＝ 30 min 后自愈）—— 误报。
+        #   ⇒ 崩亦须**收相位**（落 failed ＋ 原样报因 ／ 承「失败即报根」）。
+        rc = 2
+        print(u"[失败] 器崩（%s: %s）⇒ 相位已收（落 failed · 免得面长挂「正在重启」）"
+              % (type(_e_run).__name__, _e_run), flush=True)
     if _ur is not None:
         _ur.finish(root, rc)
     _tail(a, rc, _t0)                                        # ⭐ 尾话：随版本更新（承 pm_1762 §二.2）

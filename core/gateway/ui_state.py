@@ -108,9 +108,15 @@ def gpu():
     if not exe:
         return None
     try:
-        out = subprocess.check_output([exe, "--query-gpu=memory.total,memory.free",
-                                       "--format=csv,noheader,nounits"],
-                                      stderr=subprocess.STDOUT).decode("utf-8", "replace")
+        # ⭐ pm_1791 §三.1（裸调之治）：⛔ 直接调 `subprocess` —— 唯走「窗隐唯一出口」
+        #   `core.pa._proc`（承 PM 2026-10-05 令：⛔ 各写 `creationflags`）。
+        #   由（一手）：`subprocess.check_output` ⛔ 带 `CREATE_NO_WINDOW` ⇒ Win 下 spawn
+        #   `nvidia-smi` 即弹控制台窗（「CMD 闪屏」之一族）。
+        from core.pa import _proc as _p        # 惰性：⛔ 累 boot（`core.pa` 连带 pa_core）
+        out = _p.run_hidden([exe, "--query-gpu=memory.total,memory.free",
+                             "--format=csv,noheader,nounits"],
+                            stderr=subprocess.STDOUT,
+                            check=True).stdout.decode("utf-8", "replace")
     except Exception:
         return None
     m = re.findall(r"\d+", out)

@@ -57,6 +57,7 @@ class ExecuteCommandPlugin(ToolPlugin):
         except Exception as _ip_e:
             pass  # 注入失败不阻断命令执行(仅诊断)
         import subprocess
+        from core.lib import _proc as _proc_xh   # ⭐ pm_1791 §三.2：窗隐唯「_proc」出口（⛔ 裸调）
         # 2026-10-03 修（CW）· 「shell 死」的真因不在 shell，在 stdin.
         #   背景：Windows 上 shell=True 走 cmd.exe；而 cmd 的 date 是【交互提问】
         #   （提示 "Enter the new date: (yy-mm-dd)"）。⛔ 不给 stdin ⇒ 子进程继承网关的 stdin，
@@ -81,7 +82,7 @@ class ExecuteCommandPlugin(ToolPlugin):
             except Exception:
                 _exec_cwd = base
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, stdin=subprocess.DEVNULL, text=True, timeout=_tool_timeout_s, cwd=str(_exec_cwd), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
+            result = _proc_xh.run_hidden(cmd, shell=True, capture_output=True, stdin=subprocess.DEVNULL, text=True, timeout=_tool_timeout_s, cwd=str(_exec_cwd), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
         except subprocess.TimeoutExpired:
             # P1-2: 长时间测试超时引导 — 不要 nohup 后台 + sleep 轮询
             return {"success": False, "stdout": "",
@@ -108,7 +109,7 @@ class ExecuteCommandPlugin(ToolPlugin):
                 if _abs_pre.exists():
                     _abs_pre.stat()
             try:
-                _res_h = subprocess.run(cmd, shell=True, capture_output=True, stdin=subprocess.DEVNULL, text=True, timeout=_tool_timeout_s, cwd=str(base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
+                _res_h = _proc_xh.run_hidden(cmd, shell=True, capture_output=True, stdin=subprocess.DEVNULL, text=True, timeout=_tool_timeout_s, cwd=str(base), env=_SANDBOX_ENV, encoding="utf-8", errors="replace")
             except subprocess.TimeoutExpired:
                 return {"success": False, "stdout": "",
                         "stderr": f"命令执行超时(>{int(_tool_timeout_s)}s)。如需运行长时间测试，请改用 timeout 300 同步等待，不要 nohup 后台 + sleep 轮询。",

@@ -27,4 +27,6 @@ NO_WINDOW = _m.NO_WINDOW
 run_hidden = _m.run_hidden
 popen_hidden = _m.popen_hidden
 call_hidden = _m.call_hidden
+DETACH_FLAGS = _m.DETACH_FLAGS
+popen_detached = _m.popen_detached
 CANON_SHA16 = None  # 真源之印（惰性：调用方自行取 _m 之源）

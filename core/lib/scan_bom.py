@@ -70,6 +70,8 @@ import os
 import subprocess
 import sys
 
+from core.lib import _proc as _proc_xh   # ⭐ pm_1791 §三.2：窗隐唯「_proc」出口（core/lib/** 之令）
+
 # ⭐ 2026-10-06（pm_1409 §二.3 · 批二）：自仓根起 ⇒ `core.lib.paths` 可导（直跑 ∨ 引皆可）。
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _REPO_ROOT not in sys.path:
@@ -175,7 +177,7 @@ def face_map(root, exts, all_):
 
 def git_tracked(root, exts):
     u"""⭐ 面之定义 ＝ `git ls-files`（唯**已追** · ⛔ 目录直走 · 承 PM 1221 §二.⒞.2）。"""
-    r = subprocess.run(["git", "-C", root, "ls-files", "-z"],
+    r = _proc_xh.run_hidden(["git", "-C", root, "ls-files", "-z"],
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if r.returncode != 0:
         raise RuntimeError(u"git ls-files rc=%d" % r.returncode)
@@ -372,10 +374,10 @@ def selftest():
             bad.append(u"反控：基线之面缺 ⇒ 应 rc4（⛔ 静默 · ⛔ 读作 rc5）")
         grepo = os.path.join(root, "grepo")
         os.makedirs(grepo)
-        subprocess.run(["git", "-C", grepo, "init", "-q"], capture_output=True)
+        _proc_xh.run_hidden(["git", "-C", grepo, "init", "-q"], capture_output=True)
         with io.open(os.path.join(grepo, "clean.py"), "wb") as f:
             f.write(b"a=1\n")
-        subprocess.run(["git", "-C", grepo, "add", "-A"], capture_output=True)
+        _proc_xh.run_hidden(["git", "-C", grepo, "add", "-A"], capture_output=True)
         gbase = os.path.join(root, "gbase.json")
         n_ctrl += 1
         if _quiet_main(["--rebase", "--face-git", grepo, "--baseline", gbase])[0] != 0:
@@ -388,7 +390,7 @@ def selftest():
             bad.append(u"反控：git 面 ⇒ 输出须显其类（git已追）")
         with io.open(os.path.join(grepo, "bad.py"), "wb") as f:
             f.write(BOM + b"b=2\n")
-        subprocess.run(["git", "-C", grepo, "add", "-A"], capture_output=True)
+        _proc_xh.run_hidden(["git", "-C", grepo, "add", "-A"], capture_output=True)
         n_ctrl += 1
         if _quiet_main(["--baseline", gbase])[0] != 2:
             bad.append(u"正控：git 面之新已追 BOM ⇒ 应 rc2（报）")

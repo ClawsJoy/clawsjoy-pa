@@ -8,6 +8,7 @@
 
 
 import subprocess
+from core.lib import _proc as _proc_xh   # ⭐ pm_1791 §三.2：窗隐唯「_proc」出口（⛔ 裸调）
 import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -45,7 +46,7 @@ class VideoIndexerAgent(SmartAgent):
         frames = []
         try:
             # 获取视频时长
-            result = subprocess.run(
+            result = _proc_xh.run_hidden(
                 [
                     "ffprobe",
                     "-v",
@@ -72,7 +73,7 @@ class VideoIndexerAgent(SmartAgent):
                     timestamp = step * (i + 1)
                     frame_path = Path(tmpdir) / f"frame_{i}.jpg"
 
-                    subprocess.run(
+                    _proc_xh.run_hidden(
                         [
                             "ffmpeg",
                             "-ss",
