@@ -159,6 +159,13 @@ def build(dist, out, name, zip_only=False, reuse=False, deflate=False):
     rows += _g_rows
     if not _g_ok:
         return 2, rows + [u"[FAIL] 出包之闸 ⛔ 过 ⇒ ⛔ 造（pm_1598 §二 令二）"]
+    # ⭐ pm_1606 §二.2 ⒝（凡闸须自守其面）：`_gate` 为**活控**（真起服）
+    #   ⇒ 其副作用（`web/pa/ui_state.json` ／ `data\` ／ `logs\`）可落载荷；
+    #   而首检（`:143`）在闸**之先** ⇒ 必于闸后 ∧ 落 zip 前**复核**（⛔ 以首检为已守）。
+    _g2_ok, _g2_why = guard_dist(dist)
+    if not _g2_ok:
+        return 2, rows + [u"[FAIL] 闸后复核：%s ⇒ ⛔ 造（凡闸须自守其面 · pm_1606 §二.2）" % _g2_why]
+    rows.append(u"[OK] 闸后复核：%s" % _g2_why)
     p = plan(dist, out, name)
     stage = p["stage"]
     os.makedirs(stage, exist_ok=True)

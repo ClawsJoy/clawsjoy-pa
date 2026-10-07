@@ -284,6 +284,11 @@ def probe_start(exe, payload, timeout=300):
             % (port, os.path.join(tmp, u"data").replace(BS, u"/")))
         env = dict(os.environ)
         env[u"APPDATA"] = tmp
+        # ⭐ pm_1606 §二.2 ⒜（闸之自污之修）：`ui_state.snapshot_path()`（`core/gateway/ui_state.py:246`）
+        #   ＝ env `CJ_UI_STATE` ∨ `<root>/web/pa/ui_state.json`；其 `<root>` ＝ 脚本所在（＝**载荷根**）
+        #   ⇒ 起服之探会把界面态快照**写进载荷**（⇒ 随 zip 入包）。令其落探之临时根（与 `APPDATA` 同族）
+        #   ⇒ 随 `shutil.rmtree(tmp)` 而亡（⛔ 留痕）。
+        env[u"CJ_UI_STATE"] = os.path.join(tmp, u"ui_state.json")
         try:
             r = run([exe, u"-X", u"utf8", pn, u"start"], cwd=payload, timeout=timeout, env=env)
             rc = r.returncode

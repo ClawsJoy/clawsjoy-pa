@@ -200,6 +200,68 @@ def ignored_payload(root, files):
     return sorted(set(x.strip() for x in txt.splitlines() if x.strip()))
 
 
+#: 净树之闸之「唯可之未跟踪」（出包之产物 · 相对仓根 · pm_1591 §二.1）
+TREE_ALLOW_UNTRACKED = ("dist/",)
+#: `git status --porcelain` 之码 ⇒ 人话（报必可读 · 承「⛔ 静默」）
+_PORCELAIN_ZH = {"M": "改", "D": "删", "R": "改名", "C": "复本", "A": "新增",
+                 "U": "冲突", "T": "型变", "?": "未跟踪", "!": "被忽略"}
+
+
+def guard_tree(root=None, payload_files=None, allow_untracked=TREE_ALLOW_UNTRACKED):
+    u"""⭐ **净树之闸**（pm_1589 §三.1 ／ pm_1591 §二 ／ pm_1606 §二.4）—— 出包之**第一步**。
+
+    其由（pm_1588 §六.1）：载荷**自工作树取件**（⛔ git 树）⇒ 本机之痕（未提交之 `port: 5103`）
+      **静**入包（同族者：`web/pa/ui_state.json` ／ `.bak` 之碎屑）⇒ 须以闸锁之。
+    口径（三）：
+      ⒜ `M` ／ `D` ／ `R` …（**跟踪件之改 ／ 删 ／ 改名**）⇒ **止**
+      ⒝ `??`（**未跟踪**）⇒ 唯 `dist/` 之属可（＝出包之产物 · `TREE_ALLOW_UNTRACKED`）／ 余 ⇒ **止**
+      ⒞ `!!`（**被忽略而实在** · 如 `*.bak` 之碎屑）⇒ 唯**载荷之内**者计 ⇒ 委 `ignored_payload`
+         （**一处定形** —— ⛔ 自拟 ignore 之则 ⇒ 必与 `.gitignore` 漂）
+    ⚠ 其闸为**一处**（唯此一形）∧ 置于出包之**冠首**（⛔ 各径各判 · pm_1591 §二.3）。
+    ⚠ 「⛔ 得判」（git ⛔ 用 ／ 非仓）⇒ **按拒论**（承「凡阴性须附面与刻」· ⛔ 判绿）。
+    ⚠ ⛔ 自动净树（⛔ 代删用户之未跟踪件 · pm_1591 §二.2）—— 唯**报** ＋ 指净树之法。
+    返 `(ok, rows)`。
+    """
+    root = root or ROOT
+    rows = [u"[净树] 仓＝%s（唯 `%s` 之未跟踪可 · pm_1606 §二.4）" % (root, u"` ／ `".join(allow_untracked))]
+    cmd = ["git", "-C", root, "-c", "core.quotepath=false", "status", "--porcelain"]
+    try:
+        r = subprocess.run(cmd, capture_output=True)
+    except Exception as e:
+        rows.append(u"[净树] ⛔ 得判（git ⛔ 可调）：%s ⇒ 按拒论（⛔ 判绿）" % e)
+        return False, rows
+    if r.returncode != 0:
+        err = (r.stderr or b"").decode("utf-8", "replace").strip()[:200]
+        rows.append(u"[净树] ⛔ 得判（`git status` rc=%d）：%s ⇒ 按拒论（⛔ 判绿）" % (r.returncode, err))
+        return False, rows
+    txt = (r.stdout or b"").decode("utf-8", "replace")
+    bad, ok_un = [], []
+    for ln in txt.splitlines():
+        if len(ln) < 4:
+            continue
+        code, path = ln[:2].strip(), ln[3:].strip()
+        if code == "??" and path.replace(BS, "/").startswith(tuple(allow_untracked)):
+            ok_un.append(path)
+            continue
+        zh = u" ／ ".join(_PORCELAIN_ZH.get(c, c) for c in code)
+        bad.append(u"%s  %s（%s）" % (code, path, zh))
+    files = _payload_files(root) if payload_files is None else payload_files
+    ig = ignored_payload(root, files)
+    if ig is None:
+        rows.append(u"[净树] ⒞ ⛔ 得判（`git check-ignore` ⛔ 用 ／ 非仓）⇒ 按拒论（⛔ 判绿）")
+        return False, rows
+    rows.append(u"[净树] ⒜⒝ 改 ／ 删 ／ 未跟踪：%d 处（未跟踪而可者 %d：%s）"
+                % (len(bad), len(ok_un), u" ／ ".join(ok_un) or u"无"))
+    for x in bad[:20]:
+        rows.append(u"  ⛔ %s" % x)
+    rows.append(u"[净树] ⒞ 载荷内之「被忽略」：%d 处%s"
+                % (len(ig), (u"：" + u" ／ ".join(ig[:20])) if ig else u""))
+    ok = (not bad) and (not ig)
+    rows.append(u"[净树] 判：%s" % (u"净 ⇒ 可（出包之第一步）" if ok else
+                                  u"**⛔ 净** ⇒ ⛔ 止（逐件点名 ⇒ 先净树：`git checkout -- <件>` ／ 移出 ／ 入 `.gitignore`）"))
+    return ok, rows
+
+
 def _norm(n):
     u"""PEP 503 名之归一（⛔ 则 `PyYAML` ⟷ `pyyaml` 判二物）。"""
     return re.sub(r"[-_.]+", "-", str(n)).strip().lower()
@@ -520,6 +582,12 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False, runtime=None):
     p = plan_bundle(root, out)
     lines = [u"[bundle] out=%s ｜ 件 %d（%.1f MB）｜ 依 %d" % (
         p["out"], len(p["payload_files"]), p["payload_bytes"] / 1048576.0, len(p["dists"]))]
+    # ⭐ pm_1606 §二.4 ⒜：**净树之闸** —— 出包之**第一步**（载荷自工作树取件 ⇒ 先净树）
+    _t_ok, _t_rows = guard_tree(p["root"], p["payload_files"])
+    lines += _t_rows
+    if not _t_ok:
+        lines.append(u"[bundle] ⛔ 净树之闸驳 ⇒ ⛔ 出包（pm_1606 §二.4）")
+        return 2, lines
     if p["excluded"]:
         lines.append(u"[bundle] ⊘ 剔（⛔ 入包 · 承 pm_1417 §二）：%d 件" % len(p["excluded"]))
         for x in p["excluded"]:
