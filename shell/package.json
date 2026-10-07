@@ -1,0 +1,45 @@
+{
+  "name": "clawsjoy-pa-shell",
+  "productName": "ClawsJoyPA",
+  "version": "9.0.1",
+  "description": "ClawsJoy PA 桌面壳（Electron）—— 「壳层」：窗 ／ 托盘 ／ 启停 ／ 双层更新之交界",
+  "main": "main.js",
+  "author": "ClawsJoy",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dir": "electron-builder --win --x64 --dir",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "electron": "^44.6.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.clawsjoy.pa",
+    "productName": "ClawsJoyPA",
+    "directories": { "output": "../dist/pa_shell/setup" },
+    "files": ["main.js", "preload.js", "package.json", "icon.png"],
+    "extraResources": [
+      { "from": "../dist/pa_shell/payload", "to": "payload" }
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "ClawsJoyPA-Setup-${version}-${arch}.${ext}"
+    },
+    "publish": [
+      { "provider": "generic", "url": "http://192.168.3.11:8800/", "channel": "internal" }
+    ]
+  }
+}
