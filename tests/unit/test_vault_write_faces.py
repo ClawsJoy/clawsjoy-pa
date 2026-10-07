@@ -210,12 +210,28 @@ def test_B3_tmp_vault_writers_registered():
           其余（有裸写）⇒ 须在 tmp_scripts 逐条登记（写目标须写明）；
        ④ 裸写目标为 vault 变量者 ⇒ 须在 deviations 逐条登记（已知偏差 · ⛔ 未删 · 待处置）；
        ⑤ 四处都不许说谎：条目已不再命中 ⇒ 红；条数 != 声明数 ⇒ 红（防静默增删）。
+       ⭐ 2026-10-08（pm_1837 §一 · 采 ⒝ · 技术总监 f202f89 一手）：`data/tmp` 之擦写面**已清**
+          ⇒ 表立 `tmp_history_only: true` ⇒ 本齿走**「已清」之支**（⛔ 静默兜底 · ⛔ 空混缺）：
+          ⒜ 史档**自洽**（名与数 · 仍是 fail-loud）⒝ `cw_emit.py` **照实不在**（正面断言 · ⛔ 非跳）
+          ⒞ **盘之活牙仍在**（现面若再落触碰 vault 之脚本 ⇒ 必红 ⇒ ⛔ 因史档而失牙）。
     """
     reg = _load()
     files = tmp_files(ROOT)
+    cand = tmp_candidates(files)
+    if reg.get("tmp_history_only"):
+        # ⭐ 「已清」之支（pm_1837 §一）：史档自洽 ∧ 照实其不在 ∧ 盘之活牙仍在
+        for _k, _c in (("tmp_emit_only", "tmp_emit_only_count"),
+                       ("tmp_scripts", "tmp_scripts_count"),
+                       ("deviations", "deviations_count")):
+            assert len({x["module"] for x in reg.get(_k, [])}) == reg.get(_c), \
+                "史档 %s 条数 != 声明数 ⇒ 静默增删（已清亦 ⛔ 说谎）" % _k
+        assert not (ROOT / "data/tmp/cw_emit.py").exists(), \
+            "史档书「已清」而 cw_emit.py 在场 ⇒ 二处互斥（pm_1837 §一）"
+        assert not cand, \
+            "data/tmp 现面有触碰 vault 之脚本而史档已冻结 ⇒ 须立新档登记: %s" % sorted(cand)
+        return
     assert "def emit_text(" in files.get("data/tmp/cw_emit.py", ""), "唯一出口 data/tmp/cw_emit.py::emit_text 不见了"
 
-    cand = tmp_candidates(files)
     emit_only = {rel for rel, v in cand.items() if v["emit"] and not v["bare"]}
     eo_reg = {x["module"] for x in reg.get("tmp_emit_only", [])}
     assert eo_reg == emit_only, "emit_only 档与登记不符（增删须同批登记）: 新增 %s / 幽灵 %s" % (sorted(emit_only - eo_reg), sorted(eo_reg - emit_only))

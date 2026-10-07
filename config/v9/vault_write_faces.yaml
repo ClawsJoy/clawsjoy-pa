@@ -18,7 +18,7 @@
 #   逐条已统一附「（过程之痕 · 今 ⛔ 可寻）」；⛔ 删其引（保其史迹）· ⛔ 改其 module ／ 条数。
 
 version: 1
-updated: "2026-09-28"
+updated: "2026-10-08"
 provenance: "CW 一手扫（data/tmp/cw_wf_probe.py）⇒ 6 候选"
 true_source: "core/lib/paths.py::vault_root()"
 only_text_exit: "core/lib/paths.py::write_text_lf()"
@@ -123,7 +123,19 @@ exceptions:
       - "core/agents/builtin/private_manager.py:53"
       - "core/agents/builtin/private_manager.py:57"
       - "core/agents/builtin/private_manager.py:74"
-exceptions_count: 1
+  # ⭐ 2026-10-08（pm_1837 §一 · 技术总监 f202f89 一手之据 · 第二次 config/** 之明许）：
+  #   假阳 —— 引 vault **真源之符**（`resolve_paths` 之 `paths_src.vault` ⇒ `core/lib/paths.py::vault_root`）
+  #   然其**写面在 `<仓根>/data/v9/pa/env_notes`（⛔ vault）**：`NOTE_DIR`（`core/pa/env_face.py:228`）
+  #   ＝ `D:\clawsjoy_v9\data\v9\pa\env_notes` ∧ 其**唯一二写**（`:1022` ／ `:1023`）皆落此
+  #   ⇒ 覆盖规则（引真源之符 ＋ 有写调用）之假阳（与本表 `private_manager.py` 一条**同族**）。
+  #   ⛔ 改其面之字面 ／ 行为（唯登记 —— 承产品态之律：⛔ 改面之辞以就器）。
+  - module: core/pa/env_face.py
+    reason: "假阳：引 vault 真源之符而写面在 <仓根>/data/v9/pa/env_notes（⛔ vault）⇒ 覆盖规则之假阳"
+    evidence:
+      - "core/pa/env_face.py:228"
+      - "core/pa/env_face.py:1022"
+      - "core/pa/env_face.py:1023"
+exceptions_count: 2
 
 peer_faces:
   - holder: "对端（WSL 侧 · brain 镜像器持有方）"
@@ -152,6 +164,17 @@ collision:
 #   ⚠ 已知边界（⛔ 不假装覆盖）：目标经 os.path.join / Path(...) / 任意调用构造者 ⛔ 逮不到 ——
 #      该取舍**有意**：`os.path.join(仓内, os.path.basename(P))` ＝ 正解存底写法，若对调用透明
 #      传播必生假阳性。反例门 test_B3_counterexample_rule_has_teeth 把该边界钉成断言。
+# ⭐ 2026-10-08（pm_1837 §一 · 采 ⒝ · 技术总监 f202f89 一手之据 · 第二次 config/** 之明许）：
+#   本次之改由（**先书其由 · 后改其态**）—— `data/tmp` 之**擦写面已清**：一手之据 ＝
+#   ① 盘上 `data/tmp/*.py` 今唯 `2` 件（`_cw_iso.py` ／ `_cw_iso2.py`）
+#   ② `data/tmp/cw_emit.py` **盘上无 ∧ 物库从无**（`git log --all -- data/tmp/cw_emit.py` ⇒ `0` 行
+#      ∧ `git cat-file -e HEAD:data/tmp/cw_emit.py` ⇒ `rc 128`；其由 ＝ `.gitignore` 之 `data/`）
+#   ③ 齿原索 `cw_emit.py` 之在场（`tests/unit/test_vault_write_faces.py:216`）⟹ **二件互斥**（表 `:17`
+#      自书「今 ⛔ 可寻 ⇒ 唯记其史」而齿硬索 ⇒ 器病 · 结构性必红 · 既有红）。
+#   ⇒ 本表此处**⛔ 删其历 · ⛔ 改其 module ／ 条数**（守 `:18` 之自书）—— 唯**加此旗**，令齿走「已清」之支。
+tmp_history_only: true
+tmp_history_note: "2026-10-08：data/tmp 已清（pm_1837 §一 · 一手：盘上唯 2 件 · cw_emit.py 盘上无 ∧ 物库从无）⇒ 本档三块（tmp_emit_only ／ tmp_scripts ／ deviations）唯记其史 ∧ 齿走「已清」之支（⛔ 再与盘比 —— 比之必假红）"
+
 tmp_scripts_note: "data/tmp 侧面分母（明写 · 两档）：分母 = 含 vault 字面 ∧（裸写 ∨ 走 emit_text）的 data/tmp/*.py。① tmp_emit_only 档（只走唯一出口 emit_text ⇒ 合规）② tmp_scripts 档（有裸写 ⇒ 须逐条给写目标）。⚠ 两档**名单与条数均冻结断言** ⇒ data/tmp 增删任何触碰 vault 的脚本 ⇒ 门必红（fail-loud · ⛔ 不许静默漂移）。本读数 = 09:31 立表 · 09:40 同批更新（＋ data/tmp/cw_t6_emit.py ⇒ 分母 24→25） · 20260928_1804 同批更新（＋ 我线本会话 5 件落件器: cw_ack_switch / cw_dsline_report / cw_newds_reply1 / cw_notice_ceo_route / cw_re_T1T2 ⇒ emit_only 12→17） · 20260928_1805 同批更新（＋ 我线本会话 6 件裸写: cw_ceo_165/166/167/168 · cw_pm_reply169to171 · cw_t6_amend ⇒ tmp_scripts 13→19 · deviations 2→8）"
 tmp_emit_only:
   - module: data/tmp/cw_ack_switch.py
