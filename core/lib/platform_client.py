@@ -52,7 +52,7 @@ class PlatformClient:
             # 先注册 OS 节点（幂等操作）
             requests.post(f"{self.platform_url}/api/os/register", json={
                 "hostname": self.hostname,
-                "version": "9.0.7",
+                "version": "9.0.8",
                 "capabilities": ["agent_workspace"],
             }, timeout=5)
             # 尝试登录
