@@ -411,6 +411,34 @@ def manifest_for(entries, dists, src):
             "件之表": list(entries),
             "口径": u"离线包：wheel\\ 之依全 ∧ 运行子集之 sha256；⛔ 含模型（须另下）"}
 
+def prune_stale(out, want, skip_top=("wheel", "runtime")):
+    u"""陈件之清（pm_1578 补 · 我一手逮）：本器唯「覆写」⇒ 旧包之件（今树 ⛔ 有）会**留**在 out
+    ⇒ 下一出包之 zip 一并收之 ⇒ **重出而仍旧**之口（例：`ci_windows.yml.备件` 随老板之 git mv 而消 ⇒ 旧包之件留
+    ⇒ 新包仍旧印之）。⛔ 触 `wheel\\`（pip 所管）∨ `runtime\\`（上已整树重落）。"""
+    want = set(want)
+    stale = []
+    for dp, dns, fns in os.walk(out):
+        rel = os.path.relpath(dp, out).replace(os.sep, u"/")
+        if rel == u".":
+            rel = u""
+        if rel.split(u"/")[0] in skip_top:
+            dns[:] = []
+            continue
+        for fn in fns:
+            r = (rel + u"/" + fn) if rel else fn
+            if r not in want:
+                stale.append(r)
+    for r in sorted(stale):
+        os.remove(os.path.join(out, r.replace(u"/", os.sep)))
+    for dp, _dns, _fns in os.walk(out, topdown=False):
+        rel = os.path.relpath(dp, out).replace(os.sep, u"/")
+        if rel == u"." or rel.split(u"/")[0] in skip_top:
+            continue
+        if not os.listdir(dp):
+            os.rmdir(dp)
+    return sorted(stale)
+
+
 def apply_bundle(root=None, out=None, wheel=True, json_out=False, runtime=None):
     u"""真做（⚠ 须**网**）—— ⓐ `pip download` 入 `wheel\\` ⓑ 复运行子集 ⓒ 写册（逐件 sha256）。
     ⛔ 起停 ／ ⛔ 改本仓（唯写 `out`）。"""
@@ -472,6 +500,11 @@ def apply_bundle(root=None, out=None, wheel=True, json_out=False, runtime=None):
                 b.write(a.read())
             n_rt += 1
         lines.append(u"[bundle] \u81ea\u5e26\u8fd0\u884c\u65f6\uff1a%s \u21d2 runtime\\ \uff08%d \u4ef6 \u00b7 \u5165\u518c\uff09" % (rt_src, n_rt))
+    stale = prune_stale(p["out"], p["payload_files"])
+    if stale:
+        lines.append(u"[bundle] ⊘ 陈件（旧包留下 · 今树 ⛔ 有）：%d 件 ⇒ 已清（⛔ 清则下一出包必收之 —— 重出而仍旧之口 · pm_1578 补）" % len(stale))
+        for x in stale[:20]:
+            lines.append(u"  ⊘ %s" % x)
     entries = []
     for rel in p["payload_files"]:
         src = os.path.join(p["root"], rel.replace("/", os.sep))

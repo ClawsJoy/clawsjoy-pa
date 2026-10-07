@@ -364,6 +364,26 @@ def test_bundled_python_prints_cjk_on_gbk_console(tmp_path):
     assert u"\u4e2d\u6587" in txt, txt[:400]
 
 
+def test_bundle_prune_stale_removes_old_keeps_wheel_runtime(tmp_path):
+    u"""正控：重出之包 ⛔ 留「今树 ⛔ 有」之旧件（⛔ 重出而仍旧 —— 我一手逞：ci_windows.yml.备件）；
+    反控：wheel\\ ／ runtime\\ ⇒ ⛔ 触（pip 所管 ／ 上已整树重落）。"""
+    m = _mod("make_client_bundle.py")
+    out = os.path.join(_short_tmp("test_prune"), "out")
+    for rel in ("scripts/win_pa/a.py", "scripts/win_pa/gone.py", "sub/b.txt",
+                "sub/only/gone2.txt", "wheel/w.whl", "runtime/Lib/x.py"):
+        p = os.path.join(out, rel.replace("/", os.sep))
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with io.open(p, "w", encoding="utf-8") as fh:
+            fh.write(u"x")
+    got = m.prune_stale(out, ["scripts/win_pa/a.py", "sub/b.txt"])
+    assert got == ["scripts/win_pa/gone.py", "sub/only/gone2.txt"], got
+    for dead in got:
+        assert not os.path.exists(os.path.join(out, dead.replace("/", os.sep))), dead
+    for live in ("scripts/win_pa/a.py", "sub/b.txt", "wheel/w.whl", "runtime/Lib/x.py"):
+        assert os.path.isfile(os.path.join(out, live.replace("/", os.sep))), live
+    assert not os.path.isdir(os.path.join(out, "sub", "only"))
+
+
 def test_old_style_cmd_breaks_on_gbk_console(tmp_path):
     u"""反控：同台跑旧形（UTF-8 之 CJK 在 .cmd 里）⇒ **必出行碎之错**（证病在）。"""
     b = _old_head_bytes()
