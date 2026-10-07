@@ -122,9 +122,14 @@ def notice(src=None):
 
 
 def feedback_dir(root=None, src=None):
-    u"""收件目录之绝对径（**一处定形**）—— `dir` 为相对时挂装根。"""
+    u"""收件目录之绝对径（**一处定形**）—— `dir` 为相对时挂装根。
+
+    ⭐ pm_1679 §五.1⒝：**径之形唯此处出**（⛔ 壳自算）⇒ 以 `os.path.normpath`
+      **归一**（旧形 `…\\data/pa/feedback` 混分隔符 ⇒ 用户面照拄必惑）。
+    """
     d = str((src or load(root)).get(u"dir") or DEFAULT_DIR)
-    return d if os.path.isabs(d) else os.path.join(root or root_dir(), d)
+    p = d if os.path.isabs(d) else os.path.join(root or root_dir(), d)
+    return os.path.normpath(p)
 
 
 #: 「⛔ 出机」之结构齿（**一处定形** —— `feedback_store` ／ `diagnostics` 皆唯借此处）：

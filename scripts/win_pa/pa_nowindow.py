@@ -43,6 +43,28 @@ BREAKAWAY = getattr(subprocess, 'CREATE_BREAKAWAY_FROM_JOB', 0x01000000)   # ⭐
 START_TASK = os.environ.get('PA_START_TASK') or chr(92) + 'ClawsJoy_PA_Start_Once'   # ⭐ 062 §一(⒝)
 TASK_MARK = os.path.join(ROOT, 'logs', 'win_pa.task_dispatch.json')   # 派遣标记(⒝ 回程认亲 · 免环)
 
+#: ⭐ 子进程须「⛔ 写 `.pyc`」（**一处定形** · 承 pm_1679 §五.1⒜）：
+#:   载荷之根 ≡ 装根 ⇒ 头一跑若落 `__pycache__` ⇒ 载荷 ⛔ 再等「纯树」（且装根被**静默**改）。
+#:   二并（**⛔ 二源**）：argv 之 `-B`（本进程之子）＋ env `PYTHONDONTWRITEBYTECODE=1`（覆孙进程）。
+NO_PYC_ENV = 'PYTHONDONTWRITEBYTECODE'
+
+
+def child_env(base=None):
+    u'''子进程之 env（**一处定形**）：一律置 `PYTHONDONTWRITEBYTECODE=1`。'''
+    e = dict(os.environ if base is None else base)
+    e[NO_PYC_ENV] = '1'
+    return e
+
+
+def py_argv(script, *rest, **kw):
+    u'''子进程之 argv（**一处定形**）：`python -X utf8 -B [-u] <script> [rest...]`。'''
+    a = [sys.executable, '-X', 'utf8', '-B']
+    if kw.get('unbuffered'):
+        a.append('-u')
+    a.append(script)
+    a.extend(rest)
+    return a
+
 
 def gateway_port():
     sys.path.insert(0, ROOT)
@@ -104,10 +126,11 @@ def read_pid():
 
 def run_preflight():
     """起前自检（P4）: rc != 0 => 不 spawn, 人话因透传（承 046 四.1）。"""
-    cmd = [sys.executable, '-X', 'utf8', PREFLIGHT, '--root', ROOT]
+    cmd = py_argv(PREFLIGHT, '--root', ROOT)
     try:
         r = subprocess.run(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                           creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+                           creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+                           env=child_env())
     except Exception as e:
         return 1, '[FAIL] preflight runner error: %s: %s' % (type(e).__name__, e)
     return r.returncode, (r.stdout or b'').decode('utf-8', 'replace')
@@ -147,8 +170,8 @@ def cmd_detach_child():
     print(chr(114)+chr(101)+chr(97)+chr(100)+chr(121), flush=True)
     time.sleep(1.2)   # 等父先把本进程归入 job（免 race）
     _flag = (len(sys.argv) > 2 and sys.argv[2] == '1')
-    p = subprocess.Popen([sys.executable, '-c', 'import time;time.sleep(60)'],
-                         creationflags=FLAGS | (BREAKAWAY if _flag else 0))
+    p = subprocess.Popen(py_argv('-c', 'import time;time.sleep(60)'),
+                         creationflags=FLAGS | (BREAKAWAY if _flag else 0), env=child_env())
     print(p.pid, flush=True)
     time.sleep(60)
     return 0
@@ -187,9 +210,9 @@ def cmd_detach_probe():
         info.Basic.LimitFlags = 0x00000800      # JOB_OBJECT_LIMIT_BREAKAWAY_OK
         _ok = k32.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info))
         try:
-            st = _sp.Popen([sys.executable, os.path.abspath(__file__),
-                          '_detach-child', flag], stdout=_sp.PIPE,
-                          creationflags=getattr(_sp, 'CREATE_NO_WINDOW', 0), text=True)
+            st = _sp.Popen(py_argv(os.path.abspath(__file__), '_detach-child', flag),
+                          stdout=_sp.PIPE, creationflags=getattr(_sp, 'CREATE_NO_WINDOW', 0),
+                          text=True, env=child_env())
         except OSError as e:
             print('[FAIL] %s: starter spawn: %s' % (label, e))
             k32.CloseHandle(job)
@@ -308,8 +331,9 @@ def cmd_start():
         return 2
     lf = open(console_path(), 'ab', buffering=0)
     lf.write(('=== nowindow start ' + time.strftime('%Y-%m-%d %H:%M:%S') + ' ===' + chr(10)).encode('utf-8'))
-    _argv = [sys.executable, '-X', 'utf8', '-u', APP]
-    _kw = dict(cwd=ROOT, stdout=lf, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+    _argv = py_argv(APP, unbuffered=True)
+    _kw = dict(cwd=ROOT, stdout=lf, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+               env=child_env())
     _detach = 'breakaway'
     try:
         p = subprocess.Popen(_argv, creationflags=FLAGS | BREAKAWAY, **_kw)

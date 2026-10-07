@@ -18,6 +18,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const ID = require('./identity');   // ⭐ 身份之判（**一处定形** · pm_1679 §四）
 
 const APP_ID = 'com.clawsjoy.pa';
 const SELFTEST = !!process.env.CLAWSJOY_SHELL_SELFTEST;
@@ -46,7 +47,21 @@ function shellLogFile() { return path.join(localDir(), 'shell.log'); }
 
 /* 落点目录（**一处定形** · 与后端 `core/lib/feedback_target.py:feedback_dir` 同序）：
    env PA_FEEDBACK_DIR ⇒ `config/feedback_target.yaml` 之平表 `dir:` ⇒ 默认 `data/pa/feedback`（相对装根）。 */
-function feedbackDir() {
+/* 后端所出之读数（**一处定形** · pm_1679 §五.1⒝）：载荷之路径唯 `/health` 出
+   （承「读一处（`/health`）· 动分端」之律）⇒ 壳 ⛔ 自算（否则「一改一不改」⇒ 面之校必假红）。 */
+let BACKEND_DIRS = { feedback: null, build_path: null, at: null };
+function refreshBackendDirs(j) {
+  try {
+    const fb = (j && j.feedback) || {};
+    const bd = (j && j.build) || {};
+    if (fb.resolved_dir) { BACKEND_DIRS.feedback = String(fb.resolved_dir); }
+    if (bd.path) { BACKEND_DIRS.build_path = String(bd.path); }
+    BACKEND_DIRS.at = Date.now();
+  } catch (e) { /* 照实：下面之报会显其因 */ }
+}
+
+/* 落点目录：后端所出为主（上）；回落（服未起 ⁄ `/health` ⛔ 答）则与后端同序算之（一处定形）。 */
+function feedbackDirLocal() {
   let d = (process.env.PA_FEEDBACK_DIR || '').trim();
   if (!d) {
     const f = path.join(rootDir(), 'config', 'feedback_target.yaml');
@@ -57,13 +72,11 @@ function feedbackDir() {
     } catch (e) { /* 未见 ⇒ 默认（照实：下面之报会显其径） */ }
   }
   if (!d) { d = 'data/pa/feedback'; }
-  // ⭐ **径之形唯后端一处出**：逐字复现 `os.path.join(root, dir)`（＝ `root` ＋ 分隔符 ＋ `dir` 之原字）
-  //   ⇒ ⛔ 用 `path.join`（它会归一 ／ 转 `\`）—— 否则面之「开后端之径否」之校必假红
-  //   （页：`p !== dir` ⇒ ⚠）。⚠ 后端之默认 `data/pa/feedback` 含正斜杠 ⇒ 我一手逮之「混分隔符」
-  //   亦现于用户面（`去处：自行打开 …\data/pa/feedback`）—— 其修须动 `core/**`（载荷之件 ⇒ 升版号 · 候 PM 裁）。
-  const abs = /^[A-Za-z]:[\\/]/.test(d) || d.indexOf('\\\\') === 0 || d.charAt(0) === '/';
-  return abs ? d : (rootDir() + path.sep + d);
+  // ⭐ 与后端 `feedback_target.feedback_dir` 同形：相对 ⇒ 挂装根，并**归一**
+  //   （后端已以 `os.path.normpath` 归一 —— 二处同形 ⇒ 面之校假红之根已去）。
+  return path.isAbsolute(d) ? path.normalize(d) : path.join(rootDir(), d);
 }
+function feedbackDir() { return BACKEND_DIRS.feedback || feedbackDirLocal(); }
 
 // ---------------------------------------------------------------- 记账（机器面之日志）
 function log() {
@@ -149,18 +162,9 @@ function payloadVersionByRead() {
 }
 
 // ---------------------------------------------------------------- 探活 ／ 起停
-function probeHealth() {
-  return new Promise(function (resolve) {
-    if (!PORT) { resolve({ ok: false, status: 0, body: 'no-port' }); return; }
-    const req = http.get({ host: '127.0.0.1', port: PORT, path: '/health', timeout: 2500 }, function (res) {
-      let b = '';
-      res.on('data', function (d) { b += d; });
-      res.on('end', function () { resolve({ ok: res.statusCode === 200, status: res.statusCode, body: b }); });
-    });
-    req.on('error', function (e) { resolve({ ok: false, status: 0, body: String(e && e.message) }); });
-    req.on('timeout', function () { req.destroy(); resolve({ ok: false, status: 0, body: 'timeout' }); });
-  });
-}
+/* 探活（**一处定形** · `identity.js`）：唯 `127.0.0.1` · ⛔ 出机。 */
+function probeHealthAt(port) { return ID.probeHealthAt(port); }
+function probeHealth() { return ID.probeHealthAt(PORT); }
 async function waitHealth(ms) {
   const t0 = Date.now();
   for (;;) {
@@ -171,6 +175,16 @@ async function waitHealth(ms) {
   }
 }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+/* ⭐ 身份之核（一处定形 · pm_1679 §四）：应答者是否本壳之载荷？⛔ 则静默载旧页。 */
+async function serviceIdentity(port) {
+  const h = await ID.probeHealthAt(port || PORT);
+  if (!h.ok) { return { ok: false, why: 'health-⛔-答', status: h.status, want: versionJson() }; }
+  let j = null;
+  try { j = JSON.parse(h.body); } catch (e) { return { ok: false, why: 'health-⛔-JSON', want: versionJson() }; }
+  refreshBackendDirs(j);
+  return ID.evaluateHealth(j, versionJson());
+}
 
 async function startService() {
   log('起服：pa_nowindow.py start');
@@ -222,12 +236,21 @@ async function openFeedbackDir() {
 }
 
 // ---------------------------------------------------------------- 窗
+let IDENTITY = null;   // 身份之判之果（一处）—— 非 null 且 !ok ⇒ ⛔ 载载荷之页
+
 let win = null;
 let tray = null;
 let isQuitting = false;
 const st = { window: false, page_loaded: false, url: null, title: null, load_error: null };
 
-function createWindow() {
+/* 人话之页（⛔ 载载荷之页 · ⛔ 白屏）—— 一处定形。 */
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function msgPageHtml(title, lines) {
+  return 'data:text/html;charset=utf-8,' + encodeURIComponent('<h2>' + esc(title) + '</h2>'
+    + (lines || []).map(function (t) { return '<p>' + esc(t) + '</p>'; }).join(''));
+}
+
+function createWindow(msg) {
   const s = loadWindowState();
   win = new BrowserWindow({
     width: s.width, height: s.height, x: s.x, y: s.y,
@@ -249,12 +272,18 @@ function createWindow() {
     log('页载败：' + st.load_error);
   });
   win.on('close', function () { saveWindowState(); if (!isQuitting && !SELFTEST) { win.hide(); return false; } });
-  if (PORT) { win.loadURL(paUrl()); } else { win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
-    '<h2>ClawsJoy PA</h2><p>⛔ 得端口：' + PORT_WHY + '</p><p>因 ＋ 去处：见 %LOCALAPPDATA%\\ClawsJoyPA\\shell\\shell.log</p>')); }
+  if (msg) { win.loadURL(msgPageHtml('ClawsJoy PA', msg)); }
+  else if (PORT) { win.loadURL(paUrl()); }
+  else { win.loadURL(msgPageHtml('ClawsJoy PA', ['⛔ 得端口：' + PORT_WHY,
+    '因 ＋ 去处：见 %LOCALAPPDATA%\\ClawsJoyPA\\shell\\shell.log'])); }
   log('窗已立（' + s.width + 'x' + s.height + '）');
 }
 
-function reloadPage() { if (win && PORT) { win.loadURL(paUrl()); } }
+function reloadPage() {
+  if (!win) { return; }
+  if (IDENTITY && !IDENTITY.ok) { win.loadURL(msgPageHtml('ClawsJoy PA', ID.identityMessage(IDENTITY))); return; }
+  if (PORT) { win.loadURL(paUrl()); }
+}
 
 // ---------------------------------------------------------------- 托盘 ＋ 菜单
 function trayIcon() {
@@ -322,6 +351,23 @@ function checkShellUpdate() {
 }
 
 // ---------------------------------------------------------------- 自测（⛔ 入产品之面）
+/* 自测之桩（唯自测 · ⛔ 入产品之路）：扮一「他之 PA」应答 `/health`。 */
+function startStub(opt) {
+  return new Promise(function (resolve) {
+    const body = JSON.stringify((opt && opt.omitBuild)
+      ? { status: 'healthy', version: '9.0.0' }
+      : { status: 'healthy', version: '9.0.0',
+          build: { available: true, path: 'D:\\OTHER\\ClawsJoyPA\\version.json', version: '9.0.0' } });
+    const srv = http.createServer(function (req, res) {
+      if (req.url && req.url.indexOf('/health') === 0) {
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(body);
+      } else { res.writeHead(404); res.end('no'); }
+    });
+    srv.listen(0, '127.0.0.1', function () { resolve({ server: srv, port: srv.address().port }); });
+  });
+}
+function stopStub(s) { try { if (s && s.server) { s.server.close(); } } catch (e) { } }
+
 async function selfTest() {
   const r = { root: rootDir(), py: pyExe(), root_ok: fs.existsSync(rootDir()), py_ok: fs.existsSync(pyExe()) };
   // ⭐ 护栏（我一手之训）：自测**必**指明 ROOT ⇒ ⛔ 落到开发之「实载荷」上（否则会起停 ／ 改他根之实例）
@@ -346,7 +392,27 @@ async function selfTest() {
   const h0 = await probeHealth();
   r.health_before = h0.status;
   r.start = await startService();
-  if (r.port) { createWindow(); }
+  // ⭐ §四 之齿（正控 ＋ 反控二 · pm_1679 §四.2）：本载荷 ⇒ 载页；他之载荷 ⇒ 人话 ＋ 去处。
+  r.identity = await serviceIdentity();
+  r.identity_positive = !!(r.identity && r.identity.ok);
+  r.dec_positive = ID.decidePage(r.identity).load;
+  r.feedback_dir_shell_after = feedbackDir();
+  r.feedback_dir_from_health = BACKEND_DIRS.feedback;
+  const _sa = await startStub({ omitBuild: false });
+  r.identity_foreign = await serviceIdentity(_sa.port);
+  r.identity_foreign_caught = !!(r.identity_foreign && !r.identity_foreign.ok
+    && r.identity_foreign.why === 'foreign-root');
+  const _df = ID.decidePage(r.identity_foreign);
+  r.dec_foreign = _df.load;
+  r.dec_foreign_msg_ok = (_df.load === 'msg')
+    && ((_df.msg || []).join(' ').indexOf('本机已有一个 PA 在跑') >= 0)
+    && ((_df.msg || []).join(' ').indexOf('shell.log') >= 0);
+  const _sb = await startStub({ omitBuild: true });
+  r.identity_nobuild = await serviceIdentity(_sb.port);
+  r.identity_nobuild_caught = !!(r.identity_nobuild && !r.identity_nobuild.ok);
+  stopStub(_sa); stopStub(_sb);
+  const _dec = ID.decidePage(r.identity);
+  if (r.port) { createWindow(_dec.load === 'msg' ? _dec.msg : null); }
   await sleep(2500);
   r.page_loaded = st.page_loaded;
   r.url = st.url;
@@ -385,7 +451,11 @@ if (!gotLock) {
     await readPort();
     await firstRunCheck();
     await startService();
-    createWindow();
+    IDENTITY = await serviceIdentity();
+    log('身份之核：' + JSON.stringify(IDENTITY));
+    const _dec = ID.decidePage(IDENTITY);
+    if (_dec.load === 'msg') { log('⛔ 载载荷之页（他之 PA 应答）⇒ 以「人话 ＋ 去处」代之'); }
+    createWindow(_dec.load === 'msg' ? _dec.msg : null);
     try { buildTray(); } catch (e) { log('托盘 ⛔ 得：' + (e && e.message)); }
     buildAppMenu();
   });
