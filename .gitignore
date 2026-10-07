@@ -164,3 +164,12 @@ core/lib/scan_bom_baseline.json
 # ===== 本机之活配置（含个人邮箱 ⇒ ⛔ 入仓 · 出包亦剔 · pm_1580 §二.1）=====
 config/alert_config.json
 config/scheduler_config.json
+
+# ===== 域内弃树（⛔ 入库 · 承 pm_1779 §二.1⒞ ／ pm_1811 §一.2⒜「弃树 ⛔ 落仓内」）=====
+# ⭐ 锚位（承 pm_1419 §二.4）：裸名 `dist/` ／ `_tmp/` 会中 tools/**/dist 之族 ⇒ 唯根者
+# 其效（如实书 · 承 pm_1779 §二.2）：**唯去 git status 之 ?? 噪** —— ⛔ 减
+#   `git ls-files -o -i --directory --exclude-standard` 之数（`-i` 本即列「被忽略」者；
+#   而 daemon 所数者正是此令 ⇒ 其负在「逐件」之监，⛔ 在「入不入 ignore」）。
+#   ⚠ 真减少其数 ⇒ 唯清弃树本体（承 pm_1811 §一.2⒜）／ 出仓（承 pm_1794 §四.1⒜）。
+/dist/
+/_tmp/
