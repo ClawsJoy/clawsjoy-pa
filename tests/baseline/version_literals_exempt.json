@@ -1,0 +1,58 @@
+{
+  "schema": "version-literals-exempt/1",
+  "policy": "凡 `core/**` ＋ `scripts/**` 内『我方版号族』（＝ `__version__` 之 `<major>.` 前缀）之字面、而其行有『书版』之上下文（`version` ／ `__version__` ／ 版 ／ 升）者 ⇒ 必 ≡ `core/lib/version.py` 之 `__version__`（『由真源取』之实）∨ 在本册。⛔ 静默放过：何以须咬 —— `9.0.7 ⇒ 9.0.8` 升号时，`core/lib/version.py:8` 之注文行漏改 ⇒ 该件首注自谎（承 pm_1846 §四.1）。",
+  "note": "本册是**基线留痕**（记「哪些字面豁免、为什么」），由 `tests/unit/test_version_literals_1849.py` 读取：**未登之同族字面 ＝ 红**；**陈旧豁免 ＝ 红**（条目所记字面若不再现 ⇒ 必删条目 · 承 name_shadowing 之例）。⚠ 豁免者多为**样例数据**与**史例** —— ⛔ 删其史迹（改之则史自伪）；⚠ 若产品版号之**族**变（如 `9.x ⇒ 10.x`）⇒ 本册全条**必重核**（族外之字面不复入扫）。",
+  "updated": "2026-10-08",
+  "scan_scope": ["core", "scripts"],
+  "decision_ref": "pm_1821 §一.3 ／ pm_1846 §四.2 ／ pm_1849 §二.2",
+  "entries": [
+    {
+      "id": "VL-01",
+      "path": "scripts/win_pa/pa_update.py",
+      "literals": ["9.0.7"],
+      "kind": "史例（⛔ 改 —— 改之则史例自伪）",
+      "evidence": "pa_update.py:949 —— 逐字「⇒ 「从哪升到哪」不可考（9.0.7 ⇒ 9.0.7 之假记）」（承 pm_1799 §二.1 ／ pm_1833 §三.4 之 `不改`）",
+      "status": "留痕（永存）"
+    },
+    {
+      "id": "VL-02",
+      "path": "scripts/win_pa/pa_update.py",
+      "literals": ["9.0.0", "9.0.1", "9.0.2"],
+      "kind": "`--self-test` 之样例清单（合成之 man ／ dman · 版号任意）",
+      "evidence": "pa_update.py:725（`{\"version\": u\"9.0.1\", \"base_version\": u\"9.0.0\"}`）／ :744（`dman` 9.0.2 ⟷ 9.0.1）",
+      "status": "留痕（器之样例）"
+    },
+    {
+      "id": "VL-03",
+      "path": "scripts/win_pa/pa_update.py",
+      "literals": ["9.0.8"],
+      "kind": "背景注释（述本夜之实：同版号三出 —— 史）",
+      "evidence": "pa_update.py:588 逐字「⭐ pm_1848 §三（一手 · 本夜三出同版号 9.0.8）」",
+      "status": "留痕（永存）"
+    },
+    {
+      "id": "VL-04",
+      "path": "scripts/win_pa/make_payload.py",
+      "literals": ["9.0.0", "9.0.1", "9.0.2", "9.0.9", "9.9.9"],
+      "kind": "`--self-test` 之合成载荷（含**有意不合**之反控样例）",
+      "evidence": "make_payload.py:573–635（`w(u\"p1/core/lib/version.py\", ...)` 一族）；:612 之 9.0.9 与 :614 之 9.0.1 ⟷ 9.0.9 系**反控**之有意不合（T4c 一源之闸）",
+      "status": "留痕（器之样例）"
+    },
+    {
+      "id": "VL-05",
+      "path": "scripts/win_pa/make_update.py",
+      "literals": ["9.0.0", "9.0.1"],
+      "kind": "`--self-test` 之合成清单 ＋ 史例之说明",
+      "evidence": "make_update.py:159（史例：旧 `_ver_lit` 唯 `strip(chr(34))` 之病）／ :357 ／ :372（样例 man ／ big）",
+      "status": "留痕（器之样例 ＋ 史例）"
+    },
+    {
+      "id": "VL-06",
+      "path": "core/lib/version.py",
+      "literals": ["9.0.0"],
+      "kind": "史例（述本件之缘起：`/` 报 6.0.0 ⟷ 仓 9.0.0 之归一）",
+      "evidence": "version.py:2 逐字「承 pm_1384 §三.5：`/` 报 `6.0.0` ⟷ 仓 `9.0.0` ⇒ 归一」",
+      "status": "留痕（永存）"
+    }
+  ]
+}
