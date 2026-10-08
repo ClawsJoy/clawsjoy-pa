@@ -1115,19 +1115,23 @@ function paEngCleanDrawer(){
     /* ⭐⭐ pm_1813 §二.3（要）：旧形**每次入此支皆新建一条同名之折** ⇒ 抽屉里二 ／ 三条一模一样的
        「来源 ／ 详情（抽屉之过程注记 · 原文照录）」—— 用户不知那是几条什么。
        ⇒ 治：① **一条定形**（既有则并之 · ⛔ 二条）② 题须自带**面 ／ 件 ／ 刻**（各条可辨）。 */
-    let d = document.querySelector('#paMoreBody details[data-engskip="1"]');
-    if(d && d.querySelector('.engbody')){
-      const eb = d.querySelector('.engbody');
-      const add = texts.filter(function(x){ return eb.textContent.indexOf(x) < 0; });
-      if(add.length) eb.textContent = eb.textContent + '\n' + add.join('\n');
-    } else {
+    /* ⭐⭐ pm_2104 §四.4⒠：旧形**以「任一 `data-engskip`」索之** ⇒ 首中者常为**他折**
+       （`[来源 ／ 详情]` · 无 `.engbody`）⇒ 守卫落空 ⇒ 每跑一次新建一条（增生 · 承 pm_1813 §二.3）。
+       ⇒ 治：① 固定 `id="paEngNote"`（**一处定形** · 唯此 id 索之）② 幂等（既有 ⇒ 补缺 · 无 ⇒ 建）。
+       ⚠ `data-engskip` 之**值** ⛔ 动（他处皆以「存在」判折 ⇒ 值之一处定形 ＝ `"1"`）。 */
+    let d = document.getElementById('paEngNote');
+    if(!d){
       d = document.createElement('details');
       d.className = 'msub';
+      d.id = 'paEngNote';
       d.setAttribute('data-engskip', '1');
       d.innerHTML = '<summary></summary><div class="t engbody"></div>';
-      d.querySelector('.engbody').textContent = texts.join('\n');
       (document.getElementById('paMoreBody') || root).appendChild(d);
     }
+    let eb = d.querySelector('.engbody');
+    if(!eb){ eb = document.createElement('div'); eb.className = 't engbody'; d.appendChild(eb); }
+    const add = texts.filter(function(x){ return eb.textContent.indexOf(x) < 0; });
+    if(add.length) eb.textContent = (eb.textContent ? (eb.textContent + '\n') : '') + add.join('\n');
     paEngSkipSum(d);
   }
   return hits.length;
@@ -2127,7 +2131,7 @@ function paSelfFailText(s){
   if(/PA\s*通道暂不可用|未挂载/.test(t)){
     /* ⭐ 补（pm_1031 §二 令② 同族）：回落之两路皆不通（检索未命中 ∧ 通道 404）⇒ 也是「没送到」，
        ⛔ 贴「由模型作答」之标（那会让用户以为模型说了话）（承 L76）。 */
-    return {u:'⚠ 这次没送到 —— 后端说「PA 对话通道暂不可用」（404：接口未挂载）；检索侧亦未命中 ⇒ 两路皆不通。可：① 再发一次 ② 把本句发我，我查后端通道挂载。',
+    return {u:'⚠ 这次没送到 —— 「PA 对话通道暂不可用」（接口未挂载）；检索侧亦未命中 ⇒ 两路皆不通。可：① 再发一次 ② 把本句发我，我查通道挂载。',
             e:'原始返回：' + t};
   }
   return null;
@@ -3714,7 +3718,11 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     box.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:9999;max-width:min(720px,92vw);'
       + 'background:#161b22;border:1px solid #d29922;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);'
       + 'padding:10px 14px;font-size:12.5px;line-height:1.8;color:#c9d1d9';
-    var rows = (o.rows || []).map(function(r){ return '<div><b>' + H(r[0]) + '</b>\uff1a' + H(r[1]) + '</div>'; }).join('');
+    /* ⭐ pm_2104 §三.2：`rows` 之第 `3` 元（若有）⇒ 本行 `title`（工程之据 ⛔ 丢源 · 屏上唯人话）。 */
+    var rows = (o.rows || []).map(function(r){
+      var tip = (r[2] != null && String(r[2])) ? (' title="' + H(String(r[2])) + '"') : '';
+      return '<div' + tip + '><b>' + H(r[0]) + '</b>：' + H(r[1]) + '</div>';
+    }).join('');
     var btns = '<button id="' + id + 'Ok" style="font-weight:700">' + H(o.okLabel || '\u786e\u8ba4') + '</button>';
     if(o.alwaysLabel) btns += '<button id="' + id + 'Al">' + H(o.alwaysLabel) + '</button>';
     btns += '<button id="' + id + 'No">' + H(o.cancelLabel || '\u53d6\u6d88') + '</button>';
@@ -4037,7 +4045,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   function refHas(r){ r = r || refOf(); return !!(r['件号'] || r['sha16']); }
   function refLine(r){
     r = r || refOf();
-    if(!refHas(r)) return '缺（未附原信 ⇒ ⛔ 装已附 · 后端回执同显「缺」）';
+    if(!refHas(r)) return '缺（未附原信 · 对端回执同显「缺」）';
     return '件号 ' + (r['件号'] || '（缺）') + ' ／ sha16 ' + (r['sha16'] || '（缺）');
   }
   /* ⭐ pm_刀15p §一③ ＋ pm_刀16p §一.4：**花了多少** ＋ **$/件** —— 读数皆后端取（⛔ 前端估 · ⛔ 数 token）。 */
@@ -4048,20 +4056,20 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   }
   function spendLine(rc){
     var s = (rc && rc['花了多少']) || null;
-    if(!s) return '未取得（后端未给 花了多少 键）';
+    if(!s) return '未取得（对端未给「花了多少」）';
     var b = s['bytes'] || {};
-    return 'wall_s ' + numOr(s['wall_s'], ' 秒') + ' · 入 ' + numOr(b['in'], ' B') + ' ／ 出 ' + numOr(b['out'], ' B')
+    return '用时 ' + numOr(s['wall_s'], ' 秒') + ' · 入 ' + numOr(b['in'], ' 字节') + ' ／ 出 ' + numOr(b['out'], ' 字节')
       + ' · ' + numOr(s['money']) + ' ' + String(s['currency'] || 'CNY')
-      + (s['source'] ? (' · 源 ' + String(s['source'])) : '')
-      + (s['读数之器'] ? (' · 器 ' + String(s['读数之器'])) : '');
+      + (s['source'] ? (' · 取自 ' + String(s['source'])) : '')
+      + (s['读数之器'] ? (' · 量法 ' + String(s['读数之器'])) : '');
   }
   function costLine(rc){
     var c = (rc && rc['成本']) || null;
-    if(!c) return '未取得（后端未给 成本 键）';
-    return '单价 ' + numOr(c['单价_元每件']) + ' ' + String(c['币'] || 'CNY') + ' ／ 件 · 总 ' + numOr(c['总花费_元'])
+    if(!c) return '未取得（对端未给「成本」）';
+    return '每件 ' + numOr(c['单价_元每件']) + ' ' + String(c['币'] || 'CNY') + ' · 总 ' + numOr(c['总花费_元'])
       + ' · 件数 ' + numOr(c['件数']) + '（口径 ' + String(c['口径'] || '—') + '）'
       + (c['本地_远端'] ? (' · ' + String(c['本地_远端'])) : '')
-      + (c['tokens'] == null ? (' · tokens 无（' + String(c['tokens_之由'] || '未取得') + '）') : (' · tokens ' + c['tokens']));
+      + (c['tokens'] == null ? (' · 词元 无（' + String(c['tokens_之由'] || '未取得') + '）') : (' · 词元 ' + c['tokens']));
   }
   /* ⭐ pm_073 §三（T1.1）：`stop_to` 入参 —— ⛔ 必填；**唯面有真值方传** ⇒ 缺省由后端自解「本人」
      （⛔ 传 `本人` 字面 ⇒ 会把后端之**正确默认**顶掉 · 我 1129 前向接线之隐病 · 自逮）。 */
@@ -4093,8 +4101,8 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   function setDecision(id){ var e = Q(ID.dec); if(e) e.value = String(id == null ? '' : id); decisionId = String(e ? e.value : '').trim(); return decisionId; }
   /* ⭐ pm_072 §一.1：面须能**读** PM 落的真拍板（⛔ 本面造号 —— 真拍板写 data\ 属 PM 之界） */
   var decLoaded = false;
-  var BLOCK_LABEL = { input:'参数闸（缺参 · 400）', decision_gate:'拍板闸（decision_id · 403 fail-closed）',
-                      idem:'幂等闸（同 task_id 异文 · 409）', recipient_scope:'收件人闸（甲形限域 · 403）',
+  var BLOCK_LABEL = { input:'参数闸（缺参 · 400）', decision_gate:'拍板闸（未拍板 · 403 宁拒）',
+                      idem:'幂等闸（同一件已交过 · 409）', recipient_scope:'收件人闸（超出允许范围 · 403）',
                       credentials:'凭据闸（502）', send:'发送（502）' };
   async function loadDecision(force){
     var el = Q(ID.dec), src = Q(ID.decSrc);
@@ -4106,7 +4114,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       var rows = ((d && d.decisions) || []).filter(function(x){ return x && x.decision === '采纳' && x.id; });
       decLoaded = true;
       if(!rows.length){
-        if(src) src.textContent = '对端还没有「采纳」之拍板（HTTP ' + r.status + '）⇒ 照实（不由本面编号）';
+        if(src){ src.textContent = '对端还没有「采纳」之拍板（' + r.status + '）⇒ 照实（不由本面编号）'; src.title = '原字：HTTP ' + r.status; }
         return null;
       }
       var last = rows[rows.length - 1];
@@ -4218,9 +4226,9 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     probeRun = (probe === true);
     var out = Q(ID.out);
     var task = val(ID.task).trim() || lastPlanTask;
-    if(!task){ if(out) out.textContent = '\u62cd\u677f\uff1a\u26d4 \u65e0\u4ea4\u529e \u21d2 \u672a\u62cd\u677f'; return; }
+    if(!task){ if(out) out.textContent = '拍板：无交办 ⇒ 未拍板'; return; }
     lastStage = 'decision';
-    if(out) out.textContent = '\u62cd\u677f\uff1a\u8bf7\u6c42\u4e2d\u2026\uff08POST /v9/pa/decision \u00b7 \u91c7\u7eb3\uff09';
+    if(out){ out.textContent = '拍板：请求中…'; out.title = '工程之据：POST /v9/pa/decision · 采纳'; }
     try{
       var r = await fetch(API + '/v9/pa/decision', { method:'POST', cache:'no-store',
         headers:{ 'Content-Type':'application/json' },
@@ -4230,16 +4238,17 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       var d = await r.json().catch(function(){ return null; });
       var rec = d && d.decision;
       if(!d || d.ok === false || !rec || !rec.id){
-        if(out) out.textContent = '\u62cd\u677f\uff1a\u540e\u7aef\u672a\u7ed9 decision_id\uff08HTTP ' + r.status
-          + '\uff09\u21d2 \u7167\u5b9e\uff08\u26d4 \u524d\u7aef\u7f16\u53f7\uff09';
+        if(out){ out.textContent = '拍板：对端未给拍板件号（' + r.status
+          + '）⇒ 照实（不由本面编号）'; out.title = '工程之据：HTTP ' + r.status; }
         return;
       }
       decisionId = String(rec.id);
       setDecision(decisionId);
-      var _ds = Q(ID.decSrc); if(_ds) _ds.textContent = '本面自拍（POST /v9/pa/decision）· 件之刻 '
-        + ((rec && rec.ts != null) ? paSelfAt(rec.ts) : ('缺（后端未给 ts）⇒ 本轮读数刻 ' + nowStr())) + '（承 pm_刀11p §二.4）';
-      if(out) out.textContent = '\u62cd\u677f\uff1a\u5df2\u843d decision_log \u00b7 id ' + decisionId
-        + '\uff08HTTP ' + r.status + '\uff09\u00b7 \u523b ' + nowStr();
+      var _ds = Q(ID.decSrc); if(_ds){ _ds.textContent = '本面自拍 · 件之刻 '
+        + ((rec && rec.ts != null) ? paSelfAt(rec.ts) : ('缺（对端未给「刻」）⇒ 本轮读数刻 ' + nowStr()));
+        _ds.title = '工程之据：POST /v9/pa/decision · 承 pm_刀11p §二.4'; }
+      if(out){ out.textContent = '拍板：已记入对端之账 · 件号 ' + decisionId
+        + '（' + r.status + '）· 刻 ' + nowStr(); out.title = '工程之据：HTTP ' + r.status; }
       say('\ud83d\uddc2 T1 \u5df2\u62cd\u677f\uff08\u91c7\u7eb3\uff09\uff1adecision_id ' + decisionId, 'ok');
     }catch(e){
       if(out) out.textContent = '\u62cd\u677f\uff1a\u8bf7\u6c42\u672a\u9001\u8fbe\uff08' + String((e && e.message) || e) + '\uff09\u21d2 \u672a\u62cd\u677f';
@@ -4261,7 +4270,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       if(out) out.textContent = '交付：未拍板 ⇒ 本面不发 · 正在留下「停手」之痕…';
       return stopTrace('拍板（T1 发信之授权点 · 未批 ⇒ 止）', tid0, b).then(function(sd){
         var who = (sd && sd['报给谁']) ? String(sd['报给谁']) : stopTo();
-        var whoAxis = (sd && sd['报给谁之面']) ? ('后端 deliver/stop · ' + String(sd['报给谁之面'])) : '本面之「停手收件人」字段';
+        var whoAxis = (sd && sd['报给谁之面']) ? ('对端 deliver/stop · ' + String(sd['报给谁之面'])) : '本面之「停手收件人」字段';
         showFail('拍板（T1 发信之授权点 · 未批 ⇒ 止）', who, whoAxis,
           '未拍板 —— 本面之弱保证（未批即不发）；'
           + '真闸在对端（发信之路内 · 缺拍板 ⇒ 403 宁拒）', tid0);
@@ -4292,15 +4301,15 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       rows: [
         ['做什么', '发信给 ' + b.to.join(', ') + '（主题：' + b.subject + '）'],
         ['凭什么', refLine()],
-        ['通道', '我方闭环（真闸在对端）'],
+        ['通道', '我方闭环（真闸在对端）', 'POST /v9/pa/deliver/mail'],
         ['代价', '未取得（发后之回执才给：用时 ／ 字节 ／ 词元 ／ 每件花费 ⇒ 不由本面估）'],
-        ['报给谁', stopTo() + '（停手时由对端定 · 其「报给谁」恒有）'],
+        ['报给谁', stopTo() + '（停手时由对端定 · 其「报给谁」恒有）', 'POST /v9/pa/deliver/stop'],
         ['可撤销性', '未批即未动 —— 此刻后悔 ＝ 什么都不发生'],
         ['弱保证', '未批 ⇒ 本面不发（本面之弱保证）⇔ 对端会拒（真闸 · 在发信之路内）'],
-        ['授权', needAdopt ? '本卡即授权点 ⇒ 点「本次发送」落真拍板再发' : ('decision_id ' + decId())],
+        ['授权', needAdopt ? '本卡即授权点 ⇒ 点「本次发送」落真拍板再发' : ('拍板件号 ' + decId()), 'POST /v9/pa/decision'],
         ['人工步数', String(paT1Steps) + '／2（点本卡 ⇒ ' + String(paT1Steps + 1) + '）'],
         ['引哪封来信', refLine()],
-        ['task_id', tid],
+        ['件号', tid],
         ['刻', nowStr()]
       ],
       okLabel: '✅ 本次发送',
@@ -4314,7 +4323,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       onCancel: function(){
         stopTrace('授权点（取消 ⇒ 未授权 ⇒ 未发）', tid, b).then(function(sd){
           var who = (sd && sd['报给谁']) ? String(sd['报给谁']) : stopTo();
-          var axis = (sd && sd['报给谁之面']) ? ('后端 deliver/stop · ' + String(sd['报给谁之面'])) : '本面之「停手收件人」字段';
+          var axis = (sd && sd['报给谁之面']) ? ('对端 deliver/stop · ' + String(sd['报给谁之面'])) : '本面之「停手收件人」字段';
           showFail('授权点（取消 ⇒ 未授权 ⇒ 未发）', who, axis,
             '点了「❌ 取消」⇒ 未授权 ⇒ 未发（此刻后悔 ＝ 什么都不发生）', tid);
           if(out) out.textContent = '交付：已取消（未批即未动 · 未发）· 停手留痕之「报给谁」' + who;
@@ -4350,17 +4359,20 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   async function send(tid, b){
     var out = Q(ID.out);
     lastTaskId = tid; lastStage = 'deliver';
-    if(out) out.textContent = '\u4ea4\u4ed8\uff1a\u53d1\u9001\u4e2d\u2026\uff08POST /v9/pa/deliver/mail\uff09\u00b7 task_id ' + tid;
+    if(out){ out.textContent = '交付：发送中…'; out.title = '工程之据：POST /v9/pa/deliver/mail · 件号 ' + tid; }
+    var okSent = false;
     try{
       var r = await fetch(API + '/v9/pa/deliver/mail', { method:'POST', cache:'no-store',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify(payloadOf(tid, b)) });
       lastHttp = r.status;
       var d = await r.json().catch(function(){ return null; });
+      okSent = (r.status >= 200 && r.status < 300) && d && d.ok !== false && d.success !== false;
       renderReceipt(r.status, d, tid, null);
     }catch(e){
       renderReceipt(0, null, tid, String((e && e.message) || e));
     }
+    if(out) out.textContent = okSent ? '交付：已送出 · 回执见下' : '交付：未送出 ⇒ 见下之回执';
   }
   function fourItems(src){
     src = src || {};
@@ -4388,7 +4400,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       rows = want.map(function(p){
         var v = null, i, x;
         for(i = 0; i < p[1].length; i++){ x = src[p[1][i]]; if(x != null && x !== ''){ v = x; break; } }
-        return [p[0], (v == null) ? '未取得（后端未给此件）' : flat(v)];
+        return [p[0], (v == null) ? '未取得（对端未给此件）' : flat(v)];
       });
     }
     /* ⭐ 引哪封来信 ／ $/件：缺则补（⛔ 只报四件而漏此二要件 · 承 pm_刀15p §一②③ ＋ pm_刀16p §一.4） */
@@ -4396,7 +4408,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     var basis = src['凭什么'] || null;
     var ir = (basis && typeof basis === 'object') ? basis['引哪封来信'] : null;
     if(!has(/引哪封来信/) && ir) rows.push(['引哪封来信', flat(ir)]);
-    if(!has(/成本|\$|\/件/)) rows.push(['$/件', costLine(src)]);
+    if(!has(/成本|\$|\/件|每件花费/)) rows.push(['每件花费', costLine(src)]);
     if(!has(/谁批的/) && src['谁批的']) rows.push(['谁批的', flat(src['谁批的'])]);
     return rows;
   }
@@ -4412,8 +4424,8 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       + '<div><b>停在哪一步</b>：' + H(stageLbl) + (blockedBy ? ('　<b>闸</b>：' + H(BLOCK_LABEL[blockedBy] || blockedBy)) : '') + '</div>'
       + '<div><b>\u62a5\u7ed9\u8c01</b>\uff1a' + H(who) + '\uff08\u505c\u624b\u6536\u4ef6\u4eba \u00b7 \u53d6\u81ea' + H(whoAxis) + '\uff09</div>'
       + '<div><b>\u56e0</b>\uff1a' + H(why) + '</div>'
-      + '<div><b>task_id</b>\uff1a' + H(tid || '\u2014') + '\u3000<b>decision_id</b>\uff1a' + H(decisionId || '\u2014') + '</div>'
-      + '<div style="' + SUB + '">\u523b ' + nowStr() + ' \u00b7 \u26d4 \u672a\u542b\u51ed\u636e\uff08\u6388\u6743\u7801\u503c\u4e0d\u5165\u5c4f \u00b7 \u627f pm_071 \u00a7\u56db\uff09</div>';
+      + '<div><b>件号</b>：' + H(tid || '—') + '　<b>拍板件号</b>：' + H(decisionId || '—') + '</div>'
+      + '<div style="' + SUB + '" title="工程之据：未含凭据（授权码值不入屏）· 承 pm_071 §四">刻 ' + nowStr() + '</div>';
   }
   function showFail(stageLbl, who, whoAxis, why, tid){
     var host = Q(ID.rc); if(!host) return;
@@ -4437,8 +4449,8 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         + '<div><b>件之刻（对端回执 · 不是本轮）</b>：' + H(pieceAt || '缺（对端回执未给「刻」）')
         + '　<span style="' + SUB + '">本轮读数刻 ' + nowStr() + '</span></div>'
         + '<div><b>花了多少（真读数）</b>：' + H(spendLine(rco)) + '</div>'
-        + '<div><b>$/件</b>：' + H(costLine(rco)) + '</div>'
-        + '<div style="' + SUB + '" title="真源：POST /v9/pa/deliver/mail 回执">task_id ' + H(tid) + ' · 来源：对端回执'
+        + '<div><b>每件花费</b>：' + H(costLine(rco)) + '</div>'
+        + '<div style="' + SUB + '" title="真源：POST /v9/pa/deliver/mail 回执">件号 ' + H(tid) + ' · 来源：对端回执'
         + '（四件 ＋ 引哪封来信 ＋ 件之刻 ＋ 每件花费 皆对端取 · 不由本面估）'
         + ((d && d['印']) ? (' · 印 ' + H(d['印'])) : '') + '</div>'
         + '<details class="eng"><summary>来源 ／ 详情</summary><div class="engbody"></div></details>';
@@ -4452,7 +4464,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       var why = netErr ? ('请求未送达（' + netErr + '）· 不等于未发')
         : ('HTTP ' + http + (d && d.error ? (' · ' + d.error) : '')
            + (http === 403 ? ' ⇒ 对端宁拒（真闸）'
-              : (http === 404 ? ' ⇒ 后端路由未接（器未接之证）'
+              : (http === 404 ? ' ⇒ 对端未接此路'
                  : (http === 409 ? ' ⇒ 同一件已交过（不重发）' : ''))));
       /* ⭐ 判据 ⑥：停在哪一步 ＋ 报给谁 —— **取后端**（回执 ∨ 留痕行 ∨ policy.stop_to · ⛔ 前端自说） */
       var stage = (rc && rc['停在哪一步']) || BLOCK_LABEL[(d && d.blocked_by) || ''] || '交付';
@@ -4466,8 +4478,8 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       host.innerHTML = failHTML(String(stage), who,
           hasBackendWho ? whoAxisB : '本面之「停手收件人」字段',
           why, tid, (d && d.blocked_by) || '')
-        + '<div><b>件之刻（后端回执）</b>：' + H(rc && rc['刻'] ? String(rc['刻']) : '无（此路未到回执行）') + '</div>'
-        + '<div><b>$/件</b>：' + H(rc ? costLine(rc) : '无回执（此路未到回执行 ⇒ 未取得）') + '</div>'
+        + '<div><b>件之刻（对端回执）</b>：' + H(rc && rc['刻'] ? String(rc['刻']) : '无（此路未到回执行）') + '</div>'
+        + '<div><b>每件花费</b>：' + H(rc ? costLine(rc) : '无回执（此路未到回执行 ⇒ 未取得）') + '</div>'
         + '<details class="eng"><summary>来源 ／ 详情</summary><div class="engbody"></div></details>';
       say('🗂 T1 交付失败回执：停在「' + String(stage) + '」· 报给 ' + who + ' · ' + why, 'warn');
     }
@@ -4518,15 +4530,16 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       + 'max-height:52%;overflow:auto';
     box.innerHTML =
       '<summary style="cursor:pointer;padding:5px 14px;font-size:11.5px;color:var(--sub)">'
-      + '\ud83d\uddc2 <b style="color:var(--text)">T1 \u4ea4\u4ed8\u9762</b>\uff08\u53d1\u4fe1 \u00b7 \u6211\u65b9\u95ed\u73af\uff09'
+      + '🗂 <b style="color:var(--text)" title="工程之据：T1 交付面">交付面</b>（发信 · 由 PA 自己送出）'
       + '\u00b7 \u505c\u624b\u6536\u4ef6\u4eba\uff1a<b id="' + ID.echo + '" style="color:var(--text)">\u672c\u4eba</b>'
       + '\u3000<span style="opacity:.8" id="' + ID.backWrap + '">\u4e0e\u5bf9\u7aef\u4e4b\u901a\uff1a<span id="' + ID.back + '">\u63a2\u6d4b\u4e2d\u2026</span></span></summary>'
       + '<div style="padding:6px 14px 10px;font-size:11.5px;line-height:1.75">'
       + '<div>\u26a0 <b>\u5f31\u4fdd\u8bc1</b>\uff1a\u672a\u6279 \u21d2 \u672c\u9762\u4e0d\u53d1\uff08<b>\u672c\u9762\u4e4b\u5f31\u4fdd\u8bc1</b>\uff09'
-      + ' \u27f7 <b>\u5bf9\u7aef\u4f1a\u62d2</b>\uff08\u771f\u95f8 \u00b7 \u5728\u53d1\u4fe1\u8def\u7531\u5185\uff09\u2014\u2014 '
+      + ' ⇔ <b>对端会拒</b>（真闸 · 在真发那一步）—— '
       + '<span title="\u5de5\u7a0b\u4e4b\u636e\uff1a\u5f31\u4fdd\u8bc1 \u2260 \u771f\u95f8 \u00b7 \u627f pm_071 \u00a7\u4e09">\u5f31\u4fdd\u8bc1 \u2260 \u771f\u95f8</span>\u3002</div>'
-      + '<details class="eng"><summary>\u9012\u4ea4\u4e4b\u89c4\uff08\u5de5\u7a0b\u4e4b\u636e \u00b7 \u70b9\u5f00\u5373\u89c1\uff09</summary><div class="engbody">\u4f53\uff1aPOST /v9/pa/deliver/mail {user_id, task_id, decision_id, to, subject, body_md}'
-      + ' \u00b7 \u7f3a decision_id \u21d2 403 fail-closed \u00b7 \u91cd\u653e\u540c task_id \u21d2 \u8fd4\u65e2\u6709\u56de\u6267</div></details>'
+      + '<details class="eng"><summary>递交之规（工程之据 · 点开即见）</summary>'
+      + '<div class="engbody">体：POST /v9/pa/deliver/mail {user_id, task_id, decision_id, to, subject, body_md}'
+      + ' · 缺 decision_id ⇒ 403 fail-closed · 重放同 task_id ⇒ 返既有回执</div></details>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0">'
       + '<textarea id="' + ID.task + '" rows="2" placeholder="\u2460 \u4ea4\u529e\uff08\u81ea\u7136\u8bed\u8a00 \u00b7 \u4e00\u53e5\u8bdd\uff09" style="' + INP + '"></textarea>'
       + '<textarea id="' + ID.body + '" rows="2" title="\u5b57\u6bb5\uff1abody_md" placeholder="\u6b63\u6587\uff08\u7559\u7a7a \u21d2 \u53d6\u4ea4\u529e\uff09" style="' + INP + '"></textarea>'
@@ -4534,7 +4547,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       + '<label style="' + SUB + '" title="\u5b57\u6bb5\uff1asubject">\u4e3b\u9898<input id="' + ID.subject + '" style="' + INP + '"></label>'
       + '<label style="grid-column:1/3;color:var(--amber)">⭐ 停手收件人（默认 本人 · 不会默认「无收件人」）'
       + '<input id="' + ID.stop + '" placeholder="本人（留空即本人）" style="' + INP + '"></label>'
-      + '<label style="' + SUB + '">引哪封来信 · 件号（凭什么 · C1）<input id="' + ID.refNo + '" placeholder="原信之件号（留空 ⇒ 回执显「缺」）" style="' + INP + '"></label>'
+      + '<label style="' + SUB + '">引哪封来信 · 件号（凭什么 · 来信之件号）<input id="' + ID.refNo + '" placeholder="原信之件号（留空 ⇒ 回执显「缺」）" style="' + INP + '"></label>'
       + '<label style="' + SUB + '">引哪封来信 · sha16<input id="' + ID.refSha + '" placeholder="原信 sha16（留空 ⇒ 显「缺」）" style="' + INP + '"></label>'
       + '<label style="grid-column:1/3;' + SUB + '" title="工程之据：decision_id（拍板之键）">拍板件号（真拍板由对端读 · 不由本面编号）'
       + '<input id="' + ID.dec + '" placeholder="d…（可点下方「取最新拍板」）" style="' + INP + '"></label>'

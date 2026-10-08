@@ -66,6 +66,33 @@ _CJK = tf._CJK
 _STMT_END = tf._STMT_END
 _NEEDLE = tf._NEEDLE
 _DRIVE = tf._DRIVE
+
+#: ⚠ 旧形（`tf._screen_part`）之病：先剔**完整**之 `title="…"` ⇒ 留 `title=` ⇒ 复判「悬引」
+#:   ⇒ **截去其后之屏上之字**（如 `title="真源：…">件号 ' + …` 之屏上段 `件号 ` 得漏 ⇒ 反控空跑）。
+#:   今**自左至右**剔：完整之属性 **剔其值** ∧ **悬引**（值在拼接式之内）⇒ 自此皆属性 ⇒ 弃余。
+_ATTR_NAME_RE = re.compile(u'[A-Za-z_:][-A-Za-z0-9_:]*\\s*=\\s*')
+
+
+def _screen_part_local(txt: str) -> str:
+    u"""一处字面 ⇒ 其**屏上**之分（属性 `name="…"` ⛔ 上屏 ⇒ 剔之 · ⛔ 截其后之屏上之字）。"""
+    out, i, n = [], 0, len(txt)
+    while i < n:
+        m = _ATTR_NAME_RE.match(txt, i)
+        if m:
+            q = txt[m.end():m.end() + 1]
+            if q in ('"', "'"):
+                e = txt.find(q, m.end() + 1)
+                if e < 0:
+                    break
+                i = e + 1
+                continue
+            break
+        out.append(txt[i])
+        i += 1
+    return u"".join(out)
+
+
+_SCREENPART = _screen_part_local
 #: 字面内之 HTML 属性（`title="…"` ／ `data-axis="probe"` 之族）⇒ **屏外** ⇒ 剔之（⛔ 上屏之字）
 _ATTR_RE = re.compile(u'[A-Za-z_:][-A-Za-z0-9_:]*\\s*=\\s*"[^"]*"')
 
@@ -75,6 +102,14 @@ STRICT_BANS = ((u"cross", u"\u26d4"), (u"star", u"**"), (u"btick", u"`"),
 #: ⭐ 端字段名 —— 平文 ⛔ 许现（承 pm_2095 §三.1；`title` ／ 折体 ／ 端给之真 id ⇒ 绿）
 FIELDNAMES = (u"level", u"caps", u"invoke", u"cost", u"probe", u"paths", u"ids")
 _FIELD_RE = re.compile(u"(?<![A-Za-z0-9_$])(" + u"|".join(FIELDNAMES) + u")(?![A-Za-z0-9_$])")
+#: ⭐⭐ 标识名族（pm_2104 §四.5⒟⒝）：端之键 ／ 工程之辞 —— 平文 ⛔ 许现（⇒ `title` ／ 折体）
+IDNAMES = (u"task_id", u"decision_id", u"wall_s", u"tokens", u"fail-closed")
+_ID_RE = re.compile(u"(?<![A-Za-z0-9_$])(" + u"|".join(IDNAMES) + u")(?![A-Za-z0-9_$])")
+#: ⭐ 原字之 `HTTP `：屏上唯 `<码>`（原字**逐字全**入 `title` · 承 pm_2097 §三.2 ／ pm_2102 §二.3）
+_HTTP_RE = re.compile(u"HTTP ")
+#: ⭐ 工程语（pm_2102 §一 丁12）：平文 ⛔ 许现
+ENGWORDS = (u"\u8def\u7531",)   # 「路由」
+_ENG_RE = re.compile(u"|".join(ENGWORDS))
 #: 白名单 —— 端给之真 id ／ 真件名 ／ 会话 id（照实之律 · 面 ⛔ 代端改名）
 ALLOW = re.compile(u"(?:ds_chat|dsh_wsl|v9_agent|web_[A-Za-z0-9]+|\\.agent_state\\.json|pa_[A-Za-z0-9_]+)")
 #: 命令行之旗（`--system-level` ／ `-background` 之族）＝ 端给之真值 ⇒ 白名单
@@ -85,6 +120,16 @@ def _read(p) -> str:
     return io.open(str(p), encoding="utf-8").read()
 
 
+def _unesc(s: str) -> str:
+    r"""源码之**原文**（`\u26d4` 之族）⇒ 真字。
+
+    ⚠ 一手之验：`_literals` 所给者 ＝ 源码之**原文** ⇒ 若 ⛔ 解码 ⇒ 凡以 `\uXXXX` 写就之字面
+      一条也逮不着（原样扫得 `0` 条 · 解码后乃见）⇒ 齿成**空跑**（承律①：量法即读数之半）。
+    """
+    s = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), s)
+    return s.replace("\\n", "\n").replace("\\'", "'").replace('\\"', '"').replace("\\\\", "\\")
+
+
 def _mask(t: str) -> str:
     u"""白名单之串 ⇒ 掩之（免得齿咬「端给之真 id」／命令行之旗）。"""
     t = _FLAG_RE.sub(lambda m: u"\u3000" * len(m.group(0)), t)
@@ -92,17 +137,72 @@ def _mask(t: str) -> str:
 
 
 def _bad(t: str) -> list:
+    m = _mask(t)
     out = [nm for (nm, pat) in STRICT_BANS if pat in t]
-    if _FIELD_RE.search(_mask(t)):
+    if _FIELD_RE.search(m):
         out.append(u"fieldname")
-    if _DRIVE.search(_mask(t)):
+    if _DRIVE.search(m):
         out.append(u"drive")
-    if re.search(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", _mask(t)):
+    if re.search(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", m):
         out.append(u"underscore")
+    if _ID_RE.search(m):
+        out.append(u"idname")
+    if _HTTP_RE.search(m):
+        out.append(u"http")
+    if _ENG_RE.search(m):
+        out.append(u"engword")
     return out
 
 
 # ============================== 射程（本批之界） ==============================
+#: ⭐⭐ T1 交付面之诸函（pm_2104 §四.4⒝）—— **缩进之函**（IIFE 之内）⇒ 须另取（`_ifuncs`）
+_T1_SCOPE_FNS = (u"refLine", u"spendLine", u"costLine", u"numOr", u"loadDecision", u"doAdopt",
+                 u"openAuthzCard", u"send", u"fourItems", u"failHTML", u"showFail",
+                 u"renderReceipt", u"humanOf", u"flat", u"deliverBody", u"build", u"stopAsk",
+                 u"engDetails", u"probeBackend")
+#: ⭐⭐ 折（`details.eng`）之**体** ⇒ **屏外**（⛔ 上屏）· 逐字明标 ＋ 书其由（pm_2104 §三.4）：
+#:   其字（`POST /v9/pa/deliver/mail` ／ `task_id` ／ `decision_id` ／ `fail-closed`）＝ **工程之据**
+#:   ⇒ ⛔ 删（删之即违 pm_2061 裁⒉「⛔ 丢真源」）；**反控**：去其折体之容器（＝把其字移入平文）⇒ **必咬**。
+_T1_IGN = (
+    (u"'<div class=\"engbody\">体：POST /v9/pa/deliver/mail {user_id, task_id, decision_id, to, subject, body_md}'",
+     u"返既有回执</div></details>'"),
+)
+_T1_IGN_WHY = u"折体（`details.eng` 之体）⇒ 屏外 ⇒ 真源 ⛔ 丢 ／ 工程之据 ⛔ 上屏"
+_T1_BLOCK_LABEL = u"send:'发送（502）' }"
+
+
+def _ifuncs(s: str) -> list:
+    u"""**缩进之函**（IIFE 之内）⇒ `[(名, 起, 止)]`（花括号配平 · 同 `tf._funcs`）。
+
+    ⚠ `tf._funcs` 之正则以 `^function` 起 ⇒ 缩进之函（本轮之 T1 诸函）**一条也收不着**。
+    """
+    out = []
+    for m in re.finditer(r"(?:^|\n)[ \t]*(?:async[ \t]+)?function[ \t]+(\w+)[ \t]*\(", s):
+        i = s.index("{", m.end() - 1)
+        d, j = 0, i
+        while j < len(s):
+            if s[j] == "{":
+                d += 1
+            elif s[j] == "}":
+                d -= 1
+                if d == 0:
+                    break
+            j += 1
+        out.append((m.group(1), m.start(), j + 1))
+    return out
+
+
+def _find(s: str, a: str, b: str, frm: int = 0) -> tuple:
+    u"""同 `_anchor` 而**⛔ 断言**（缺 ⇒ `(-1, -1)`）—— 俾反控之变体（其锚已被去）得**真扫**。"""
+    i = s.find(a, frm)
+    if i < 0:
+        return (-1, -1)
+    j = s.find(b, i)
+    if j < 0:
+        return (-1, -1)
+    return (i, j + len(b))
+
+
 def _spans(sys_src: str, self_src: str) -> dict:
     u"""本批所动之区间（⛔ 全件扫 —— 全件扫必咬他面无涉之件 ⇒ 越批之界）。"""
     fns = _FUNCS(sys_src)
@@ -116,23 +216,35 @@ def _spans(sys_src: str, self_src: str) -> dict:
     # `#paHistList` 之段（IIFE ⇒ 以注释锚取）
     self_sp.append(_ANCHOR(self_src, u"/* ================= 六 · 7 · 会话历史",
                            u"window.paHistInfo = function()"))
+    # ⭐⭐ T1 交付面（pm_2104 §四.4⒝）：缩进之函 ＋ `BLOCK_LABEL`（平文之闸名 · 丁2）
+    ifns = _ifuncs(self_src)
+    for n in _T1_SCOPE_FNS:
+        self_sp.append(_FSPAN(ifns, n))
+    self_sp.append(_find(self_src, u"var BLOCK_LABEL = {", _T1_BLOCK_LABEL))
     ign = [(_ANCHOR(self_src, u"      box.innerHTML = '<summary title=\"工程之据：真源",
                     u".jsonl（append-only）")),
            (_ANCHOR(self_src, u'<details class="eng" id="paAskStatBox">',
                     u"paSelfModeDiagHtml()\n    + '</div></details>'"))]
+    for (a, b) in _T1_IGN:
+        ign.append(_find(self_src, a, b))
     return {"sys": sys_sp, "self": self_sp, "ign": ign}
 
 
 def scan(src: str, spans: list, ign: list) -> dict:
-    u"""纯扫（⛔ 触盘）：`{kept, hits}` —— `kept` ＝ scope 内之屏上字面。"""
-    fns = _FUNCS(src)
+    r"""纯扫（⛔ 触盘）：`{kept, hits}` —— `kept` ＝ scope 内之屏上字面。
+
+    ⚠ **先解码**（`_unesc`）：`_literals` 所给者 ＝ 源码之**原文**（`\u26d4` 之族）
+      ⇒ ⛔ 解码则凡以 `\uXXXX` 写就之字面得漏（pm_2104 §四.4「本批之真洞」之一）。
+    """
+    fns = _FUNCS(src) + _ifuncs(src)
     kept, hits = [], []
     for (pos, txt) in _LITS(src):
         if not any(a >= 0 and a <= pos < b for (a, b) in spans):
             continue
         if any(a >= 0 and a <= pos < b for (a, b) in ign):
             continue
-        if not _CJK.search(txt):
+        t = _unesc(txt)
+        if not _CJK.search(t):
             continue
         k = max(src.rfind(c, 0, pos) for c in _STMT_END)
         pre_raw = src[k + 1:pos]
@@ -143,9 +255,12 @@ def scan(src: str, spans: list, ign: list) -> dict:
             continue
         if re.search(r"setAttribute\(\s*['\"]title['\"]\s*,", pre):
             continue
+        # ⭐ 门后之流水（`say(` ／ `addLog(`）⇒ ⛔ 上屏（⛔ 本批所计 · 另族候议 · pm_2104 §四.1「并报」）
+        if re.search(r"\b(?:say|addLog)\s*\(", pre):
+            continue
         if _NEEDLE.search(pre.rstrip()):
             continue
-        t = _ATTR_RE.sub(u"", _SCREENPART(txt))
+        t = _SCREENPART(t)
         kept.append((pos, _OWNER(fns, pos), t))
         b = _bad(t)
         if b:
@@ -321,7 +436,7 @@ _T1_PAIRS = (
      u"\"><b>回执（后端 · HTTP ' + http + '）</b>"),
     (u"件之刻（对端回执 · 不是本轮）", u"件之刻（后端回执 · ⛔ 本轮刻）"),
     (u"缺（对端回执未给「刻」）", u"缺（后端回执未给「刻」）"),
-    (u"title=\"真源：POST /v9/pa/deliver/mail 回执\">task_id ' + H(tid) + ' · 来源：对端回执",
+    (u"title=\"真源：POST /v9/pa/deliver/mail 回执\">件号 ' + H(tid) + ' · 来源：对端回执",
      u"\">task_id ' + H(tid) + ' · 真源：POST /v9/pa/deliver/mail 回执"),
     (u"'（四件 ＋ 引哪封来信 ＋ 件之刻 ＋ 每件花费 皆对端取 · 不由本面估）'",
      u"'（四件 ＋ 引哪封来信 ＋ 件之刻 ＋ $/件 皆后端取 · ⛔ 前端估）'"),
@@ -369,9 +484,160 @@ def test_S4_次批余数之屏净与反控():
         assert _pairs_bad(mut, _SRC_FILES_PAIRS + _SRC_SELF_PAIRS) != [], u"反控（真源族）：须咬：%r" % (new,)
 
 
+# ============================== S6 · 本批逐字文案（静态 · ⛔ 触浏览器） ==============================
+#: ⭐⭐ 本批（pm_2104 §四.1 丁 ／ §四.2 自逮 ／ 另逮 ／ §四.3 ⑧ ／ pm_2106 §三.2）之逐字。
+#: 形 ＝ `(新, 旧, 定形之数)`：新辞须**恰 n 处**（一处定形 · 承 `test_S1c`）∧ 旧辞须**尽除**。
+#: ⚠ `对端 deliver/stop` 合 `n=2`（`whoAxis` 之正控 ／ 取消 二支 —— 一处定形之辞 · 二处落点）。
+_T1_PAIRS2 = (
+    # ⒜ 真源族之残（refLine ／ spendLine ／ costLine）
+    (u"'缺（未附原信 · 对端回执同显「缺」）'",
+     u"'缺（未附原信 ⇒ ⛔ 装已附 · 后端回执同显「缺」）'", 1),
+    (u"'未取得（对端未给「花了多少」）'",
+     u"'未取得（后端未给 花了多少 键）'", 1),
+    (u"'用时 ' + numOr(s['wall_s'], ' 秒') + ' · 入 ' + numOr(b['in'], ' 字节') + ' ／ 出 ' + numOr(b['out'], ' 字节')",
+     u"'wall_s ' + numOr(s['wall_s'], ' 秒') + ' · 入 ' + numOr(b['in'], ' B') + ' ／ 出 ' + numOr(b['out'], ' B')", 1),
+    (u"(' · 取自 ' + String(s['source']))", u"(' · 源 ' + String(s['source']))", 1),
+    (u"(' · 量法 ' + String(s['读数之器']))", u"(' · 器 ' + String(s['读数之器']))", 1),
+    (u"'未取得（对端未给「成本」）'", u"'未取得（后端未给 成本 键）'", 1),
+    (u"'每件 ' + numOr(c['单价_元每件']) + ' ' + String(c['币'] || 'CNY') + ' · 总 '",
+     u"'单价 ' + numOr(c['单价_元每件']) + ' ' + String(c['币'] || 'CNY') + ' ／ 件 · 总 '", 1),
+    (u"(' · 词元 无（'", u"(' · tokens 无（'", 1),
+    (u"(' · 词元 ' + c['tokens'])", u"(' · tokens ' + c['tokens'])", 1),
+    # ⒝ 闸名（`BLOCK_LABEL` · 丁2）
+    (u"decision_gate:'拍板闸（未拍板 · 403 宁拒）'",
+     u"decision_gate:'拍板闸（decision_id · 403 fail-closed）'", 1),
+    (u"idem:'幂等闸（同一件已交过 · 409）'",
+     u"idem:'幂等闸（同 task_id 异文 · 409）'", 1),
+    (u"recipient_scope:'收件人闸（超出允许范围 · 403）'",
+     u"recipient_scope:'收件人闸（甲形限域 · 403）'", 1),
+    # ⒞ 拍板（`loadDecision` ／ `doAdopt`）
+    (u"对端还没有「采纳」之拍板（' + r.status + '）⇒ 照实（不由本面编号）",
+     u"对端还没有「采纳」之拍板（HTTP ' + r.status + '）⇒ 照实（不由本面编号）", 1),
+    (u"'拍板：无交办 ⇒ 未拍板'", u"'拍板：⛔ 无交办 ⇒ 未拍板'", 1),
+    (u"'拍板：请求中…'", u"'拍板：请求中…（POST /v9/pa/decision · 采纳）'", 1),
+    (u"'拍板：对端未给拍板件号（'", u"'拍板：后端未给 decision_id（HTTP '", 1),
+    (u"'本面自拍 · 件之刻 '", u"'本面自拍（POST /v9/pa/decision）· 件之刻 '", 1),
+    (u"'缺（对端未给「刻」）⇒ 本轮读数刻 '", u"'缺（后端未给 ts）⇒ 本轮读数刻 '", 1),
+    (u"'拍板：已记入对端之账 · 件号 '", u"'拍板：已落 decision_log · id '", 1),
+    # ⒟ 停手卡之诸行（`openAuthzCard`）
+    (u"'对端 deliver/stop · '", u"'后端 deliver/stop · '", 2),
+    (u"['件号', tid]", u"['task_id', tid]", 1),
+    (u"['通道', '我方闭环（真闸在对端）', 'POST /v9/pa/deliver/mail']",
+     u"['通道', '我方闭环（真闸在对端）']", 1),
+    (u"['报给谁', stopTo() + '（停手时由对端定 · 其「报给谁」恒有）', 'POST /v9/pa/deliver/stop']",
+     u"['报给谁', stopTo() + '（停手时由对端定 · 其「报给谁」恒有）']", 1),
+    (u"('拍板件号 ' + decId())", u"('decision_id ' + decId())", 1),
+    # ⒠ 交付（`send` ／ `fourItems` ／ `failHTML` ／ `renderReceipt`）
+    (u"'交付：发送中…'", u"'交付：发送中…（POST /v9/pa/deliver/mail）· task_id '", 1),
+    (u"'未取得（对端未给此件）'", u"'未取得（后端未给此件）'", 1),
+    (u"['每件花费', costLine(src)]", u"['$/件', costLine(src)]", 1),
+    (u"'<div><b>件号</b>：' + H(tid || '—')", u"'<div><b>task_id</b>：' + H(tid || '—')", 1),
+    (u"'<div><b>每件花费</b>：' + H(costLine(rco))", u"'<div><b>$/件</b>：' + H(costLine(rco))", 1),
+    (u"' ⇒ 对端未接此路'", u"' ⇒ 后端路由未接（器未接之证）'", 1),
+    (u"'<div><b>件之刻（对端回执）</b>：'", u"'<div><b>件之刻（后端回执）</b>：'", 1),
+    (u"'<div><b>每件花费</b>：' + H(rc ? costLine(rc)", u"'<div><b>$/件</b>：' + H(rc ? costLine(rc)", 1),
+    # ⒡ T1 面（折首 ／ 静态平文）＋ 丁10（对话面之去其主）
+    (u">交付面</b>（发信 · 由 PA 自己送出）", u">T1 交付面</b>（发信 · 我方闭环）", 1),
+    (u"' ⇔ <b>对端会拒</b>（真闸 · 在真发那一步）—— '", u"' ⇔ <b>对端会拒</b>（真闸 · 在发信路由内）—— '", 1),
+    (u"引哪封来信 · 件号（凭什么 · 来信之件号）", u"引哪封来信 · 件号（凭什么 · C1）", 1),
+    (u"'⚠ 这次没送到 —— 「PA 对话通道暂不可用」（接口未挂载）；检索侧亦未命中 ⇒ 两路皆不通。可：① 再发一次 ② 把本句发我，我查通道挂载。'",
+     u"'⚠ 这次没送到 —— 后端说「PA 对话通道暂不可用」（404：接口未挂载）；检索侧亦未命中 ⇒ 两路皆不通。可：① 再发一次 ② 把本句发我，我查后端通道挂载。'", 1),
+)
+#: ⭐ 本批**新加**之力（⛔ 旧形可对）—— 惟须在 ∧ **恰一处**（真源 ⛔ 丢 ／ 其路须真行）
+_T1_ADD2 = (
+    (u"title=\"工程之据：T1 交付面\">交付面</b>", 1),
+    (u"src.title = '原字：HTTP ' + r.status", 1),
+    (u"out.title = '工程之据：POST /v9/pa/deliver/mail · 件号 ' + tid", 1),
+    (u"out.title = '工程之据：POST /v9/pa/decision · 采纳'", 1),
+    (u"_ds.title = '工程之据：POST /v9/pa/decision · 承 pm_刀11p §二.4'", 1),
+    (u"var okSent = false;", 1),
+    (u"okSent = (r.status >= 200 && r.status < 300) && d && d.ok !== false && d.success !== false;", 1),
+    (u"'交付：已送出 · 回执见下'", 1),
+    (u"'交付：未送出 ⇒ 见下之回执'", 1),
+    (u"var tip = (r[2] != null && String(r[2]))", 1),
+    (u"document.getElementById('paEngNote')", 1),
+    (u"d.id = 'paEngNote';", 1),
+    (u"setAttribute('data-engskip', '1')", 1),
+)
+MORE = ROOT / "web" / "pa" / "faces" / "more.js"
+#: ⒢（`more.js` · 上屏之支路器名 ⇒ 人话 · pm_2104 §四.3 ⑧）
+_MORE_PAIRS2 = ((u"' · 源：界面快照'", u"' · 源 ui_state'", 1),)
+
+
+def _pairs2_bad(src, pairs) -> list:
+    u"""逐字之判（纯函数 ⇒ 供反控喂变体）：新辞须**恰 n 处**（一处定形）∧ 旧辞须**尽除**。"""
+    out = []
+    for (new, old, n) in pairs:
+        c = src.count(new)
+        if c != n:
+            out.append(u"新辞之数 ⛔ ≠%d（%d）：%r" % (n, c, new[:60]))
+        if old in src:
+            out.append(u"旧辞未除：%r" % (old[:60],))
+    return out
+
+
+def test_S6_本批逐字文案与反控():
+    u"""pm_2104 §四.1（丁全表）＋ §四.2（自逮 5 ／ 另逮 2）＋ pm_2106 §三.2（丁10 去其主）＋ §四.3 ⑧：
+    本批所净之诸处 ⇒ **屏上唯人话** ∧ 工程之据 ⇒ `title` ／ 折体（⛔ 丢真源）。
+    ⭐ 形：逐字锚（一处定形）＋ 反控（新 ⇒ 旧 必咬）—— 承 `test_S1c` ／ `test_S4` 之例。
+    """
+    self_js, more_js = _read(SELF), _read(MORE)
+    allp = _T1_PAIRS2 + _MORE_PAIRS2
+    bad = _pairs2_bad(self_js, _T1_PAIRS2) + _pairs2_bad(more_js, _MORE_PAIRS2)
+    for (lit, n) in _T1_ADD2:
+        c = self_js.count(lit)
+        if c != n:
+            bad.append(u"本批之新增 ⛔ 见 ／ 数异（%d≠%d）：%r" % (c, n, lit[:60]))
+    assert bad == [], u"；".join(bad)
+    # 反控（防「假牙」）：还旧形 ⇒ 必咬
+    for (new, old, _n) in allp:
+        src = more_js if new in more_js else self_js
+        mut = src.replace(new, old, 1)
+        assert mut != src, u"反控之锚 ⛔ 在（将空跑）：%r" % (new,)
+        assert _pairs2_bad(mut, allp) != [], u"反控：还旧形 ⇒ 须咬：%r" % (new,)
+
+
+# ============================== S7 · 射程之反控锚（静态 · ⛔ 触浏览器） ==============================
+#: ⭐ 折体之起（含其 `engbody` 之标）—— 去其标 ＝ **把折内之字移入平文**（pm_2106 §三.4 之反控）
+_FOLD_WRAP = u"'<div class=\"engbody\">体：POST"
+_PLAIN_WRAP = u"'体：POST"
+#: ⭐ 本批所净之一（逐字 · 其平文曾上屏）—— 还旧形 ⇒ **必咬**（证射程真罩其落处 ／ 解码真行）
+_SCAN_ANCHORS2 = (
+    (u"'交付：已送出 · 回执见下'",
+     u"'交付：发送中…（POST /v9/pa/deliver/mail）· task_id '"),
+    (u"'缺（未附原信 · 对端回执同显「缺」）'",
+     u"'缺（未附原信 ⇒ ⛔ 装已附 · 后端回执同显「缺」）'"),
+    (u"'未取得（对端未给此件）'",
+     u"'未取得（后端未给此件）'"),
+)
+
+
+def test_S7_射程之反控锚():
+    u"""pm_2104 §四.4（射程之扩）＋ pm_2106 §三.4（须防「折内之字」误咬）：
+    ① 正形须先净（前提）② **折体之明标恰在**（其缺 ⇒ 反控将空跑）③ 把折体之字**移入平文**（去其标）
+    ⇒ **必咬**（证明标 ⛔ 空跑 ／ 亦证「⛔ 逼删真源」之险已被扼）④ 本批所净之诸处 ⇒ 还旧形 ⇒ **必咬**。
+    """
+    src, syssrc = _read(SELF), _read(SYS)
+    assert scan(src, _SP["self"], _SP["ign"])["hits"] == [], u"前提：正形须先净"
+    miss = [i for i, (a, _b) in enumerate(_SP["ign"]) if a < 0]
+    assert miss == [], u"`ign` 之明标 ⛔ 在（反控将空跑）：%r" % (miss,)
+    # ① 折体之字 ⇒ 移入平文（去其折体之标）⇒ 必咬
+    mut = src.replace(_FOLD_WRAP, _PLAIN_WRAP, 1)
+    assert mut != src, u"折体之锚 ⛔ 在（反控将空跑）：%r" % (_FOLD_WRAP,)
+    sp = _spans(syssrc, mut)
+    assert scan(mut, sp["self"], sp["ign"])["hits"], \
+        u"折体之字移入平文 ⇒ 必咬（⛔ 则 `_ign` 之明标为「免死金牌」）"
+    # ② 本批所净之诸处 ⇒ 还旧形 ⇒ 必咬
+    for (new, old) in _SCAN_ANCHORS2:
+        m2 = src.replace(new, old, 1)
+        assert m2 != src, u"反控之锚 ⛔ 在（将空跑）：%r" % (new,)
+        assert scan(m2, _SP["self"], _SP["ign"])["hits"], u"还旧形 ⇒ 必咬（射程未罩）：%r" % (new,)
+
 # ============================== S3 · 真渲齿（真 Chrome × CDP） ==============================
 GATEWAY = int(os.environ.get("PA_GATEWAY_PORT", "5102"))
 
+#: ⚠ 活态之 `under` ＝ **已知工程标识之列**（⛔ 通配 `x_y`）—— 通配于**活态**必咬端给之真件名
+#:   （体检之盘径夹名 · 承 pm_2095 §二.2「盘符准留」· 我一手验）；通配之网留于**静态之齿**（源码字面 · 真件名 ⛔ 出）。
 _PROBE = r"""
 (function(){
   function vis(e){ try{ if(e.checkVisibility){ return e.checkVisibility({checkOpacity:true, checkVisibilityCSS:true}); } }catch(x){}
@@ -385,10 +651,11 @@ _PROBE = r"""
   function isEng(k){ var c=' ' + String(k.className||'') + ' '; return c.indexOf(' eng ')>=0 || k.hasAttribute('data-engskip'); }
   var R = {cross:/\u26d4/g, star:/\*\*/g, btick:/`/g, tilde:/~~/g, v9:/\/v9\//g,
            jsonl:/\.jsonl/g, backend:/\u540e\u7aef/g,
-           field:/(?<![A-Za-z0-9_$])(level|caps|invoke|cost|probe|paths|ids)(?![A-Za-z0-9_$])/g};
+           field:/(?<![A-Za-z0-9_$])(level|caps|invoke|cost|probe|paths|ids)(?![A-Za-z0-9_$])/g,
+           under:/(?<![A-Za-z0-9_$])(task_id|decision_id|wall_s|tokens|fail_closed|ui_state|agent_state|deliver_stop|body_md|user_id)(?![A-Za-z0-9_$])/g};
   var ALLOW = /(?:ds_chat|dsh_wsl|v9_agent|web_[A-Za-z0-9]+|\.agent_state\.json|pa_[A-Za-z0-9_]+)/g;
   var DRIVE = /[A-Za-z]:[\\\/]/g;
-  var hits = [], flatLen = 0, texts = [];
+  var hits = [], flatLen = 0, texts = [], flat = [];
   var FLAG = /(?<![A-Za-z0-9])-{1,2}[A-Za-z][-A-Za-z0-9_]*/g;
   function mask(t){ return t.replace(ALLOW, function(m){ return '\u3000'.repeat(m.length); })
     .replace(FLAG, function(m){ return '\u3000'.repeat(m.length); }); }
@@ -408,6 +675,7 @@ _PROBE = r"""
         if(!vis(n)) continue;
         if(!eng) flatLen += tx.replace(/\s+/g,'').length;
         texts.push((eng?'[E]':'') + tx.replace(/\s+/g,' ').trim());
+        if(!eng) flat.push(tx.replace(/\s+/g,' ').trim());
         fire(n, tx, eng);
         continue; }
       if(k.nodeType !== 1) continue;
@@ -421,7 +689,7 @@ _PROBE = r"""
   var a = document.getElementById('paMorePanel'); if(a) roots.push(a);
   var b = document.getElementById('paFaceTasks'); if(b) roots.push(b);
   for(var i=0;i<roots.length;i++) walk(roots[i], false);
-  return JSON.stringify({n_roots: roots.length, flatLen: flatLen, hits: hits, text: texts.join(' | ')});
+  return JSON.stringify({n_roots: roots.length, flatLen: flatLen, hits: hits, text: texts.join(' | '), flatText: flat.join(' | ')});
 })()
 """
 
@@ -705,3 +973,115 @@ def test_S5_停手卡之守卫之真路():
         assert bad.get("card") is False, u"反控：无 `paStopAsk` ⇒ 卡 ⛔ 得开：%r" % (bad,)
         assert _NO_CARD_MSG in (bad.get("out") or u""), \
             u"反控：须见「停手卡不可用」—— ⛔ 见 ⇒ 正控之绿为假（⛔ 假牙）：%r" % (bad.get("out"),)
+
+# ============================== S8 · 真渲（过程注记之数 ＋ T1 面之平文 · 真 Chrome × CDP） ==============================
+#: ⭐ 探器之根 ⇒ `#paT1Panel`（本批之面 · 承 pm_2104 §四.4⒝「射程须及 T1 诸函」）
+_T1_ROOTS_OLD = (u"  var a = document.getElementById('paMorePanel'); if(a) roots.push(a);\n"
+                 u"  var b = document.getElementById('paFaceTasks'); if(b) roots.push(b);")
+_T1_ROOTS_NEW = u"  var a = document.getElementById('paT1Panel'); if(a) roots.push(a);"
+assert _T1_ROOTS_OLD in _PROBE, u"`_PROBE` 之根须可换（否则 T1 之探器将空跑）"
+_PROBE_T1 = _PROBE.replace(_T1_ROOTS_OLD, _T1_ROOTS_NEW)
+assert _PROBE_T1 != _PROBE
+
+#: ⒠ 之数：`#paMoreBody` 内之折（`[data-engskip]`）∧ 其中带 `id="paEngNote"` 者
+_CNT_NOTE = (u"(function(){ var b=document.getElementById('paMoreBody'); if(!b) return '{}';"
+             u" var a=b.querySelectorAll('details[data-engskip]');"
+             u" var c=b.querySelectorAll('details[data-engskip][id=\"paEngNote\"]');"
+             u" return JSON.stringify({n:a.length, nid:c.length}); })()")
+#: ⚠ 本轮既净 ⇒ 自然之 hit ＝ 0 ⇒ 「合并 ／ 新建」之路**⛔ 得行** ⇒ 反控须**造一 hit**。
+#:   此非「预置被验之物」（承 pm_2104 §四.4⒠ 之教训）—— 乃「使被测之路得行」（其 hit 之由 ＝ 端字 `§`）。
+_FORCE_HIT = (u"(function(){ try{"
+              u" var b=document.getElementById('paMoreBody'); if(!b) return 'noBody';"
+              u" var pr=document.createElement('div'); pr.id='cwProbeHit'; pr.textContent='§probe';"
+              u" b.appendChild(pr); var r=String(paEngCleanDrawer());"
+              u" var a=b.querySelectorAll('details[data-engskip]');"
+              u" var c=b.querySelectorAll('details[data-engskip][id=\"paEngNote\"]');"
+              u" return JSON.stringify({r:r, n:a.length, nid:c.length}); }"
+              u"catch(e){ return 'ERR:'+String(e); } })()")
+#: 反控之桩：去其 `id`（＝旧形之「以任一 `data-engskip` 索之」）
+_UNID = (u"(function(){ try{ var d=document.getElementById('paEngNote'); if(!d) return 'none';"
+         u" d.removeAttribute('id'); return 'ok'; }catch(e){ return 'ERR'; } })()")
+_DROP_PROBE = (u"(function(){ var e=document.getElementById('cwProbeHit');"
+               u" if(e && e.parentNode) e.parentNode.removeChild(e); return 'ok'; })()")
+#: 真源之落处（折首 `title` ／ 折体）须在 ∧ 平文 ⛔ 见 `T1`
+_HTMLHAS_T1 = (u"(function(){ var p=document.getElementById('paT1Panel'); if(!p) return '{}';"
+               u" var h=p.innerHTML;"
+               u" return JSON.stringify({t1title:h.indexOf('title=\"工程之据：T1 交付面\"')>=0,"
+               u" foldBody:h.indexOf('POST /v9/pa/deliver/mail')>=0,"
+               u" rawT1:h.indexOf('>T1 交付面</b>')>=0}); })()")
+#: T1 面**屏上**（折判）须见之逐字
+_T1_MUST_SHOW = (u"交付面", u"（发信 · 由 PA 自己送出）", u"与对端之通：",
+                 u"（真闸 · 在真发那一步）", u"来信之件号",
+                 u"拍板件号（真拍板由对端读 · 不由本面编号）")
+#: T1 面**平文** ⛔ 得见之旧形（工程语 ／ 端字段名 ／ 端径 ／ 旧辞）
+_T1_MUST_NOT = (u"后端", u"task_id", u"decision_id", u"/v9/", u"C1）", u"fail-closed", u"路由")
+
+
+def test_S8_真渲_过程注记之数与T1面之平文(tmp_path):
+    u"""pm_2104 §四.4⒠（过程注记之增生须治）＋ §四.4⒝（射程须及 T1 诸函）＋ pm_2106 §三.4：
+    ⒠ **正控**（真载入 · `go()` 三跑 ⇒ 折数恒 2 ／ 其中 `paEngNote` 1 —— 旧形 ⇒ 3）；
+    ⒠ **反控**（去其 `id` ⇒ 造 hit ⇒ **必增生** ⇒ 证「唯 id 乃其锚」）；
+    T1 面：**平文**（折判 · ⛔ 裸 `textContent`）犯字 ＝ 0 ∧ 本批逐字在屏 ∧ 旧形 ⛔ 在屏 ∧ 真源在 `title` ／ 折体。
+    环境不就绪 ⇒ **skip**（⛔ 红）；真跑毕 ⇒ 必收（`cw_chrome_reap`）∧ 图落盘。
+    """
+    R = _reap()
+    reason = _env_reason(R)
+    if reason:
+        pytest.skip(u"环境不就绪：" + reason)
+    port = _free_port()
+    with R.run_headless(port=port, tag="cw2095s8", wait_s=15.0,
+                        extra=("--remote-allow-origins=*",),
+                        why=u"pm_2104 §四.4⒠（过程注记之数）＋ §四.4⒝（T1 面之真渲平文）"):
+        c = _CDP(_ws_url(port))
+        c.cmd("Page.enable")
+        c.cmd("Runtime.enable")
+        c.cmd("Emulation.setDeviceMetricsOverride", width=1440, height=940,
+              deviceScaleFactor=1, mobile=False)
+        c.cmd("Page.navigate", url="http://127.0.0.1:%d/web/pa.html" % GATEWAY)
+        time.sleep(7.5)
+        c.js(_DISMISS)
+        assert c.js(_DRIVE_UI) == "ok", u"开「更多 ／ 体检 ／ 关于」⛔ 成"
+        time.sleep(2.5)
+        c.js(_OPEN)
+        time.sleep(1.0)
+        # ---------- ⒠ 正控：真载入 ⇒ 折之数须恒「2 ／ 1」 ----------
+        d0 = json.loads(c.js(_CNT_NOTE) or "{}")
+        assert d0.get("n") == 2 and d0.get("nid") == 1, \
+            u"⒠：`details[data-engskip]` 须 ＝ 2 ∧ `[id=paEngNote]` ＝ 1（旧形 ⇒ 3）：%r" % (d0,)
+        # ⒠ 正控二（幂等）：造一 hit ⇒ 行「合并」之路 ⇒ 其数 ⛔ 增
+        d1 = json.loads(c.js(_FORCE_HIT) or "{}")
+        assert d1.get("r") not in (None, u"0", u"noBody"), u"正控之 hit ⛔ 生效：%r" % (d1,)
+        assert d1.get("n") == 2 and d1.get("nid") == 1, u"正控：既有 ⇒ 须**并之**（⛔ 新建）：%r" % (d1,)
+        c.js(_DROP_PROBE)
+        # ⒠ 反控：去其 `id` ⇒ 造 hit ⇒ **必新建一条**
+        assert c.js(_UNID) == "ok", u"反控之桩 ⛔ 成"
+        d2 = json.loads(c.js(_FORCE_HIT) or "{}")
+        assert d2.get("n") == 3, u"反控：唯 `id` 乃其锚 —— 去之 ⇒ 必增生：%r" % (d2,)
+        c.js(_DROP_PROBE)
+        shot1 = c.shot(str(tmp_path / "more_engnote_w1440.png"))
+        # ---------- T1 面之真渲（折判 · ⛔ 裸 `textContent`） ----------
+        assert c.js(_TASKS) == "ok", u"切 `tasks` 面 ⛔ 成"
+        time.sleep(2.5)
+        c.js(_OPEN)
+        time.sleep(1.0)
+        try:
+            res = json.loads(c.js(_PROBE_T1))
+        except Exception:
+            res = {}
+        assert int(res.get("n_roots") or 0) == 1, u"T1 之根（`#paT1Panel`）⛔ 在：%r" % (res,)
+        assert int(res.get("flatLen") or 0) > 200, u"T1 之平文过少 ⇒ 面未渲：%r" % (res.get("flatLen"),)
+        flats = [h for h in (res.get("hits") or []) if not h["eng"] and h["k"] != u"drive"]
+        assert flats == [], u"T1 面**平文**见犯字 %s" % (
+            u"；".join(u"%s@%s %r" % (h["k"], h["loc"], h["t"][:50]) for h in flats[:8]),)
+        txt = res.get("flatText") or u""
+        assert txt, u"T1 \u4e4b\u5e73\u6587 \u26d4 \u5f97\uff08\u63a2\u5668\u987b\u7ed9 `flatText`\uff09"
+        for lit in _T1_MUST_SHOW:
+            assert lit in txt, u"T1 面逐字 ⛔ 见（面未渲 ∨ 辞漂）：%r" % (lit,)
+        for old in _T1_MUST_NOT:
+            assert old not in txt, u"T1 面**平文**见旧形：%r" % (old,)
+        hh = json.loads(c.js(_HTMLHAS_T1) or "{}")
+        assert hh.get("t1title") is True, u"真源（`T1 交付面`）须入折首之 `title`（⛔ 丢真源）"
+        assert hh.get("foldBody") is True, u"端径（`POST /v9/pa/deliver/mail`）须在折体（⛔ 丢真源）"
+        assert hh.get("rawT1") is False, u"平文 ⛔ 得见 `T1`"
+        shot2 = c.shot(str(tmp_path / "tasks_t1_w1440.png"))
+    assert shot1 > 0 and shot2 > 0, u"图须落盘（跑毕必收 ∧ 入账）"

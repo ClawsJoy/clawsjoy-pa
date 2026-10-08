@@ -127,8 +127,14 @@ def test_P6_axis_bar_carries_no_internal_readings():
 def test_P7_drawer_notes_are_one_titled_fold():
     s = _read(SELF)
     d = _fn(s, u"function paEngCleanDrawer(){")
-    assert u"""document.querySelector('#paMoreBody details[data-engskip="1"]')""" in d, \
-        u"须**一条定形**（既有则并 —— ⛔ 每次新建 ⇒ 三条同名之折）"
+    # ⭐ pm_2104 §四.4ⓠ：旧形以「任一 `data-engskip`」索之 ⇒ 首中者常为**他折**（「来源 ／ 详情」·无 `.engbody`）
+    #   ⇒ 守卫落空 ⇒ 每跑一次新建一条（增生）。今改作固定 `id="paEngNote"`（一处定形）：
+    #   **其意不变**（一条定形 · 既有则并）—— 唯其锚改为可定之 `id`（承 pm_2106 §三.1 之准）。
+    assert u"document.getElementById('paEngNote')" in d \
+        and u"d.id = 'paEngNote';" in d, \
+        u"须**一条定形**（既有则并 · 固定 `id`）—— ⛔ 每次新建 ⇒ 三条同名之折"
+    assert u"document.querySelector('#paMoreBody details[data-engskip=\"1\"]')" not in d, \
+        u"反控：旧形（以任一 `data-engskip` 索之）⛔ 得回归（其守卫会落空 ⇒ 增生）"
     assert u"paEngSkipSum(d);" in s, u"题须随内容重算"
     k = _fn(s, u"function paEngSkipSum(d){")
     assert u"过程注记（抽屉内文之工程引用 · " in k, u"题须载**件数**（各条可辨 · 承 pm_1813 §二.3）"

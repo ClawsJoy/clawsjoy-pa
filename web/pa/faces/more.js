@@ -303,7 +303,7 @@ function paUiEngDetails(raw){
         el.innerHTML = esc('采样刻 ' + chk2(d['刻']) + '（服务启动时之快照 · 非实时 ⇒ 刷此无效） · 显存 ' + num2(vr.free) + '/' + num2(vr.total) + ' MB · 已载 '
             + num2(d['已载']) + ' · Forever ')
           + '<b style="font-weight:600' + (warn ? (';color:' + warn) : '') + '">' + esc(fShow) + '</b>'
-          + esc(' · 本地在 ' + yn(d['本地在']) + ' · 远端 ' + paRemoteText(d) + ' · 源 ui_state')
+          + esc(' · 本地在 ' + yn(d['本地在']) + ' · 远端 ' + paRemoteText(d) + ' · 源：界面快照')
           + (miss.length ? ('<b data-unknown="1" style="font-weight:600;color:var(--amber)">'
               + esc(' · ⚠ 缺键 ' + miss.length + ' 项 ⇒ 未知') + '</b>') : '');
         el.title = '界面态快照（只读 · web/pa/ui_state.json · 由技总器 --落 写 · 快照非实时 ⇒ ⛔ 当实时读）'
