@@ -543,7 +543,7 @@
     t=t.split('⛔ 假装能用').join('未验证');
     /* ③ **盘符径**（盘符 ＋ 冒号 ＋ 反斜杠 之形：即本机之开发径）⇒ ⛔ 上用户面
        （净机为用户径 · 同族「回执 ⛔ 载本机绝对径」）⇒ 人话；其值仍在「工程注记」（⛔ 丢信息）。 */
-    t=t.replace(/[：:]\s*[A-Za-z]:[\\/][^\s，。；、）]+/g,'（点开「工程注记」即见其径）');
+    t=t.replace(/[：:]\s*[A-Za-z]:[\\/][^\s，。；、）]+/g,'（点开「来源 ／ 详情」即见其径）');
     return t;
   }
   function el(tag,st,html){var d=document.createElement(tag);if(st)d.setAttribute('style',st);if(html!=null)d.innerHTML=html;return d;}
@@ -598,25 +598,35 @@
     _place();
     try{ if(typeof window!=='undefined' && window.requestAnimationFrame) window.requestAnimationFrame(_place); }catch(e){}
     try{ if(typeof window!=='undefined' && window.addEventListener) window.addEventListener('resize',_place); }catch(e){}
-    b.appendChild(el('div','font-weight:700;margin:0 0 6px','🔰 第一次用（只读 · 数来自本机后端）'));
+    /* ⭐⭐ pm_2022 §二（首屏工程墙 · 要）＋ pm_2025 §二.3⒜：本盒**⛔ 占首屏主位** ⇒
+       首屏唯此一行（人话之窄提示 · 「知道了」可退）∧ 首屏之正中让与「今日」（P1 ＝ 用户的当下）；
+       其余（须知 ／ 模型之路 ／ 数据目录 ／ 面之源 ／ 缺）⇒ 入下之「来源 ／ 详情」（门后 · ⛔ 丢信息 · 原文一字不减）。
+       ⛔ 自拟：本二行之字为界面之常辞（⛔ 事实断言）；诸项之字唯取后端（须知之「话」经 `face()` ／ 模型与目录取后端之态）。 */
+    b.appendChild(el('div','font-weight:700;margin:0 0 2px','🔰 第一次用 · 本机自述（只读）'));
+    b.appendChild(el('div','margin:0 0 6px;color:#94a3b8;font-size:12px','逐项在本行下方「来源 ／ 详情」内 —— 点开即见（原文一字不减）'));
+    /* ⭐ pm_2022 §二.⒝：自我怀疑之辞 ⛔ 上屏（后端之「缺什么，上面就写什么 —— …」）——
+       其源在 `core/**`（TD 域）⇒ 面侧**⛔ 渲**（面闸 · 与端之禁辞成**双保险** · 承 pm_1860 §二.⒝ 之同法）。
+       ⚠ 唯此一项不渲；「缺」列本身照旧（真读数 · ⛔ 丢）。 */
+    var PA_SELFDOUBT_WORD=/缺什么/;
     var need=(d['须知']||[]);
-    for(var i=0;i<need.length;i++){
-      b.appendChild(el('div','margin:2px 0','• '+esc(face(need[i]['话']))));
-    }
     var m=d['模型']||{};
-    b.appendChild(el('div','margin-top:6px','• 模型之路：'+esc(q(SAID[m['态']]||m['态']))));
     var dir=d['数据目录']||{};
     /* pm_1853 §一.5：绝对径 ⛔ 上用户面（净机为用户径；且与「回执 ⛔ 载本机绝对径」同族）
-       ⇒ 人话：「点开即见其径」；其值入工程注记（下段 · ⛔ 丢信息）。 */
-    b.appendChild(el('div','margin-top:2px','• 数据目录：'
-      +(dir['值']?'本机（点开「工程注记」即见其径）':'（未接）')));
+       ⇒ 人话：「点开即见其径」；其值入「来源 ／ 详情」（下段 · ⛔ 丢信息）。 */
     var fs=d['面之源'],_vk=null;
     if(fs&&fs['键']){for(var vj=0;vj<fs['键'].length;vj++){if(fs['键'][vj]['键']==='PA_VAULT_DIR'){_vk=fs['键'][vj];}}}
-    /* —— 以下皆「工程注记」（默认收起 · 原字不减） —— */
+    /* —— 以下皆「来源 ／ 详情」（门后 · 默认收起 · 原字不减 · 承 pm_2022 §二.⒞：「工程注记」四字 ⛔ 入首屏字面） —— */
     var det=el('details','',''); det.setAttribute('class','eng');
-    det.appendChild(el('summary','','工程注记（技术细节 · 一般不必看 · 点开即见全部来源）'));
+    det.appendChild(el('summary','','来源 ／ 详情（一般不必看 · 点开即见全部原文）'));
     var eng=el('div','engbody','');
     var _elin=function(host,t){ host.appendChild(el('div','margin:2px 0',esc(t))); };
+    /* 人话之诸项（原在首屏 ⇒ 今入门后 · ⛔ 丢信息 · 承 pm_2022 §二.⒜） */
+    for(var i1=0;i1<need.length;i1++){
+      if(PA_SELFDOUBT_WORD.test(String(need[i1]['话']||''))) continue;
+      _elin(eng,'• '+face(need[i1]['话']));
+    }
+    _elin(eng,'• 模型之路：'+(SAID[m['态']]||m['态']));
+    _elin(eng,'• 数据目录：'+(dir['值']?'本机（其径见下）':'（未接）'));
     for(var i2=0;i2<need.length;i2++){ _elin(eng,'• 依据：'+String(need[i2]['据']||'')); }
     _elin(eng,'• 模型：态＝'+String(m['态']||'')+(m['因']?(' ／ 因：'+String(m['因'])):''));
     _elin(eng,'• 数据目录：'+String(dir['值']||'（未接）')+'（源：'+String(dir['源']||'')+'）');
@@ -627,6 +637,12 @@
         _elin(eng,'  · '+String(kk['键']||'')+'＝'+String(kk['今']||'')+'  ［义：'+String(kk['义']||'')+'］');
       }
       _elin(eng,'  ［'+String(fs['口径']||'')+'］');
+    }
+    var miss=(d['缺']||[]);
+    if(miss.length){
+      var mm='• 还没接上的：';
+      for(var k=0;k<miss.length;k++){mm+=esc(miss[k]['项'])+'（'+esc(miss[k]['因'])+'）'+(k<miss.length-1?'；':'');}
+      eng.appendChild(el('div','margin:2px 0',mm));
     }
     det.appendChild(eng);
     b.appendChild(det);
@@ -666,19 +682,13 @@
       _vclr.onclick=function(){vset('',_vapply);};
       b.appendChild(_vbox);
     }
-    var miss=(d['缺']||[]);
-    if(miss.length){
-      var mm='• 还没接上的：';
-      for(var k=0;k<miss.length;k++){mm+=esc(miss[k]['项'])+'（'+esc(miss[k]['因'])+'）'+(k<miss.length-1?'；':'');}
-      b.appendChild(el('div','margin-top:2px;color:#fbbf24',mm));
-    }
     var btn=el('button','float:right;margin-left:10px;background:#1e293b;color:#e8eef7;border:1px solid #475569;border-radius:6px;padding:2px 10px;cursor:pointer','知道了');
     btn.onclick=function(){b.setAttribute('style',b.getAttribute('style')+';display:none');};
     b.appendChild(btn);
     document.body.appendChild(b);
   }
   function fallback(){
-    document.body.appendChild(el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#3b1d1d;color:#fde8e8;border:1px solid #7f1d1d;border-radius:10px;padding:10px 14px;font:13px/1.7 system-ui,Segoe UI,Microsoft YaHei,sans-serif','🔰 第一次用：没读成后端之读数（⛔ 显示为「已就绪」）—— 请查后端是否在答。'));
+    document.body.appendChild(el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#3b1d1d;color:#fde8e8;border:1px solid #7f1d1d;border-radius:10px;padding:10px 14px;font:13px/1.7 system-ui,Segoe UI,Microsoft YaHei,sans-serif','🔰 第一次用：没读成后端之读数 —— 请查后端是否在答（本页不会显示为「已就绪」）。'));
   }
   try{
     fetch(B+'/v9/pa/first_run',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){

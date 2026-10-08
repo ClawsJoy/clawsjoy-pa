@@ -266,21 +266,22 @@ def test_P8_回执尽人话而原键入悬停():
 
 
 def test_P9_首启盒之文案():
-    u"""pm_1853 §一.5：机器码 ⇒ 人话 ∧ `⛔ 假装能用` ⇒ `未验证` ∧ 本机开发径 ⛔ 上屏。"""
+    u"""pm_1853 §一.5 ＋ pm_2022 §二 ／ pm_2025 §二.3⒜（首屏工程墙之撤）：机器码 ⇒ 人话 ∧
+    「⛔ 假装能用」⇒「未验证」∧ 本机开发径 ⛔ 上屏 ∧ 首屏字面 ⛔ 载「工程注记」四字。
+    ⚠ 首启卡之**字与位**（真函数 · node 桩 · 真渲之字）⇒ 另齿 test_pa_first_run_2022.py。"""
     h = _read_de(HTML)
     assert u"var PA_STATE_WORD={'未接':'没接上'," in h, u"机器码须对译（一处定形）"
     assert u"'在∧可用':'可用'" in h, u"「在∧可用」⇒ 人话（旧形之拼接错）"
     assert u"t=t.split('⛔ 假装能用').join('未验证');" in h, u"⛔ 读成「这是假的」⇒ 须书「未验证」"
-    face = _stmt(h, u"function face(s){", u"');\n    return t;")
-    assert u"[A-Za-z]:[\\\\/]" in face, u"盘符径须于 `face()` 一处分（⛔ 各点各判）"
-    assert u"（点开「工程注记」即见其径）" in face, u"其去处（人话）"
-    assert u"need[i]['话']" in h and u"esc(face(need[i]['话']))" in h, u"须知须经 `face()`"
+    face = _stmt(h, u"function face(s){", u"return t;")
+    assert u"[A-Za-z]" in face and u"t.replace(" in face, u"盘符径须于 face() 一处分（⛔ 各点各判）"
+    assert u"（点开「来源 ／ 详情」即见其径）" in face, u"其去处（人话 · 折名 · pm_2022 §二.⒞）"
+    assert u"face(need[" in h and u"['话']" in h, u"须知须经 face()（一处对译 · ⛔ 各处各判）"
     box = h[h.index(u"function box(d){"):]
-    line = _stmt(box, u"b.appendChild(el('div','margin-top:2px','• 数据目录：'", u"'（未接）')));")
-    assert u"esc(dir['值']" not in line and u"+dir['值']" not in line, u"⛔ 直渲数据目录之值（＝本机开发径 · pm_1853 §一.5）"
-    assert u"点开「工程注记」即见其径" in line, u"用户面须书其去处"
-    assert u"_elin(eng,'• 数据目录：'+String(dir['值']||'（未接）')" in box, \
-        u"反控：原值仍须在**工程注记**（⛔ 丢信息）"
+    assert u"esc(dir['值']" not in box and u"+dir['值']" not in box, u"⛔ 直渲数据目录之值（＝本机开发径 · pm_1853 §一.5）"
+    assert u"_elin(eng,'• 数据目录：'+String(dir['值']||'（未接）')" in box, u"反控：原值仍须有去处（⛔ 丢信息）"
+    assert u"PA_SELFDOUBT_WORD" in box, u"自我怀疑之辞须有面闸（⛔ 上屏）"
+    assert u"来源 ／ 详情" in box, u"折名须人话（pm_2022 §二.⒞：「工程注记」⛔ 入首屏字面）"
 
 
 def test_P10_左栏一位():

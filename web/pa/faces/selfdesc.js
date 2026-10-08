@@ -187,6 +187,30 @@ function paSelfEsc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, func
 function paSelfYN(v){ return v === true ? '✓' : (v === false ? '✗' : '未知'); }
 function paSelfAt(v){ try{ return (v == null) ? '未知' : PA_STAMP.fmt(v); }catch(e){ return '未知'; } }
 
+/* ⭐⭐ pm_2025 §二.1 ／ pm_2028 §四.2（面之回执 · 「人话之序」）：端 POST /v9/pa/turn 之回执自带
+   human 四键（一句 ／ 做了什么 ／ 动了哪些件 ／ 可否退 · **一处定形在后端**
+   core/pa/gateway_routes.py 之 pa_turn_human）⇒ 用户面**唯引用**之：
+   ⛔ 前端自拟此句 ／ ⛔ 由 session_lines_before 等原字剥拼
+   （承 P3「人话凭据 · ⛔ 行数与路径」＋ 技术总监 2023 §二.6 之请）。
+   ⚠ 端 ⛔ 给（旧端 ／ 未落盘 ／ 无回执）⇒ 回 null ⇒ 调用处**照旧**（⛔ 自拟兜底 ／ ⛔ 编人话）。
+   ⚠ 唯「一句」为要（缺 ⇒ 端未给人话）；余三键有则附 —— ⛔ 以缺键生空行。 */
+function paTurnHuman(rc){
+  try{
+    var h = (rc && typeof rc === 'object') ? rc.human : null;
+    if(!h || typeof h !== 'object') return null;
+    var one = (h['一句'] == null) ? '' : String(h['一句']).trim();
+    if(!one) return null;
+    var o = {'一句': one};
+    var rest = ['做了什么', '动了哪些件', '可否退'];
+    for(var i = 0; i < rest.length; i++){
+      var v = h[rest[i]];
+      if(v != null && String(v).trim() !== '') o[rest[i]] = String(v).trim();
+    }
+    return o;
+  }catch(e){ return null; }
+}
+try{ window.paTurnHuman = paTurnHuman; }catch(e){}
+
 /* ================= 〇 · 工程注记（用户面只说人话 · 承 pm_1012 §一 ／ §二）=================
    ⭐ 用户面（默认态）⇒ 只人话；工程注记（判定依据 ／ 件号 ／ 律号 ／ 机制说明 ／ 留痕 ／ 候选）⇒ **默认隐藏**，
      入「来源 ／ 详情」折叠处可展开（⛔ 丢信息）。判据：默认态用户面 innerText ⇒ 禁词命中 ＝ 0。 */
@@ -3533,15 +3557,32 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       var _pm = _pl ? _pl.match(/\u4ef6\u4e4b\u523b\s*([0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2})/) : null;
       _piece = _pm ? _pm[1] : null;
     }catch(e){ _piece = null; }
-    hr.textContent = '\ud83d\udccb \u672c\u8f6e\u56de\u6267\uff08\u672c\u8f6e\u8bfb\u6570\u523b ' + nowStr()
-      + (_piece ? (' \uff5c \u7ed3\u8bba\u6240\u5f15\u4e4b\u4ef6\u4e4b\u523b ' + _piece) : ' \uff5c \u672c\u8f6e\u65e0\u4ef6\u4e4b\u523b')
-      + '\uff09\n' + rcLines().join('\n');
+    var _synt = rcLines();   /* 合成之六行（旧形 · ⛔ 删 —— 今入 title 作**工程之据** · ⛔ 丢信息） */
+    var _hum = paTurnHuman(rcOf());   /* ⭐ 端之 human 四键（面**唯引用** · ⛔ 自拟 ／ ⛔ 由原字剥） */
+    if(_hum){
+      /* ⭐⭐ pm_2025 §二.1 ／ pm_2028 §四.2：端之人话在 ⇒ 用户面**唯此四行**（「人话之序」）——
+         ⛔ 自拟之头（「本轮读数刻 …」）混入；「回执」二字为界面之常辞（承我 1866 §二）。 */
+      hr.textContent = '\ud83d\udccb \u672c\u8f6e\u56de\u6267\n'
+        + '\u00b7 ' + _hum['一句']
+        + (_hum['做了什么'] ? ('\n\u00b7 \u505a\u4e86\u4ec0\u4e48\uff1a' + _hum['做了什么']) : '')
+        + (_hum['动了哪些件'] ? ('\n\u00b7 \u52a8\u4e86\u54ea\u4e9b\u4ef6\uff1a' + _hum['动了哪些件']) : '')
+        + (_hum['可否退'] ? ('\n\u00b7 \u53ef\u5426\u9000\uff1a' + _hum['可否退']) : '');
+    } else {
+      hr.textContent = '\ud83d\udccb \u672c\u8f6e\u56de\u6267\uff08\u672c\u8f6e\u8bfb\u6570\u523b ' + nowStr()
+        + (_piece ? (' \uff5c \u7ed3\u8bba\u6240\u5f15\u4e4b\u4ef6\u4e4b\u523b ' + _piece) : ' \uff5c \u672c\u8f6e\u65e0\u4ef6\u4e4b\u523b')
+        + '\uff09\n' + _synt.join('\n');
+    }
     hr.title = '\u672c\u5757\u7531\u65e2\u6709\u56de\u6267\u884c\u5408\u6210\uff08\u26d4 \u53e6\u9020\u5b50\u7cfb\u7edf\uff09\u00b7 \u771f\u6e90\uff1a\u8d70\u5f84\u6807 \uff0f \u540e\u7aef\u56de\u6267 \uff0f \u4f1a\u8bdd\u65e5\u5fd7\uff5c' + SRC;
     /* 反控（pm_1853 §一.4 · ⛔ 丢真源）：后端用时之**原键**仍可得 —— 入本块之 `title`。 */
     try{ hr.title = hr.title + (costRaw() ? ('｜后端用时之原键：' + costRaw()) : ''); }catch(e){}
+    /* ⭐ pm_2025 §二.1：合成之六行（⛔ 屏上）＋ 探得之件之刻 ⇒ **工程之据之地**（title · ⛔ 丢信息）。 */
+    try{
+      hr.title = hr.title + '｜本轮之合成回执（工程之据 · ⛔ 屏上）：' + _synt.join(' ／ ')
+        + (_piece ? ('｜结论所引之件之刻：' + _piece) : '');
+    }catch(e){}
   }
 
-  /* ---------- 7.3 内部读数 ⇒ 工程注记（用户面改人话 · 承 pm_1115 §一.2）---------- */
+  /* ---------- 7.3 内部读数 ⇒ 人话（屏唯引用端之 human · 原字入工程注记 · 承 pm_1115 §一.2 ／ pm_2025 §二.1）---------- */
   var LEDGER_RE = /\u672c\u8f6e\u5df2\u843d\u76d8\uff08/;
   function ledgerPass(){
     try{
@@ -3552,8 +3593,17 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         if(!LEDGER_RE.test(raw)) continue;
         el.__paLedgerHuman = 1;
         var n = (el.dataset && el.dataset.n && el.dataset.n !== '1') ? ('   \u00d7' + el.dataset.n) : '';
-        el.textContent = '\u2705 \u672c\u8f6e\u5df2\u5b58\u6863' + n;
-        el.setAttribute('data-pa-user', '\u2705 \u672c\u8f6e\u5df2\u5b58\u6863');
+        /* ⭐⭐ pm_2025 §二.1 ／ pm_2028 §四.2：屏上之辞**唯引用**端之 human.一句
+           （⛔ 前端自拟「✅ 本轮已存档」—— 回执一字之身在后端 ⇒ 一处定形）。
+           ⚠ 守：一回执**唯用于其一行**（__paHumanUsed · 免以旧回执之人话充新行）；
+             端 ⛔ 给 human（旧端 ／ 无回执）⇒ 照旧（⛔ 失行 · 非病）。 */
+        var _rc = rcOf(), _h = null;
+        try{
+          if(_rc && !_rc.__paHumanUsed){ _h = paTurnHuman(_rc); if(_h) _rc.__paHumanUsed = 1; }
+        }catch(e){ _h = null; }
+        var _uc = (_h && _h['一句']) ? _h['一句'] : '\u2705 \u672c\u8f6e\u5df2\u5b58\u6863';
+        el.textContent = _uc + n;
+        el.setAttribute('data-pa-user', _uc);
         var d = document.createElement('details');
         d.className = 'eng';
         d.innerHTML = '<summary>\u5de5\u7a0b\u6ce8\u8bb0</summary><div class="engbody"></div>';

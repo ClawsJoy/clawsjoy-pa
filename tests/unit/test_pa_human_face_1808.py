@@ -49,20 +49,28 @@ def _user_face_of_box(src: str) -> str:
 
 
 def test_P1_first_run_box_puts_jargon_behind_a_fold():
+    u"""⛔ 弃之形（pm_1808 §二.1 之原则**仍在**，唯**位**经 pm_2022 §二 ／ pm_2025 §二.3⒜ 改）：
+    旧形＝人话**在外**（须知 ／ 模型之路 ／ 数据目录平铺首屏）⇒ pm_2022 逮「首屏工程墙占主区之半」
+    ⇒ 今形＝首屏唯**一条可退之窄提示** ∧ 诸项（人话 ＋ 工程话）**皆入折**（折名人话「来源 ／ 详情」）。
+    ⭐ 故本齿之正控改「人话之字**在盒内可渲**（折内亦可 · ⛔ 丢）」，反控照旧「工程话 ⛔ 得在折之前」。"""
     h = _read(HTML)
     src = _box_src(h)
     face = _user_face_of_box(src)
-    # 正控：人话在外
-    for k, why in ((u"need[i]['话']", u"须知之人话上屏"), (u"• 模型之路：", u"模型之路（人话）"),
-                   (u"• 数据目录：", u"数据目录之值")):
-        assert k in face, k + u" —— " + why
-    # 反控：工程话 ⛔ 在用户面（`据` ／ `义` ／ `口径` ／ 键名）
+    # 正控：人话仍在（唯入折 —— ⛔ 丢信息 · ⛔ 删）
+    for k, why in ((u"face(need[", u"须知之人话仍渲（唯入折）"),
+                   (u"• 模型之路：", u"模型之路（人话）"),
+                   (u"• 数据目录：", u"数据目录之值（唯入折 · ⛔ 丢）")):
+        assert k in src, k + u" —— " + why
+    # 反控：工程话 ⛔ 得在**折之前**（＝用户之屏 · pm_1808 §二.1 之原则）
     for bad in (u"['据']", u"['义']", u"['口径']", u"面之源（面数由三键定 · ⛔ 静默）"):
         assert bad not in face, bad + u" ⛔ 得在首启盒之用户面（pm_1808 §二.1）"
-    # 工程注记之折叠在此
-    assert u"el('details'" in src and u"setAttribute('class','eng')" in src, \
-        u"工程话须入 details.eng（折叠处 · ⛔ 删）"
-    assert u"工程注记" in src, u"折叠之 summary 须载「工程注记」（人可辨）"
+    # ⭐ 首屏唯窄提示（⛔ 诸项平铺 · pm_2022 §二.⒜）
+    assert u"逐项在本行下方" in face, u"首屏须为一条可退之窄提示（pm_2022 §二.⒜）"
+    assert u"PA_SELFDOUBT_WORD" in face, u"自我怀疑之辞须有面闸（pm_2022 §二.⒝ · ⛔ 上屏）"
+    # 工程之折叠在此
+    assert u"el('details'" in src and u"setAttribute('class','eng')" in src,         u"工程话须入 details.eng（折叠处 · ⛔ 删）"
+    assert u"来源 ／ 详情" in src, u"折叠之 summary 须载**人话**之名（pm_2022 §二.⒞：⛔ 载「工程注记」）"
+    # ⚠ 「⛔ 入首屏字面」之判**唯可取渲之字**（源码之注释亦载此四字 ⇒ 源码之判必假红）—— 见 test_pa_first_run_2022.py F1。
 
 
 def test_P2_jargon_not_deleted_only_moved():

@@ -132,7 +132,11 @@ def test_three_states_no_silent_fallback():
     assert u"""if(!sel || !paModelRows) return '';""" in c
     assert u"sel.disabled = true;" in c
     assert u"照实 0 行" in c          # 0 行 ⇒ 照实报（⛔ 以 0 充未接）
-    assert u"PA_GAP.fallback('models_table')" in c   # 键⛔ 在 ⇒ 回退支（明书其键）
+    # ⭐ pm_1928 §一.1⒝（齿之钉正）：旧钉「明书其键」＝**钉了『键名上屏』**（键名在 `<option>` 之项文里 ⇒ 真在屏）——
+    #    今唯钉「回退支（一处定形之器）在用 ∧ 键名可查（`title`）∧ 屏上 ⛔ 载」（详 test_pa_human_text_1928.py）。
+    assert u"PA_GAP.fallback(" in c, u"键⛔ 在 ⇒ 回退支（一处定形之器 · ⛔ 自造一形）"
+    assert u"PA_GAP.fallback('模型表')" in c and u"models_table" in c, \
+        u"屏唯人话 ∧ 键名可查（title）"
     assert c.count(u"PA_GAP.down(") == 2, c.count(u"PA_GAP.down(")
     # 显形之态 ⛔ 存空值（存底 ⛔ 静默丢）
     assert u"model:(paModelSel()||paModelKept)" in c

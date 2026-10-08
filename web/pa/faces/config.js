@@ -12,7 +12,8 @@ function loadCfg(){ const c=JSON.parse(localStorage.getItem('pa_cfg')||'{}'); co
    ⑥ 回填之请**先归一、后比**（pm_1472 §二）：以**后端之表之归一**（行 `aliases[]` ／ 顶层 `model_aliases`）
      ⇒ 别名（如 `deepseek-v4-flash`）**归一为实名** ⇒ 命中即选中 —— ⛔ 静默落默认；⛔ 猜测（前缀剥 ／ 模糊比）。
    ⑦ ⛔ 命中（真未知名）⇒ **显形**（明书「表 ⛔ 含此名 ＋ 所按之默认」· 紧贴选单 ⇒ ⛔ 与「表未得」之态一名蔽二态）;
-     **存者唯实名**（别名 ⛔ 存底 —— 归正后回写 `pa_cfg.model`）。 */
+     **存者唯实名**（别名 ⛔ 存底 —— 归正后回写 `pa_cfg.model`）。
+   ⑧ ⭐ **屏唯人话 · 端径入 `title`**（pm_1928 §一.1⒜ ／ §一.2）：四态之辞 ⛔ 载端径（`GET /v9/…`） ／ 端字段名（`models_table`）—— 二者入 `sel.title`（＝**工程之据之地** · 悬停可查）；得表后须清（⛔ 留旧态之据）。⇒ 用户面读作「模型表未应答（因）· 扫于刻」∧ 工程之据 ⛔ 丢（承「可查」之律）。 */
 var paModelRows = null;   /* 后端之表（本轮之实）· null ＝ 未得 ⇒ paModelSel() 恒 "" */
 var paModelKept = '';     /* 末次**得表**之所选（⛔ 被显形之空值抹去 ⇒ 存底 ⛔ 静默丢） */
 function paModelKindTxt(k){ return (k === 'local') ? '本机' : ((k === 'remote') ? '云端' : '种类未给'); }
@@ -23,9 +24,10 @@ function paModelOptHtml(m){
   if(o['可用']) t += '（可用：' + String(o['可用']) + '）';
   return '<option value="' + paEsc(id) + '">' + paEsc(t) + '</option>';
 }
-function paModelState(sel, txt){
+function paModelState(sel, txt, tip){
   sel.innerHTML = '<option value="">' + paEsc(txt) + '</option>';
   sel.disabled = true;   /* 显形之态 ⛔ 可择（⛔ 以旧别名充选） */
+  sel.title = String(tip || '');   /* ⭐ 工程之据之地（端径 ／ 键名 ／ 码）：**屏唯人话** · 此处可查（pm_1928 §一.1⒜ ／ §一.2 —— 承「可查 ⛔ 丢」） */
   paModelNote(sel, '');  /* 表未得之态 ⇒ 归正／未知名之注 ⛔ 留（二态须别） */
   return sel;
 }
@@ -75,11 +77,11 @@ function paModelPersist(id){
 }
 function paModelRender(sel, st, d, at, err, prev){
   const rows = (d && Array.isArray(d.models_table)) ? d.models_table : null;
-  if(err){ paModelRows = null; return paModelState(sel, PA_GAP.down('GET /v9/pa/providers 未应答（' + err + '）· 扫于 ' + at)); }
-  if(st !== 200 || !d){ paModelRows = null; return paModelState(sel, PA_GAP.down('GET /v9/pa/providers 未回 200（HTTP ' + st + '）· 扫于 ' + at)); }
-  if(!rows){ paModelRows = null; return paModelState(sel, PA_GAP.fallback('models_table') + ' · 扫于 ' + at); }
-  if(!rows.length){ paModelRows = null; return paModelState(sel, '后端 models_table 照实 0 行（扫于 ' + at + '）'); }
-  paModelRows = rows; sel.disabled = false;
+  if(err){ paModelRows = null; return paModelState(sel, PA_GAP.down('模型表未应答（' + err + '）· 扫于 ' + at), 'GET /v9/pa/providers 未应答：' + err); }
+  if(st !== 200 || !d){ paModelRows = null; return paModelState(sel, PA_GAP.down('模型表未回成（服务之回 ' + st + '）· 扫于 ' + at), 'GET /v9/pa/providers 未回 200（HTTP ' + st + '）'); }
+  if(!rows){ paModelRows = null; return paModelState(sel, PA_GAP.fallback('模型表') + ' · 扫于 ' + at, 'GET /v9/pa/providers 之回 ⛔ 载此键 models_table'); }
+  if(!rows.length){ paModelRows = null; return paModelState(sel, '模型表照实 0 行（扫于 ' + at + '）', 'GET /v9/pa/providers 之 models_table 照实 0 行'); }
+  paModelRows = rows; sel.disabled = false; sel.title = '';   /* 得表 ⇒ 前一态之工程之据须清（⛔ 留旧态之 title） */
   sel.innerHTML = rows.map(paModelOptHtml).join('');
   /* 择值之序：**回填之请**（先归一 · 在表）⇒ 后端之 `default.model` ⇒ 首行（⛔ 前端自拟默认）。 */
   const want = String(prev || '').trim(), dft = String(((d || {}).default || {}).model || '');
