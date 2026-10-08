@@ -152,7 +152,7 @@ function paShellUpdView(r, local, ctx){
   /* 文案（人话 · 二事分名 ⇒ 一句必带「桌面程序」）。 */
   if(v.state === 'available'){
     v.text = '桌面程序有新版本' + (v.latest ? ('（' + v.latest + '）') : '') + '可更新 · 等你点一下，才继续';
-    v.note = '更新的是**桌面程序本体**（与内容之版本无关）· 唯由你之点';
+    v.note = '更新的是桌面程序本体（与内容之版本无关）· 唯由你之点';
   } else if(v.state === 'running' && ph === 'downloading'){
     v.text = '正在更新桌面程序 · 正在下载新版本'
            + (v.progress ? ('（已下 ' + paShuMB(v.progress.done) + ' ／ ' + paShuMB(v.progress.total) + '）') : '');
@@ -185,7 +185,7 @@ function paShellUpdRender(v){
     chip.disabled = !v.can_start;
     if(on){
       chip.textContent = paShuChipTxt(v.state);
-      chip.title = '更新**桌面程序本体**（与内容之版本无关）· 唯由你之点 · ' + PA_SHU_RESTART_NOTE
+      chip.title = '更新桌面程序本体（与内容之版本无关）· 唯由你之点 · ' + PA_SHU_RESTART_NOTE
                  + (v.code ? (' ｜ 码：' + v.code) : '');
     }
   }

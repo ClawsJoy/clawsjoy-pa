@@ -17,6 +17,7 @@ u"""令 1886 ／ 1890 ／ 1897 之齿 —— 壳层（桌面程序本体）更�
   S6 ⛔ 行话上屏（祖链判）：`electron-updater` ／ `NSIS` ／ `blockmap` ／ `quitAndInstall` ／ 端径 ／
      件号 —— **用户面之文**一字 ⛔ 载（唯**注释**可载 —— 工程之据）。
   S6b 注释可载工程之据（⛔ 丢真源）。
+  S6c ⛔ 工程之饰上屏（`**` ⇒ 屏上照显 · 用户面之文一字 ⛔ 载）。
   S7 终态同尺：`PA_SHU_TERM_HOLD_MS` ＝ `startup.js` 之 `PA_PREP_TERM_HOLD_MS`（⛔ 二阈各说各话）。
   F3 `unsupported` 二判：⛔ `window.paShell` ⇒ `browser`；有壳而 ⛔ 带 `shellUpdateState` ⇒ `old-shell`。
   F4 拉为唯一真源（裁 ⒜）：`onShellUpdate` 唯登记「唤我再拉」（其回调**无参** ⇒ ⛔ 各自算态）。
@@ -536,6 +537,19 @@ def test_S6_行话不上屏():
 
 def test_S6b_注释可载工程之据():
     assert u"electron-updater" in _read(SHU), u"工程之据（注释）宜在（⛔ 丢真源）"
+
+
+def test_S6c_用户面之文无markdown之饰():
+    u"""⛔ 工程之饰上屏：`**`（markdown 之饰）屏上照显为字面 ⇒ 用户面之文**一字 ⛔ 载**。
+
+    由（一手 · 我自逮）：`pa.html` 三处（首启盒之兜底 ／ 本机体检「模型之路」之对译表 ／ 留言之钮之
+    `title`）＋ 本件新档二处（`chip.title` ／ 横幅之 `note`）—— 屏上读作「模型**没查成**（见其据）」。
+    判：先去 HTML 注释 ∧ 再去 JS ／ CSS 注释 ⇒ 所余（＝**用户面之文 ＋ 码**）一字 ⛔ 载。
+    """
+    for fp in (SHU, HTML):
+        t = re.sub(r"<!--.*?-->", " ", _read(fp), flags=re.S)
+        t = _strip_comments(t)
+        assert u"**" not in t, u"用户面之文 ⛔ 载 `**`（屏上照显）：" + str(fp)
 
 
 # ---------- S7：终态同尺 ----------

@@ -221,7 +221,7 @@
             <input type="checkbox" id="paFbAgree"><label id="paFbAgreeLb" for="paFbAgree"></label>
           </div>
           <div class="fb-row">
-            <button class="fb-send" id="paFbSend" title="发送 ⇒ POST /v9/pa/feedback（落**本机** · ⛔ 出站）">发送</button>
+            <button class="fb-send" id="paFbSend" title="发送 ⇒ POST /v9/pa/feedback（落本机 · ⛔ 出站）">发送</button>
             <span class="fb-state" id="paFbState" role="status" aria-live="polite"></span>
           </div>
         </div>
@@ -547,8 +547,8 @@
     return t;
   }
   function el(tag,st,html){var d=document.createElement(tag);if(st)d.setAttribute('style',st);if(html!=null)d.innerHTML=html;return d;}
-  var SAID={'未接':'本机的 AI 模型**没接上**','在·无权重':'本机有模型服务，但**还没下模型**（下好才能用）',
-            '在∧可用':'本机的 AI 模型**可用**','不可达':'本机有模型服务，但**答不上来**','未核':'模型**没查成**（见其据）'};
+  var SAID={'未接':'本机的 AI 模型没接上','在·无权重':'本机有模型服务，但还没下模型（下好才能用）',
+            '在∧可用':'本机的 AI 模型可用','不可达':'本机有模型服务，但答不上来','未核':'模型没查成（见其据）'};
   //: 态之判唯「面之源．键[].态」之机器码（no_root ／ empty ／ ok）—— ⛔ 比字面哨符 · ⛔ 前端自造辞
   //  （上屏之字面唯自后端之「今」／「义」出 · 承 pm_1499 §一.3 ＋ pm_1503 §一 ＋ pm_1504 §一）
   //: 选笔记目录之步（pm_1518 §一 · 契约 TD_1515 §六.1）—— 径 ／ 体 ／ 错之字面唯取契约 · ⛔ 自拟
@@ -678,7 +678,7 @@
     document.body.appendChild(b);
   }
   function fallback(){
-    document.body.appendChild(el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#3b1d1d;color:#fde8e8;border:1px solid #7f1d1d;border-radius:10px;padding:10px 14px;font:13px/1.7 system-ui,Segoe UI,Microsoft YaHei,sans-serif','🔰 第一次用：**没读成**后端之读数（⛔ 显示为「已就绪」）—— 请查后端是否在答。'));
+    document.body.appendChild(el('div','position:fixed;left:10px;right:10px;bottom:10px;z-index:9998;background:#3b1d1d;color:#fde8e8;border:1px solid #7f1d1d;border-radius:10px;padding:10px 14px;font:13px/1.7 system-ui,Segoe UI,Microsoft YaHei,sans-serif','🔰 第一次用：没读成后端之读数（⛔ 显示为「已就绪」）—— 请查后端是否在答。'));
   }
   try{
     fetch(B+'/v9/pa/first_run',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
