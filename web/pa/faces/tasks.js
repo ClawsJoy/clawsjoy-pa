@@ -80,9 +80,14 @@ function paTaskAccept(text){
 })();
 
 /* ===== 任务面读数 ===== */
-function paRow(k, v, s, na){
+/* ⭐ pm_2091 §一 · #2：端之 `kind` ⇒ **人话名**（映射唯此一处 ⇒ ⛔ 屏上写类名 · ⛔ 各写一套）。 */
+var PA_KIND_CN = {external_llm:'外部模型', coding_agent_cli:'命令行智能体', local_service:'本机服务',
+  desktop_app:'桌面程序', mcp_service:'MCP 服务', local_model:'本机模型', agent_framework:'智能体框架'};
+/* ⭐ pm_2091 §一（承 pm_2061 裁⒉）：三槽（`.st` ／ `.v` ／ `.s`）**屏上唯人话** —— 工程之据（端径 ／ 键名 ／ 盘径 ／
+   会话 id）⇒ 第 `5` 参 `sTip` ⇒ 入 `.s` 之 `title`（悬停可回 · ⛔ 丢）。 */
+function paRow(k, v, s, na, sTip){
   return '<div class="r"><span class="st">' + k + '</span><span class="v' + (na ? ' na' : '') + '">'
-    + v + '</span><span class="s">' + (s || '') + '</span></div>';
+    + v + '</span><span class="s"' + (sTip ? (' title="' + paEsc(sTip) + '"') : '') + '>' + (s || '') + '</span></div>';
 }
 function paEsc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
   return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
@@ -100,6 +105,9 @@ function paTsLocal(v){
     return PA_STAMP.fmt(v);
   }catch(e){ return null; }
 }
+
+/* ⭐ pm_2091 §一：以 `title` 载「工程之据」——`paV3Txt` 之姊妹（一处定形 · 唯本面用；屏上唯人话）。 */
+function paV3Tip(id, s){ const e = document.getElementById(id); if(e) e.setAttribute('title', s); }
 
 /* ⭐ pm_1061 §二：以 `title` 补「屏上被截之槽」（零 CSS ／ 零控件 ／ **⛔ 硬改 `paRow` 之形**）。
    ⚠ 一手：`paRow`（本件 `:83–86`）唯三槽（`.st` ／ `.v` ／ `.s`）⇒ ⛔ 支持属性（⛔ 第四参）；
@@ -217,8 +225,11 @@ function paEnsureSubGuard(){
   w.setAttribute('data-verified', 'false');
   w.style.cssText = 'margin:2px 0 6px;padding:4px 8px;border-radius:6px;font-size:10.5px;line-height:1.7;'
     + 'color:var(--amber);background:rgba(210,153,29,.10);border:1px solid rgba(210,153,29,.45)';
-  w.innerHTML = '⚠ 未验（M1）：按「派活」会真起执行循环（后端真跑工具 ／ 写沙箱 · 本卡无「停止 ／ 撤回」钮）⇒ ⛔ 重复按。'
-    + '<br>本池读数按 <code>user_id</code> ＋ <code>session_id</code> 取（服务进程内存）⇒ 重启后可能空 · ⛔「池空」≠「未跑」。';
+  /* 屏上唯人话（pm_2091 §一 · #7）：端径 ／ 键名 ／ 符号 ⇒ `ENG_*` ⇒ 入 `title`（悬停可回）。 */
+  const ENG_guardTip = '⚠ 未验（M1）：按「派活」会真起执行循环（后端真跑工具 ／ 写沙箱 · 本卡无「停止 ／ 撤回」钮）｜本池读数按 user_id ＋ session_id 取（服务进程内存）· 池空 ≠ 未跑。';
+  w.innerHTML = '⚠ 未验（M1）：按「派活」会真起执行（本机真跑工具 · 本卡无「停止／撤回」）⇒ 请勿重复按。'
+    + '<br>件数按本次会话取（存于内存）⇒ 重启后可能为空 · 空 ≠ 没跑。';
+  w.title = ENG_guardTip;
   sub.parentNode.insertBefore(w, sub);
   return w;
 }
@@ -266,12 +277,12 @@ function paEnvAgentsRows(host, ro, roF){
   }
   var badB = (setA.length !== setB.length) || (setA.join('|') !== setB.join('|'));
   var red = badA || badB;
-  var verdict = '判 ⒜ 声明 ' + (declared === null ? '缺' : declared) + ' ⟷ 实 ' + (nCards === null ? '缺' : nCards)
-    + (badA ? ' ✗' : ' ✓') + ' ／ ⒝ by_level 归集 ' + setA.length + ' ⟷ 逐卡 level ' + setB.length + (badB ? ' ✗' : ' ✓');
+  var verdict = '本机册之对表：声明 ' + (declared === null ? '缺' : declared) + ' ⟷ 实 ' + (nCards === null ? '缺' : nCards)
+    + (badA ? ' ✗' : ' ✓') + ' ／ 分级归集 ' + setA.length + ' ⟷ 逐卡层级 ' + setB.length + (badB ? ' ✗' : ' ✓');
   if(!cards){
     host.insertAdjacentHTML('beforeend',
-      '<div class="ch" style="margin-top:8px">环境面 · agents（武装四件）<span class="src">源：GET /v9/pa/roster?full=1</span></div>'
-      + paRow('agents', '未知（后端未应答 ／ ⛔ 前端补齐）', '源：GET /v9/pa/roster?full=1'));
+      '<div class="ch" style="margin-top:8px">本机能干哪些活<span class="src" title="源：GET /v9/pa/roster?full=1">本机自述之册</span></div>'
+      + paRow('本机能干哪些活', '未知（没读到）', '本机自述之册', false, '源：GET /v9/pa/roster?full=1'));
     return 0;
   }
   var colDefs = [
@@ -288,16 +299,24 @@ function paEnvAgentsRows(host, ro, roF){
   ];
   var have = colDefs.map(function(d){ return cards.filter(function(c){ return d[1](c) != null; }).length; });
   var reading = 'agents ' + cards.length + ' 件 · 五列齐：' + colDefs.map(function(d, i){ return d[0] + ' ' + have[i] + '／' + cards.length; }).join(' · ');
-  var html = '<div class="ch" style="margin-top:8px">环境面 · agents（武装四件）'
-    + '<span class="src">源：GET /v9/pa/roster ＋ ?full=1 · ⛔ 密钥唯「有／无」（本片无此键 ⇒ ' + PA_GAP.fallback('secret_guard') + '｜密钥有无之真源 ＝ GET /v9/pa/env 之 secret_guard）</span></div>'
+  /* 屏上唯人话（pm_2091 §一 · #2）：端径 ／ 键名 ／ 回退支之语 ⇒ `ENG_*` ⇒ 入 `title`（悬停可回）。 */
+  const ENG_agentsSrc = '源：GET /v9/pa/roster ＋ ?full=1 · ⛔ 密钥唯「有／无」（本片无此键 ⇒ ' + PA_GAP.fallback('secret_guard') + '｜密钥有无之真源 ＝ GET /v9/pa/env 之 secret_guard）';
+  var html = '<div class="ch" style="margin-top:8px">本机能干哪些活'
+    + '<span class="src" title="' + paEsc(ENG_agentsSrc) + '">本机自述之册</span></div>'
     + '<div class="envjudge" data-axis="env-agents" data-red="' + (red ? '1' : '0') + '" data-declared="' + (declared === null ? '' : declared)
     + '" data-cols="' + cards.length + '" style="font-size:10.5px;line-height:1.7;color:' + (red ? '#f85149' : 'var(--sub)') + '">'
     + paEsc(reading) + '<br>' + paEsc(verdict)
-    + (red ? ' ⚠ 显红：声明与实不齐 ⇒ ⛔ 前端补齐（承 刀7p §二）' : '') + '</div>';
+    + (red ? ' ⚠ 显红：册之声明与本机之实不齐' : '') + '</div>';
   cards.forEach(function(c){
     var id = String((c && c.id) || '?');
     var lvl = (c && c.access && c.access.level != null) ? String(c.access.level) : '缺';
-    var src = (c && c.source != null && String(c.source).trim()) ? String(c.source) : '缺（后端无 source）';
+    var src = (c && c.source != null && String(c.source).trim()) ? String(c.source) : '';
+    var kindRaw = String((c && c.kind) || '缺');
+    var srcHuman = !src ? '来源未给'
+      : (/^PORT\s*[:=]/i.test(src) ? '来源：本机端口'
+        : (/^WSL\s*[:=]/i.test(src) ? '来源：本机之 Linux 侧'
+          : ((/^PATH\s*[:=]/i.test(src) || /^[A-Za-z]:[\\\/]/.test(src)) ? '来源：本机路径' : src)));
+    var kindHuman = PA_KIND_CN[kindRaw] || kindRaw;
     var cap = paEnvList(c && c.capabilities);
     var inv = paEnvCell(c && c.access ? c.access.channel : null);
     var cost = paEnvCell(c && c.cost);
@@ -306,7 +325,8 @@ function paEnvAgentsRows(host, ro, roF){
     var others = all ? all.filter(function(x){ return !/^\s*probe:/.test(String(x)); }) : null;
     var probeCell = (probes === null) ? '缺（后端无 verified）' : (probes.length ? probes.join('；') : '空（后端无 probe: 条）');
     html += '<details class="eng" data-agent="' + paEsc(id) + '">'
-      + '<summary>' + paEsc(lvl + ' · ' + id + ' · ' + String((c && c.kind) || '缺') + ' · ' + src) + '</summary>'
+      + '<summary title="' + paEsc('原文：层级 ' + lvl + ' ／ 名 ' + id + ' ／ 类 ' + kindRaw + ' ／ 来源 ' + (src || '未给')) + '">'
+      + paEsc(lvl + ' · ' + id + ' · ' + kindHuman + ' · ' + srcHuman) + '</summary>'
       + '<div class="engbody">'
       + paRow('caps', paEsc(cap.t), '源：GET /v9/pa/roster?full=1#' + paEsc(id) + ' · 字段 capabilities', cap.na)
       + paRow('invoke', paEsc(inv.t), '源：GET /v9/pa/roster?full=1#' + paEsc(id) + ' · 字段 access.channel', inv.na)
@@ -373,15 +393,17 @@ async function paLoadTasks(){
      ⇒ ⛔ 改「源」行（并存）。⚠ 照实：⛔ 把本页运行态当成池之态，亦 ⛔ 把池之态顶替本页态。 */
   const nSubFail = (st && Array.isArray(st.subtasks))
     ? st.subtasks.filter(function(x){ return x && x.status === 'failed'; }).length : null;
-  const inFlightPlain = '本页任务态：' + runLabel + ' ｜ 后端子任务池：'
-    + (nSub0 === null ? '未知（后端未应答）'
+  /* 屏上唯人话（pm_2091 §一 · #3 ／ 裁⒝）：二义分列**照留**（防「值 ⟷ 源」打架 · 承 pm_1051 §四）· 唯净其字面。 */
+  const inFlightPlain = '本机任务态：' + runLabel + ' ｜ 本机子任务池：'
+    + (nSub0 === null ? '未知（没读到）'
        : (nSub0 + ' 件' + (nSub0 > 0 ? ('（失败 ' + (nSubFail === null ? '未知' : nSubFail) + '）') : '')));
   const inFlightVal = paEsc(inFlightPlain);
   /* ⭐ pm_1061 §二：值槽 ／ 源槽屏上皆被截（`nowrap ＋ ellipsis`）⇒ 备 `title`（⛔ 截 · 悬停可回）。
      ⭐ 值槽之 `title` ＝ 本行值之**全文** ＋（池内有失败条 ⇒ 逐条「task_id · 因：<全文>」）⇒ 在办行亦「携因」。 */
-  const srcPlain = runSrcNo
-    ? ('源：后端事件：尚未到达 ＋ GET /v9/subtask/status（子任务 ' + (nSub0 === null ? '未知' : nSub0 + ' 件') + '）')
-    : ('源：' + runSrcVal + '（后端事件）＋ GET /v9/subtask/status（子任务 ' + (nSub0 === null ? '未知' : nSub0 + ' 件') + '）');
+  const nSub0Txt = (nSub0 === null ? '未知' : nSub0 + ' 件');
+  const srcPlain = runSrcNo ? ('本机事件尚未到达 · 另取子任务池（' + nSub0Txt + '）')
+    : ('本机事件已到 · 另取子任务池（' + nSub0Txt + '）');
+  const ENG_srcPlain = runSrcNo ? ('源：后端事件：尚未到达 ＋ GET /v9/subtask/status（子任务 ' + nSub0Txt + '）') : ('源：' + runSrcVal + '（后端事件）＋ GET /v9/subtask/status（子任务 ' + nSub0Txt + '）');
   const subFailNotes = (st && Array.isArray(st.subtasks)) ? st.subtasks.filter(function(x){
       return x && x.status === 'failed';
     }).map(function(x){
@@ -403,26 +425,26 @@ async function paLoadTasks(){
         return String((x || {}).to_seat || '').trim() !== '' && String((x || {}).stage || '') !== '已收口';
       }).length : null);
   const dhPoolN = dhRows ? dhRows.filter(function(x){ return String((x || {}).source || '') === 'subtask_pool'; }).length : null;
-  const dhFilter = '滤：to_seat 非空 ∧ stage ≠ 已收口'
-    + (dhCnt ? '（后端 counts.awaiting_receipt）' : ' ⇒ ⚠ 后端未发 counts ⇒ 面内按同谓词自 rows 派生（⛔ 手搓）');
-  const dhSrcLine = '源：GET /v9/pa/dispatch/history（store_exists=' + (dh ? String(dh.store_exists) : '未知')
-    + ' · 表长 ' + (dhTblN === null ? '未知' : dhTblN) + ' 行 ⊃ 池路行 ＋ 已终结行 ⇒ ⛔ 表长 ≠ 待回执数）｜' + dhFilter;
-  /* ⭐ pm_刀11p §二.1：**受理**之「源」⛔ 写 `POST`（POST ＝ 写路 · ⛔ 读源）⇒ 明标「未接（无读源）」
-     （⛔ 以 `0` 充「未接」）；本页计数照实另书（本页口径 · ⛔ 后端）。 */
+  /* 屏上唯人话（pm_2091 §一 · #3）：端径 ／ 键名 ／ 「表长 ≠ 数」之内部辨 ⇒ `ENG_*`。 */
+  const dhSrcHuman = '本机派活记录（按「投到席 ∧ 未收口」计）';
+  const ENG_dhSrc = '源：GET /v9/pa/dispatch/history（store_exists=' + (dh ? String(dh.store_exists) : '未知') + ' · 表长 ' + (dhTblN === null ? '未知' : dhTblN) + ' 行 ⊃ 池路行 ＋ 已终结行 ⇒ ⛔ 表长 ≠ 待回执数）｜滤：to_seat 非空 ∧ stage ≠ 已收口' + (dhCnt ? '（后端 counts.awaiting_receipt）' : ' ⇒ ⚠ 后端未发 counts ⇒ 面内按同谓词自 rows 派生（⛔ 手搓）');
+  /* 屏上唯人话（pm_2091 §一 · #3）：端径 ／ 键名 ／ 符号 ⇒ `ENG_*` ⇒ 入 `title`（悬停可回 · ⛔ 丢）。 */
+  const ENG_accSrc = '源：后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）｜本页计数 ＝ 本页已接（本页口径）';
+  const ENG_apprSrc = '源：GET /v9/audit/approvals · 属会话 ' + paEsc(curSession()) + '（本会话 · ⛔ 全局数）｜无参 ⇒ 400（⛔ 把错误渲染成 0）';
+  const ENG_runSrc = '源：GET /v9/pes/runs（按 user_id 取 · ⛔ 会话轴 ⇒ ⛔ 与本会话之数互校）';
   if(stEl) stEl.innerHTML =
-    paRow('受理', PA_GAP.todo() + ' · 本页已接 ' + paLocalTasks.length + ' 件',
-      '源：后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）｜本页计数 ＝ 本页已接（本页口径）')
-  + paRow('在办', inFlightVal, paEsc(srcPlain))
+    paRow('受理', PA_GAP.todo() + ' · 本机已接 ' + paLocalTasks.length + ' 件',
+      '本机暂无「受理态」之读数 —— 上列为本页已接之数', false, ENG_accSrc)
+  + paRow('在办', inFlightVal, paEsc(srcPlain), false, ENG_srcPlain)
   + paRow('等待外部结果', (dhWaitN !== null)
-        ? (dhWaitN === 0 ? '0 件（后端真判据下无待回执之件 · 空态 · 非故障）'
-                         : dhWaitN + ' 件（席位轴 to_seat 之件 · 待外部回执；表长 ' + (dhTblN === null ? '未知' : dhTblN)
-                           + ' ⊃ 池路 ' + (dhPoolN === null ? '未知' : dhPoolN) + ' ＋ 已终结）')
-        : '未知（后端未应答）',
-      dhSrcLine)
-  + paRow('待你裁', (nA === null ? '未知（后端未应答 ／ 无参 ⇒ 400）' : (nA === 0 ? '0 件（后端 approvals: []）' : nA + ' 件')),
-      '源：GET /v9/audit/approvals · 属会话 ' + paEsc(curSession()) + '（本会话 · ⛔ 全局数）｜无参 ⇒ 400（⛔ 把错误渲染成 0）')
-  + paRow('已完成', (nR === null ? '未知（后端未应答）' : (nR === 0 ? '0 件（后端 runs: []）' : nR + ' 件（state=done）')),
-      '源：GET /v9/pes/runs（按 user_id 取 · ⛔ 会话轴 ⇒ ⛔ 与本会话之数互校）');
+        ? (dhWaitN === 0 ? '0 件（本机暂无待回执之件 · 空态 · 非故障）'
+                         : dhWaitN + ' 件（投到席之件 · 待外部回执）')
+        : '未知（没读到）',
+      dhSrcHuman, false, ENG_dhSrc)
+  + paRow('待你裁', (nA === null ? '未知（没读到）' : (nA === 0 ? '0 件（本机无待裁之件）' : nA + ' 件')),
+      '本机待裁之件（本会话）', false, ENG_apprSrc)
+  + paRow('已完成', (nR === null ? '未知（没读到）' : (nR === 0 ? '0 件（本机无已完之件）' : nR + ' 件（已完成）')),
+      '本机已办结之记录（按本机用户计）', false, ENG_runSrc);
 
   /* —— 左栏 · 任务台账（源 /v9/metrics/tool_flow · 真数据）—— */
   const by = (mf && mf.stats && mf.stats.by_task) ? mf.stats.by_task : null;
@@ -436,35 +458,45 @@ async function paLoadTasks(){
   const mfWinStr = (mf && mf.stats && mf.stats.window_hours != null) ? ('窗 ' + mf.stats.window_hours + ' h')
     : '窗缺（后端未给 stats.window_hours）';
   const mySid = String(curSession());
-  const sessMark = function(k){ return String(k) + '（' + (String(k) === mySid ? '本会话' : '⛔ 非本会话') + '）'; };
-  paV3Txt('paTaskLedgerSrc', (by ? ('源：GET /v9/metrics/tool_flow · ' + keys.length + ' 项 · ' + mfAtStr + ' · ' + mfWinStr
-      + ' · 会话：' + (keys.map(sessMark).join(' ／ ') || '—') + '｜本会话 ＝ ' + mySid)
-      : ('源：GET /v9/metrics/tool_flow · 未知（后端未应答）· ' + mfAtStr + ' · ' + mfWinStr))
-    + '｜测试痕判据：' + (ttRule ? '清单已取（' + (ttRule.patterns.length) + ' 名形）' : '清单未取／无该键 ⇒ 一条也不收'));
+  const sessMark = function(k){ return String(k) + '（' + (String(k) === mySid ? '本会话' : '非本会话') + '）'; };
+  /* 屏上唯人话（pm_2091 §一 · #1）：端径 ／ 会话 id ／ 名形清单之径 ⇒ `ENG_*` ⇒ 入 `title`（悬停可回）。 */
+  const mfAtHuman = (mf && mf.stats && mf.stats.generated_at != null) ? ('刻 ' + paTsLocal(mf.stats.generated_at)) : '取数时刻未给';
+  const mfWinHuman = (mf && mf.stats && mf.stats.window_hours != null) ? ('近 ' + mf.stats.window_hours + ' 小时') : '时间窗未给';
+  const ledgerHuman = by ? ('本机工具流水 · ' + keys.length + ' 项 · ' + mfAtHuman + ' · ' + mfWinHuman
+      + '（含他会话之数 · ' + (ttRule ? '已去掉测试痕' : '测试痕清单未取 ⇒ 一条也不收') + '）')
+    : ('本机工具流水 · 未知（没读到）· ' + mfAtHuman + ' · ' + mfWinHuman);
+  const ENG_ledgerSrc = '源：GET /v9/metrics/tool_flow · ' + keys.length + ' 项 · ' + mfAtStr + ' · ' + mfWinStr + ' · 会话：' + (keys.map(sessMark).join(' ／ ') || '—') + '｜本会话 ＝ ' + mySid + '｜测试痕判据：' + (ttRule ? '清单已取（' + (ttRule.patterns.length) + ' 名形）' : '清单未取／无该键 ⇒ 一条也不收');
+  paV3Txt('paTaskLedgerSrc', ledgerHuman);
+  paV3Tip('paTaskLedgerSrc', ENG_ledgerSrc);
   const lg = document.getElementById('paTaskLedger');
   if(lg){
+    /* ⭐ pm_2091 裁⒞：逐行之件 ⇒ **辨异之最小形留屏**（`…` ＋ 末 6 字）∧ 全文入 `title`（⛔ 全入）。 */
+    function shortSid(k){
+      const s = String(k);
+      return (s.length <= 8) ? s : ('…' + s.slice(-6));
+    }
     function rowOf(k){
       const r = by[k] || {};
-      const own = (String(k) === mySid) ? '本会话' : '⛔ 非本会话';
+      const own = (String(k) === mySid) ? '本会话' : '非本会话';
       return '<div title="会话 ' + paEsc(String(k)) + '（' + own + '）· ' + paEsc(mfAtStr) + ' · ' + paEsc(mfWinStr)
         + ' · 源：GET /v9/metrics/tool_flow by_task[' + paEsc(String(k)) + ']">'
-        + '会话 ' + paEsc(String(k).slice(0, 42)) + '（' + own + '）'
+        + '会话 ' + paEsc(shortSid(k)) + '（' + own + '）'
         + ' —— 工具 ' + (r.count == null ? '未知' : r.count) + ' 次 · 成 '
         + (r.success_rate == null ? '未知' : r.success_rate + '%') + ' · 均 ' + (r.avg_ms == null ? '未知' : r.avg_ms)
-        + ' ms · ' + paEsc(mfAtStr) + ' · ' + paEsc(mfWinStr) + '</div>';
+        + ' 毫秒 · ' + paEsc(mfAtHuman) + ' · ' + paEsc(mfWinHuman) + '</div>';
     }
     if(!keys.length){
-      lg.innerHTML = '<div>0 项（后端未应答或空库 ⇒ 空态 · ⛔ 编）</div>';
+      lg.innerHTML = '<div>0 项（没读到 ∨ 空库 ⇒ 空态 · 不编）</div>';
     }else{
       const real = [], tst = [];
       keys.forEach(function(k){ (paTtIsTestName(k, ttRule) ? tst : real).push(k); });
       let html = real.length ? real.slice(0, 12).map(rowOf).join('')
-                             : '<div>0 项（真任务 · 名形皆命中测试痕清单 ⇒ 全数入下）</div>';
+                             : '<div>0 项（本机真任务之数 · 名形皆命中测试痕清单 ⇒ 全数入下）</div>';
       if(tst.length){
         html += '<details class="eng" data-tt="taskledger">'
           + '<summary title="判据（外置可配 · ' + paEsc('pa/测试痕_清单.json 之「任务台账_测试名」') + '）：'
           + paEsc(String((ttRule && ttRule.rule) || '')) + '">'
-          + '🧪 测试痕 ' + tst.length + ' 项（名形命中清单 · 收起 · 展开可见 · ⛔ 丢）</summary>'
+          + '🧪 测试痕 ' + tst.length + ' 项（按名形清单滤出 · 展开可见）</summary>'
           + '<div>' + tst.map(rowOf).join('') + '</div></details>';
       }
       lg.innerHTML = html;
@@ -473,36 +505,48 @@ async function paLoadTasks(){
 
   /* —— 左栏 · 行为闸 ＋ 干预 —— */
   const g = document.getElementById('paTaskGates');
+  /* 屏上唯人话（pm_2091 §一 · #4）：符号 ／ 端径 ／ 内部语 ⇒ `ENG_*` ⇒ 入 `title`（承 2061 裁⒜）。 */
+  const ENG_steerTip = 'POST /v9/pa/steer（通道已在 ＝ shared_state.add_steer ／ drain_steer · 承 PM 1254）⇒ ⭐ 面不可达时明标「不可达」· ⛔ 静默';
+  const ENG_cancelTip = 'POST /v9/cancel/<session_id>（routes/session.py · 会话级协作取消 · 置位取消标志 ⇒ bridge_loop 下轮检查点退出 · ⛔ 硬杀）';
+  const ENG_takeTip = '无此端点 —— 后端无「接管」之概念（gateway_routes.py 逐路名 0 命中）· ⭐ 待立项（须先定义：接谁的管 ／ 界在何 ／ 可否逆 ／ 是否触他方平台）';
   if(g) g.innerHTML =
-    '<div class="g"><b>受理门永不关</b>：任何时刻之输入皆受理（⛔ 置灰输入 ／ ⛔ 拒件 · ⛔「稍等一下」类文案）。'
-    + '<br>输入分类（新任务 ／ 改令 ／ 追问 ／ 闲聊）' + PA_GAP.todo('后端无端点（须开读面 ⇒ 承批四）· 按真实意图分（⛔ 按「忙」分）') + '。</div>'
-    + '<div class="g"><b>打断 · 生效时点照实</b>：排队中 ⇒ 即时作废；已在跑 ⇒ <b>下一步边界生效</b>（后端置取消标志 · ⛔ 硬杀）。'
-    + '<div class="gr"><button onclick="paIntervene(\'改令\')" title="POST /v9/pa/steer（通道已在 ＝ shared_state.add_steer ／ drain_steer · 承 PM 1254）⇒ ⭐ 面不可达时明标「不可达」· ⛔ 静默">✏️ 改令</button>'
-    + '<button onclick="paIntervene(\'中止\')" title="POST /v9/cancel/&lt;session_id&gt;（routes/session.py · 会话级协作取消 · 置位取消标志 ⇒ bridge_loop 下轮检查点退出 · ⛔ 硬杀）">⏹ 中止本线程（会话级 · 下一步边界生效）</button>'
-    + '<button onclick="paIntervene(\'接管\')" disabled title="无此端点 —— 后端无「接管」之概念（gateway_routes.py 逐路名 0 命中）· ⭐ 待立项（须先定义：接谁的管 ／ 界在何 ／ 可否逆 ／ 是否触他方平台）">🤝 接管 · 待立项（须先定义）</button></div></div>'
-    + '<div class="g"><b>交互不锁 · 执行排队</b>：并行 ＝ <b>编排并行 · 推理排队</b>（6 GB 单卡 · 并发 1）⇒ ⛔ 让用户以为「多模型并行」。</div>'
-    + '<div class="g"><b>本页任务（后端事件改写 · ⛔ 前端猜）</b><div id="paLocalList"></div></div>';
+    '<div class="g"><b>受理门永不关</b>：任何时刻之输入皆受理（不置灰 · 不拒件 · 不写「稍等一下」）。'
+    + '<br>输入分类（新任务 ／ 改令 ／ 追问 ／ 闲聊）—— 本机暂无此端点，暂按真实意图分之（未接 · 待办）。</div>'
+    + '<div class="g"><b>打断 · 生效时点照实</b>：排队中 ⇒ 即时作废；已在跑 ⇒ <b>下一步边界生效</b>。'
+    + '<div class="gr"><button onclick="paIntervene(\'改令\')" title="' + paEsc(ENG_steerTip) + '">✏️ 改令</button>'
+    + '<button onclick="paIntervene(\'中止\')" title="' + paEsc(ENG_cancelTip) + '">⏹ 中止本线程（会话级 · 下一步边界生效）</button>'
+    + '<button onclick="paIntervene(\'接管\')" disabled title="' + paEsc(ENG_takeTip) + '">🤝 接管 · 待立项（须先定义）</button></div></div>'
+    + '<div class="g"><b>交互不锁 · 执行排队</b>：并行 ＝ <b>编排并行 · 推理排队</b>（单卡 · 并发 1）。</div>'
+    + '<div class="g"><b>本页任务（依本机事件改写）</b><div id="paLocalList"></div></div>';
   paRenderLocalTasks();
 
   /* —— 右栏 · 派活 —— */
   const nSub = (st && Array.isArray(st.subtasks)) ? st.subtasks.length : null;
   const rows = document.getElementById('paSeatRows');
+  /* 屏上唯人话（pm_2091 §一 · #5）：端径 ／ 键名 ／ 内部语 ⇒ `ENG_*` ⇒ 入 `title`（悬停可回 · ⛔ 丢）。 */
+  const ENG_rosterSrc = '源：GET /v9/pa/roster（面名「能力端点册」 · 14 卡 · 派活前「谁能干」 · ⛔ 非组织席位册）｜⭐ 组织席位册 ＝ GET /v9/pa/seats（14 席 · 已接 · 见下「派席」）｜实时驻留态 ＝ GET /v9/pa/env 之 cols.agents（kind=seat）';
+  const ENG_clientSrc = '源：GET /v9/pa/local_client/status';
+  const ENG_sub2Src = '源：GET /v9/subtask/status';
+  const ENG_appr2Src = '源：GET /v9/audit/approvals';
+  const ENG_permSrc = '源：GET /v9/pa/permission';
+  const ENG_dispSrc = '源：GET /v9/pa/dispatch/history（两轴 · 逐行谓词）｜⭐ 本面「派池」钮 ＝ POST /v9/subtask/create（source=subtask_pool ⇒ 件 ⛔ 进席）｜⭐ 本面「派席」钮 ＝ POST /v9/pa/dispatch {task_text, to_seat}（席轴 ⇒ 投到席）';
+  const lvTxt = (ro && ro.by_level && Object.keys(ro.by_level).length) ? Object.keys(ro.by_level).sort().join('／') : '—';
+  const nmTxt = ((ro && ro.rows) || []).slice(0,3).map(function(x){ return x.name || x.id; }).join(' · ') || '—';
   if(rows) rows.innerHTML =
-    paRow('能力端点', (ro && ro.count != null)
-        ? paEsc('编队花名册 ' + ro.count + ' 卡（' + ((ro.by_level && Object.keys(ro.by_level).length) ? Object.keys(ro.by_level).sort().join('／') : '—') + '）· ' + (((ro.rows || []).slice(0,3).map(function(x){ return x.name || x.id; }).join(' · ')) || '—'))
-        : '未知（后端未应答）',
-      '源：GET /v9/pa/roster（面名「能力端点册」 · 14 卡 · 派活前「谁能干」 · ⛔ 非组织席位册）｜⭐ 组织席位册 ＝ GET /v9/pa/seats（14 席 · 已接 · 见下「派席」）｜实时驻留态 ＝ GET /v9/pa/env 之 cols.agents（kind=seat）')
-  + paRow('对端', lc ? paEsc((lc.client || '（未命名）') + ' · connected=' + lc.connected) : '未知（后端未应答）',
-      '源：GET /v9/pa/local_client/status')
-  + paRow('在办', (nSub === null ? '未知（后端未应答）' : nSub + ' 件'), '源：GET /v9/subtask/status')
-  + paRow('待验收', (nA === null ? '未知（后端未应答）' : nA + ' 件'), '源：GET /v9/audit/approvals')
-  + paRow('凭据在册', pm ? paEsc('权限档 ' + (pm.level || '未知') + ' · 授权档 ' +
+    paRow('本机能干哪些活' + ((ro && ro.count != null) ? ('（' + ro.count + ' 卡）') : ''),
+      (ro && ro.count != null) ? paEsc(lvTxt + ' · ' + nmTxt) : '未知（没读到）',
+      '本机自述之册', false, ENG_rosterSrc)
+  + paRow('本机与对端之连接', lc ? paEsc((lc.client || '（未命名）') + ' · ' + (lc.connected ? '已连' : '未连')) : '未知（没读到）',
+      '本机之连接态', false, ENG_clientSrc)
+  + paRow('本机子任务池', (nSub === null ? '未知（没读到）' : nSub + ' 件'), '本机子任务池之数', false, ENG_sub2Src)
+  + paRow('本机待裁之件', (nA === null ? '未知（没读到）' : nA + ' 件'), '本机待裁之件之数', false, ENG_appr2Src)
+  + paRow('本机凭据在册', pm ? paEsc('权限档 ' + (pm.level || '未知') + ' · 授权档 ' +
       (pm.grant && pm.grant.pa ? (pm.grant.pa.exists ? '在' : '缺') : '?') + ' ／ ' +
-      (pm.grant && pm.grant.pes ? (pm.grant.pes.exists ? '在' : '缺') : '?')) : '未知（后端未应答）',
-      '源：GET /v9/pa/permission')
-  + paRow('派活之路', '派席（带 to_seat）' + (dhSeatN === null ? '：未知' : ('：' + dhSeatN + ' 行'))
-      + ' ｜ 派池（subtask_pool）' + (dhPoolN === null ? '：未知' : ('：' + dhPoolN + ' 行')),
-      '源：GET /v9/pa/dispatch/history（两轴 · 逐行谓词）｜⭐ 本面「派池」钮 ＝ POST /v9/subtask/create（source=subtask_pool ⇒ 件 ⛔ 进席）｜⭐ 本面「派席」钮 ＝ POST /v9/pa/dispatch {task_text, to_seat}（席轴 ⇒ 投到席）');
+      (pm.grant && pm.grant.pes ? (pm.grant.pes.exists ? '在' : '缺') : '?')) : '未知（没读到）',
+      '本机之凭据档', false, ENG_permSrc)
+  + paRow('本机派活之路', '投到席' + (dhSeatN === null ? '：未知' : ('：' + dhSeatN + ' 件'))
+      + ' ｜ 进池' + (dhPoolN === null ? '：未知' : ('：' + dhPoolN + ' 件')),
+      '本机两条派活之路', false, ENG_dispSrc);
 
   /* —— 右栏 · 环境面 · agents（五列 · 承 pm_刀7p ／ 刀3′）—— */
   paEnvAgentsRows(rows, ro, roF);
@@ -511,24 +555,25 @@ async function paLoadTasks(){
   try{ await paSubRouteInit(); }catch(e){}
 
   /* —— 右栏 · 子任务池 —— */
-  paV3Txt('paSubSrc', '源：GET /v9/subtask/status · ' + (nSub === null ? '未知（后端未应答）' : nSub + ' 件'));
+  const ENG_subSrc = '源：GET /v9/subtask/status · ' + (nSub === null ? '未知（后端未应答）' : nSub + ' 件');
+  paV3Txt('paSubSrc', '本机子任务池 · ' + (nSub === null ? '未知（没读到）' : nSub + ' 件'));
+  paV3Tip('paSubSrc', ENG_subSrc);
   /* ⭐ pm_1061 §二：两处「在办」行（五态 ／ 池畔）皆补 `title` —— 值槽 ＝ 值全文 ＋（有失败条 ⇒ 因全文）
-     ∧ 源槽 ＝ 源行全文（⛔ 截 · 悬停可回）。⚠ 只赋属性 ⇒ 零 CSS ／ 零控件 ／ ⛔ 动 `paRow` 之形（其 ⛔ 支持属性）。 */
-  paAttachRowTitle(stEl, '在办', inFlightTitle, srcPlain);
+     ∧ 源槽 ＝ 源行全文（⛔ 截 · 悬停可回）。⚠ 只赋属性 ⇒ 零 CSS ／ 零控件。 */
+  paAttachRowTitle(stEl, '在办', inFlightTitle, ENG_srcPlain);
   /* ⭐ 刀11p：新改之两行亦被 nowrap ＋ ellipsis 截 ⇒ 补 title（⛔ 截 · 悬停可回 · 零 CSS）。 */
-  paAttachRowTitle(stEl, '受理', PA_GAP.todo() + ' · 本页已接 ' + paLocalTasks.length + ' 件',
-    '源：后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）｜本页计数 ＝ 本页已接（本页口径）');
+  paAttachRowTitle(stEl, '受理', PA_GAP.todo() + ' · 本机已接 ' + paLocalTasks.length + ' 件', ENG_accSrc);
   paAttachRowTitle(stEl, '等待外部结果',
-    ((dhWaitN === null) ? '未知（后端未应答）' : (dhWaitN + ' 件（席位轴 to_seat 之件 · 待外部回执）')),
-    dhSrcLine);
-  paAttachRowTitle(rows, '在办',
-    ('在办 ' + (nSub === null ? '未知（后端未应答）' : nSub + ' 件')
+    ((dhWaitN === null) ? '未知（没读到）' : (dhWaitN + ' 件（投到席之件 · 待外部回执）')),
+    ENG_dhSrc);
+  paAttachRowTitle(rows, '本机子任务池',
+    ('本机子任务池 ' + (nSub === null ? '未知（没读到）' : nSub + ' 件')
       + (subFailNotes.length ? ('\n（池内失败条之因 · 全文）\n' + subFailNotes.join('\n')) : '')),
-    '源：GET /v9/subtask/status');
+    ENG_sub2Src);
   const sl = document.getElementById('paSubtaskList');
   if(sl) sl.innerHTML = (nSub === null)
-    ? '<div>未知（后端未应答）</div>'
-    : (nSub === 0 ? '<div>0 件（后端 subtasks: []）· 空态</div>'
+    ? '<div>未知（没读到）</div>'
+    : (nSub === 0 ? '<div title="源：GET /v9/subtask/status · 后端 subtasks: []">0 件（本机池里暂无）· 空态</div>'
       : st.subtasks.map(paSubRowHtml).join(''));
   paEnsureSubPop();
 }
@@ -582,9 +627,10 @@ function paSubtaskPop(){
 function paRenderLocalTasks(){
   const el = document.getElementById('paLocalList'); if(!el) return;
   el.innerHTML = paLocalTasks.length
-    ? paLocalTasks.slice(0, 6).map(function(t){
+      ? paLocalTasks.slice(0, 6).map(function(t){
         return '<div>' + paEsc(t.id) + ' · <b>' + paEsc(t.state) + '</b> · ' + paEsc(t.note)
-          + '<br><span style="opacity:.8">状态来源：' + paEsc(t.src) + ' · ' + paEsc(t.ts) + '（样张号域 · ⛔ 冒真凭据）</span></div>';
+          + '<br><span style="opacity:.8" title="' + paEsc('状态来源：' + t.src + ' · ' + t.ts) + '">本机之记 · '
+          + paEsc(t.ts) + '（来源见提示）</span></div>';
       }).join('')
     : '<div>本页未发起任务</div>';
 }
@@ -675,22 +721,32 @@ async function paSubRouteInit(){
       box.id = 'paSubRoute';
       box.setAttribute('data-axis', 'subroute');
       box.style.cssText = 'margin:4px 0 2px;font-size:10.5px;line-height:1.75;color:var(--sub)';
+      /* 屏上唯人话（pm_2091 §一 · #6 `#paSubRoute`）：端径 ／ 参数名 ／ 符号 ⇒ `ENG_*` ⇒ 入 `title`。 */
+      const ENG_subRouteSrc = '源：GET /v9/pa/seats（组织席位册 · ⛔ 手搓）｜「派池」＝ POST /v9/subtask/create（source=subtask_pool）｜「派席」＝ POST /v9/pa/dispatch {task_text, to_seat}（落 to_seat 行 · 投到席）';
+      const ENG_seatSelTip = '席之真源：GET /v9/pa/seats（组织席位册）';
+      const ENG_seatBtnTip = '席路：POST /v9/pa/dispatch {task_text, to_seat}（真投到席）';
+      /* 屏上唯人话（pm_2091 §一 · #6）：名 = 「本机组织席位册（N 席）」（数从 GET /v9/pa/seats 取实）。 */
+      const l0 = document.createElement('div');
+      l0.id = 'paSubRouteName';
+      l0.textContent = '本机组织席位册';
       const l1 = document.createElement('div');
-      l1.appendChild(document.createTextNode('派席（投到席 · 席轴）⟷ 派池（有界并发池 · ⛔ 进席）　席：'));
+      l1.appendChild(document.createTextNode('派席（投到席）⟷ 派池（有序并发池）　席：'));
       const sel = document.createElement('select');
       sel.id = 'paSeatSel';
-      sel.title = '席之真源：GET /v9/pa/seats（组织席位册）';
+      sel.title = ENG_seatSelTip;
       const sb = document.createElement('button');
       sb.id = 'paSeatSend';
       sb.type = 'button';
       sb.textContent = '派席';
-      sb.title = '席路：POST /v9/pa/dispatch {task_text, to_seat}（真投到席）';
+      sb.title = ENG_seatBtnTip;
       sb.onclick = paSeatSubmit;
       l1.appendChild(sel); l1.appendChild(document.createTextNode(' ')); l1.appendChild(sb);
       const l2 = document.createElement('div');
       l2.style.cssText = 'font-size:10px;opacity:.92';
-      l2.textContent = '源：GET /v9/pa/seats（组织席位册 · ⛔ 手搓）｜「派池」＝ POST /v9/subtask/create（source=subtask_pool）｜「派席」＝ POST /v9/pa/dispatch {task_text, to_seat}（落 to_seat 行 · 投到席）';
-      box.appendChild(l1); box.appendChild(l2);
+      /* 屏上唯人话（pm_2091 §一 · #6）：端径 ／ 参数名 ⇒ 入 `title`（悬停可回）。 */
+      l2.textContent = '派席 ⇒ 投到席；派池 ⇒ 进本机池（各自之路见提示）';
+      l2.title = ENG_subRouteSrc;
+      box.appendChild(l0); box.appendChild(l1); box.appendChild(l2);
       form.parentNode.insertBefore(box, form.nextSibling);
     }
     const sel = document.getElementById('paSeatSel');
@@ -701,7 +757,7 @@ async function paSubRouteInit(){
       if(sel.dataset.sig !== sig){
         sel.innerHTML = '';
         if(!rows){
-          const o = document.createElement('option'); o.value = ''; o.textContent = PA_GAP.down('席册：GET /v9/pa/seats 未应答');
+          const o = document.createElement('option'); o.value = ''; o.textContent = PA_GAP.down('席册没读到');
           sel.appendChild(o);
         }else{
           rows.forEach(function(s){
@@ -714,6 +770,8 @@ async function paSubRouteInit(){
         sel.dataset.sig = sig;
       }
       if(box) box.dataset.seats = rows ? String(rows.length) : 'nosrc';
+      const nm = document.getElementById('paSubRouteName');
+      if(nm) nm.textContent = rows ? ('本机组织席位册（' + rows.length + ' 席）') : '本机组织席位册（' + PA_GAP.down('席册没读到') + '）';
     }
     return rows ? rows.length : 0;
   }catch(e){ return 0; }
