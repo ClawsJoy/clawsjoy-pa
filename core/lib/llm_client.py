@@ -154,6 +154,8 @@ class LLMClient:
         self._ollama_probe_ok = False
         # ⭐ PM 034 §三.ⓝ：走径标之真源 —— 记**实际**所走之 provider/model（⛔ 猜）
         self.last_route = {}
+        #: ⭐ pm_2117 §三.3：上一调用之**试数**（一处记 ⇒ 「白调」可查）
+        self.last_attempts = 0
         self._fb_reason = ""
         # ⭐ pm_1609 §二.3：**原始异常唯入此**（机器诊断面 · ⛔ 用户面）
         self.last_error = ""
@@ -274,6 +276,10 @@ class LLMClient:
 
     def get_last_route(self):
         return dict(self.last_route or {})
+
+    def get_last_attempts(self):
+        u"""上一调用之**试数**（⏔ 猜 · 一处记）—— 承 pm_2117 §三.3（「白调」须可查 · 律①）。"""
+        return int(getattr(self, "last_attempts", 0) or 0)
 
     def _call(
         self,
@@ -444,6 +450,7 @@ class LLMClient:
             self._ensure_ollama()
         last_error = None
         for attempt in range(self.config.max_retries):
+            self.last_attempts = attempt + 1
             try:
                 start = time.time()
                 resp = self._session.post(
@@ -663,6 +670,7 @@ class LLMClient:
         # 重试逻辑
         last_error = None
         for attempt in range(self.config.max_retries):
+            self.last_attempts = attempt + 1
             try:
                 _payload_size = len(json.dumps(payload))
                 if _payload_size > 100 * 1024:

@@ -165,6 +165,17 @@ def generate_plan(task_text, mode="work", user_id=None):
        读者可辨「回空」（`error` ＝ 模型回空）与「跑而败」（`error` ＝ 异常类名 ＋ 首句）
        （此前 `except: pass` ⇒ 二态一名蔽）。⚠ 超时**已自带**（`LLMClient._call`：远端 `or 60` ／
        本机 `or config.timeout`＝120）⇒ ⛔ 另设（免改其语义）。
+    ⭐ PM 2112 §三（`route` 之显形 · 出机明书之雏）：回执入 `route` —— 本轮**实际所走**之路
+       （`provider` ／ `model` ／ `fell_back` ／ `reason` · 取自 `LLMClient.get_last_route()` ⇒ **⛔ 猜**）。
+    ⭐ PM 2112 §三.5（其速 · 归我域）：模型名**唯自** `core.pa.providers.default_route()`（注册表之
+       **一处定形**）—— 旧形之调用 **⛔ 给 model** ⇒ `_call` 落 `LLMConfig.default_model`
+       （**本机 qwen**）⇒ 云端诸支**永不入**（一手实测 `get_last_route()` ＝ ollama ／ `fell_back` False）
+       ⇒ 与注册表「默认 ＝ remote:deepseek」**二处漂**。
+    ⭐ PM 2117 §三.2（裁：准提 · **一处定形**）：`max_tokens` 唯自注册表之 `default_max_tokens()`
+       （⛔ 硬编 `200` ／ `800`）—— 旧 `200` 于**推理模型**（deepseek-v4-flash）必被 `reasoning`
+       之额耗尽 ⇒ `API_EMPTY: finish_reason=length` ⇒ 白调二（一手：日志逐字）。
+    ⭐ PM 2117 §三.3（照实 · 白调须可查）：`refine` 并载 `max_tokens`（**实用**值）＋ `attempts`
+       （试数 · 自 `LLMClient.get_last_attempts()` · ⛔ 猜）。
     """
     tt = _detect_task_type(task_text)
     template = TASK_TEMPLATES.get(tt, TASK_TEMPLATES["办公"])
@@ -174,10 +185,24 @@ def generate_plan(task_text, mode="work", user_id=None):
     verifies = [t[3] for t in template]
     owners = [t[4] for t in template]
     #: 细化之痕（一处定形）：`ok` ＝ 模型之 label 已采纳；`error` 空而 `ok` 假 ⇒ ⛔ 有（今无此态）。
-    refine = {"ok": False, "ms": 0, "error": ""}
+    refine = {"ok": False, "ms": 0, "error": "", "max_tokens": 0, "attempts": 0}
+    route = {}
+    _c = None
+    _rt_note = ""
     _t0 = time.time()
     try:
         from core.lib.llm_client import LLMClient
+        from core.pa.providers import default_route as _default_route
+        from core.pa.providers import default_max_tokens as _default_max_tokens
+
+        # ⭐ 注册表之**一处定形**（⛔ 硬编模型名 · 承 pm_1468 §二.1）—— 旧形 ⛔ 给 model ⇒ 必落本机。
+        _rt, _rt_note = _default_route()
+        # ⭐ pm_2117 §三.2：额度亦唯自注册表（与 gateway_routes.py:295 同法 · 一处配）。
+        try:
+            _mt = int(_default_max_tokens())
+        except Exception:
+            _mt = 1600
+        refine["max_tokens"] = _mt
 
         prompt = (
             "你是老板的 PA。任务将按固定阶段执行(顺序与阶段名不可改): %s\n"
@@ -185,7 +210,8 @@ def generate_plan(task_text, mode="work", user_id=None):
             "只输出一个 JSON 字符串数组, 长度 %d, 与阶段一一对应, 不要输出其它文字。\n\n"
             "任务: %s" % ("/".join(stages), len(stages), task_text)
         )
-        out = LLMClient().generate(prompt, max_tokens=200)
+        _c = LLMClient()
+        out = _c.generate(prompt, model=_rt.get("model"), max_tokens=_mt)
         if out:
             s = (out or "").strip()
             i = s.find("[")
@@ -207,10 +233,22 @@ def generate_plan(task_text, mode="work", user_id=None):
             refine["error"] = "模型回空"
     except Exception as e:
         refine["error"] = "%s: %s" % (type(e).__name__, str(e)[:120])
+    finally:
+        if _c is not None:
+            try:
+                route = _c.get_last_route() or {}
+            except Exception:
+                route = {}
+            try:
+                refine["attempts"] = _c.get_last_attempts()
+            except Exception:
+                refine["attempts"] = 0
+        if _rt_note:
+            route["note"] = _rt_note
     refine["ms"] = int((time.time() - _t0) * 1000)
     steps = [
         {"stage": s, "label": l, "produces": p, "verify": v, "owner": o}
         for s, l, p, v, o in zip(stages, labels, produces, verifies, owners)
     ]
     return {"steps": steps, "source": ("llm" if refine["ok"] else "template"),
-            "task_type": tt, "refine": refine}
+            "task_type": tt, "refine": refine, "route": route}
