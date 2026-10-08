@@ -271,7 +271,7 @@ function paSysRender(){
   if(!r.doc){
     h += '<div style="font-size:11px;color:var(--sub)">'
       + (r.busy ? '正在本机体检（唯读 · 有界 6 s）…'
-                : '点「🩺 本机体检」取一次（唯本机 · 不出机 ／ 不写 ／ 不提权）。')
+                : '点「🩺 本机体检」取一次（唯本机 · 不外发 ／ 不写 ／ 不提权）。')
       + '</div>';
     box.innerHTML = h;
     return;
@@ -296,7 +296,7 @@ function paSysRender(){
     + '<div style="font-size:10.5px;color:var(--sub)">取于 ' + paSysEsc(d.generated_at || '—')
     + '（耗 ' + paSysEsc(String(d.elapsed_s)) + ' s' + (d.cached ? ' · 皆缓存' : ' · 本次真扫')
     + '）｜源：' + paSysEsc(d.source_note || '—') + '</div>'
-    + '<div style="font-size:10.5px;color:var(--sub)">本器一阶段全程不出机 ／ 不写 ／ 不提权（本面纯读）；清删类之真动仅经「去处」之红钮（逐次授权 · 二次确认 · 可撤）—— 须授权之项已标「须授权」（本器不自行提权）。</div>'
+    + '<div style="font-size:10.5px;color:var(--sub)">本器一阶段全程不外发 ／ 不写 ／ 不提权（本面纯读）；清删类之真动仅经「去处」之红钮（逐次授权 · 二次确认 · 可撤）—— 须授权之项已标「须授权」（本器不自行提权）。</div>'
     + '<div style="margin-top:6px">';
   for(let i = 0; i < order.length; i++) h += paSysPanelHtml(by[order[i]]);
   h += '</div>'

@@ -62,7 +62,7 @@
     <button class="chip" id="paShellUpdGo" onclick="paShellUpdGo()" style="display:none;flex:0 0 auto" disabled
             title="更新桌面程序本体（与内容之版本无关 · 唯在桌面程序内可用 · 唯由你之点）">⬆ 桌面程序更新</button>
     <span class="chip" id="paKeyBtn" onclick="paKeyOpen()" title="密钥（模型供应商 · 唯落本机）：填 ／ 换 ／ 清 —— 值 ⛔ 上屏 ／ ⛔ 掩码 ／ ⛔ 入日志 ／ ⛔ 出机">🔑 密钥</span>
-    <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · 不出机）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
+    <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · 不外发）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
     <span class="chip" id="paMoreBtn" onclick="paMore(true)" title="更多：轨迹 ／ 产出 ／ 文件 ／ 模式 ／ 常驻 ／ 系统 ／ 设置 ／ 私面（各一步可达）">更多 ▾</span>
     <span class="chip" id="drawerRightBtn" onclick="paSettings()" title="设置（老板 ／ 配置 ／ 建档）">⚙ 设置</span>
     <!-- ⭐⭐ pm_1855（承 pm_1853 §一.1）：首屏 ⛔ 载机器号（`web_…`）——
@@ -202,8 +202,8 @@
               （Chromium 之内建）⇒ **一途通二处**（⛔ 二源 · 承 pm_1657 §二.2 之「回落 ∨ 并存」之问）。
            ⛔ 载绝对径 ／ ⛔ 起停。 -->
       <section class="msec" id="paFeedback">
-        <h6>留言板（内测 · 不出机）</h6>
-        <p class="mnote" id="paFbNotice" role="status" aria-live="polite">留言板之「不出机」明书：正在读本机（不自行编辞）…</p>
+        <h6>留言板（内测 · 不外发）</h6>
+        <p class="mnote" id="paFbNotice" role="status" aria-live="polite">留言板之「不外发」明书：正在读本机（不自行编辞）…</p>
         <div class="fb-reply" id="paFbReply" role="status" aria-live="polite" hidden></div>
         <div class="fb-form">
           <input class="fb-in" id="paFbTitle" maxlength="120" placeholder="题（必填 · 一句话说清你遇到的问题）">
@@ -287,7 +287,7 @@
            真源 GET /v9/pa/sys/snapshot（唯本机 · ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默）；由 pa/faces/sys.js 收放。
            ⛔ 后端写盘（唯前端之便）：文本块可全选复制。 -->
       <section class="msec" id="paMoreSysFace"><h6>本机体检（只读 · 七面）</h6>
-        <p class="mnote" title="真源：GET /v9/pa/sys/snapshot">来源：本机体检（唯本机 · 不出机 ／ 不写 ／ 不静默提权 · 只读）。</p>
+        <p class="mnote" title="真源：GET /v9/pa/sys/snapshot">来源：本机体检（唯本机 · 不外发 ／ 不写 ／ 不静默提权 · 只读）。</p>
         <div class="sysrow">
           <span class="chip" id="paSysOpen" onclick="paSysOpen()" title="本机体检（只读 · 七面）：展开 ／ 收起（唯本机 · 取一次）">🩺 本机体检</span>
           <span class="chip" onclick="paSysScan()" title="重扫（真扫 · 有界 6 s）">↻ 重扫</span>

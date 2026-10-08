@@ -211,7 +211,7 @@ def test_F1_明书唯取后端notice之逐字():
     assert v["nt"]["ok"] == FT.NOTICE_LOCAL, (u"屏上之形须 ＝ 端之逐字（真源今已净 ⇒ ⛔ 待面剔）："
                                               + v["nt"]["ok"])
     assert v["nt"]["marks"] == u"a · b · c", v["nt"]["marks"]
-    assert v["nt"]["cross"] == u"不出机 · 不联网发送", v["nt"]["cross"]
+    assert v["nt"]["cross"] == u"不外发 · 不联网发送", v["nt"]["cross"]
     assert v["g"]["ok"]["ok"] is True, v["g"]["ok"]
 
 

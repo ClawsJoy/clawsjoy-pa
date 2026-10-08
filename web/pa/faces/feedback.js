@@ -70,12 +70,14 @@ function paFbTarget(h){
    判：仅「`⛔` ＋ 空格」之形方判「不」（避把「⛔ 缺 X」此等记号误译成句 —— 一手教训）。 */
 function paFbHumanLine(s){
   return String(s == null ? '' : s)
+    /* ⭐ PM 2081 §二：端之旧形「⛔ 出机」之兜底 ⇒ 与端今字一名「不外发」。 */
+    .replace(/⛔\s*出机/g, '不外发')
     .replace(/⛔\s*/g, '不').replace(/\*\*/g, '').replace(/\~\~/g, '').replace(/`/g, '');
 }
 function paFbNoticeRaw(t){
   if(!t || t.state !== 'ok') return '留言板未答：本机还没给落点之声明（不自行编辞 —— 候本机）';
   if(t.notice) return String(t.notice);
-  return '本机还没给「内容出机 ∨ 不出机」之明书 —— 不自行编辞（故停发：候本机）';
+  return '本机还没给「内容出机 ∨ 不外发」之明书 —— 不自行编辞（故停发：候本机）';
 }
 function paFbNoticeText(t){ return paFbHumanLine(paFbNoticeRaw(t)); }
 
@@ -406,10 +408,10 @@ async function paFbOpenItem(fid){
    ⚠ 其位 ＝ **最低**优先级（put · `paPrepMerge` 之末判）⇒ 唯「他事皆无」时显。 */
 function paFbBannerView(st, t){
   if(!st || !st.state) return null;
-  if(st.state === 'sending') return {state: 'running', text: '正在发送留言…（落本机 · 不出机）', note: ''};
+  if(st.state === 'sending') return {state: 'running', text: '正在发送留言…（落本机 · 不外发）', note: ''};
   if(st.state === 'ok') return {state: 'done',
       text: '留言已落本机：' + String(st.id),
-      note: '内测 · 不出机：我们上门取 ∨ 你自己复给我们'};
+      note: '内测 · 不外发：我们上门取 ∨ 你自己复给我们'};
   if(st.state === 'fail') return {state: 'failed',
       text: '留言未发出：' + (st.error || '（后端未给因）'), note: PA_FB_OUTLET};
   return null;
