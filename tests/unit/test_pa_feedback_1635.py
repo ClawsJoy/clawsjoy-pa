@@ -286,8 +286,8 @@ def test_F12_一幅横幅_本面不自渲且投入唯1处():
     assert body.index(u"if(u.state === 'done') return u;") < body.index(u"const f = (c &&"), \
         u"反馈之判须在更新之判之后（＝ 最低优先级）"
     assert u"a.state === 'ready'" in body, u"反馈唯占「起服已就绪」之本应收之横幅"
-    assert u"paPrepMerge(v, paPrepUpd, paPrepFb)" in _fn(su, u"paPrepPaint"), \
-        u"三源须同投一处之判"
+    assert u"paPrepMerge(v, paPrepUpd, paPrepFb, paPrepShu)" in _fn(su, u"paPrepPaint"), \
+        u"四源须同投一处之判"
 
 
 # ---------- F13：横幅之最低优先级（⛔ 三横幅） ----------

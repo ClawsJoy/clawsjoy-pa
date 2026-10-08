@@ -312,6 +312,15 @@ details.eng.paroute{margin:0 0 5px}
 #paUpdGo:not([disabled]):hover{filter:brightness(1.12)}
 #paUpdGo[disabled]{opacity:.45}
 
+/* ⭐⭐ pm_1886 §一.1 ／ pm_1890 裁 ⒞（归 9.0.12 · 第五物）：**壳层（桌面程序本体）更新之钮**（一处定形）——
+   与载荷更新之 `#paUpdGo`（上 · 琥珀）**二路分明** ⇒ 取**蓝**（`var(--blue)` ⇒ 用户一眼可分「我升的是壳还是载荷」）。
+   现隐由 `web/pa/faces/shellupd.js` 之 `paShellUpdRender`（一处收放）· ⛔ 此处管现隐。⛔ 行话上屏（祖链判）。 */
+#paShellUpdGo{flex:0 0 auto;font-weight:700;letter-spacing:.3px;padding:4px 13px;
+  background:var(--blue);border-color:var(--blue);color:var(--bg);
+  box-shadow:0 0 0 1px rgba(88,166,255,.40),0 0 10px rgba(88,166,255,.30)}
+#paShellUpdGo:not([disabled]):hover{filter:brightness(1.12)}
+#paShellUpdGo[disabled]{opacity:.5}
+
 /* —— 横幅之各态配色（pm_1621 令二：更新之「完成 ／ 需重启」与「准备中」须别形）—— */
 .prep[data-state="done"]{background:rgba(63,185,80,.14);color:var(--green);border-bottom-color:rgba(63,185,80,.4)}
 .prep[data-state="unreachable"]{background:rgba(139,148,158,.14);color:var(--sub);border-bottom-color:rgba(139,148,158,.35)}

@@ -269,7 +269,30 @@ let paPrepUpd = null;   /* 更新面之末回（由 update.js 之 paPrepFeedUpda
 function paPrepFeedUpdate(v){ paPrepUpd = (v && typeof v === 'object') ? v : null; paPrepPaint(); }
 let paPrepFb = null;    /* 反馈面之末回（由 feedback.js 之 paPrepFeedFeedback 投 · ⛔ 本件自取 · pm_1635 §一.3） */
 function paPrepFeedFeedback(v){ paPrepFb = (v && typeof v === 'object') ? v : null; paPrepPaint(); }
-function paPrepMerge(a, b, c){
+/* ⭐⭐ pm_1886 §三 要（一处定形）：壳层（桌面程序本体）之态 —— 第四个源，
+   由 `web/pa/faces/shellupd.js` 之 `paShellUpdFetch()` 投（⛔ 自取 ／ ⛔ 自渲 —— 承「⛔ 二套面」）。
+   投者 唯「在办（下 ／ 装）」∨「已交出安装（终态）」∨「败」三种 ⇒ 转为本横幅之诸态
+   （⛔ 直投 `shellupd.js` 之辞态 —— 免二套态名）：下 ／ 装 ⇒ `running`（⏳）｜交出安装 ⇒
+   `done` ＋ `term_key` ／ `term_deadline`（复用本处之终态自退 · 20 s）｜败 ⇒ `failed`（❌）。
+   ⛔ 「有新版（available）／已下好待点（wait）」**⛔ 占** 横幅（其位 ＝ 顶栏之 `#paShellUpdGo`
+   ＋ 「更多 ▾ → 系统」之一行 —— 承裁 ⒟ 之反：⛔ 无等待亦挂）。 */
+let paPrepShu = null;
+function paPrepFeedShell(v){
+  const s = (v && typeof v === 'object') ? v : null;
+  let m = null;
+  if(s && s.state === 'running')
+    m = {state:'running', phase:'shu', text:s.text, note:s.note,
+         can_bar:!!s.can_bar, pct:((typeof s.pct === 'number') ? s.pct : null)};
+  else if(s && s.state === 'failed')
+    m = {state:'failed', phase:'shu', text:s.text, note:s.note};
+  else if(s && s.state === 'launching')
+    m = {state:'done', phase:'shu', term_key:'shu|launching',
+         term_deadline:(typeof s.term_deadline === 'number') ? s.term_deadline : 0,
+         text:s.text, note:s.note};
+  paPrepShu = m;
+  paPrepPaint();
+}
+function paPrepMerge(a, b, c, d){
   const u = (b && typeof b === 'object') ? b : null;
   if(u){
     if(u.state === 'failed') return u;
@@ -277,6 +300,14 @@ function paPrepMerge(a, b, c){
     if(u.state === 'running' && PA_UPD_BUSY[u.phase]) return u;
     if(u.state === 'done') return u;
   }
+  /* ⭐⭐ pm_1886 §三 ／ pm_1897 §一（要）：壳层（桌面程序本体）之**第四源** —— 由
+     `shellupd.js` 之 `paPrepFeedShell()` 投（⛔ 自取 ／ ⛔ 自渲 —— 承「⛔ 二套面」）。
+     ⭐ 其位（一处 · pm_1897 §一.2）：在**更新之四态**（失败 ／ 需重启 ／ 在办 ／ 完成）**之后** ∧ 在**反馈**（最低）**之前**。
+     由：既有之七景（更新 ＋ 起服）**一字未动**（正可作反控之齿）；而壳之态**⛔ 丢** ——
+     壳钮（顶栏 `#paShellUpdGo`）＋「更多 ▾ → 系统」之一行**恒显**（承裁 ⒟ · ⛔ 藏死）。
+     唯接「在办 ／ 交出安装 ／ 败」三种已转过之态（见 `paPrepFeedShell`）—— ⛔ 直投本面之辞态（免二套态名）。 */
+  const sh = (d && typeof d === 'object') ? d : null;
+  if(sh && (sh.state === 'running' || sh.state === 'failed' || sh.state === 'done')) return sh;
   /* ⭐ pm_1635 §一.3（三面 ⇒ **一幅横幅** · ⛔ 三横幅）：反馈之「成 ／ 败」＝ **最低**优先级 ——
      唯「起服已就绪（横幅本应收）」时方占 ⇒ ⛔ 凌于起服之「准备中 ／ 失败」（其判在上）∧
      ⛔ 凌于更新之诸态（上列已判）⇒ 免「更新要重启 ∧ 一条留言回执盖之」。 */
@@ -289,7 +320,7 @@ function paPrepPaint(){
   const v = paPrepView(paPrepRun.h, {elapsed_s:(Date.now() - paPrepRun.t0) / 1000,
         tries:paPrepRun.tries, http_status:paPrepRun.http, was_ready:paPrepRun.wasReady});
   paPrepRun.last = v;
-  const face = paPrepMerge(v, paPrepUpd, paPrepFb);   /* 三源 ⇒ 一处判（⛔ 三套面 · pm_1635 §一.3） */
+  const face = paPrepMerge(v, paPrepUpd, paPrepFb, paPrepShu);   /* 四源 ⇒ 一处判（⛔ 多套面 · pm_1635 §一.3 ／ pm_1886 §三） */
   paPrepRender(face);
   return face;
 }
@@ -342,6 +373,8 @@ try{ window.paPrepView = paPrepView; window.paPrepRender = paPrepRender;
      window.paPrepTermGone = function(){ return paPrepTermGone; }; }catch(e){}
 try{ window.paPrepFeedFeedback = paPrepFeedFeedback;
      window.paPrepFb = function(){ return paPrepFb; }; }catch(e){}
+try{ window.paPrepFeedShell = paPrepFeedShell;
+     window.paPrepShu = function(){ return paPrepShu; }; }catch(e){}
 /* 自起（⛔ 候 boot.js —— 首屏须「JS 一跑即显」· 承令一「⛔ 白屏」之反）。 */
 if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', paPrepBegin); }
 else { paPrepBegin(); }

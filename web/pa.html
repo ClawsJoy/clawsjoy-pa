@@ -51,6 +51,16 @@
          现隐唯由 `update.js` 之 `paUpdBtnRender` 收放（唯 `available === true` ∧ ⛔ 在跑时现）。 -->
     <button class="chip" id="paUpdGo" onclick="paUpdGo()" style="display:none;flex:0 0 auto" disabled
             title="更新到新版（本机端 · 唯本机可用 ∧ 唯由你之点）">⬆ 更新</button>
+
+    <!-- ⭐⭐ pm_1886 §一（主件）＋ pm_1890 ／ pm_1897 之裁（归 9.0.12 之第五物）：**壳层（桌面程序本体）更新之入口**
+         —— 与载荷更新（上 `#paUpdGo` · `update.js`）**二路分明**（裁 ⒞：可同时现 · 各一句 ／ 用户须能答「我升的是壳还是载荷」）。
+         一：**显壳之态**（有新版 ∨ 失败 ⇒ 顶栏现；无新版 ⛔ 占位 ⇒ 唯「更多 ▾ → 系统」之一行 · 裁 ⒟ —— ⛔ 藏死 · 承 `pa.html:41`）。
+         二：**一键「重启并安装」**（唯由用户之点 ⇒ 桥 `shellUpdateInstall()`；⛔ 静默装 ／ ⛔ 偷重启 —— 重启之**明书**入 `title` ∧ 面之辞）。
+         三：**败必明书**（因 ＋ 去处 · 人话）；码可查（`title` ＋ 工程注记之折叠 · 裁 ⒝）· ⛔ 行话上屏（祖链判）。
+         真源 ＝ `window.paShell.shellUpdateState()`（拉为唯一真源 · 裁 ⒜）；本页在浏览器里 ⇒ 此钮 ⛔ 现（`unsupported`）。
+         现隐唯由 `web/pa/faces/shellupd.js` 之 `paShellUpdRender`（一处收放）；样式一处定形於 `pa_v3.css` 之 `#paShellUpdGo`（⛔ 此处写样式）。 -->
+    <button class="chip" id="paShellUpdGo" onclick="paShellUpdGo()" style="display:none;flex:0 0 auto" disabled
+            title="更新桌面程序本体（与内容之版本无关 · 唯在桌面程序内可用 · 唯由你之点）">⬆ 桌面程序更新</button>
     <span class="chip" id="paKeyBtn" onclick="paKeyOpen()" title="密钥（模型供应商 · 唯落本机）：填 ／ 换 ／ 清 —— 值 ⛔ 上屏 ／ ⛔ 掩码 ／ ⛔ 入日志 ／ ⛔ 出机">🔑 密钥</span>
     <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · ⛔ 出机）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
     <span class="chip" id="paMoreBtn" onclick="paMore(true)" title="更多：轨迹 ／ 产出 ／ 文件 ／ 模式 ／ 常驻 ／ 系统 ／ 设置 ／ 私面（各一步可达）">更多 ▾</span>
@@ -259,6 +269,12 @@
       <section class="msec" id="paMoreSys"><h6>系统</h6>
         <p class="mnote">构建指纹 ／ 配额横幅 ／ 栏位折叠（原顶栏诸 pill 皆并入状态行或折叠于此）。</p>
         <div class="sysrow">构建指纹 <span id="paBuild" title="页面构建指纹（服务端对实际发出的 web/pa.html 现算 sha16）">构建 —</span> · 快照指纹 <span id="paTodayBuild">读数中…</span></div>
+
+        <!-- ⭐ pm_1886 §一.1 ＋ 裁 ⒟：壳层（桌面程序本体）之态 —— **常显之一行**（⛔ 占顶栏 ·
+             「更多 ▾ → 系统」一步可达 · 可查）；其文由 `shellupd.js` 之 `paShellUpdRender` 一处写（⛔ 前端自造辞）。
+             工程注记（折叠：态 ／ 码 ／ 取数之真源）仅供**可查** —— 裁 ⒝。 -->
+        <div class="sysrow">桌面程序（壳）版本 <span id="paShellVer" title="真源：桌面程序本体（唯在桌面程序内有此能）">读数中…</span></div>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody" id="paShellUpdEng">—</div></details>
         <div id="paQuotaBanner" class="pa-quota-banner" role="status" aria-live="polite">
           <span id="paQuotaText"></span>
           <button onclick="paExportArchive()" title="导出全部归档与会话为 JSON 文件（不删除任何数据）">导出归档 JSON</button>
@@ -494,6 +510,7 @@
 <script src="pa/faces/startup.js"></script>
 <script src="pa/faces/update.js"></script>
 <script src="pa/faces/feedback.js"></script>
+<script src="pa/faces/shellupd.js"></script>
 <script src="pa/faces/keys.js"></script>
 <script src="pa/faces/sys.js"></script>
 <!-- ⭐ 首启引导（净机之「第一屏」· M1 余件之三 · 承 pm_1384 §三.3）：
