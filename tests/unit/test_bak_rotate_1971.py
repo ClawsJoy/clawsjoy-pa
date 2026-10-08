@@ -157,3 +157,17 @@ def test_表头异不计真唯一(tmp_path):
     _w(u"投递台账.csv.before_0000000000000002", ls[0] + u",时点\n001,a,b,c\n断行无号\n")
     r = m.replica_test(d, m.DEF_PAT)
     assert r[u"n"] == 2 and r[u"real_unique"] == 1 and r[u"hdr_only"] == 2 and r[u"early"] == 1
+
+
+def test_护真唯一不转(tmp_path):
+    u"""护真唯一（PM `1994 §二.2␬`）：`hold` 系**加护**（⛔ 改「留 `keep`」之数）；默空 ⇒ 旧行为。"""
+    m = _load()
+    src = m._fixture(os.path.join(str(tmp_path), u"h"), 5)
+    rows = m.family(src, m.DEF_PATS)
+    held = rows[-1][u"n"]
+    k0, r0 = m.select(rows, 2)
+    assert len(k0) == 2 and len(r0) == 3
+    k1, r1 = m.select(rows, 2, (held,))
+    assert len(k1) == 3 and len(r1) == 2
+    assert held in [x[u"n"] for x in k1]
+    assert held not in [x[u"n"] for x in r1]

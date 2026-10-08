@@ -80,9 +80,15 @@ def family(d, pat):
     return rows
 
 
-def select(rows, keep):
-    u"""⇒ (留, 转)：留 ＝ 最近 `keep` 枚（按 mtime）；转 ＝ 余。"""
-    return rows[:keep], rows[keep:]
+def select(rows, keep, hold=()):
+    u"""⇒ (留, 转)：留 ＝ 最近 `keep` 枚（按 mtime）**∪ `hold`**（⭐ 真唯一之护 · 承 PM `1994 §二.2⒜`）；转 ＝ 余。
+
+    ⚠ `hold` 系**加护**（⛔ 改「留 `keep`」之数 ⇒ 唯「转」侧多一层滤 · 默空 ＝ 旧行为）。
+    """
+    hs = set(hold)
+    k = [r for r in rows[:keep]] + [r for r in rows[keep:] if r["n"] in hs]
+    kn = set(r["n"] for r in k)
+    return k, [r for r in rows if r["n"] not in kn]
 
 
 def batch_paths(arch, day):
@@ -134,14 +140,14 @@ def last_rotation(hist):
         return None
 
 
-def read_report(d, pat, keep, arch, hist=None, now=None):
+def read_report(d, pat, keep, arch, hist=None, now=None, hold=()):
     u"""⭐ **只读**读数（承 PM `1981 §二`）：族之枚数 ＋ 尺 ＋ 拟转 ＋ **刻** ＋ 上次轮转之记。
 
     ⚠ 三守：⒜ **只读**（⛔ 写族 ／ ⛔ 触他径）⒝ 其数**带刻**（一刻之读 · 族为活）
         ⒞ ⛔ 以「今数」充「**率**」（率须书**观测窗** ＋ 其**形**：匀速 ∨ `burst`）。
     """
     rows = family(d, pat)
-    k, r = select(rows, keep)
+    k, r = select(rows, keep, hold)
     ts = lambda t: time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(t))
     tb = sum(x["size"] for x in rows)
     rb = sum(x["size"] for x in r)
@@ -350,14 +356,15 @@ def replica_test(d, pat=DEF_PATS, main_name=None, now=None):
             "bom_only": n["bom"], "real_unique": n["real"], "hdr_only": n["hdr"], "det": det}
 
 
-def report(rows, keep, title):
-    k, r = select(rows, keep)
+def report(rows, keep, title, hold=()):
+    k, r = select(rows, keep, hold)
+    nh = len([x for x in k if x["n"] in set(hold)])
     tb = sum(x["size"] for x in rows)
     kb = sum(x["size"] for x in k)
     rb = sum(x["size"] for x in r)
     print(u"%s：族 %d 枚 ／ %.1f MiB" % (title, len(rows), tb / 1048576.0))
-    print(u"   留（最近 %d）%d 枚 ／ %.1f MiB ｜ 转 %d 枚 ／ %.1f MiB"
-          % (keep, len(k), kb / 1048576.0, len(r), rb / 1048576.0))
+    print(u"   留（最近 %d%s）%d 枚 ／ %.1f MiB ｜ 转 %d 枚 ／ %.1f MiB"
+          % (keep, u" ＋ 护 %d" % nh if nh else u"", len(k), kb / 1048576.0, len(r), rb / 1048576.0))
     ts = lambda t: time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(t))
     if k:
         print(u"   界：留之最旧 %s（%s）" % (k[-1]["n"], ts(k[-1]["mtime"])))
@@ -508,6 +515,15 @@ def self_test():
         _w4(u"投递台账.csv.bak_20260925_1318_误写态_x", ml4[0] + u"\n001,a\n077,b\n9,z\n")
         c(u"二式一器：.bak_* 入族 ⇒ 4", len(family(root4, DEF_PATS)) == 4)
         c(u"旧 glob 唯 .before_ ⇒ 3（⛔ 破兼容）", len(family(root4, u"投递台账.csv.before_*")) == 3)
+        # ⒦ 护真唯一（`rc 7` 之件 ⛔ 转 · 承 PM `1994 §二.2⒜`）
+        src6 = _fixture(os.path.join(root, u"f6"), 5)
+        rows6 = family(src6, DEF_PATS)
+        k6, r6 = select(rows6, 2)
+        held = rows6[-1]["n"]
+        k6h, r6h = select(rows6, 2, (held,))
+        c(u"护：默空 ＝ 旧行为（留 2 ／ 转 3）", len(k6) == 2 and len(r6) == 3)
+        c(u"护：真唯一 ⛔ 转（留 3 ／ 转 2 · 含护者）",
+          len(k6h) == 3 and len(r6h) == 2 and held in [x["n"] for x in k6h])
         c(u"读数齿只读（盘上 ⛔ 变）", snap0 == snap1)
     finally:
         shutil.rmtree(root, ignore_errors=True)
@@ -532,6 +548,8 @@ def main(argv):
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--only", action="append", default=None, help=u"唯复此件（可多次 · `restore` 用）")
     ap.add_argument("--main", default=DEF_MAIN, help=u"主册之名（`repl` 用）")
+    ap.add_argument("--protect-unique", action="store_true",
+                    help=u"⭐ 真唯一存底（主册复现测试之 `rc 7` 件）⛔ 转（承 PM `1994 §二.2⒜`）")
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args(argv)
     pats = tuple(a.pattern) if a.pattern else DEF_PATS
@@ -540,6 +558,12 @@ def main(argv):
     if not os.path.isdir(a.dir):
         print(u"[缺] 件夹不在：%s" % a.dir)
         return 2
+    hold = ()
+    if a.protect_unique:
+        _rr = replica_test(a.dir, pats, a.main)
+        hold = tuple(x["n"] for x in _rr.get("det", []) if x["verdict"].startswith(u"⭐"))
+        print(u"[护] 真唯一存底 %d 枚 ⇒ ⛔ 转%s"
+              % (len(hold), (u"：" + u"、".join(hold)) if hold else u"（无）"))
     day = time.strftime("%Y%m%d")
     if a.stage == u"repl":
         rr = replica_test(a.dir, pats, a.main)
@@ -558,7 +582,7 @@ def main(argv):
         print(u"   ⚠ 本数系**一刻之读**（族为活）｜⛔ 唯一存底 ＝ 内容别无可替（⛔ 尺差代理）")
         return 0 if rr["real_unique"] == 0 else 7
     if a.stage == u"read":
-        rr = read_report(a.dir, pats, a.keep, a.arch)
+        rr = read_report(a.dir, pats, a.keep, a.arch, hold=hold)
         if a.json:
             print(json.dumps(rr, ensure_ascii=False))
             return 0
@@ -574,7 +598,7 @@ def main(argv):
         print(u"   ⚠ 本数系**一刻之读**（族为活）｜⛔ 以此为「率」（率须书**窗** ＋ **形**）")
         return 0
     rows = family(a.dir, pats)
-    k, r = report(rows, a.keep, u"[读] %s ／ %s" % (a.dir, u" ∨ ".join(pats)))
+    k, r = report(rows, a.keep, u"[读] %s ／ %s" % (a.dir, u" ∨ ".join(pats)), hold)
     if a.stage == u"dry" or not a.go:
         return 0
     if a.stage == u"archive":
