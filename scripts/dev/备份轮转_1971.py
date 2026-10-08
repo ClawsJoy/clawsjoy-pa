@@ -20,6 +20,7 @@ u"""台账存底轮转（一次性 · 承 PM 令 `1971` ／ CEO 席 `1968` 之�
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --stage restore --go [--only <件名>]
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --stage read [--json]      # 只读读数（夜办之证物）
   （`--pattern` 可多次 · 默认**二式**：`.before_*` ＋ `.bak_*` ⇒ 一处定形 · 承 PM `1992 §二.3`）
+  （⭐ `--protect-unique` **默认开** ⇒ 真唯一存底 ⛔ 转（承 pm_2021 §三.1：免一手之漏 ·「留 N」是下限 ⛔ 上限）；唯对照 ／ 修车 ⇒ `--no-protect-unique`）
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --stage repl [--json]      # 主册复现测试（唯一存底之正尺）
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --self-test
 """
@@ -548,8 +549,13 @@ def main(argv):
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--only", action="append", default=None, help=u"唯复此件（可多次 · `restore` 用）")
     ap.add_argument("--main", default=DEF_MAIN, help=u"主册之名（`repl` 用）")
-    ap.add_argument("--protect-unique", action="store_true",
-                    help=u"⭐ 真唯一存底（主册复现测试之 `rc 7` 件）⛔ 转（承 PM `1994 §二.2⒜`）")
+    # ⭐ pm_2021 §三.1（2026-10-08）：**默认开** —— 该护系「免一手之漏」之守（真唯一件一出库
+    #   即无据）；且 `hold` 唯**加护**（⛔ 改「留 N」之数 · 默空 ＝ 旧行为）⇒ 开之无险。
+    ap.add_argument("--protect-unique", dest="protect_unique", action="store_true", default=True,
+                    help=u"⭐ 真唯一存底（主册复现测试之 `rc 7` 件）⛔ 转（承 PM `1994 §二.2⒜`）——"
+                         u"⭐ **默认开**（承 pm_2021 §三.1）")
+    ap.add_argument("--no-protect-unique", dest="protect_unique", action="store_false",
+                    help=u"⭐ 关其护（**唯**对照 ／ 修车之需 · ⛔ 常规跑 ⛔ 用 —— 真唯一件有出库之虞）")
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args(argv)
     pats = tuple(a.pattern) if a.pattern else DEF_PATS

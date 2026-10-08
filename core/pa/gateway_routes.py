@@ -649,6 +649,41 @@ def pa_gate_view(decision=None, origin=None, grounded=None, answer_source=None, 
     return {"decision": _d, "display": _disp, "fact_family": _family,
             "refusal_canon": PA_ASK_REFUSAL, "why": PA_GATE_WHY.get(_d, "")}
 
+#: ⭐ pm_2021 §五.1（2026-10-08 · 承 pm_1012 §一 ／ P3）：`/v9/pa/turn` 之**人话回执**（一处定形）。
+#   为什么在**后端**：回执之出生在此 ⇒ 面**唯引用**（⛔ 令面自行剥字 ／ ⛔ 面自拟）。
+#   三态与 `recorded` ／ `*_readable` **同源**（⛔ 二处各判）：成 ／ 读数不可得 ／ 未落 ——
+#   人话亦三分（承 P9 BUG-1：「查不到」⛔ 说成「已保存」∧ ⛔ 说成「没保存」）。
+#   ⚠ 人话之律（可机验 · 见 `tests/unit/test_pa_turn_human_2021.py`）：⛔ 数字（行数 ／ 枚数）／
+#     ⛔ 绝对径 ／ ⛔ 键名 —— 四键只答 P3 之问（做了什么 ／ 动了哪些件 ／ 可否退）。
+PA_TURN_HUMAN = {
+    "done": {
+        u"一句": u"✅ 已记下这一轮（可回看）",
+        u"做了什么": u"记下你这一轮的话与答复",
+        u"动了哪些件": u"对话档（只增 · 原稿未动）",
+        u"可否退": u"可 —— 只增记；要撤说一声",
+    },
+    "unknown": {
+        u"一句": u"⚠ 这一轮记下没有：一时查不到（可稍后回看）",
+        u"做了什么": u"试着记下你这一轮的话与答复",
+        u"动了哪些件": u"对话档（读数一时取不得）",
+        u"可否退": u"可 —— 只增记；要撤说一声",
+    },
+    "miss": {
+        u"一句": u"⚠ 这一轮没记下（可再发一次）",
+        u"做了什么": u"本轮未记入档",
+        u"动了哪些件": u"无",
+        u"可否退": u"不适用（未动）",
+    },
+}
+
+
+def pa_turn_human(recorded, readable):
+    u"""本轮之**人话回执**（⭐ 一处定形 · 承 pm_2021 §五.1）⇒ 四键（一句 ／ 做了什么 ／ 动了哪些件 ／ 可否退）。"""
+    if not readable:
+        return dict(PA_TURN_HUMAN["unknown"])
+    return dict(PA_TURN_HUMAN["done" if recorded else "miss"])
+
+
 # ⭐ 2026-10-04 新增（PM b136893 · 老板批 · 阶段 2「素材面接入」之**最小登记** · 只读）：
 #   面表：面名 ⇒ (根…, 通配…)。⛔ 用户输入之路径 —— 根皆**常量**（"@vault:" 前缀＝vault 内相对）
 #   ⇒ 无穿越风险（沿用 _kb_safe_rel 之精神）。⛔ 不改 (收件箱/知识库) 之既有口径；⛔ 不写盘。
@@ -2699,6 +2734,10 @@ def register_pa_routes(app, brain=None):
             "source": "record-only",
             "tokens_source": "无",
         }
+        # ⭐ pm_2021 §五.1：回执之**人话**在此出生（⛔ 令面剥字）
+        #   —— 与 recorded 同源判（一处）：⛔ 二处各判。
+        _readable = bool(_ses_readable and _ev_readable)
+        _recorded = bool(_readable and _after > _before and _ev_after > _ev_before)
         return ok({
             "session_id": sid,
             "session_path": str(_sess.path),
@@ -2713,8 +2752,8 @@ def register_pa_routes(app, brain=None):
             "session_readable": _ses_readable,
             "session_error": _ses_err,
             "error": _err or _ses_err,
-            "recorded": bool(_ses_readable and _ev_readable
-                             and _after > _before and _ev_after > _ev_before),
+            "recorded": _recorded,
+            "human": pa_turn_human(_recorded, _readable),
             "gate": pa_gate_view(decision=p.get("gate_decision"), origin=p.get("origin"), grounded=p.get("grounded"), answer_source=p.get("answer_source"), fact_family=p.get("fact_family")),
             "cost": _cost,
         })

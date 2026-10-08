@@ -171,3 +171,41 @@ def test_护真唯一不转(tmp_path):
     assert len(k1) == 3 and len(r1) == 2
     assert held in [x[u"n"] for x in k1]
     assert held not in [x[u"n"] for x in r1]
+
+
+def test_护默认开与可关(tmp_path, capsys):
+    u"""⭐ pm_2021 §三.1：`--protect-unique` **默认开**（免一手之漏 —— 真唯一件一出库即无据）∧
+    留 `--no-protect-unique` 之关闸（唯对照 ／ 修车之需）。"""
+    m = _load()
+    d = os.path.join(str(tmp_path), u"pdef")
+    os.makedirs(d)
+    ls = [u"序号,日期,发件,收件", u"001,a,b,c", u"002,d,e,f"]
+    NL = chr(10)
+
+    def _w(nm, sv, mt):
+        fp = os.path.join(d, nm)
+        with io.open(fp, "wb") as f:
+            f.write(sv.encode("utf-8"))
+        os.utime(fp, (mt, mt))
+
+    _w(u"投递台账.csv", NL.join(ls) + NL, 900)
+    _w(u"投递台账.csv.before_000000000000000a", NL.join(ls[:2]) + NL, 1000)                       # 前缀
+    _w(u"投递台账.csv.before_000000000000000b", NL.join(ls[:2]) + NL + u"002,d,ZZZ,f" + NL, 1001)  # 同号早稿
+    _w(u"投递台账.csv.before_000000000000000c", NL.join(ls[:2]) + NL + u"003,x,y,z" + NL, 1002)    # ⭐ 真唯一
+    _w(u"投递台账.csv.before_000000000000000d", NL.join(ls[:2]) + NL, 1003)                       # 前缀
+    assert m.replica_test(d, m.DEF_PATS)[u"real_unique"] == 1
+
+    # 正控：默认（⛔ 传参）⇒ 护出手
+    rc = m.main([u"--dir", d, u"--stage", u"read", u"--keep", u"1"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert u"[护] 真唯一存底 1 枚" in out, out
+    assert u"000000000000000c" in out, out
+    assert len(m.family(d, m.DEF_PATS)) == 4          # ⛔ 动盘（唯读）
+
+    # 反控：--no-protect-unique ⇒ 护不出手（默空 ＝ 旧行为）
+    rc = m.main([u"--dir", d, u"--stage", u"read", u"--keep", u"1", u"--no-protect-unique"])
+    out2 = capsys.readouterr().out
+    assert rc == 0
+    assert u"[护]" not in out2, out2
+    assert len(m.family(d, m.DEF_PATS)) == 4
