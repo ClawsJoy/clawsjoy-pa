@@ -835,7 +835,7 @@ function paSelfLegacySplit(s){
   const u = [], e = [];
   lines.forEach(function(x){ ((paEngHit(x) || PA_ENG_ERR.test(x)) ? e : u).push(x); });
   let U = u.join('\n').trim();
-  if(!U) U = '（这条既有消息整条都是工程注记 —— 点「来源 ／ 详情」看原文。）';
+  if(!U) U = '（这条既有消息没有可读的正文 —— 点「来源 ／ 详情」看原文。）';
   return {u:U, e:'（既有消息之工程注记 · 原文照录）\n' + t};
 }
 /* ⭐ 存量运行记录之分层（显示层 · pm_1012 §一）：此前各轮所存之运行记录里含工程语
@@ -848,7 +848,7 @@ function paLogHuman(line){
   let head = m ? t.slice(0, m.index) : '';
   head = head.replace(/[\s\u00b7\uFF5C|\u3001\uFF0C,\uFF1A:\uFF0F\/\u2014-]+$/, '').trim();
   if(head.length < 2) head = '\u26a0 \u65e2\u6709\u8fd0\u884c\u8bb0\u5f55';
-  return head + '\uFF08\u5DE5\u7A0B\u6CE8\u8BB0\u89C1\u4E0B\u65B9\u300C\u539F\u6587\u300D\uFF09';
+  return head + '\uFF08\u8BE6\u60C5\u89C1\u4E0B\u65B9\u300C\u539F\u6587\u300D\uFF09';
 }
 /* ⭐ 运行记录之注记（承 pm_1013 §三 · 显示层）：存量（存档回放）之运行记录**不经** addLog 包装 ⇒
    此处补一道扫：凡 `.tool-log` 含禁词 ／ 裸异常词 ／ 旧拒答话术（「查不到」）⇒ 用户面只留人话头段，
@@ -2968,11 +2968,12 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
      其「正名之真源（页上之两名）」直指 `selfdesc.js:2868-2869` 之 `VAL` ⇒ ⛔ 页上 ⛔ 另立一套辞
      （旧书「聊天 ／ 工作」＝ `pm_1804 §一.1` 之「两套辞」· 已治）⇒ ⭐ 态之渲**唯**本件 `paint()`
      （另名 `window.paAxisRender` · 一处定形）⇒ `web/pa/faces/chat.js` 之 `setMode` ⛔ 造辞 · 唯转调。
-     ⭐ `note` ＝ 其辞如实（PM 1803 §一 之逐字）：陪伴 ⇒ 陪着 · 只商量 · ⛔ 替你动手；
+     ⭐ `note` ＝ 其辞如实（PM 1803 §一 之逐字 ∧ 末句承 PM 2048 §一.2 之裁改「不替你动手」
+        —— ⛔ 符号上屏：用户面唯人话（源码／信通内之记号 ⛔ 当产品视觉语汇））；
         办事 ⇒ 真动手 · 有交付 · 可验收。`hint` ＝ 后端 `PA_MODE_CLAUSE` 之场合口吻（诊断之据）。
      ⭐ `chan` ＝ 该态所属之**通道**（＝ `tasks.js:51`／`core.js:4` 之映射 ∧ PM 1803 §二.2 之「真发向」）。 */
   var VAL = { companion: { label:"陪伴", hint:"自然口语 · 陪着说",
-                           note:"陪着 · 只商量 · ⛔ 替你动手", chan:"pa" },
+                           note:"陪着 · 只商量 · 不替你动手", chan:"pa" },
               work:      { label:"办事", hint:"结论先行 · 给建议",
                            note:"真动手 · 有交付 · 可验收", chan:"agent" } };
   var cur = null;                       /* 本地缓存（无会话时之退路 · 默认 companion） */
@@ -3528,9 +3529,9 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     var rt = receiptText();
     var log = pickLog(/^[\u25b6\u2705\u274c\u26d4\u23f3\ud83d\udca1\ud83d\udccb\u23f9\ud83d\udc64\ud83d\udcbe\ud83e\uddf9\ud83d\udd0d]/);
     var did = srcOf() + (log ? (' \uff5c ' + log) : '') + (rt ? (' \uff5c ' + rt) : '');
-    var tail = '\u672c\u8f6e\u5df2\u7ed3\u675f\uff08\u7ec6\u8282\u89c1\u300c\u5de5\u7a0b\u6ce8\u8bb0\u300d\uff09';
+    var tail = '\u672c\u8f6e\u5df2\u7ed3\u675f\uff08\u7ec6\u8282\u89c1\u300c\u6765\u6e90 \uff0f \u8be6\u60c5\u300d\uff09';
     if(pickLog(/\u7b49\u5f85\u6388\u6743\uff1a/) || pickLog(/\u5f85\u4f60\u88c1/) || pickLog(/\u5f85\u62cd\u677f/)) tail = '\u7b49\u4f60\u62cd\u677f\u540e\u7ee7\u7eed';
-    else if(pickLog(/^\u274c|\u4efb\u52a1\u4e2d\u65ad|\u672a\u843d\u76d8\u8bfb\u6570\u4e0d\u53ef\u5f97/)) tail = '\u53ef\u91cd\u8bd5 \uff0f \u5148\u770b\u5de5\u7a0b\u6ce8\u8bb0';
+    else if(pickLog(/^\u274c|\u4efb\u52a1\u4e2d\u65ad|\u672a\u843d\u76d8\u8bfb\u6570\u4e0d\u53ef\u5f97/)) tail = '\u53ef\u91cd\u8bd5 \uff0f \u5148\u770b\u300c\u6765\u6e90 \uff0f \u8be6\u60c5\u300d';
     /* ⭐ pm_刀11p §零：本轮回执合成器若引「那件」之行（⚙ T1 交付回执）⇒ 抽其**件之刻**上屏（⛔ 只报「本轮」刻）。 */
     var piece = null;
     try{
@@ -3568,16 +3569,19 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         + (_hum['动了哪些件'] ? ('\n\u00b7 \u52a8\u4e86\u54ea\u4e9b\u4ef6\uff1a' + _hum['动了哪些件']) : '')
         + (_hum['可否退'] ? ('\n\u00b7 \u53ef\u5426\u9000\uff1a' + _hum['可否退']) : '');
     } else {
-      hr.textContent = '\ud83d\udccb \u672c\u8f6e\u56de\u6267\uff08\u672c\u8f6e\u8bfb\u6570\u523b ' + nowStr()
-        + (_piece ? (' \uff5c \u7ed3\u8bba\u6240\u5f15\u4e4b\u4ef6\u4e4b\u523b ' + _piece) : ' \uff5c \u672c\u8f6e\u65e0\u4ef6\u4e4b\u523b')
-        + '\uff09\n' + _synt.join('\n');
+      /* ⭐ pm_2048 §三.3／§三.4（新逞：回执之 fallback）：端 ⛔ 给人话
+         （旧端 ／ 无回执）⇒ 用户面**唯一句人话**（⛔ 六行工程语上屏）；
+         —— 其六行仍入本块 `title` 作工程之据（⛔ 丢信息）。
+         ⭐ 辞之裁（我 · PM 曰「请裁」）：**「本轮未取到回执」** 而 ⛔ 「本轮未记下」
+         —— 回执存而无人话（`/v9/pa/dialog` 之 `persisted`）⇒ 其轮**已记下**；若书「未记下」 ＝ **假**（违「照实」）。 */
+      hr.textContent = '\ud83d\udccb \u672c\u8f6e\u56de\u6267\uff1a\u672c\u8f6e\u672a\u53d6\u5230\u56de\u6267\uff08\u53ef\u518d\u53d1\u4e00\u6b21\uff09';
     }
     hr.title = '\u672c\u5757\u7531\u65e2\u6709\u56de\u6267\u884c\u5408\u6210\uff08\u26d4 \u53e6\u9020\u5b50\u7cfb\u7edf\uff09\u00b7 \u771f\u6e90\uff1a\u8d70\u5f84\u6807 \uff0f \u540e\u7aef\u56de\u6267 \uff0f \u4f1a\u8bdd\u65e5\u5fd7\uff5c' + SRC;
     /* 反控（pm_1853 §一.4 · ⛔ 丢真源）：后端用时之**原键**仍可得 —— 入本块之 `title`。 */
     try{ hr.title = hr.title + (costRaw() ? ('｜后端用时之原键：' + costRaw()) : ''); }catch(e){}
     /* ⭐ pm_2025 §二.1：合成之六行（⛔ 屏上）＋ 探得之件之刻 ⇒ **工程之据之地**（title · ⛔ 丢信息）。 */
     try{
-      hr.title = hr.title + '｜本轮之合成回执（工程之据 · ⛔ 屏上）：' + _synt.join(' ／ ')
+      hr.title = hr.title + '｜本轮读数刻：' + nowStr() + '｜本轮之合成回执（工程之据 · ⛔ 屏上）：' + _synt.join(' ／ ')
         + (_piece ? ('｜结论所引之件之刻：' + _piece) : '');
     }catch(e){}
   }
@@ -3606,7 +3610,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         el.setAttribute('data-pa-user', _uc);
         var d = document.createElement('details');
         d.className = 'eng';
-        d.innerHTML = '<summary>\u5de5\u7a0b\u6ce8\u8bb0</summary><div class="engbody"></div>';
+        d.innerHTML = '<summary>\u6765\u6e90 \uff0f \u8be6\u60c5</summary><div class="engbody"></div>';
         d.querySelector('.engbody').textContent = raw + '\n\uff08\u771f\u6e90\uff1a\u540e\u7aef POST /v9/pa/turn \u56de\u6267 \u00b7 \u26d4 \u7528\u6237\u9762\uff09';
         el.appendChild(d);
       }
@@ -4407,7 +4411,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         + '<div style="' + SUB + '">task_id ' + H(tid) + ' · 真源：POST /v9/pa/deliver/mail 回执'
         + '（四件 ＋ 引哪封来信 ＋ 件之刻 ＋ $/件 皆后端取 · ⛔ 前端估）'
         + ((d && d['印']) ? (' · 印 ' + H(d['印'])) : '') + '</div>'
-        + '<details class="eng"><summary>工程注记（回执 JSON 原文 · ⛔ 用户面）</summary><div class="engbody"></div></details>';
+        + '<details class="eng"><summary>来源 ／ 详情</summary><div class="engbody"></div></details>';
       say('🗂 T1 交付回执（后端）：' + (human || '已回')
         + ' · 件之刻 ' + (pieceAt || '缺（后端未给）') + ' · task_id ' + String(tid), 'ok');
     } else {
@@ -4434,7 +4438,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
           why, tid, (d && d.blocked_by) || '')
         + '<div><b>件之刻（后端回执）</b>：' + H(rc && rc['刻'] ? String(rc['刻']) : '无（此路未到回执行）') + '</div>'
         + '<div><b>$/件</b>：' + H(rc ? costLine(rc) : '无回执（此路未到回执行 ⇒ 未取得）') + '</div>'
-        + '<details class="eng"><summary>工程注记（回执 JSON 原文 · ⛔ 用户面）</summary><div class="engbody"></div></details>';
+        + '<details class="eng"><summary>来源 ／ 详情</summary><div class="engbody"></div></details>';
       say('🗂 T1 交付失败回执：停在「' + String(stage) + '」· 报给 ' + who + ' · ' + why, 'warn');
     }
     engDetails(host, d, netErr);

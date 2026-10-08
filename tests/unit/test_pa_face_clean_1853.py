@@ -261,7 +261,8 @@ def test_P8_回执尽人话而原键入悬停():
     rc = _stmt(s, u"function rcLines(){", u"'· 谁批的：' + whoText(),")
     assert u"未取得（本轮未做本机检索 ⇒ 无此据）" in rc, u"缺据须书**因**（⛔ 只书「未取得」）"
     assert u"⛔ 前端不编" not in rc, u"我辈之约 ⛔ 得入用户面（是**我们**之语 · ⛔ 用户之语）"
-    assert u"本轮回执（本轮读数刻 " in s, u"头行 ⛔ 载「（人话版 ）」之自标"
+    assert u"本轮回执" in s, u"回执之头须在（人话）"
+    assert u"（人话版" not in s, u"头行 ⛔ 得自称「（人话版 ）」（吾辈之语 · ⛔ 用户之语）"
     assert u"承 pm_1115 §二.5" not in s, u"工单号 ⛔ 得入用户面"
 
 
