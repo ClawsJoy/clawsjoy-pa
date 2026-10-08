@@ -50,6 +50,10 @@ SHU = ROOT / "web" / "pa" / "faces" / "shellupd.js"
 SU = ROOT / "web" / "pa" / "faces" / "startup.js"
 HTML = ROOT / "web" / "pa.html"
 CSS = ROOT / "web" / "pa" / "pa_v3.css"
+UPD = ROOT / "web" / "pa" / "faces" / "update.js"
+FBS = ROOT / "web" / "pa" / "faces" / "feedback.js"
+CFG = ROOT / "web" / "pa" / "faces" / "config.js"
+ARC = ROOT / "web" / "pa" / "faces" / "archive.js"
 SCRATCH = ROOT / "data" / "tmp" / "_cw_shu1897"
 
 PHASES = ["unsupported", "idle", "checking", "available", "downloading",
@@ -540,17 +544,38 @@ def test_S6b_注释可载工程之据():
     assert u"electron-updater" in _read(SHU), u"工程之据（注释）宜在（⛔ 丢真源）"
 
 
+def _no_comment(s: str) -> str:
+    u"""去注释之**遮罩**形（⛔ 去其字）—— 供「饰之族 ⛔ 上屏」之判。
+
+    由（一手 · 齿之器病 · pm_1909 之回）：`_strip_comments`（逐字之器）遇**正则中之引号**
+    （如 `/'/g` ／ `/"/g`）即失准（其后之注释皆被吞 ⇒ 假红）⇒ ⛔ 用于本判 ⇒ 改**遮罩**
+    （命中之区间置空 —— 同长 · 偏移不移）。
+
+    ⚠ 器之限（照实）：`//` 之遮罩 ⛔ 辨「**串内之 `//`**」（如 `http://` ／ `POST /v9/…` 之后）
+    ⇒ 其行之后半 ⛔ 判（**唯漏报 · ⛔ 误报** ⇒ 判「无」须先知此限）。
+    """
+    m = [True] * len(s)
+    for pat in (r"<!--.*?-->", r"/\*.*?\*/", r"(?m)//[^\n]*"):
+        for x in re.finditer(pat, s, flags=re.S):
+            for i in range(x.start(), x.end()):
+                m[i] = False
+    return "".join((ch if m[i] else " ") for i, ch in enumerate(s))
+
+
 def test_S6c_用户面之文无markdown之饰():
     u"""⛔ 工程之饰上屏：`**`（markdown 之饰）屏上照显为字面 ⇒ 用户面之文**一字 ⛔ 载**。
 
     由（一手 · 我自逮）：`pa.html` 三处（首启盒之兜底 ／ 本机体检「模型之路」之对译表 ／ 留言之钮之
     `title`）＋ 本件新档二处（`chip.title` ／ 横幅之 `note`）—— 屏上读作「模型**没查成**（见其据）」。
-    判：先去 HTML 注释 ∧ 再去 JS ／ CSS 注释 ⇒ 所余（＝**用户面之文 ＋ 码**）一字 ⛔ 载。
+    ⭐ 并（pm_1909 §三.2 之尺 · 一族）：**饰之族**（`**` ／ `~~`）我域**他面**尚有 —— 其「屏上之文 ＋
+    `title`」之六处（`update.js` 之横幅二 ／ `feedback.js` 之钮 title ／ `config.js` 之讯 ／
+    `archive.js` 之告二）于 pm_1909 之回中一并清之 ⇒ **此六档皆入本齿**（⛔ 复归）。
+    判：先去 HTML 注释 ∧ 再去 JS ／ CSS 注释 ⇒ 所余（＝**用户面之文 ＋ 码**）一字 ⛔ 载（`**` ∧ `~~`）。
     """
-    for fp in (SHU, HTML):
-        t = re.sub(r"<!--.*?-->", " ", _read(fp), flags=re.S)
-        t = _strip_comments(t)
+    for fp in (SHU, HTML, UPD, FBS, CFG, ARC):
+        t = _no_comment(_read(fp))
         assert u"**" not in t, u"用户面之文 ⛔ 载 `**`（屏上照显）：" + str(fp)
+        assert u"~~" not in t, u"用户面之文 ⛔ 载 `~~`（同上）：" + str(fp)
 
 
 # ---------- S7：终态同尺 ----------

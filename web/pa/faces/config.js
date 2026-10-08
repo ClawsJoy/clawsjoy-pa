@@ -137,5 +137,5 @@ function saveCfg(){
       }
       fetchPaGrant();   /* 回读：顶栏徽标 ／ 授权面板 ／ 本下拉 同源同步 */
     })
-    .catch(function(e){ addMsg('sys','⚠ 权限档未取得回执：'+((e&&e.message)||e)+' ⇒ 后端是否已改**未知**（⛔ 不等于「没改」）'); fetchPaGrant(); });
+    .catch(function(e){ addMsg('sys','⚠ 权限档未取得回执：'+((e&&e.message)||e)+' ⇒ 后端是否已改未知（⛔ 不等于「没改」）'); fetchPaGrant(); });
 }

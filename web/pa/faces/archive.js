@@ -54,8 +54,8 @@ function paArchiveBackupFile(){
   }catch(e){ return null; }
 }
 function paArchiveMigrateFail(msg, backup){
-  const full = '⚠ ' + msg + '（**本地未改**，正文仍在本地）'
-    + (backup ? '；已先存回滚文件 ' + backup : '；**回滚文件未生成**，请先手动导出 pa_state');
+  const full = '⚠ ' + msg + '（本地未改，正文仍在本地）'
+    + (backup ? '；已先存回滚文件 ' + backup : '；回滚文件未生成，请先手动导出 pa_state');
   try{ console.warn('[PA][ARCHIVE_SERVER] ' + full); }catch(_e1){}
   try{ paQuotaNotice(full); }catch(_e2){}
   try{ addMsg('sys', full); }catch(_e3){}

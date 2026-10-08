@@ -244,7 +244,7 @@ function paUpdView(u, ctx){
   if(rph === 'failed' && rfresh){
     v.state = 'failed';
     v.text = '更新失败' + (rnote ? ('：' + rnote) : '（后端未给因）');
-    v.note = '回滚之数与旧版之号**唯后端之辞为凭**（⛔ 自造 ／ ⛔ 猜）· ' + PA_UPD_OUTLET;
+    v.note = '回滚之数与旧版之号唯后端之辞为凭（⛔ 自造 ／ ⛔ 猜）· ' + PA_UPD_OUTLET;
     return v;
   }
   const raw = ss(o.state);
@@ -299,7 +299,7 @@ function paUpdView(u, ctx){
   }
   if(raw === 'restart' || v.phase === 'restart' || v.phase === 'restarting'){
     v.state = 'restart';
-    v.text = (v.phase === 'restarting' ? '正在重启服务…' : '更新已就位 ⇒ **需重启服务**方可生效');
+    v.text = (v.phase === 'restarting' ? '正在重启服务…' : '更新已就位 ⇒ 需重启服务方可生效');
     v.note = '重启中页面会短暂断开，随后自动恢复（本页会自动重试）';
     return v;
   }

@@ -256,7 +256,7 @@ function paFbRender(){
   const sb = paFbEl('paFbSend');
   if(sb){
     sb.disabled = !g.ok;
-    sb.setAttribute('title', g.ok ? '发送 ⇒ POST /v9/pa/feedback（落**本机** · ⛔ 出站）' : g.why);
+    sb.setAttribute('title', g.ok ? '发送 ⇒ POST /v9/pa/feedback（落本机 · ⛔ 出站）' : g.why);
   }
   const li = paFbEl('paFbItems');
   if(li){
