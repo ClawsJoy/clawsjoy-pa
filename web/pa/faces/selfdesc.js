@@ -1932,7 +1932,7 @@ function paPermRender(){
       + '<div class="na" id="paPermGpuWarn" style="display:none"></div>';
   }
   /* ⭐ pm_2061 §二.2（裁⒉）：内部元素名 ／ 端径 ⇒ 平文 ⛔ 载（原字入 `title` · ⛔ 丢真源）。 */
-  if(fs){ fs.textContent = '来源：左栏「画像素材面」（另列：检索面 —— 真源悬停本行即见）';
+  if(fs){ fs.textContent = '来源：左栏「画像素材面」（另列：检索面 —— 悬停本行即见）';
     fs.title = '来源：#paSrcList（左栏「画像素材面」· 非检索面）｜检索面另列：POST /v9/pa/ask'; }
   paPermGpuWarnRender();
   const ex = document.getElementById('paPermExceptBody');
@@ -4242,7 +4242,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         + '\uff08HTTP ' + r.status + '\uff09\u00b7 \u523b ' + nowStr();
       say('\ud83d\uddc2 T1 \u5df2\u62cd\u677f\uff08\u91c7\u7eb3\uff09\uff1adecision_id ' + decisionId, 'ok');
     }catch(e){
-      if(out) out.textContent = '\u62cd\u677f\uff1a\u8bf7\u6c42\u672a\u9001\u8fbe\uff08' + String((e && e.message) || e) + '\uff09\u21d2 \u26d4 \u672a\u62cd\u677f';
+      if(out) out.textContent = '\u62cd\u677f\uff1a\u8bf7\u6c42\u672a\u9001\u8fbe\uff08' + String((e && e.message) || e) + '\uff09\u21d2 \u672a\u62cd\u677f';
     }
   }
 
@@ -4252,22 +4252,22 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     probeRun = (probe === true);
     var out = Q(ID.out);
     var b = deliverBody();
-    if(!b.task){ if(out) out.textContent = '交付：⛔ 无交办 ⇒ 未发'; return Promise.resolve(); }
-    if(!b.to.length){ if(out) out.textContent = '交付：⛔ 收件人为空 ⇒ 未发（⛔ 开空件）'; return Promise.resolve(); }
+    if(!b.task){ if(out) out.textContent = '交付：无交办 ⇒ 未发'; return Promise.resolve(); }
+    if(!b.to.length){ if(out) out.textContent = '交付：收件人为空 ⇒ 未发（不会开空件）'; return Promise.resolve(); }
     if(!decId()){
       /* ⭐ 判据 6 之止步（前端之弱保证 · 未批即止）⇒ 亦出**失败回执**（⛔ 只留一句 out）。
          ⭐ pm_刀16p §一.3：`报给谁` 取**后端** `POST /v9/pa/deliver/stop` 之字段（⛔ 前端自说）。 */
       var tid0 = taskIdOf(b.task, b.to, b.body_md);
-      if(out) out.textContent = '交付：⛔ 未拍板（无 decision_id）⇒ 前端不发（「前端之弱保证」）· 正在落「停手」留痕…';
+      if(out) out.textContent = '交付：未拍板 ⇒ 本面不发 · 正在留下「停手」之痕…';
       return stopTrace('拍板（T1 发信之授权点 · 未批 ⇒ 止）', tid0, b).then(function(sd){
         var who = (sd && sd['报给谁']) ? String(sd['报给谁']) : stopTo();
         var whoAxis = (sd && sd['报给谁之面']) ? ('后端 deliver/stop · ' + String(sd['报给谁之面'])) : '本面之「停手收件人」字段';
         showFail('拍板（T1 发信之授权点 · 未批 ⇒ 止）', who, whoAxis,
-          '未拍板（无 decision_id）—— 前端之弱保证（未批 ⇒ 不发）；'
-          + '真闸在后端（发信路由内 · 缺 decision_id ⇒ 403 fail-closed）', tid0);
-        if(out) out.textContent = '交付：⛔ 未拍板（无 decision_id）⇒ 前端不发'
-          + '（「前端之弱保证」）· 后端此路将 403 fail-closed · 已出失败回执 · 报给 ' + who
-          + (sd ? ('（后端 deliver/stop · 留痕径 ' + String((sd['留痕'] && sd['留痕']['面之径逐字']) || '—') + '）') : '');
+          '未拍板 —— 本面之弱保证（未批即不发）；'
+          + '真闸在对端（发信之路内 · 缺拍板 ⇒ 403 宁拒）', tid0);
+        if(out) out.textContent = '交付：未拍板 ⇒ 本面不发'
+          + ' · 对端此路将 403 宁拒 · 已出失败回执 · 报给 ' + who
+          + (sd ? ('（留痕路径 ' + String((sd['留痕'] && sd['留痕']['面之径逐字']) || '—') + '）') : '');
         say('🗂 T1 交付止步：未拍板 ⇒ 前端不发（弱保证）· 报给 ' + who, 'warn');
       });
     }
@@ -4280,21 +4280,21 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     var out = Q(ID.out);
     var ask = window.paStopAsk;
     if(typeof ask !== 'function' || !Q('paStopAsk')){
-      if(out) out.textContent = '交付：⛔ 停手卡不可用（paStopAsk 未就绪）⇒ 未发（fail-closed）';
+      if(out) out.textContent = '交付：停手卡不可用 ⇒ 未发（宁不发）';
       return;
     }
     lastTaskId = tid; lastStage = 'deliver';
     ask({
-      title: '⛔ 停手：即将以你名义发信（T1 交付）',
+      title: '停手：即将以你名义发信（交付）',
       rows: [
         ['做什么', '发信给 ' + b.to.join(', ') + '（主题：' + b.subject + '）'],
         ['凭什么', refLine()],
-        ['通道', 'POST /v9/pa/deliver/mail（我方闭环 · 后端真闸）'],
-        ['代价', '未取得（后端于发后之回执给 wall_s ／ bytes ／ tokens ／ $/件 ⇒ ⛔ 前端估）'],
-        ['报给谁', stopTo() + '（停手时由后端 POST /v9/pa/deliver/stop 定 · 其「报给谁」恒有字段）'],
+        ['通道', '我方闭环（真闸在对端）'],
+        ['代价', '未取得（发后之回执才给：用时 ／ 字节 ／ 词元 ／ 每件花费 ⇒ 不由本面估）'],
+        ['报给谁', stopTo() + '（停手时由对端定 · 其「报给谁」恒有）'],
         ['可撤销性', '未批即未动 —— 此刻后悔 ＝ 什么都不发生'],
-        ['弱保证', '未批 ⇒ 前端不发（前端之弱保证）⇔ 后端拒执（真闸 · 在发信路由内）'],
-        ['授权', needAdopt ? '本卡即授权点 ⇒ 点「本次发送」落真拍板（POST /v9/pa/decision）再发' : ('decision_id ' + decId())],
+        ['弱保证', '未批 ⇒ 本面不发（本面之弱保证）⇔ 对端会拒（真闸 · 在发信之路内）'],
+        ['授权', needAdopt ? '本卡即授权点 ⇒ 点「本次发送」落真拍板再发' : ('decision_id ' + decId())],
         ['人工步数', String(paT1Steps) + '／2（点本卡 ⇒ ' + String(paT1Steps + 1) + '）'],
         ['引哪封来信', refLine()],
         ['task_id', tid],
@@ -4309,13 +4309,12 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         send(tid, b);
       },
       onCancel: function(){
-        stopTrace('授权点（老板取消 ⇒ 未授权 ⇒ ⛔ 未发）', tid, b).then(function(sd){
+        stopTrace('授权点（取消 ⇒ 未授权 ⇒ 未发）', tid, b).then(function(sd){
           var who = (sd && sd['报给谁']) ? String(sd['报给谁']) : stopTo();
           var axis = (sd && sd['报给谁之面']) ? ('后端 deliver/stop · ' + String(sd['报给谁之面'])) : '本面之「停手收件人」字段';
-          showFail('授权点（老板取消 ⇒ 未授权 ⇒ ⛔ 未发）', who, axis,
-            '老板点了「❌ 取消」⇒ 未授权 ⇒ ⛔ 未发（此刻后悔 ＝ 什么都不发生）', tid);
-          if(out) out.textContent = '交付：已取消（未批即未动 · ⛔ 未发）· 停手留痕之「报给谁」' + who
-            + '（面：' + axis + '）';
+          showFail('授权点（取消 ⇒ 未授权 ⇒ 未发）', who, axis,
+            '点了「❌ 取消」⇒ 未授权 ⇒ 未发（此刻后悔 ＝ 什么都不发生）', tid);
+          if(out) out.textContent = '交付：已取消（未批即未动 · 未发）· 停手留痕之「报给谁」' + who;
         });
       }
     });
@@ -4324,21 +4323,21 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   async function adoptThenSend(tid, b){
     var out = Q(ID.out);
     await doAdopt(probeRun);
-    if(!decId()){ if(out) out.textContent = '交付：⛔ 授权未落（后端未给 decision_id）⇒ 未发（fail-closed）'; return; }
+    if(!decId()){ if(out) out.textContent = '交付：授权未落（对端未给拍板）⇒ 未发（宁不发）'; return; }
     send(tid, b);
   }
   async function doOneStep(probe){
     probeRun = (probe === true);
     var out = Q(ID.out);
     var task = val(ID.task).trim();
-    if(!task){ if(out) out.textContent = '一句话交办：⛔ 交办为空 ⇒ 未提交（⛔ 开空件）'; return; }
+    if(!task){ if(out) out.textContent = '一句话交办：交办为空 ⇒ 未提交（不会开空件）'; return; }
     bumpStep('交办（一句话交办）');
     await doPlan(probe);
     if(!lastPlan || !((lastPlan.steps || []).length)){
-      if(out) out.textContent = '一句话交办：⛔ 后端未给计划 ⇒ 停在授权点之前（⛔ 前端编步骤）'; return;
+      if(out) out.textContent = '一句话交办：对端未给计划 ⇒ 停在授权点之前（不会自己编步骤）'; return;
     }
     var b = deliverBody();
-    if(!b.to.length){ if(out) out.textContent = '一句话交办：⛔ 收件人为空 ⇒ 未到授权点'; return; }
+    if(!b.to.length){ if(out) out.textContent = '一句话交办：收件人为空 ⇒ 未到授权点'; return; }
     /* ⭐ 面已载**真拍板**（后端 decision_log）⇒ 本步 ⛔ 另写（承 pm_072 §一.1：拍板写 data\\ 属老板）。 */
     var needAdopt = !decId();
     openAuthzCard(taskIdOf(b.task, b.to, b.body_md), b, needAdopt);
@@ -4429,15 +4428,15 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       /* ⭐ pm_刀11p §零 ／ pm_刀16p §一.2：**每件自带「件之刻」** —— 取后端回执自带之「刻」
          （回执不可逆 · 其刻 ＝ 真发之刻）⛔ 以屏上「本轮」刻冒充（实测差 ≈ 4h20m）。 */
       var pieceAt = rco['刻'] ? String(rco['刻']) : null;
-      host.innerHTML = '<div style="color:var(--green)"><b>回执（后端 · HTTP ' + http + '）</b>'
+      host.innerHTML = '<div style="color:var(--green)" title="原字：HTTP ' + http + '"><b>回执（对端 · ' + http + '）</b>'
         + (human ? ('　' + H(human)) : '') + '</div>'
         + rows.map(function(x){ return '<div><b>' + H(x[0]) + '</b>：' + H(x[1]) + '</div>'; }).join('')
-        + '<div><b>件之刻（后端回执 · ⛔ 本轮刻）</b>：' + H(pieceAt || '缺（后端回执未给「刻」）')
+        + '<div><b>件之刻（对端回执 · 不是本轮）</b>：' + H(pieceAt || '缺（对端回执未给「刻」）')
         + '　<span style="' + SUB + '">本轮读数刻 ' + nowStr() + '</span></div>'
         + '<div><b>花了多少（真读数）</b>：' + H(spendLine(rco)) + '</div>'
         + '<div><b>$/件</b>：' + H(costLine(rco)) + '</div>'
-        + '<div style="' + SUB + '">task_id ' + H(tid) + ' · 真源：POST /v9/pa/deliver/mail 回执'
-        + '（四件 ＋ 引哪封来信 ＋ 件之刻 ＋ $/件 皆后端取 · ⛔ 前端估）'
+        + '<div style="' + SUB + '" title="真源：POST /v9/pa/deliver/mail 回执">task_id ' + H(tid) + ' · 来源：对端回执'
+        + '（四件 ＋ 引哪封来信 ＋ 件之刻 ＋ 每件花费 皆对端取 · 不由本面估）'
         + ((d && d['印']) ? (' · 印 ' + H(d['印'])) : '') + '</div>'
         + '<details class="eng"><summary>来源 ／ 详情</summary><div class="engbody"></div></details>';
       say('🗂 T1 交付回执（后端）：' + (human || '已回')
@@ -4447,18 +4446,18 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       var rc = (d && (d.receipt || d.receipt_four)) || null;
       var pol = (d && d.policy) || null;
       var stl = (d && d['授权留痕']) || null;
-      var why = netErr ? ('请求未送达（' + netErr + '）· ⛔ 不等于未发')
+      var why = netErr ? ('请求未送达（' + netErr + '）· 不等于未发')
         : ('HTTP ' + http + (d && d.error ? (' · ' + d.error) : '')
-           + (http === 403 ? ' ⇒ 后端 fail-closed（真闸）'
+           + (http === 403 ? ' ⇒ 对端宁拒（真闸）'
               : (http === 404 ? ' ⇒ 后端路由未接（器未接之证）'
-                 : (http === 409 ? ' ⇒ 幂等拒（task_id 已用于另一交办）' : ''))));
+                 : (http === 409 ? ' ⇒ 同一件已交过（不重发）' : ''))));
       /* ⭐ 判据 ⑥：停在哪一步 ＋ 报给谁 —— **取后端**（回执 ∨ 留痕行 ∨ policy.stop_to · ⛔ 前端自说） */
       var stage = (rc && rc['停在哪一步']) || BLOCK_LABEL[(d && d.blocked_by) || ''] || '交付';
       var whoB = (rc && rc['报给谁']) || (stl && stl['报给谁'])
               || (pol && pol.stop_to) || (d && (d.stop_to || d.report_to || d.notify)) || '';
-      var whoAxisB = (rc && rc['报给谁']) ? '后端回执'
-              : ((stl && stl['报给谁']) ? '后端 deliver/mail 留痕行'
-                 : ((pol && pol.stop_to) ? '后端 policy.stop_to' : ''));
+      var whoAxisB = (rc && rc['报给谁']) ? '对端回执'
+              : ((stl && stl['报给谁']) ? '对端之留痕行'
+                 : ((pol && pol.stop_to) ? '对端之「停手收件人」' : ''));
       var hasBackendWho = !!String(whoB || '');
       var who = hasBackendWho ? String(whoB) : stopTo();
       host.innerHTML = failHTML(String(stage), who,

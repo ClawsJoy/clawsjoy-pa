@@ -5,7 +5,7 @@ function renderFileSource(d){
   const src = (d && d.source) ? String(d.source) : '';
   const p = (d && d.path) ? String(d.path) : '';
   /* ⭐ pm_2061 §二.2（裁⒉）：平文唯人话 —— 端之 `source` ＋ 端径（含盘符径）⇒ 入 `title`（工程之据之地 · ⛔ 删真源 · 承 P2「可寻得」）。 */
-  el.textContent = '来源：本机工作区文件（真源与径 ⇒ 悬停本行即见）';
+  el.textContent = '来源：本机工作区文件（悬停本行见路径）';
   el.title = (src ? ('来源：' + src + '\n') : '来源未知\n') + (p || '');
 }
 async function loadFiles(){
