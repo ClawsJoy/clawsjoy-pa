@@ -29,7 +29,7 @@ function paCaliberCardHtml(c){
 }
 function paCaliberCountsHtml(doc){
   const d=doc||{};
-  if(!d.counts) return '计数不可得（后端未给 counts ⇒ ⛔ 不按 0 显示）';
+  if(!d.counts) return '计数不可得（本机未给计数 ⇒ 不按 0 显示）';
   const parts=[]; PA_CALIBER_STATES.forEach(function(st){ parts.push(st+' '+(d.counts[st]||0)); });
   return parts.join(' · ')+' · 源 '+(d.source||'未给');
 }
@@ -39,7 +39,7 @@ function paCaliberPrevHtml(card, patch){
   const row=function(k,curV,nextV,naTxt){
     return '<tr><td>'+esc(k)+'</td><td class="cbcur">'+cell(curV,naTxt)+'</td><td class="cbnext">'+cell(nextV,'本次未填')+'</td></tr>';
   };
-  if(!c) return '<div class="cb-degraded">⚠ 改前值不可得：该 id 不在 store 现值里（新卡 ／ id 打错 —— ⛔ 前端不凭空造「改前值」）</div>';
+  if(!c) return '<div class="cb-degraded">⚠ 改前值不可得：该编号不在现有清单里（新卡 ／ 编号打错 —— 本面不凭空造「改前值」）</div>';
   return '<table class="cbtable"><tr><th>键</th><th>改前（store 现值）</th><th>改后（本次提交）</th></tr>'
     + row('status', c.status, p.status, '现值未给')
     + row('owner',  c.owner,  p.owner,  '现值未给')
@@ -47,8 +47,8 @@ function paCaliberPrevHtml(card, patch){
     + '</table>';
 }
 function paCaliberCheckHtml(res){
-  if(res==null) return '<span class="cbna">⚠ 未取得回执</span>（⛔ 不等于「未命中」—— 这是读数不可得，两态必须分得开）';
-  if(res.__error) return '<span class="cbna">⚠ 未取得回执：'+esc(res.__error)+'</span>（⛔ 不等于「未命中」）';
+  if(res==null) return '<span class="cbna">⚠ 未取得回执</span>（不等于「未命中」—— 这是读数不可得，两态必须分得开）';
+  if(res.__error) return '<span class="cbna">⚠ 未取得回执：'+esc(res.__error)+'</span>（不等于「未命中」）';
   const hits=Array.isArray(res.hits)?res.hits:[];
   if(!hits.length) return '✅ 未命中口径卡（后端 hits=0）';
   return '⚠ 命中 '+hits.length+' 条：'+hits.map(function(h){
@@ -61,7 +61,7 @@ function paCaliberPanelHtml(doc, opts){
   let h='<details class="cbpanel"'+(o.open?' open':'')+'><summary>🧭 口径面板 · '
     +esc(loaded?paCaliberCountsHtml(d):'尚未加载（展开时按只读接口拉取，不刷新页面）')+'</summary>';
   if(!loaded) return h+'</details>';
-  if(d.__error) return h+'<div class="cb-degraded">⚠ 口径读数不可得：'+esc(String(d.__error))+'（⛔ 这不是「没有口径卡」）</div></details>';
+  if(d.__error) return h+'<div class="cb-degraded">⚠ 口径读数不可得：'+esc(String(d.__error))+'（这不是「没有口径卡」）</div></details>';
   const cards=Array.isArray(d.cards)?d.cards:[];
   h+='<div class="cbmeta">状态读法：<b>unverified／pending</b> 的数字出现在正文 ⇒ check 命中；confirmed 不拦。'
     +' <button class="cbrefresh" onclick="paCaliberLoad(true)">刷新</button></div>';
@@ -71,7 +71,7 @@ function paCaliberPanelHtml(doc, opts){
     +'<option value="unverified">unverified</option><option value="pending">pending</option></select>'
     +'<input id="cbOwner" placeholder="owner（谁签）"></div>'
     +'<input id="cbWhy" placeholder="why（改动理由）">'
-    +'<button class="cbsubmit" onclick="paCaliberSubmit()">提交变更单（⛔ 缺 id/status/owner/why 任一项即拒）</button>'
+    +'<button class="cbsubmit" title="必填四项：id ／ status ／ owner ／ why" onclick="paCaliberSubmit()">提交变更单（四项缺一即拒）</button>'
     +'<div id="cbPrev" class="cbprev">（提交前在此渲染「改前值 → 改后值」）</div></div>';
   h+='<div class="cbform"><textarea id="cbCheckBody" placeholder="产物／草稿正文（留空则用输入框草稿）"></textarea>'
     +'<button class="cbcheck" onclick="paCaliberCheck()">校验：正文是否命中未核实口径</button>'
@@ -116,7 +116,7 @@ async function paCaliberSubmit(form){
   const prev=paCaliberEl('cbPrev');
   const miss=paCaliberMissingFields(f);
   if(miss.length){
-    if(prev) prev.innerHTML='<div class="cb-degraded">⛔ 变更单缺：'+esc(miss.join(' / '))+' ⇒ 不提交（P7 必填 id/status/owner/why，⛔ 前端不代填默认值）</div>';
+    if(prev) prev.innerHTML='<div class="cb-degraded">变更单还缺：'+esc(miss.join(' ／ '))+' ⇒ 不提交（四项必填，本面不代填默认值）</div>';
     return {ok:false, error:'missing_fields', missing:miss, sent:false};
   }
   if(prev) prev.innerHTML=paCaliberPrevHtml(paCaliberFindCard(f.id), f);   /* ③ 先渲染改前值，再提交 */
@@ -125,14 +125,14 @@ async function paCaliberSubmit(form){
     let d=null; try{ d=await r.json(); }catch(e){ d=null; }
     if(r.status!==200 || !d || d.ok===false){
       const msg=(d&&(d.message||d.error))||('HTTP '+r.status);
-      if(prev) prev.innerHTML+='<div class="cb-degraded">⚠ 后端拒收（HTTP '+r.status+'）：'+esc(String(msg))+'（原样可见，⛔ 不吞）</div>';
+      if(prev) prev.innerHTML+='<div class="cb-degraded">⚠ 本机拒收（HTTP '+r.status+'）：'+esc(String(msg))+'（原样可见，不吞）</div>';
       return {ok:false, error:msg, sent:true, status:r.status};
     }
     await paCaliberLoad(true);
     return {ok:true, sent:true, resp:d};
   }catch(e){
     const msg=''+((e&&e.message)||e);
-    if(prev) prev.innerHTML+='<div class="cb-degraded">⚠ 未取得回执：'+esc(msg)+'（⛔ 不等于「没改」）</div>';
+    if(prev) prev.innerHTML+='<div class="cb-degraded">⚠ 未取得回执：'+esc(msg)+'（不等于「没改」）</div>';
     return {ok:false, error:msg, sent:true};
   }
 }
@@ -143,7 +143,7 @@ async function paCaliberCheckText(text){
   const out=paCaliberEl('cbCheckOut');
   const say=function(html){ if(out) out.innerHTML=html; return html; };
   if(!String(payloadBody).trim()){
-    const res={__error:'没有可校验的正文（⛔ 前端不凭空造 pages）'};
+    const res={__error:'没有可校验的正文（本面不凭空造）'};
     say(paCaliberCheckHtml(res)); return res;
   }
   let res=null;

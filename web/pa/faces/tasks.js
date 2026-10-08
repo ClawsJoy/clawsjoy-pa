@@ -5,6 +5,14 @@
    行为闸（pm_984 §二）：受理门永不关（⛔ 置灰输入 ／ ⛔ 拒件）· 可打断 · 可闲聊 · 生效时点照实写。
    ⚠ 本面 2 栏：左「任务五态 ＋ 台账 ＋ 干预」／右「派活（席位 ／ 对端 ／ 在办 ／ 待验收 ／ 凭据）」—— 同件事之两面。 */
 
+/* ⭐ pm_2095 裁⒞：会话 id 之**短形** —— 一处出（本面与「会话历史清单」共用）。
+   逐行之件 ⇒ 辨异之最小形留屏（`…` ＋ 末 6 字）∧ 全文入 `title`（⛔ 全入 · 承 pm_2091 裁⒞）。 */
+function paShortSid(k){
+  const s = String(k == null ? '' : k);
+  return (s.length <= 8) ? s : ('…' + s.slice(-6));
+}
+try{ window.paShortSid = paShortSid; }catch(e){}
+
 /* ===== 行为闸 · 先落：⛔ 置灰输入（承 pm_984 §二.1）=====
    status.js 之 setBusy(on) 会 `sendBtn.disabled = on` ⇒ 在办时输入被「关」⇒ 即拒件。
    本页（⭐ 承 pm 1203 §一：今唯 pa.html 一壳 ⇒ 旧「唯 v3 载入 ／ 旧 pa.html ⛔ 受影响」之界已反 —— 本件之改及于唯一壳）以**同签名**覆盖：保留停止键与探针，⛔ 不动发送键。
@@ -286,25 +294,28 @@ function paEnvAgentsRows(host, ro, roF){
     return 0;
   }
   var colDefs = [
-    ['level',  function(c){ return (c && c.access && c.access.level != null) ? String(c.access.level) : null; }],
-    ['caps',   function(c){ return (c && Array.isArray(c.capabilities) && c.capabilities.length) ? c.capabilities.join('；') : null; }],
-    ['invoke', function(c){ return (c && c.access && c.access.channel) ? String(c.access.channel) : null; }],
-    ['cost',   function(c){ return (c && c.cost != null && String(c.cost).trim()) ? String(c.cost) : null; }],
+    /* ⭐ pm_2095 裁⒟：列名 —— 第 3 位 ＝ **人话名**（屏上唯人话）∧ 第 1 位（端字段名）⇒ 本行 `title`（可辨 · ⛔ 丢真源）。 */
+    ['level',  function(c){ return (c && c.access && c.access.level != null) ? String(c.access.level) : null; }, '层级'],
+    ['caps',   function(c){ return (c && Array.isArray(c.capabilities) && c.capabilities.length) ? c.capabilities.join('；') : null; }, '能力'],
+    ['invoke', function(c){ return (c && c.access && c.access.channel) ? String(c.access.channel) : null; }, '可调'],
+    ['cost',   function(c){ return (c && c.cost != null && String(c.cost).trim()) ? String(c.cost) : null; }, '成本'],
     ['probe',  function(c){
         var v = (c && Array.isArray(c.verified)) ? c.verified : null;
         if(!v) return null;
         var ps = v.filter(function(x){ return /^\s*probe:/.test(String(x)); });
         return ps.length ? ps.join('；') : null;
-      }]
+      }, '探测']
   ];
   var have = colDefs.map(function(d){ return cards.filter(function(c){ return d[1](c) != null; }).length; });
-  var reading = 'agents ' + cards.length + ' 件 · 五列齐：' + colDefs.map(function(d, i){ return d[0] + ' ' + have[i] + '／' + cards.length; }).join(' · ');
+  var reading = '席位 ' + cards.length + ' 件 · 字段齐备：' + colDefs.map(function(d, i){ return d[2] + ' ' + have[i] + '／' + cards.length; }).join(' · ');
+  /* ⭐ pm_2095 裁⒟：端字段名（原字）⇒ 本行 `title` ⇒ 可辨 ∧ ⛔ 丢真源。 */
+  var readingTip = '字段（原文）：' + colDefs.map(function(d){ return d[0]; }).join(' ／ ');
   /* 屏上唯人话（pm_2091 §一 · #2）：端径 ／ 键名 ／ 回退支之语 ⇒ `ENG_*` ⇒ 入 `title`（悬停可回）。 */
   const ENG_agentsSrc = '源：GET /v9/pa/roster ＋ ?full=1 · ⛔ 密钥唯「有／无」（本片无此键 ⇒ ' + PA_GAP.fallback('secret_guard') + '｜密钥有无之真源 ＝ GET /v9/pa/env 之 secret_guard）';
   var html = '<div class="ch" style="margin-top:8px">本机能干哪些活'
     + '<span class="src" title="' + paEsc(ENG_agentsSrc) + '">本机自述之册</span></div>'
     + '<div class="envjudge" data-axis="env-agents" data-red="' + (red ? '1' : '0') + '" data-declared="' + (declared === null ? '' : declared)
-    + '" data-cols="' + cards.length + '" style="font-size:10.5px;line-height:1.7;color:' + (red ? '#f85149' : 'var(--sub)') + '">'
+    + '" data-cols="' + cards.length + '" title="' + paEsc(readingTip) + '" style="font-size:10.5px;line-height:1.7;color:' + (red ? '#f85149' : 'var(--sub)') + '">'
     + paEsc(reading) + '<br>' + paEsc(verdict)
     + (red ? ' ⚠ 显红：册之声明与本机之实不齐' : '') + '</div>';
   cards.forEach(function(c){
@@ -470,17 +481,14 @@ async function paLoadTasks(){
   paV3Tip('paTaskLedgerSrc', ENG_ledgerSrc);
   const lg = document.getElementById('paTaskLedger');
   if(lg){
-    /* ⭐ pm_2091 裁⒞：逐行之件 ⇒ **辨异之最小形留屏**（`…` ＋ 末 6 字）∧ 全文入 `title`（⛔ 全入）。 */
-    function shortSid(k){
-      const s = String(k);
-      return (s.length <= 8) ? s : ('…' + s.slice(-6));
-    }
+    /* ⭐ pm_2091 裁⒞ ／ pm_2095 裁⒞：逐行之件 ⇒ **辨异之最小形留屏**（`…` ＋ 末 6 字）∧ 全文入 `title`（⛔ 全入）。
+       ⭐ pm_2095 裁⒞：本函 **一处出**（`window.paShortSid`）⇒ 他面（会话历史清单）同用 · ⛔ 二处各写。 */
     function rowOf(k){
       const r = by[k] || {};
       const own = (String(k) === mySid) ? '本会话' : '非本会话';
       return '<div title="会话 ' + paEsc(String(k)) + '（' + own + '）· ' + paEsc(mfAtStr) + ' · ' + paEsc(mfWinStr)
         + ' · 源：GET /v9/metrics/tool_flow by_task[' + paEsc(String(k)) + ']">'
-        + '会话 ' + paEsc(shortSid(k)) + '（' + own + '）'
+        + '会话 ' + paEsc(paShortSid(k)) + '（' + own + '）'
         + ' —— 工具 ' + (r.count == null ? '未知' : r.count) + ' 次 · 成 '
         + (r.success_rate == null ? '未知' : r.success_rate + '%') + ' · 均 ' + (r.avg_ms == null ? '未知' : r.avg_ms)
         + ' 毫秒 · ' + paEsc(mfAtHuman) + ' · ' + paEsc(mfWinHuman) + '</div>';

@@ -120,8 +120,8 @@ def test_j2_default_level_is_not_presented_as_a_reading():
                "paGrantLevel='标准'; paGrantErr=null;"
                "paPermGate={approved:false,expires_in:0,paths:[]};")
     assert "未授予" in h and "默认档" in h, "J2：没授予文件却没明说「未授予（默认档）」"
-    assert "未授权（后端 approved=false）" in h and "空 ≠ 读数不可得" in h, \
-        "J2b：空 paths 与「读不到」必须分得开"
+    assert "未授权" in h and "空 ≠ 读数不可得" in h and "approved=false" in h, \
+        "J2b：空 paths 与「读不到」必须分得开（且「未授权」之因（approved=false）须可查 · 承 pm_2095 §一.5 之净）"
 
 
 def test_j3_approved_shows_backend_readings_not_frontend_countdown():
@@ -129,8 +129,8 @@ def test_j3_approved_shows_backend_readings_not_frontend_countdown():
                "paGrantLevel='只读'; paGrantErr=null;"
                "paPermGate={approved:true,expires_in:900,paths:['/kv/clear']};")
     assert "已授权" in h and "900" in h and "/kv/clear" in h, "J3：已授权的读数没显示出来"
-    assert "setInterval" not in h and "倒计时" not in h.replace("⛔ 前端不倒计时", ""), \
-        "J3b：面板不许自造倒计时"
+    assert "setInterval" not in h and "不自行倒计时" in h, \
+        "J3b：面板不许自造倒计时（须明说「不自行倒计时」· 且 ⛔ setInterval · 承 pm_2095 §一.5 之净）"
 
 
 def test_j4_grant_without_named_path_sends_nothing():

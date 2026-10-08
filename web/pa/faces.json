@@ -312,7 +312,7 @@
   },
   {
    "id": "feedback",
-   "title": "留言板（内测 · ⛔ 出机）",
+   "title": "留言板（内测 · 不外发）",
    "file": "faces/feedback.js",
    "open": true,
    "private": false,

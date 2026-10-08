@@ -26,21 +26,21 @@ function paPermLevelHtml(){
   const srcs=[];
   if(paGrant.pa && paGrant.pa.exists) srcs.push(esc(String(paGrant.pa.path||'')));
   if(paGrant.pes && paGrant.pes.exists) srcs.push(esc(String(paGrant.pes.path||'')));
-  if(!srcs.length) return '⛔ 未授予（默认档「'+esc(s(paGrantLevel))+'」· ⛔ 不是「读到了只读」）';
-  return '✅ '+esc(s(paGrantLevel))+'（来源 '+srcs.join(' ／ ')+'）';
+  if(!srcs.length) return '<span title="凭据档之真源">未授予（默认档「'+esc(s(paGrantLevel))+'」· 不是「读到了只读」）</span>';
+  return '<span title="来源 '+esc(srcs.join(' ／ '))+'">✅ '+esc(s(paGrantLevel))+'</span>';
 }
 function paPermPathsHtml(paths){
   const a=Array.isArray(paths)?paths:[];
-  if(!a.length) return '<span class="cbna">（后端 paths 为空 —— 空 ≠ 读数不可得）</span>';
+  if(!a.length) return '<span class="cbna">（授权目录为空 —— 空 ≠ 读数不可得）</span>';
   return a.map(function(p){ return '<code>'+esc(String(p))+'</code>'; }).join(' · ');
 }
 function paPermGateHtml(){
   if(paPermGate===null || paPermGate===undefined) return '<div class="cbmeta">⏳ 尚未取（展开时按只读接口拉取，不刷新页面）</div>';
   if(paPermGate.__error) return paPermUnavailable('在场授权', paPermGate.__error);
   const g=paPermGate;
-  if(g.approved!==true) return '<div class="cbmeta">⛔ 未授权（后端 approved=false）· 授权范围：'+paPermPathsHtml(g.paths)+'</div>';
+  if(g.approved!==true) return '<div class="cbmeta" title="approved=false">未授权 · 授权范围：'+paPermPathsHtml(g.paths)+'</div>';
   return '<div class="cbmeta"><span class="cb-confirmed"><b>✅ 已授权</b></span> · 剩余 <b>'+esc(String(g.expires_in))
-    +'</b> s（后端读数 · ⛔ 前端不倒计时，要新值请点刷新）· 授权范围：'+paPermPathsHtml(g.paths)+'</div>';
+    +'</b> s（本机读数 · 不自行倒计时，要新值请点刷新）· 授权范围：'+paPermPathsHtml(g.paths)+'</div>';
 }
 function paPermSummaryText(){
   if(paGrantErr) return '权限档 ⚠ 面不可读 · 在场授权 '+(paPermGate&&paPermGate.approved?'有效 '+paPermGate.expires_in+'s':'无');
@@ -55,11 +55,11 @@ function paPermPanelHtml(doc, opts){
   let h='<details class="cbpanel"'+(o.open?' open':'')+'><summary>🔐 授权面板 · '
     +esc(loaded?paPermSummaryText():'尚未加载（展开时按只读接口拉取，不刷新页面）')+'</summary>';
   if(!loaded) return h+'</details>';
-  h+='<div class="cbmeta">权限档（真源＝后端 data/v9/pa/permission.json）：'+paPermLevelHtml()
+  h+='<div class="cbmeta" title="真源：本机 data/v9/pa/permission.json">权限档：'+paPermLevelHtml()
     +' <button class="cbrefresh" onclick="paPermLoad(true)">刷新</button></div>';
   h+='<div class="cbform"><div class="cbrow"><select id="ppLevel"><option value="">（未选档）</option>'
     +PA_PERM_LEVELS.map(function(l){ return '<option value="'+esc(l)+'">'+esc(l)+'</option>'; }).join('')
-    +'</select><button class="cbsubmit" onclick="paPermSetLevel()">写后端（回读校验）</button></div>'
+    +'</select><button class="cbsubmit" onclick="paPermSetLevel()">写入并回读校验</button></div>'
     +'<div id="ppLevelMsg" class="cbout"></div></div>';
   h+='<div class="cbform"><b>在场授权（会话级 · 破坏性端点）</b>'+paPermGateHtml()+'</div>';
   h+='<div class="cbform"><input id="ppPath" placeholder="path（点名要授权的端点，如 /kv/clear）">'

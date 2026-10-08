@@ -37,9 +37,11 @@ function paPlanViewMount(){
   const sel = document.createElement('select');
   sel.id = 'paPlanView';
   sel.setAttribute('onchange', 'paPlanViewSet(this.value)');
-  sel.innerHTML = '<option value="real">真产出（view=real）</option>'
-    + '<option value="test">测试痕（view=test）</option>'
-    + '<option value="all">全部（view=all）</option>';
+  /* ⭐ pm_2095 裁⒟：屏上唯人话 ∧ 取值名（view=…）⇒ 本择之 `title`（可查 · ⛔ 丢真源 · 同 #paTaskLedgerSrc 之族）。 */
+  sel.setAttribute('title', '取值：view=real ／ view=test ／ view=all');
+  sel.innerHTML = '<option value="real">真产出</option>'
+    + '<option value="test">测试痕</option>'
+    + '<option value="all">全部</option>';
   sel.value = paPlanView;
   q.parentNode.insertBefore(sel, q.nextSibling);
   return sel;

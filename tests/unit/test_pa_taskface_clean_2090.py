@@ -364,7 +364,7 @@ def test_S1b_逐字文案():
     assert u'title="POST /v9/subtask/create">送到本机执行' in html, \
         u"`pa.html` 之端径须入 `title` ∧ 屏上唯人话（承 pm_2091 §一）"
     # ⭐ 裁⒞：逐行之件 ⇒ 留短形 ∧ 全文入 `title`
-    assert u"function shortSid(k){" in js, u"裁⒞：短形之函须在"
+    assert u"function paShortSid(k){" in js, u"裁⒞：短形之函须在"
     assert u"'…' + s.slice(-6)" in js, u"裁⒞：短形须**留屏可辨**（⛔ 全入 title）"
     assert u"title=\"会话 ' + paEsc(String(k))" in js, \
         u"裁⒞：全文须仍可**悬停**得（⛔ 丢真源）"

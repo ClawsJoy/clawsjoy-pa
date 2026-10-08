@@ -710,7 +710,10 @@ function paSelfAskStatHtml(){
     return '<div class="r"><span class="n">' + paSelfEsc(String(v == null ? 0 : v)) + '</span><span class="k">'
       + paSelfEsc(n) + '</span><span class="s">' + paSelfEsc(d) + '</span></div>';
   };
-  return '<div class="a" id="paAskStatBox"><div class="q">检索统计读数（本页会话 · ⛔ 非历史累计）</div><div class="t">'
+  /* ⭐⭐ pm_2095 §二 裁ⓜ（问一）：诊断区 ≠ 免净之地 —— 凡「工程之据」⇒ **形**必折（`details.eng`）∨ `title`。
+     故本盒之容器改 `details.eng`：屏上唯人话（名可留「诊断」之样）、真源一字 ⛔ 丢。一处定形：本函。 */
+  return '<details class="eng" id="paAskStatBox"><summary>检索与诊断读数（一般不必看 · 点开即见）</summary><div class="engbody">'
+    + '<div class="q">检索统计读数（本页会话 · 非历史累计）</div><div class="t">'
     + r('检索命中（有据 ⇒ 贴据）', s.hit, '真源：/v9/pa/ask 之 grounded:true')
     + r('检索未命中（无据）', s.miss, '真源：/v9/pa/ask 之 refused ／ grounded:false')
     + r('回落模型（未命中 ⇒ 转 /v9/pa/dialog）', s.fallback, '其中失败 ' + s.fallbackFail + ' 次（模型 ／ 通道不可达）')
@@ -734,7 +737,7 @@ function paSelfAskStatHtml(){
       + '</div>'
     + '<div class="s">' + paSelfEsc(paSelfJudgeLine()) + '</div>'
     + paSelfModeDiagHtml()
-    + '</div></div>';
+    + '</div></details>';
 }
 try{ window.paSelfAskStatGet = paSelfAskStatGet; }catch(e){}
 try{ window.paSelfAskBump = paSelfAskBump; }catch(e){}
@@ -3365,17 +3368,20 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   const LIST_ID = 'paHistList';
   function hEsc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
   function fmtTime(s){ const t = String(s || ''); return t.length >= 16 ? t.slice(5, 16) : t; }
+  /* ⭐ pm_2095 裁⒞：短形之算 ⇒ **一处出**（`tasks.js` 之 `window.paShortSid` · 已在 `pa.html` 先载）——
+     本面唯调（⛔ 二处各写裁法）；不到则回全形（⛔ 自造）。 */
+  function shortSid(k){ try{ if(typeof paShortSid === 'function') return paShortSid(k); }catch(e){} return String(k == null ? '' : k); }
   async function rows(){
     try{ const r = await fetch(API + '/v9/pa/sessions', {cache:'no-store'}); const d = await r.json();
       return (d && d.ok && Array.isArray(d.sessions)) ? d.sessions : null; }catch(e){ return null; }
   }
   /* 点开即续：真源取历史 ⇒ 落本页线程 ⇒ 重渲（⛔ 另造渲染 · ⛔ 自造键 —— 径皆既有出口） */
   async function resume(sid){
-    const s = String(sid || ''); if(!s) return {ok:false, why:'无 session_id'};
+    const s = String(sid || ''); if(!s) return {ok:false, why:'这条会话没有编号'};
     const r = await fetch(API + '/v9/pa/dialog?session_id=' + encodeURIComponent(s) + '&n=60', {cache:'no-store'});
     const d = await r.json();
     const hist = (d && Array.isArray(d.history)) ? d.history : [];
-    if(!hist.length) return {ok:false, why:'该会话无可读之行（空会话 ／ 后端未回）', n:0};
+    if(!hist.length) return {ok:false, why:'该会话无可读之行（空会话 ／ 对端未回）', n:0};
     let t = null; try{ t = state.threads.find(function(x){ return x.id === s; }); }catch(e){}
     if(!t){ t = {id:s, title:'（真源）' + s, mode:'chat', msgs:[]}; try{ state.threads.push(t); }catch(e){} }
     /* ⭐ pm 1184 §一.⒞：**档行源标随行渲出**（会话视图 ＝ 档读者所据之处）——
@@ -3400,7 +3406,8 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     if(!box){
       box = document.createElement('details');
       box.className = 'mgrp'; box.id = PANEL_ID;
-      box.innerHTML = '<summary>④ 续 · 会话历史（真源：盘上 <code>data\\v9\\pa\\sessions</code> · 非页态镜像）'
+      /* ⭐ pm_2095 裁⒞（并列则）：逐行之件 ⇒ 辨异之最小形留屏；工程之据（盘径 ／ 真源）⇒ title（⛔ 丢真源）。 */
+      box.innerHTML = '<summary title="工程之据：真源 ＝ 盘上 data\\v9\\pa\\sessions\\*.jsonl（append-only）· ⛔ 页态镜像 threads_web_*.json（易失快照）">④ 续 · 会话历史（点开即见 · 本机曾聊过的会话）'
         + '<button id="paHistReload" style="margin-left:6px;font-size:11px">↻ 刷新</button></summary>'
         + '<div id="' + LIST_ID + '" style="padding:6px 1px;font-size:12px;line-height:1.75">…</div>';
       body.appendChild(box);
@@ -3414,21 +3421,21 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         const st = document.getElementById(LIST_ID);
         resume(sid).then(function(r2){
           try{ if(typeof addLog === 'function') addLog(r2.ok
-            ? ('📂 已续：' + sid + '（真源取 ' + r2.n + ' 行 ⇒ 此后新问续写该会话）')
-            : ('⚠ 未续：' + sid + '（' + r2.why + '）'), r2.ok ? 'ok' : 'warn', true, '会话历史（真源）'); }catch(e){}
+            ? ('📂 已续：' + shortSid(sid) + '（取回 ' + r2.n + ' 行 ⇒ 此后新问续写该会话）')
+            : ('⚠ 未续：' + shortSid(sid) + '（' + r2.why + '）'), r2.ok ? 'ok' : 'warn', true, '会话历史'); }catch(e){}
           if(st) st.setAttribute('data-last', (r2.ok ? 'ok:' : 'fail:') + sid);
         });
       });
     }
     const listEl = document.getElementById(LIST_ID); if(!listEl) return 'no-list';
     const rs = await rows();
-    if(!rs){ listEl.innerHTML = '<span style="color:var(--amber,#f59e0b)">⚠ 取不到真源清单（GET /v9/pa/sessions 未回 ／ 起窗中）—— 可点 ↻ 再试</span>'; return 'no-data'; }
+    if(!rs){ listEl.innerHTML = '<span style="color:var(--amber,#f59e0b)" title="端径：GET /v9/pa/sessions">⚠ 暂时取不到曾聊过的会话清单（对端未回 ／ 正在起窗）—— 可点 ↻ 再试</span>'; return 'no-data'; }
     listEl.innerHTML = rs.map(function(x){
       const sid = String(x.session_id || '');
-      const mark = /^pa_selftest/.test(sid) ? ' <span data-axis="probe" style="color:#8b949e">（自测痕 · ⛔ 真实使用）</span>' : '';
+      const mark = /^pa_selftest/.test(sid) ? ' <span data-axis="probe" style="color:#8b949e" title="工程之据：会话 id 之缀 pa_selftest ／ pa_muz 之族">（自测痕 · 不是真实使用）</span>' : '';
       return '<div style="display:flex;gap:6px;align-items:baseline">'
         + '<button data-resume="' + hEsc(sid) + '" style="font-size:11px">续</button>'
-        + '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + hEsc(sid) + mark + '</span>'
+        + '<span title="工程之据：会话 ' + hEsc(sid) + '" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + hEsc(shortSid(sid)) + mark + '</span>'
         + '<span style="color:#8b949e;font-size:11px">' + (x.lines == null ? '—' : x.lines) + ' 行 · ' + hEsc(fmtTime(x.mtime)) + '</span></div>';
     }).join('') || '<span style="color:#8b949e">（0 件）</span>';
     return 'ok:' + rs.length;
@@ -4099,19 +4106,20 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       var rows = ((d && d.decisions) || []).filter(function(x){ return x && x.decision === '采纳' && x.id; });
       decLoaded = true;
       if(!rows.length){
-        if(src) src.textContent = '后端 log 无「采纳」之拍板（HTTP ' + r.status + '）⇒ 照实（⛔ 前端编号）';
+        if(src) src.textContent = '对端还没有「采纳」之拍板（HTTP ' + r.status + '）⇒ 照实（不由本面编号）';
         return null;
       }
       var last = rows[rows.length - 1];
       if(!el.value.trim()){
         el.value = String(last.id);
-        if(src) src.textContent = '后端 log 最新「采纳」：' + String(last.id) + '（人 ' + String(last.user_id || '—')
-          + ' · 阶段 ' + String(last.stage || '—') + '）· 件之刻 ' + paSelfAt(last.ts)
-          + '（后端 decision_log 之 ts 下发 · ⛔ 前端 nowStr 顶件刻 · 承 pm_刀11p §二.4）';
+        if(src) src.textContent = '对端最新一次「采纳」：' + String(last.id) + '（人 ' + String(last.user_id || '—')
+          + ' · 阶段 ' + String(last.stage || '—') + '）· 件之刻 ' + paSelfAt(last.ts);
+        /* ⭐ pm_2095 §一.2 之六：工程之据（decision_log 之 ts 下发）⇒ 本行 `title` · 屏上唯人话。 */
+        if(src) src.title = '工程之据：后端 decision_log 之 ts 下发 · ⛔ 前端 nowStr 顶件刻 · 承 pm_刀11p §二.4';
       }
       return el.value.trim();
     }catch(e){
-      if(src) src.textContent = '读 log 未送达（' + String((e && e.message) || e) + '）⇒ ⛔ 前端编号';
+      if(src) src.textContent = '读件之账未送达（' + String((e && e.message) || e) + '）⇒ 不由本面编号';
       return null;
     }
   }
@@ -4479,8 +4487,8 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     try{
       fetch(API + '/v9/pa/deliver/mail', { method:'GET', cache:'no-store' })
         .then(function(r){
-          backendState = (r.status === 404) ? '\u540e\u7aef\u672a\u63a5\uff08HTTP 404\uff09\u21d2 \u4ea4\u4ed8\u5fc5\u8d70\u5931\u8d25\u8def'
-            : (r.status === 405 ? '\u540e\u7aef\u5df2\u63a5\uff08\u552f POST \u00b7 HTTP 405\uff09'
+          backendState = (r.status === 404) ? '\u5bf9\u7aef\u672a\u63a5\uff08HTTP 404\uff09\u21d2 \u4ea4\u4ed8\u5fc5\u8d70\u5931\u8d25\u8def'
+            : (r.status === 405 ? '\u5bf9\u7aef\u5df2\u63a5\uff08\u552f POST \u00b7 HTTP 405\uff09'
             : ('HTTP ' + r.status + '\uff08\u7167\u5b9e\uff09'));
           if(el) el.textContent = backendState;
         })
@@ -4500,25 +4508,26 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       '<summary style="cursor:pointer;padding:5px 14px;font-size:11.5px;color:var(--sub)">'
       + '\ud83d\uddc2 <b style="color:var(--text)">T1 \u4ea4\u4ed8\u9762</b>\uff08\u53d1\u4fe1 \u00b7 \u6211\u65b9\u95ed\u73af\uff09'
       + '\u00b7 \u505c\u624b\u6536\u4ef6\u4eba\uff1a<b id="' + ID.echo + '" style="color:var(--text)">\u672c\u4eba</b>'
-      + '\u3000<span style="opacity:.8">\u540e\u7aef\uff1a<span id="' + ID.back + '">\u63a2\u6d4b\u4e2d\u2026</span></span></summary>'
+      + '\u3000<span style="opacity:.8" title="\u539f\u5b57\uff1a\u540e\u7aef\uff1a">\u4e0e\u5bf9\u7aef\u4e4b\u901a\uff1a<span id="' + ID.back + '">\u63a2\u6d4b\u4e2d\u2026</span></span></summary>'
       + '<div style="padding:6px 14px 10px;font-size:11.5px;line-height:1.75">'
-      + '<div>\u26a0 <b>\u5f31\u4fdd\u8bc1</b>\uff1a\u672a\u6279 \u21d2 \u524d\u7aef\u4e0d\u53d1\uff08<b>\u524d\u7aef\u4e4b\u5f31\u4fdd\u8bc1</b>\uff09'
-      + ' \u27f7 <b>\u540e\u7aef\u62d2\u6267</b>\uff08\u771f\u95f8 \u00b7 \u5728\u53d1\u4fe1\u8def\u7531\u5185\uff09\u2014\u2014 \u5f31\u4fdd\u8bc1 \u2260 \u771f\u95f8\uff08\u627f pm_071 \u00a7\u4e09\uff09\u3002</div>'
-      + '<div style="' + SUB + '">\u4f53\uff1aPOST /v9/pa/deliver/mail {user_id, task_id, decision_id, to, subject, body_md}'
-      + ' \u00b7 \u7f3a decision_id \u21d2 403 fail-closed \u00b7 \u91cd\u653e\u540c task_id \u21d2 \u8fd4\u65e2\u6709\u56de\u6267</div>'
+      + '<div>\u26a0 <b>\u5f31\u4fdd\u8bc1</b>\uff1a\u672a\u6279 \u21d2 \u672c\u9762\u4e0d\u53d1\uff08<b>\u672c\u9762\u4e4b\u5f31\u4fdd\u8bc1</b>\uff09'
+      + ' \u27f7 <b>\u5bf9\u7aef\u4f1a\u62d2</b>\uff08\u771f\u95f8 \u00b7 \u5728\u53d1\u4fe1\u8def\u7531\u5185\uff09\u2014\u2014 '
+      + '<span title="\u5de5\u7a0b\u4e4b\u636e\uff1a\u5f31\u4fdd\u8bc1 \u2260 \u771f\u95f8 \u00b7 \u627f pm_071 \u00a7\u4e09">\u5f31\u4fdd\u8bc1 \u2260 \u771f\u95f8</span>\u3002</div>'
+      + '<details class="eng"><summary>\u9012\u4ea4\u4e4b\u89c4\uff08\u5de5\u7a0b\u4e4b\u636e \u00b7 \u70b9\u5f00\u5373\u89c1\uff09</summary><div class="engbody">\u4f53\uff1aPOST /v9/pa/deliver/mail {user_id, task_id, decision_id, to, subject, body_md}'
+      + ' \u00b7 \u7f3a decision_id \u21d2 403 fail-closed \u00b7 \u91cd\u653e\u540c task_id \u21d2 \u8fd4\u65e2\u6709\u56de\u6267</div></details>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0">'
       + '<textarea id="' + ID.task + '" rows="2" placeholder="\u2460 \u4ea4\u529e\uff08\u81ea\u7136\u8bed\u8a00 \u00b7 \u4e00\u53e5\u8bdd\uff09" style="' + INP + '"></textarea>'
-      + '<textarea id="' + ID.body + '" rows="2" placeholder="\u6b63\u6587 body_md\uff08\u7559\u7a7a \u21d2 \u53d6\u4ea4\u529e\uff09" style="' + INP + '"></textarea>'
-      + '<label style="' + SUB + '">\u6536\u4ef6\u4eba to\uff08\u591a\u4eba\u7528\u9017\u53f7\u5206\u9694 \u00b7 \u63d0\u4ea4\u65f6\u81ea\u52a8\u5f52\u4e00\u4e3a\u5217\u8868\uff09<input id="' + ID.to + '" style="' + INP + '"></label>'
-      + '<label style="' + SUB + '">\u4e3b\u9898 subject<input id="' + ID.subject + '" style="' + INP + '"></label>'
-      + '<label style="grid-column:1/3;color:var(--amber)">⭐ 停手收件人（默认 本人 · ⛔ 默认「无收件人」）'
+      + '<textarea id="' + ID.body + '" rows="2" title="\u5b57\u6bb5\uff1abody_md" placeholder="\u6b63\u6587\uff08\u7559\u7a7a \u21d2 \u53d6\u4ea4\u529e\uff09" style="' + INP + '"></textarea>'
+      + '<label style="' + SUB + '" title="\u5b57\u6bb5\uff1ato">\u6536\u4ef6\u4eba\uff08\u591a\u4eba\u7528\u9017\u53f7\u5206\u9694 \u00b7 \u63d0\u4ea4\u65f6\u81ea\u52a8\u5f52\u4e00\u4e3a\u5217\u8868\uff09<input id="' + ID.to + '" style="' + INP + '"></label>'
+      + '<label style="' + SUB + '" title="\u5b57\u6bb5\uff1asubject">\u4e3b\u9898<input id="' + ID.subject + '" style="' + INP + '"></label>'
+      + '<label style="grid-column:1/3;color:var(--amber)">⭐ 停手收件人（默认 本人 · 不会默认「无收件人」）'
       + '<input id="' + ID.stop + '" placeholder="本人（留空即本人）" style="' + INP + '"></label>'
       + '<label style="' + SUB + '">引哪封来信 · 件号（凭什么 · C1）<input id="' + ID.refNo + '" placeholder="原信之件号（留空 ⇒ 回执显「缺」）" style="' + INP + '"></label>'
       + '<label style="' + SUB + '">引哪封来信 · sha16<input id="' + ID.refSha + '" placeholder="原信 sha16（留空 ⇒ 显「缺」）" style="' + INP + '"></label>'
-      + '<label style="grid-column:1/3;' + SUB + '">decision_id（拍板 · 真拍板由后端 log 读 · ⛔ 本面编号）'
+      + '<label style="grid-column:1/3;' + SUB + '" title="工程之据：decision_id（拍板之键）">拍板件号（真拍板由对端读 · 不由本面编号）'
       + '<input id="' + ID.dec + '" placeholder="d…（可点下方「取最新拍板」）" style="' + INP + '"></label>'
       + '<div style="grid-column:1/3;' + SUB + '">拍板来源：<span id="' + ID.decSrc + '">未取</span>'
-      + ' <button id="paT1DecBtn" style="' + BTN + '">⟳ 取最新拍板（读 log）</button></div>'
+      + ' <button id="paT1DecBtn" style="' + BTN + '">⟳ 取最新拍板（读对端之账）</button></div>'
       + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
       + '<button id="' + ID.onestep + '" style="' + BTN + ';border-color:var(--green);color:var(--green)">⚡ 一句话交办（1 步）</button>'
@@ -4530,7 +4539,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       + '<button id="paT1DeliverBtn" style="' + BTN + '">③ 交付（发信）</button>'
       + '</div>'
       + '<div id="' + ID.out + '" class="out"></div>'
-      + '<div style="' + SUB + '">task_id\uff08\u9884\u89c8 \u00b7 \u4e24\u7aef\u53ef\u590d\u7b97\uff09\uff1a<span id="' + ID.tid + '">\u2014</span></div>'
+      + '<div style="' + SUB + '" title="\u5de5\u7a0b\u4e4b\u636e\uff1atask_id">\u4ef6\u53f7\uff08\u9884\u89c8 \u00b7 \u4e24\u7aef\u53ef\u590d\u7b97\uff09\uff1a<span id="' + ID.tid + '">\u2014</span></div>'
       + '<div id="' + ID.plan + '"></div>'
       + '<div id="' + ID.rc + '"></div>'
       + '</div>';
