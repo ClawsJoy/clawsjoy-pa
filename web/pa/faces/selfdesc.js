@@ -3912,7 +3912,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   var SRC = 'pm_071 §一／§二 ＋ pm_072 §一 ＋ pm_073 §一／§三 ＋ pm_刀11p ＋ pm_刀15p ／ 刀15p-补 ／ 刀16p（四件填满 · 件之刻 · 报给谁取 deliver/stop · $/件 · 引哪封来信 · 人工步数 · 本件 ⛔ 动共用件）';
   var PANEL = 'paT1Panel';
   var ID = { task:'paT1Task', body:'paT1Body', to:'paT1To', subject:'paT1Subject', stop:'paT1StopTo',
-             echo:'paT1StopToEcho', back:'paT1Backend', tid:'paT1Tid',
+             echo:'paT1StopToEcho', back:'paT1Backend', backWrap:'paT1BackendWrap', tid:'paT1Tid',
              refNo:'paT1RefNo', refSha:'paT1RefSha', onestep:'paT1OneStep', steps:'paT1Steps',
              dec:'paT1Decision', decSrc:'paT1DecSrc',
              plan:'paT1Plan', rc:'paT1Receipt', out:'paT1Out' };
@@ -4484,16 +4484,26 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   }
   function probeBackend(){
     var el = Q(ID.back); if(!el) return;
+    /* ⭐⭐ pm_2097 §三.2（准即办）：屏上唯人话（`<status>（照实）`）∧ **原字逐字全**入 `title`
+       （`原字：后端：HTTP <status>`）—— 「原字」之义 ＝ 逐字之原 ⇒ ⛔ 半截（承 pm_2097 §四.2）。
+       一处定形：唯本函写读数之字与题（404 ／ 405 ／ 200 ／ 失败 ／ 抛错 五支同法）。 */
+    function paint(disp, st){
+      backendState = disp;
+      el.textContent = disp;
+      var host = Q(ID.backWrap) || el;
+      try{ host.setAttribute('title', st == null ? '工程之据：原字 ＝ 探测之结果（无 HTTP 码）'
+                                                 : ('原字：后端：HTTP ' + st)); }catch(_e){}
+    }
     try{
       fetch(API + '/v9/pa/deliver/mail', { method:'GET', cache:'no-store' })
         .then(function(r){
-          backendState = (r.status === 404) ? '\u5bf9\u7aef\u672a\u63a5\uff08HTTP 404\uff09\u21d2 \u4ea4\u4ed8\u5fc5\u8d70\u5931\u8d25\u8def'
-            : (r.status === 405 ? '\u5bf9\u7aef\u5df2\u63a5\uff08\u552f POST \u00b7 HTTP 405\uff09'
-            : ('HTTP ' + r.status + '\uff08\u7167\u5b9e\uff09'));
-          if(el) el.textContent = backendState;
+          var st = r.status;
+          paint((st === 404) ? '对端未接 ⇒ 交付必走失败路'
+            : (st === 405 ? '对端已接（唯 POST）'
+            : (st + '（照实）')), st);
         })
-        .catch(function(){ backendState = '\u63a2\u6d4b\u5931\u8d25\uff08\u672a\u9001\u8fbe\uff09'; if(el) el.textContent = backendState; });
-    }catch(e){ backendState = '\u63a2\u6d4b\u629b\u9519\uff08' + String(e && e.message || e) + '\uff09'; if(el) el.textContent = backendState; }
+        .catch(function(){ paint('探测失败（未送达）', null); });
+    }catch(e){ paint('探测抛错（' + String(e && e.message || e) + '）', null); }
   }
   function build(){
     var face = Q('paFaceTasks'); if(!face) return null;
@@ -4508,7 +4518,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       '<summary style="cursor:pointer;padding:5px 14px;font-size:11.5px;color:var(--sub)">'
       + '\ud83d\uddc2 <b style="color:var(--text)">T1 \u4ea4\u4ed8\u9762</b>\uff08\u53d1\u4fe1 \u00b7 \u6211\u65b9\u95ed\u73af\uff09'
       + '\u00b7 \u505c\u624b\u6536\u4ef6\u4eba\uff1a<b id="' + ID.echo + '" style="color:var(--text)">\u672c\u4eba</b>'
-      + '\u3000<span style="opacity:.8" title="\u539f\u5b57\uff1a\u540e\u7aef\uff1a">\u4e0e\u5bf9\u7aef\u4e4b\u901a\uff1a<span id="' + ID.back + '">\u63a2\u6d4b\u4e2d\u2026</span></span></summary>'
+      + '\u3000<span style="opacity:.8" id="' + ID.backWrap + '">\u4e0e\u5bf9\u7aef\u4e4b\u901a\uff1a<span id="' + ID.back + '">\u63a2\u6d4b\u4e2d\u2026</span></span></summary>'
       + '<div style="padding:6px 14px 10px;font-size:11.5px;line-height:1.75">'
       + '<div>\u26a0 <b>\u5f31\u4fdd\u8bc1</b>\uff1a\u672a\u6279 \u21d2 \u672c\u9762\u4e0d\u53d1\uff08<b>\u672c\u9762\u4e4b\u5f31\u4fdd\u8bc1</b>\uff09'
       + ' \u27f7 <b>\u5bf9\u7aef\u4f1a\u62d2</b>\uff08\u771f\u95f8 \u00b7 \u5728\u53d1\u4fe1\u8def\u7531\u5185\uff09\u2014\u2014 '

@@ -199,6 +199,32 @@ def test_S1b_逐字文案():
     assert u'<div class="about" id="paAboutBody">' in html, u"`#paAboutBody` 须仍在（真源 ⛔ 丢）"
 
 
+#: 原字之题（逐字全）—— `原字：后端：HTTP <码>`（承 pm_2097 §三.2：「原字」之义 ＝ 逐字之原 ⇒ ⛔ 半截）
+_RAW_TITLE_FULL = u"\u539f\u5b57\uff1a\u540e\u7aef\uff1aHTTP "
+_RAW_TITLE_HALF = u"\u539f\u5b57\uff1a\u540e\u7aef\uff1a"
+
+
+def raw_title_bad(src: str) -> list:
+    u"""原字之题之判（纯函数 ⇒ 供反控喂变体）⇒ 犯者之列。"""
+    out = []
+    if _RAW_TITLE_FULL not in src:
+        out.append(u"原字之题 ⛔ 逐字全（缺：`" + _RAW_TITLE_FULL + u"`）")
+    return out
+
+
+def test_S1c_原字须逐字全入_title():
+    u"""pm_2097 §三.2（准即办）：`#paT1Panel` 之「与对端之通」——
+    屏上唯人话（`<status>（照实）`）∧ 原字逐字全入 `title`⇒ 可查。"""
+    src = _read(SELF)
+    assert raw_title_bad(src) == [], u"；".join(raw_title_bad(src))
+    # 正控：三支同法（一处定形：唯 paint 写之）
+    assert u"function paint(disp, st){" in src, u"一处定形之函须在"
+    assert src.count(u"el.textContent = disp;") == 1, u"写屏须唯一处"
+    # 反控（防假牙）：造半截 ⇒ 必咬
+    assert raw_title_bad(src.replace(_RAW_TITLE_FULL, _RAW_TITLE_HALF)) != [], u"反控：半截 ⇒ 须咬"
+    assert src.replace(_RAW_TITLE_FULL, _RAW_TITLE_HALF) != src, u"反控之锚 ⛔ 在（将空跑）"
+
+
 # ============================== S2 · 反控（防「假牙」） ==============================
 def test_S2_反控必咬且不妄咬():
     u"""造病 ⇒ **必咬**；造于合法之地（`title` ／ 真 id ／ 盘符）⇒ **⛔ 咬**。"""
@@ -457,6 +483,8 @@ def test_S3_真渲之屏净(tmp_path):
     flats2 = [h for h in (res2.get("hits") or []) if not h["eng"]]
     assert flats2 == [], u"`tasks` 面**平文**见犯字 %s" % (
         u"；".join(u"%s@%s %r" % (h["k"], h["loc"], h["t"][:50]) for h in flats2[:8]),)
+    assert u"\u4e0e\u5bf9\u7aef\u4e4b\u901a\uff1a" in (res2.get("text") or u""), \
+        u"`#paT1Panel` 折首之「与对端之通」 ⛔ 在屏（面未渲 ∨ 辞漂）"
     txt = res["text"]
     for lit in _MUST_SHOW:
         assert lit in txt, u"逐字 ⛔ 见（面未渲 ∨ 辞漂）：%r" % (lit,)
