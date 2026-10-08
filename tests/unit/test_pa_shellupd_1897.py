@@ -834,6 +834,9 @@ out.dev   = paShuRenderSnap({ok:true, phase:'unsupported', current:'9.0.10'});
 out.idle  = paShuRenderSnap({ok:true, phase:'idle', current:'9.0.10'});
 out.avail = paShuRenderSnap({ok:true, phase:'available', current:'9.0.10', latest:'9.0.11'});
 out.fail  = paShuRenderSnap({ok:false, code:'offline', message:'x'});
+/* ⭐ pm_2074 物5 真联调（真壳一手）所逮：桥之**真形** —— 开发态回 ok:false ＋ phase:'unsupported'。 */
+out.dev_real = paShuRenderSnap({ok:false, phase:'unsupported', current:'9.0.10', code:'no-updater',
+                                message:'本壳不带更新器 ⇒ 请重新安装桌面程序'});
 console.log(JSON.stringify(out));
 """
 
@@ -874,3 +877,26 @@ def test_F3d_版本不重字():
     assert u"('版本 ' + (v.current" not in s, u"旧形（读数段自书「版本 」）⛔ 复归"
     mutant = u"桌面程序（壳）版本 " + u"版本 " + v["idle"]["row"]
     assert u"版本 版本" in mutant, u"反控：旧形（静件 ＋ 读数段自书「版本 」）⇒ 必咬（否则本齿为假）"
+
+
+# ============ pm_2074 物5 真联调（真壳一手 · CW b2a5182 · 2026-10-09） ============
+
+def test_F3e_二形同果_桥之真形非败():
+    u"""pm_2074 物5 真联调所逮之**真根因** —— 桥之 `ok` ＝ `!(phase === 'failed' ∨
+    phase === 'unsupported')`（`shell/shell_update.js` 之 `reply()`）⇒ 开发态回
+    `ok:false ＋ phase:'unsupported' ＋ code:'no-updater'`。面若先论 `ok`
+    ⇒ 把「本机无此能」误渲成「更新没成」（真壳之屏：chip 书「没成 · 可重试」，
+    而折内自相矛盾书 `no-updater`）。
+    制：相同的“无此能”二形 ⇒ 须同果；反控：真败（无 `phase` 之 `ok:false`）⇒ 仍须为败。"""
+    v = _v2061()
+    d = v["dev_real"]
+    assert d["state"] == "unsupported", u"桥之真形（ok:false ＋ unsupported）⇒ ⛔ 成「败」：%r" % (d,)
+    assert d["can_start"] is False, d
+    assert d["chip_disp"] == "none", u"开发态 ⇒ chip ⛔ 现：%r" % (d,)
+    assert u"没成" not in d["row"], u"开发态 ⛔ 书「没成」（旧病之形）：%r" % d["row"]
+    assert d["row"] == v["dev"]["row"], u"真形与二形（ok:true）须同果（⛔ 二套面）"
+    assert u"no-updater" in d["row_title"], u"码须可查（入 title）：%r" % d["row_title"]
+    assert u"no-updater" in d["eng"], d["eng"]
+    # 反控：真败 ⇒ 仍为败（本改 ⛔ 把真败也吨了）
+    assert v["fail"]["state"] == "failed", v["fail"]
+    assert u"没成" in v["fail"]["view_text"], v["fail"]

@@ -111,7 +111,15 @@ function paShellUpdView(r, local, ctx){
     return v;
   }
   /* 拉之回（唯一真源）。 */
-  if(r && r.ok === false){
+  /* ⭐⭐ 真根因之改（pm_2074 物5 真联调 · 真壳 × 真桥 · 我一手之实）：桥之 `ok` ＝
+     `!(phase === 'failed' ∨ phase === 'unsupported')`（`shell/shell_update.js` 之 `reply()`）
+     ⇒ **开发态**回 `ok:false ＋ phase:'unsupported' ＋ code:'no-updater'`。
+     面若先论 `ok` ⇒ 把「本机无此能」误渲成「更新没成」（真壳之屏：chip 书「没成 · 可重试」，
+     而折内自相矛盾书 `no-updater`）。⇒ **phase 先于 ok**（一处定形）：
+     `phase === 'unsupported'` ⇒ 无此能之路（人话 · ⛔ 败）；余之 `ok:false` ⇒ 方为败。 */
+  const rph = (r && paShuHas(r.phase, PA_SHU_PHASES)) ? String(r.phase).trim() : '';
+  const no_cap = !!(r && r.ok === false && rph === 'unsupported');   /* 本机无此能 ⇒ ⛔ 败 */
+  if(r && r.ok === false && !no_cap){
     v.state = 'failed'; v.phase = 'failed';
     v.code = paShuHas(r.code, PA_SHU_CODES) ? String(r.code) : 'unknown';
     v.can_start = true;
@@ -119,8 +127,10 @@ function paShellUpdView(r, local, ctx){
     v.note = (PA_SHU_CODE_TXT[v.code] || PA_SHU_CODE_TXT.unknown) + ' · ' + PA_SHU_OUTLET;
     return v;
   }
-  const ph = (r && r.ok === true && paShuHas(r.phase, PA_SHU_PHASES)) ? String(r.phase).trim() : 'idle';
+  const ph = no_cap ? 'unsupported'
+                    : ((r && r.ok === true && rph) ? rph : 'idle');
   v.phase = ph;
+  if(no_cap && paShuHas(r.code, PA_SHU_CODES)) v.code = String(r.code);
   v.current = (r && r.current != null) ? String(r.current) : '';
   v.latest = (r && r.latest != null) ? String(r.latest) : '';
   const pr = (r && r.progress && typeof r.progress === 'object') ? r.progress : null;

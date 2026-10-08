@@ -97,7 +97,7 @@ out.fb = {known: (ACTION_SEMANTIC['read_file'] || '执行操作'),
           unknown: (ACTION_SEMANTIC['no_such_tool_xyz'] || '执行操作')};
 out.sum = {none: paStepSummary(null), blank: paStepSummary('   '),
            plain: paStepSummary('取回三条结果'),
-           pathy: paStepSummary('D:\\clawsjoy_v9\\data\\v9\\pa\\sessions\\session_pa_x.jsonl 已读'),
+           pathy: paStepSummary('D:\\datadir\\v9\\pa\\sessions\\session_pa_x.jsonl 已读'),
            long:  paStepSummary('一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十'),
            head:  paStepSummary('第一行内容' + String.fromCharCode(10) + '第二行内容')};
 out.undo = {ro: paStepUndoText('read_file'), wr: paStepUndoText('write_file'),

@@ -456,7 +456,7 @@ async function paAttachOnPick(inp){
   var fs = []; try{ fs = Array.prototype.slice.call((inp && inp.files) || []); }catch(e){ fs = []; }
   if(!fs.length) return;
   var box = document.getElementById('paAttachList');
-  if(box){ box.style.display = ''; box.textContent = '正在收下（唯本机 · ⛔ 出机）…'; }
+  if(box){ box.style.display = ''; box.textContent = '正在收下（唯本机 · 不外发）…'; }
   paAttachBusy = true;
   try{
     var fd = new FormData();
@@ -496,7 +496,7 @@ function paAttachRender(){
   if(!paAttachRecs.length){ box.style.display = 'none'; return; }
   box.style.display = '';
   var head = document.createElement('div');
-  head.textContent = '附件 ' + paAttachRecs.length + ' 件（已存本机 · 缺省 ⛔ 出机）';
+  head.textContent = '附件 ' + paAttachRecs.length + ' 件（已存本机 · 缺省不外发）';
   box.appendChild(head);
   paAttachRecs.forEach(function(r){
     var row = document.createElement('div');
