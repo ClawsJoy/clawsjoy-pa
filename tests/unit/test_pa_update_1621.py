@@ -288,7 +288,9 @@ def test_U13_缺available键须不充已最新():
     v = _v()["u"]["noavail"]
     assert v["state"] == "unanswered", v
     assert u"端之回缺" in v["text"], v["text"]
-    assert u"available" in v["text"], v["text"]
+    # ⭐ pm_1923 §一.4 之一加（「端字段名 ⛔ 上屏」）：**字段名 ⛔ 入屏**（人话代之）—— 旧判曾钉其名上屏 ⇒ 已正。
+    assert u"有无新版" in v["text"], v["text"]
+    assert u"available" not in v["text"], v["text"]
 
 
 def test_U14_原始异常须不入屏():

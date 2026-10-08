@@ -562,6 +562,35 @@ def _no_comment(s: str) -> str:
     return "".join((ch if m[i] else " ") for i, ch in enumerate(s))
 
 
+_LIT = re.compile(r"'(?:[^'\\\n]|\\.)*'|\"(?:[^\"\\\n]|\\.)*\"")
+
+
+def _strings(s: str):
+    u"""去注释后之**串内**（`'…'` ／ `"…"` · 单行）—— 供「饰之四符 ⛔ 入串」之判（pm_1923 §一.4 之一加）。
+
+    ⚠ 由（器之限 · 照实）：源级之判**⛔ 分**「用户面之文」与「态之常量」（如 `'failed'`）
+    ⇒ ⭐ 故本判唯钉「**串内 ⛔ 载饰之四符**」（`**` ／ `*` ／ `` ` `` ／ `~~`）——
+      四符入串**必为**欲上屏之字（⛔ 有码之用法：本域 ⛔ 用指数运算符 ∧ ⛔ 以模板串拼字）；
+      而「端字段名 ／ 端径 ／ 件号」之扫 ⇒ 归**祖链判**（真渲染 · ⛔ 源级 —— 承 `pa.html` 之
+      `title` 本为「工程之据之地」· pm_1855 §三.2）。
+    """
+    return [m.group(0) for m in _LIT.finditer(_no_comment(s))]
+
+
+def test_S6d_串内无饰之四符():
+    u"""⭐ pm_1923 §一.4 之一加：凡用户面之文 ⇒ 扫「饰」四符（`**` ／ `*` ／ `` ` `` ／ `~~`）。
+
+    由（一手 · 我自逮之第三 ／ 四例）：`feedback.js` 之「内容将出机（后端 `outbound=true`）⇒ …」
+      ∧ `update.js` 之「…（端之回缺 `available`）」—— **反引号 ＋ 端字段名**上屏（＝写者之语误入用户之面，
+      与「饰上屏」同源）⇒ 二处已清 ⇒ 本判钉之（⛔ 复归）。
+    """
+    for fp in (SHU, HTML, UPD, FBS, CFG, ARC):
+        for lit in _strings(_read(fp)):
+            for mark in (u"**", u"*", u"`", u"~~"):
+                assert mark not in lit, (
+                    u"串内 ⛔ 载 `%s`（屏上照显为字面）：%s ｜ %s" % (mark, str(fp), lit[:120]))
+
+
 def test_S6c_用户面之文无markdown之饰():
     u"""⛔ 工程之饰上屏：`**`（markdown 之饰）屏上照显为字面 ⇒ 用户面之文**一字 ⛔ 载**。
 

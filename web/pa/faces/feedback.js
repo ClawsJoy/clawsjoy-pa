@@ -209,7 +209,7 @@ function paFbRender(){
     aw.hidden = !need;
     if(need){
       const lb = paFbEl('paFbAgreeLb');
-      if(lb) lb.textContent = '内容将出机（后端 `outbound=true`）⇒ 我同意此落点';
+      if(lb) lb.textContent = '内容将出机（后端之明书）⇒ 我同意此落点';
       const c = paFbEl('paFbAgree');
       if(c && c.checked !== paFbRun.agreed) c.checked = !!paFbRun.agreed;
     }

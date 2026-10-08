@@ -326,7 +326,7 @@ function paUpdView(u, ctx){
     return v;
   }
   v.state = 'unanswered';
-  v.text = '更新面未给「有新版 ∨ 已是最新」（端之回缺 `available`）'
+  v.text = '更新面未给「有新版 ∨ 已是最新」（端之回缺「有无新版」之字段）'
          + (v.current ? (' · 当前版本 ' + v.current) : '');
   v.note = '⛔ 不以「未给」充「已是最新」（承「未知 ⛔ 充知」· 候 TD 1620 之字段）';
   return v;
