@@ -23,6 +23,8 @@ S2 **反控**（防「假牙」）：造一处于**屏上**字面 ⇒ **必咬**
 S3 **真渲齿**（真 Chrome × CDP）：`更多 ▾`（本机体检 ＋ 关于 ＋ 会话历史）＋ `tasks` 面（`#paT1Panel`）
    之**在屏**文 —— 活树遍历 ＋ `checkVisibility` ＋ **`details.eng` 之折判**（钳开诸折后取字）
    ⇒ 平文（⛔ 折内）之禁记号 = 0 ∧ 端字段名 = 0。
+S9 **收口**（pm_2108 §三）：`sha16` ⇒ 「指纹」（原字入 `title`）、`placeholder` ⇒ **屏上**（新例ⓒ）、「前端」⇒ 本面。
+S10 **计划面**（pm_2109 §一）：`doPlan` / `renderPlan` 之屏上唯人话（端径 / `task_type` / `source` ⇒ `title`）。
 S5 **守卫之真路齿**（真 Chrome × CDP · pm_2104 §二）：停手卡（`#paStopAsk`）由 `stopAsk()` 自建
    ⇒ 守卫 ⛔ 得于建卡前索其存在；**正控**（真路 · ⛔ 预置 `#paStopAsk`）⇒ 必见卡题；
    **反控**（删 `window.paStopAsk`）⇒ 必见「停手卡不可用」。
@@ -33,6 +35,7 @@ S5 **守卫之真路齿**（真 Chrome × CDP · pm_2104 §二）：停手卡（
 from __future__ import annotations
 
 import io
+import bisect
 import importlib.util
 import json
 import os
@@ -73,17 +76,27 @@ _DRIVE = tf._DRIVE
 _ATTR_NAME_RE = re.compile(u'[A-Za-z_:][-A-Za-z0-9_:]*\\s*=\\s*')
 
 
+#: ⭐⭐ pm_2108 §三.1ⓜ（**新例ⱒ**）：属性之值 ⇒ **屏外**（剔）；然 `placeholder` ／ `value`
+#:   之字 **用户真见**（`<input placeholder>` 之提示词 ∕ 逗号值）⇒ **算平文（必咬）**。
+#:   ⚠ 旧形**概剔诸属性** ⇒ 把 `title`（屏外 ✓）与 `placeholder`（屏上）**混为一谈**
+#:   ⇒ 本收口之 `sha16`（两处 `placeholder`）即由此漏（一手之证：旧法掃得 `0` · 新法掃得必咬）。
+_ATTR_ONSCREEN = (u"placeholder", u"value")
+
+
 def _screen_part_local(txt: str) -> str:
-    u"""一处字面 ⇒ 其**屏上**之分（属性 `name="…"` ⛔ 上屏 ⇒ 剔之 · ⛔ 截其后之屏上之字）。"""
+    u"""一处字面 ⇒ 其**屏上**之分（属性 `name="…"` ⛔ 上屏 ⇒ 剔之 · **唯 `placeholder` ／ `value` 留**）。"""
     out, i, n = [], 0, len(txt)
     while i < n:
         m = _ATTR_NAME_RE.match(txt, i)
         if m:
+            nm = m.group(0).split(u"=")[0].strip().lower()
             q = txt[m.end():m.end() + 1]
             if q in ('"', "'"):
                 e = txt.find(q, m.end() + 1)
                 if e < 0:
                     break
+                if nm in _ATTR_ONSCREEN:
+                    out.append(txt[i:e + 1])
                 i = e + 1
                 continue
             break
@@ -103,12 +116,18 @@ STRICT_BANS = ((u"cross", u"\u26d4"), (u"star", u"**"), (u"btick", u"`"),
 FIELDNAMES = (u"level", u"caps", u"invoke", u"cost", u"probe", u"paths", u"ids")
 _FIELD_RE = re.compile(u"(?<![A-Za-z0-9_$])(" + u"|".join(FIELDNAMES) + u")(?![A-Za-z0-9_$])")
 #: ⭐⭐ 标识名族（pm_2104 §四.5⒟⒝）：端之键 ／ 工程之辞 —— 平文 ⛔ 许现（⇒ `title` ／ 折体）
-IDNAMES = (u"task_id", u"decision_id", u"wall_s", u"tokens", u"fail-closed")
+IDNAMES = (u"task_id", u"decision_id", u"wall_s", u"tokens", u"fail-closed",
+            #: ⭐ pm_2108 §三.1ⓝ：`sha16`（凭据之指印之端键）⇒ 平文 ⛔ 许现
+            u"sha16",
+            #: ⭐⭐ pm_2109 §一.1：计划面之端键（`task_type`）⇒ 入族；
+            #:   `source`（其真源在端 · pm_2109 §二.2ⓘ 已另函 TD）⇒ 本侧唯「⛔ 上屏」。
+            u"task_type", u"source")
 _ID_RE = re.compile(u"(?<![A-Za-z0-9_$])(" + u"|".join(IDNAMES) + u")(?![A-Za-z0-9_$])")
 #: ⭐ 原字之 `HTTP `：屏上唯 `<码>`（原字**逐字全**入 `title` · 承 pm_2097 §三.2 ／ pm_2102 §二.3）
 _HTTP_RE = re.compile(u"HTTP ")
 #: ⭐ 工程语（pm_2102 §一 丁12）：平文 ⛔ 许现
-ENGWORDS = (u"\u8def\u7531",)   # 「路由」
+ENGWORDS = (u"\u8def\u7531",   # 「路由」
+            u"\u524d\u7aef")    # 「前端」（pm_2108 §三.1ⓝ：名之一处 ⇒ 本面）
 _ENG_RE = re.compile(u"|".join(ENGWORDS))
 #: 白名单 —— 端给之真 id ／ 真件名 ／ 会话 id（照实之律 · 面 ⛔ 代端改名）
 ALLOW = re.compile(u"(?:ds_chat|dsh_wsl|v9_agent|web_[A-Za-z0-9]+|\\.agent_state\\.json|pa_[A-Za-z0-9_]+)")
@@ -160,6 +179,8 @@ _T1_SCOPE_FNS = (u"refLine", u"spendLine", u"costLine", u"numOr", u"loadDecision
                  u"openAuthzCard", u"send", u"fourItems", u"failHTML", u"showFail",
                  u"renderReceipt", u"humanOf", u"flat", u"deliverBody", u"build", u"stopAsk",
                  u"engDetails", u"probeBackend")
+#: ⭐⭐ pm_2109 §一：计划面之诸函（`doPlan` / `renderPlan`）—— 本收口**并入**（列而不在射程 ⇒ 齿空跑）。
+_PLAN_SCOPE_FNS = (u"doPlan", u"renderPlan")
 #: ⭐⭐ 折（`details.eng`）之**体** ⇒ **屏外**（⛔ 上屏）· 逐字明标 ＋ 书其由（pm_2104 §三.4）：
 #:   其字（`POST /v9/pa/deliver/mail` ／ `task_id` ／ `decision_id` ／ `fail-closed`）＝ **工程之据**
 #:   ⇒ ⛔ 删（删之即违 pm_2061 裁⒉「⛔ 丢真源」）；**反控**：去其折体之容器（＝把其字移入平文）⇒ **必咬**。
@@ -169,6 +190,14 @@ _T1_IGN = (
 )
 _T1_IGN_WHY = u"折体（`details.eng` 之体）⇒ 屏外 ⇒ 真源 ⛔ 丢 ／ 工程之据 ⛔ 上屏"
 _T1_BLOCK_LABEL = u"send:'发送（502）' }"
+
+#: ⭐⭐ 行 `title`（`ask({rows:…})` 之第 3 元）之**原字**落处 ⇒ **屏外**
+#:   （pm_2108 §三ⓜ · 承 pm_2106 §三.4「折内 ／ `title` 之落处 ⇒ 入 `_ign`（逐字 ＋ 书其由）」）
+_T1_TITLE_IGN = (
+    (u"['凭什么', refLine(), '工程之据：原字 sha16", u"（凭据之指印）'],"),
+    (u"['引哪封来信', refLine(), '工程之据：原字 sha16", u"（凭据之指印）'],"),
+)
+
 
 
 def _ifuncs(s: str) -> list:
@@ -220,12 +249,16 @@ def _spans(sys_src: str, self_src: str) -> dict:
     ifns = _ifuncs(self_src)
     for n in _T1_SCOPE_FNS:
         self_sp.append(_FSPAN(ifns, n))
+    for n in _PLAN_SCOPE_FNS:
+        self_sp.append(_FSPAN(ifns, n))
     self_sp.append(_find(self_src, u"var BLOCK_LABEL = {", _T1_BLOCK_LABEL))
     ign = [(_ANCHOR(self_src, u"      box.innerHTML = '<summary title=\"工程之据：真源",
                     u".jsonl（append-only）")),
            (_ANCHOR(self_src, u'<details class="eng" id="paAskStatBox">',
                     u"paSelfModeDiagHtml()\n    + '</div></details>'"))]
     for (a, b) in _T1_IGN:
+        ign.append(_find(self_src, a, b))
+    for (a, b) in _T1_TITLE_IGN:
         ign.append(_find(self_src, a, b))
     return {"sys": sys_sp, "self": self_sp, "ign": ign}
 
@@ -238,7 +271,19 @@ def scan(src: str, spans: list, ign: list) -> dict:
     """
     fns = _FUNCS(src) + _ifuncs(src)
     kept, hits = [], []
-    for (pos, txt) in _LITS(src):
+    lits = _LITS(src)
+    #: ⭐⭐ 界之正（pm_2108 §三.1）：语句之界（`;{}`）⇒ 唯**字面之外**者得为界。
+    #:   ⓜ 旧法（`rfind` 直索）⇒ 若前一字面之内含 `;`（`style="font-size:10.5px;color:…"`）
+    #:     ⇒ 界落**字面之中** ⇒ `pre_raw` 之引号奇偶判误 ⇒ 其**后**之屏上字面得漏
+    #:     （一手之例：`sys.js` 之「这一段就是上面七面读数…（唯前端…）」）。
+    #:   ⓝ 我先一手之误（以「前一字面之末」为界）⇒ 界**太近** ⇒ 吞 `say(` ／
+    #:     `setAttribute('title',` 之上下文 ⇒ 门后流水 ／ `title` 之字得**误咬**（假红）。
+    inside = bytearray(len(src))
+    for (_p, _c) in lits:
+        _L = min(len(_c) + 2, len(src) - _p)
+        inside[_p:_p + _L] = b"\x01" * _L
+    divs = [i for i, ch in enumerate(src) if ch in _STMT_END and not inside[i]]
+    for (pos, txt) in lits:
         if not any(a >= 0 and a <= pos < b for (a, b) in spans):
             continue
         if any(a >= 0 and a <= pos < b for (a, b) in ign):
@@ -246,10 +291,14 @@ def scan(src: str, spans: list, ign: list) -> dict:
         t = _unesc(txt)
         if not _CJK.search(t):
             continue
-        k = max(src.rfind(c, 0, pos) for c in _STMT_END)
+        _j = bisect.bisect_left(divs, pos)
+        k = divs[_j - 1] if _j else -1
         pre_raw = src[k + 1:pos]
-        if pre_raw.count('"') % 2 == 1:
-            continue
+        #: ⭐ 引号奇偶之旧判（`pre_raw.count('"') % 2`）⇒ **去**。
+        #:   其原意：探「界落在一字面之内」。今界已为**字面之外**之 `;{}`
+        #:   ⇒ 其意已空；反成**假阴**之源：前文若含「字面内不配对之 `"`」（如 `'\u3002</div>'` 之族 · 或属性内之 `"`）
+        #:   ⇒ 其后之屏上字面得漏（一手之例：收口之「引哪封来信 · sha16」标、`S2 ⓜ` 之 `⛔`）。
+        #:   ⚠ 去之得多而 ⛔ 得少 —— 后之 `_SCREENPART` 自会剔屏外之属性（同时为反控之根）。
         pre = _STRIP(pre_raw)
         if re.search(r"\.title\s*=", pre):
             continue
@@ -638,6 +687,11 @@ GATEWAY = int(os.environ.get("PA_GATEWAY_PORT", "5102"))
 
 #: ⚠ 活态之 `under` ＝ **已知工程标识之列**（⛔ 通配 `x_y`）—— 通配于**活态**必咬端给之真件名
 #:   （体检之盘径夹名 · 承 pm_2095 §二.2「盘符准留」· 我一手验）；通配之网留于**静态之齿**（源码字面 · 真件名 ⛔ 出）。
+#: ⭐⭐ pm_2108 §二.3ⓜ：该「已知工程标识之列」⇒ **一处定形**（一常量 · ⛔ 散书）—— 活态（`_PROBE`）唯由此派生。
+#: ⭐ pm_2108 §二.3ⓝ：**新端字段名之族 ⇒ 入此表**（与静态之 `IDNAMES` 各司其职：静态取源码之字，活态取 DOM 之字）。
+KNOWN_ENG_IDS = (u"task_id", u"decision_id", u"wall_s", u"tokens", u"fail_closed",
+                 u"ui_state", u"agent_state", u"deliver_stop", u"body_md", u"user_id",
+                 u"sha16", u"task_type", u"source")
 _PROBE = r"""
 (function(){
   function vis(e){ try{ if(e.checkVisibility){ return e.checkVisibility({checkOpacity:true, checkVisibilityCSS:true}); } }catch(x){}
@@ -652,7 +706,8 @@ _PROBE = r"""
   var R = {cross:/\u26d4/g, star:/\*\*/g, btick:/`/g, tilde:/~~/g, v9:/\/v9\//g,
            jsonl:/\.jsonl/g, backend:/\u540e\u7aef/g,
            field:/(?<![A-Za-z0-9_$])(level|caps|invoke|cost|probe|paths|ids)(?![A-Za-z0-9_$])/g,
-           under:/(?<![A-Za-z0-9_$])(task_id|decision_id|wall_s|tokens|fail_closed|ui_state|agent_state|deliver_stop|body_md|user_id)(?![A-Za-z0-9_$])/g};
+           under:/(?<![A-Za-z0-9_$])(__UNDER__)(?![A-Za-z0-9_$])/g,
+           frontend:/\u524d\u7aef/g};
   var ALLOW = /(?:ds_chat|dsh_wsl|v9_agent|web_[A-Za-z0-9]+|\.agent_state\.json|pa_[A-Za-z0-9_]+)/g;
   var DRIVE = /[A-Za-z]:[\\\/]/g;
   var hits = [], flatLen = 0, texts = [], flat = [];
@@ -692,6 +747,11 @@ _PROBE = r"""
   return JSON.stringify({n_roots: roots.length, flatLen: flatLen, hits: hits, text: texts.join(' | '), flatText: flat.join(' | ')});
 })()
 """
+#: ⭐ pm_2108 §二.3ⓜ：活态之标识名列 ⇐ `KNOWN_ENG_IDS`（一处定形 · ⛔ 二处各书）
+_PROBE = _PROBE.replace(u"__UNDER__", u"|".join(KNOWN_ENG_IDS))
+assert u"__UNDER__" not in _PROBE, u"活态之标识名列须已接（否则齿空跑）"
+for _nm in KNOWN_ENG_IDS:
+    assert _nm in _PROBE, u"标识名 ⛔ 入活态之表：" + _nm
 
 _OPEN = (u"(function(){ var ds = document.querySelectorAll('details');"
          u" for(var i=0;i<ds.length;i++){ try{ ds[i].setAttribute('open',''); }catch(e){} }"
@@ -1085,3 +1145,144 @@ def test_S8_真渲_过程注记之数与T1面之平文(tmp_path):
         assert hh.get("rawT1") is False, u"平文 ⛔ 得见 `T1`"
         shot2 = c.shot(str(tmp_path / "tasks_t1_w1440.png"))
     assert shot1 > 0 and shot2 > 0, u"图须落盘（跑毕必收 ∧ 入账）"
+
+
+# ============================== S9 · 收口（pm_2108 §三） ==============================
+def _screen_part_old_attrs(txt: str) -> str:
+    u"""旧形（本收口之前）：**概剔诸属性** —— 把 `placeholder` ／ `value`（**屏上**）与 `title`（屏外）混为一谈。"""
+    return re.sub(u'[A-Za-z_:][-A-Za-z0-9_:]*\\s*=\\s*"[^"]*"', u"", txt)
+
+
+#: 本收口所净之（新 → 旧）—— 「把其原字移入平文」⇒ **必咬**
+_S9_ANCHORS_SELF = (
+    (u"' · 指纹 '", u"' · 指纹 sha16 '"),
+    (u"引哪封来信 · 指纹<input", u"引哪封来信 · sha16<input"),
+    (u'placeholder="原信指纹（留空 ⇒ 显「缺」）"',
+     u'placeholder="原信 sha16（留空 ⇒ 显「缺」）"'),
+)
+_S9_ANCHORS_SYS = (
+    (u"可全选后复制（只在这页上 · 不写盘）。",
+     u"可全选后复制（唯前端 · 不写盘）。"),
+)
+
+
+def test_S9_收口_sha16与前端与placeholder():
+    u"""pm_2108 §三（ⓜ `refLine` ／ ⓝ `:4551` 之标 ／ ⓞ `:4551` 之 `placeholder` ／ ⓟ `sys.js` 之「前端」）
+    ＋ §三.1（**新例ⱒ**：`placeholder` ／ `value` ⇒ **屏上** ⇒ 必咬）。
+
+    ① 正控：前提 —— `selfdesc.js` ／ `sys.js` 之屏上字面须先净（`sha16` ／ 前端 皆 ⛔ 许现）
+    ② 正控（新例ⱒ）：`placeholder` 之值 ⇒ **入屏**（新法留之 ／ 旧法概剔 ⇒ 漏）
+    ③ 反控（必咬）：上诸处**还旧形** ⇒ `scan` 必有 hit
+    ④ 反控（射程）：行 `title` 之原字 ⇒ 明标（⛔ 咬）；**去其明标** ⇒ 该字入屏上之数 ⇒ **必咬**
+    ⑤ 正控（pm_2108 §二.3ⓞ）：把端之键 `task_id` **移入平文** ⇒ **必咬**（⛔ 以「齿改名」了事）
+    """
+    src, syssrc = _read(SELF), _read(SYS)
+    # ① 正控（前提）
+    assert scan(src, _SP["self"], _SP["ign"])["hits"] == [], u"前提：`selfdesc.js` 之屏上须净"
+    assert scan(syssrc, _SP["sys"], _SP["ign"])["hits"] == [], u"前提：`sys.js` 之屏上须净"
+    # ② 新例ⱒ：`placeholder` 之值 ⇒ 屏上
+    demo = u'" placeholder="' + u"原信指纹" + u'（留空 ⇒ 显「缺」）" style="'
+    assert u"原信指纹" in _SCREENPART(demo), u"`placeholder` 之值须**入屏**（本收口之裁）"
+    assert u"原信指纹" not in _screen_part_old_attrs(demo), u"（对照）旧法概剔诸属性 ⇒ 漏"
+    # ③ 反控：还旧形 ⇒ 必咬
+    for (new, old) in _S9_ANCHORS_SELF:
+        m = src.replace(new, old, 1)
+        assert m != src, u"反控之锚 ⛔ 在（将空跑）：%r" % (new,)
+        assert scan(m, _SP["self"], _SP["ign"])["hits"], u"还旧形 ⇒ 必咬：%r" % (new,)
+    for (new, old) in _S9_ANCHORS_SYS:
+        m = syssrc.replace(new, old, 1)
+        assert m != syssrc, u"反控之锚 ⛔ 在（将空跑）：%r" % (new,)
+        assert scan(m, _SP["sys"], _SP["ign"])["hits"], u"还旧形 ⇒ 必咬（sys）：%r" % (new,)
+    # ④ 行 `title` 之原字 ⇒ 明标
+    miss = [a for (a, b) in _T1_TITLE_IGN if _find(src, a, b) == (-1, -1)]
+    assert miss == [], u"行 `title` 之明标 ⛔ 在（反控将空跑）：%r" % (miss,)
+    assert u"原字 sha16" not in u"".join(t for (_p, _f, t) in scan(src, _SP["self"], _SP["ign"])["kept"]), \
+        u"`title` 之原字 ⛔ 得入屏上之数（明标须真罩）"
+    kept0 = scan(src, _SP["self"], [])["kept"]
+    assert any(u"原字 sha16" in t for (_p, _f, t) in kept0), \
+        u"（反控）去其明标 ⇒ 该 `title` 之字**入屏上之数**（⇒ 明标 ⛔ 空跑）"
+    assert scan(src, _SP["self"], [])["hits"], u"（反控）去其明标 ⇒ 必咬"
+    # ⑤ 正控（pm_2108 §二.3ⓞ）：端之键 `task_id` 移入**平文** ⇒ 必咬
+    _a5 = u"'（四件 ＋ 引哪封来信 ＋ 件之刻 ＋ 每件花费 皆对端取 · 不由本面估）'"
+    assert _a5 in src, u"正控之锚 ⛔ 在（将空跑）"
+    m5 = src.replace(_a5, u"'（件号 task_id ＋ 引哪封来信 ＋ 件之刻 ＋ 每件花费 皆对端取 · 不由本面估）'", 1)
+    assert m5 != src, u"正控之变 ⛔ 真"
+    h5 = scan(m5, _SP["self"], _SP["ign"])["hits"]
+    assert h5 and any(u"idname" in x["bad"] for x in h5), \
+        u"端之键 `task_id` 移入平文 ⇒ 必咬（⛔ 假绿）"
+
+
+# ============================== S10 · 计划面（pm_2109 §一） ==============================
+def _esc(t: str) -> str:
+    u"""人话 ⇒ 源码之 `\\uXXXX` 形（本域之件多以 `\\uXXXX` 书之 ⇒ 逐字锚须同其形）。"""
+    return u"".join((u"\\u%04x" % ord(c)) if ord(c) > 127 else c for c in t)
+
+
+#: 计划面所净之（新 ／ 旧）—— 逐行之锚（源码之拼接式跨行 ⇒ 锚须在一行之内）
+#: 「还旧形」⇒ **必咬**（其旧形的罪证：`/v9/` · `HTTP ` · `⛔` · `后端`）。
+_PLAN_PAIRS = (
+    (u"计划：交办为空 ⇒ 未提交（不会开空件）",
+     u"计划：⛔ 交办为空 ⇒ 未提交（⛔ 开空件）"),
+    (u"计划：正在出…（约 1 分钟 · 首跑须备模型）",
+     u"计划：请求中…（POST /v9/pa/plan）"),
+    (u"（对端未回 ／ 计划为空）⇒ 照实",
+     u"（POST /v9/pa/plan 未回 ∨ 空 steps）⇒ 照实"),
+    (u"（本面不编步骤）</div>",
+     u"（本面 ⛔ 不编步骤）</div>"),
+    (u"计划：对端未给（", u"计划：后端未给（HTTP "),
+    (u"）⇒ 不等于无计划", u"）⇒ ⛔ 不等于无计划"),
+    (u"须您亲批；此据接口之定形",
+     u"须老板亲批（POST /v9/pa/decision 落 decision_id）"),
+)
+
+#: 计四 · 计五 之**屏外**之据（本块 ／ 本行 `title`）
+_PLAN_TITLES = (
+    u'title="工程之据：源 POST /v9/pa/plan · task_type ',
+    u'title="工程之据：POST /v9/pa/decision · decision_id · 缺 ⇒ 403 fail-closed（pm_071 §四）"',
+)
+
+
+def test_S10_计划面之屏净与反控():
+    u"""pm_2109 §一（计划面五处）+ §一.1（齿）—— 屏上唯人话
+    ∧ 工程之据（端径 / `task_type` / `source` / 内文号）⇒ 本块 / 本行 `title`（⛔ 丢真源）。
+    并含其**孪生三处**（`doPlan` 之 `后端` ×1 / `HTTP` ×2 / `⛔` ×1，我一手自速）。
+
+    ① 正控：计划面入 `_SP["self"]`（射程）⇒ 屏上字面须净
+    ② 逐字：本件之新辞（一处定形 · 锚在一行之内）∧ 旧辞须除
+    ③ 反控（必咬）：还旧形 ⇒ `scan` 必有 hit
+    ④ 反控：屏外之据（计四 之 `title`）**移入平文** ⇒ 必咬
+    ⑤ 正控（§一.1）：端之键 `task_type` / `source` 移入平文 ⇒ 必咬（`idname`）
+    """
+    src = _read(SELF)
+    # ① 前提（射程真罩：计划面既入 `_SP["self"]` · ⛔ 则本步失灵）
+    assert scan(src, _SP["self"], _SP["ign"])["hits"] == [], u"前提：计划面之屏上须净"
+    # ② 逐字
+    for (new, old) in _PLAN_PAIRS:
+        n = src.count(_esc(new))
+        assert n == 1, u"新辞之数 ⛔ ≠1（%d）：%r" % (n, new[:40])
+        assert _esc(old) not in src, u"旧辞未除：%r" % (old[:40],)
+    for t in (u"⚠ 这次没拿到计划", u"计划：已出 "):
+        assert _esc(t) in src, u"新辞 ⛔ 在：%r" % (t,)
+    for t in (u"后端未给计划", u"未提交（⛔", u"）⇒ ⛔ 不等于无计划"):
+        assert _esc(t) not in src, u"旧辞未除：%r" % (t,)
+    for t in _PLAN_TITLES:
+        assert _esc(t) in src, u"屏外之据 ⛔ 在（计四 / 计五）：%r" % (t[:40],)
+    _tail = u"</b> 步</div>"
+    assert src.count(_esc(_tail)) == 1, u"计四 之屏上须止于 「步」（端径 ⛔ 上屏）"
+    assert u"task_type" not in _SCREENPART(_esc(u'<div style="margin:4px 0 2px" title="工程之据：源 POST /v9/pa/plan · task_type ')), \
+        u"计四：`task_type` ⛔ 得入屏上之分"
+    # ③ 反控（还旧形 ⇒ 必咬）
+    for (new, old) in _PLAN_PAIRS:
+        m = src.replace(_esc(new), _esc(old), 1)
+        assert m != src, u"反控之锚 ⛔ 在（将空跑）：%r" % (new[:40],)
+        assert scan(m, _SP["self"], _SP["ign"])["hits"], u"还旧形 ⇒ 必咬：%r" % (new[:40],)
+    # ④ 屏外之据移入平文 ⇒ 必咬
+    m4 = src.replace(_esc(_tail), _esc(u"</b> 步（源 POST /v9/pa/plan · task_type "), 1)
+    assert m4 != src, u"计四 之反控锚 ⛔ 在（将空跑）"
+    assert scan(m4, _SP["self"], _SP["ign"])["hits"], u"计四：屏外之据移入平文 ⇒ 必咬"
+    # ⑤ 端之键入平文 ⇒ 必咬
+    m5 = src.replace(_esc(_tail), _esc(u"</b> 步 task_type source</div>"), 1)
+    assert m5 != src, u"正控之锚 ⛔ 在（将空跑）"
+    h5 = scan(m5, _SP["self"], _SP["ign"])["hits"]
+    assert h5 and any(u"idname" in x["bad"] for x in h5), \
+        u"端之键 `task_type` ／ `source` 入平文 ⇒ 必咬（⛔ 假绿）"

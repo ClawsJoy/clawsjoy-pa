@@ -4046,7 +4046,9 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   function refLine(r){
     r = r || refOf();
     if(!refHas(r)) return '缺（未附原信 · 对端回执同显「缺」）';
-    return '件号 ' + (r['件号'] || '（缺）') + ' ／ sha16 ' + (r['sha16'] || '（缺）');
+    /* ⭐ pm_2108 §三ⓜ：端之键（`sha16`）⛔ 上屏 ⇒ 屏上唯人话（**指纹**）；
+       其原字 ⇒ 本行 `title`（见 `openAuthzCard` 之 `rows` · 屏外）。 */
+    return '件号 ' + (r['件号'] || '（缺）') + ' · 指纹 ' + (r['sha16'] || '（缺）');
   }
   /* ⭐ pm_刀15p §一③ ＋ pm_刀16p §一.4：**花了多少** ＋ **$/件** —— 读数皆后端取（⛔ 前端估 · ⛔ 数 token）。 */
   function numOr(v, unit){
@@ -4165,9 +4167,9 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     var host = Q(ID.plan); if(!host) return;
     var steps = (d && Array.isArray(d.steps)) ? d.steps : [];
     if(!steps.length){
-      host.innerHTML = '<div style="color:var(--amber)">\u26a0 \u540e\u7aef\u672a\u7ed9\u8ba1\u5212'
-        + '\uff08POST /v9/pa/plan \u672a\u56de \u2228 \u7a7a steps\uff09\u21d2 \u7167\u5b9e'
-        + '\uff08\u26d4 \u524d\u7aef\u4e0d\u7f16\u6b65\u9aa4\uff09</div>';
+      host.innerHTML = '<div style="color:var(--amber)">\u26a0 \u8fd9\u6b21\u6ca1\u62ff\u5230\u8ba1\u5212'
+        + '\uff08\u5bf9\u7aef\u672a\u56de \uff0f \u8ba1\u5212\u4e3a\u7a7a\uff09\u21d2 \u7167\u5b9e'
+        + '\uff08\u672c\u9762\u4e0d\u7f16\u6b65\u9aa4\uff09</div>';
       return;
     }
     var rows = steps.map(function(s, i){
@@ -4180,23 +4182,19 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         + (s.owner    ? ' \u00b7 <span style="' + SUB + '">\u627f\u63a5 ' + H(s.owner) + '</span>' : '')
         + '</span></div>';
     }).join('');
-    host.innerHTML = '<div style="margin:4px 0 2px"><b>\u8ba1\u5212</b>\uff1a\u5171 <b>' + steps.length + '</b> \u6b65'
-      + ' <span style="' + SUB + '">\uff08\u6e90 POST /v9/pa/plan \u00b7 task_type ' + H((d && d.task_type) || '\u2014')
-      + ' \u00b7 source ' + H((d && d.source) || '\u2014') + '\uff09</span></div>'
+    host.innerHTML = '<div style="margin:4px 0 2px" title="\u5de5\u7a0b\u4e4b\u636e\uff1a\u6e90 POST /v9/pa/plan \u00b7 task_type ' + H((d && d.task_type) || '\u2014') + ' \u00b7 source ' + H((d && d.source) || '\u2014') + '">'
+      + '<b>\u8ba1\u5212</b>\uff1a\u5171 <b>' + steps.length + '</b> \u6b65</div>'
       + rows
-      + '<div style="margin-top:4px"><b>\u62cd\u677f\u70b9</b>\uff1a\u4ea4\u4ed8\uff08\u53d1\u4fe1\uff09\u524d \u2014\u2014 '
-      + '\u987b\u8001\u677f\u4eb2\u6279\uff08POST /v9/pa/decision \u843d decision_id\uff09\uff1b'
-      + '<span style="' + SUB + '">plan \u56de\u6267\u672a\u7ed9\u300c\u62cd\u677f\u70b9\u300d\u5b57\u6bb5 \u21d2 '
-      + '\u6b64\u636e\u63a5\u53e3\u5b9a\u5f62\uff08pm_071 \u00a7\u56db\uff1a\u7f3a decision_id \u21d2 403 fail-closed\uff09'
-      + '\uff0c\u26d4 \u524d\u7aef\u4e0d\u7f16</span></div>';
+      + '<div style="margin-top:4px" title="\u5de5\u7a0b\u4e4b\u636e\uff1aPOST /v9/pa/decision \u00b7 decision_id \u00b7 \u7f3a \u21d2 403 fail-closed\uff08pm_071 \u00a7\u56db\uff09"><b>\u62cd\u677f\u70b9</b>\uff1a\u4ea4\u4ed8\uff08\u53d1\u4fe1\uff09\u524d \u2014\u2014 '
+      + '\u987b\u60a8\u4eb2\u6279\uff1b\u6b64\u636e\u63a5\u53e3\u4e4b\u5b9a\u5f62</div>';
   }
   async function doPlan(probe){
     probeRun = (probe === true);
     var out = Q(ID.out);
     var task = val(ID.task).trim();
-    if(!task){ if(out) out.textContent = '\u8ba1\u5212\uff1a\u26d4 \u4ea4\u529e\u4e3a\u7a7a \u21d2 \u672a\u63d0\u4ea4\uff08\u26d4 \u5f00\u7a7a\u4ef6\uff09'; return; }
+    if(!task){ if(out) out.textContent = '\u8ba1\u5212\uff1a\u4ea4\u529e\u4e3a\u7a7a \u21d2 \u672a\u63d0\u4ea4\uff08\u4e0d\u4f1a\u5f00\u7a7a\u4ef6\uff09'; return; }
     lastStage = 'plan';
-    if(out) out.textContent = '\u8ba1\u5212\uff1a\u8bf7\u6c42\u4e2d\u2026\uff08POST /v9/pa/plan\uff09';
+    if(out) out.textContent = '\u8ba1\u5212\uff1a\u6b63\u5728\u51fa\u2026\uff08\u7ea6 1 \u5206\u949f \u00b7 \u9996\u8dd1\u987b\u5907\u6a21\u578b\uff09';
     try{
       var r = await fetch(API + '/v9/pa/plan', { method:'POST', cache:'no-store',
         headers:{ 'Content-Type':'application/json' },
@@ -4205,19 +4203,20 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       var d = await r.json().catch(function(){ return null; });
       if(!d || d.ok === false){
         renderPlan(null);
-        if(out) out.textContent = '\u8ba1\u5212\uff1a\u540e\u7aef\u672a\u7ed9\uff08HTTP ' + r.status
+        if(out){ out.textContent = '\u8ba1\u5212\uff1a\u5bf9\u7aef\u672a\u7ed9\uff08' + r.status
           + (d && d.error ? (' \u00b7 ' + d.error) : '') + '\uff09\u21d2 \u7167\u5b9e';
+          out.title = '\u5de5\u7a0b\u4e4b\u636e\uff1aHTTP ' + r.status; }
         return;
       }
       lastPlanTask = task;
       renderPlan(d);
-      if(out) out.textContent = '\u8ba1\u5212\uff1a\u5df2\u51fa ' + ((d.steps || []).length) + ' \u6b65\uff08HTTP '
-        + r.status + '\uff09\u00b7 \u523b ' + nowStr();
+      if(out){ out.textContent = '\u8ba1\u5212\uff1a\u5df2\u51fa ' + ((d.steps || []).length) + ' \u6b65 \u00b7 \u523b ' + nowStr();
+        out.title = '\u5de5\u7a0b\u4e4b\u636e\uff1aPOST /v9/pa/plan \u00b7 HTTP ' + r.status; }
       say('\ud83d\uddc2 T1 \u5df2\u51fa\u8ba1\u5212\uff1a' + ((d.steps || []).length) + ' \u6b65\uff08POST /v9/pa/plan\uff09', 'ok');
     }catch(e){
       renderPlan(null);
       if(out) out.textContent = '\u8ba1\u5212\uff1a\u8bf7\u6c42\u672a\u9001\u8fbe\uff08' + String((e && e.message) || e)
-        + '\uff09\u21d2 \u26d4 \u4e0d\u7b49\u4e8e\u65e0\u8ba1\u5212';
+        + '\uff09\u21d2 \u4e0d\u7b49\u4e8e\u65e0\u8ba1\u5212';
     }
   }
 
@@ -4300,7 +4299,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       title: '停手：即将以你名义发信（交付）',
       rows: [
         ['做什么', '发信给 ' + b.to.join(', ') + '（主题：' + b.subject + '）'],
-        ['凭什么', refLine()],
+        ['凭什么', refLine(), '工程之据：原字 sha16（凭据之指印）'],
         ['通道', '我方闭环（真闸在对端）', 'POST /v9/pa/deliver/mail'],
         ['代价', '未取得（发后之回执才给：用时 ／ 字节 ／ 词元 ／ 每件花费 ⇒ 不由本面估）'],
         ['报给谁', stopTo() + '（停手时由对端定 · 其「报给谁」恒有）', 'POST /v9/pa/deliver/stop'],
@@ -4308,7 +4307,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         ['弱保证', '未批 ⇒ 本面不发（本面之弱保证）⇔ 对端会拒（真闸 · 在发信之路内）'],
         ['授权', needAdopt ? '本卡即授权点 ⇒ 点「本次发送」落真拍板再发' : ('拍板件号 ' + decId()), 'POST /v9/pa/decision'],
         ['人工步数', String(paT1Steps) + '／2（点本卡 ⇒ ' + String(paT1Steps + 1) + '）'],
-        ['引哪封来信', refLine()],
+        ['引哪封来信', refLine(), '工程之据：原字 sha16（凭据之指印）'],
         ['件号', tid],
         ['刻', nowStr()]
       ],
@@ -4548,7 +4547,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
       + '<label style="grid-column:1/3;color:var(--amber)">⭐ 停手收件人（默认 本人 · 不会默认「无收件人」）'
       + '<input id="' + ID.stop + '" placeholder="本人（留空即本人）" style="' + INP + '"></label>'
       + '<label style="' + SUB + '">引哪封来信 · 件号（凭什么 · 来信之件号）<input id="' + ID.refNo + '" placeholder="原信之件号（留空 ⇒ 回执显「缺」）" style="' + INP + '"></label>'
-      + '<label style="' + SUB + '">引哪封来信 · sha16<input id="' + ID.refSha + '" placeholder="原信 sha16（留空 ⇒ 显「缺」）" style="' + INP + '"></label>'
+      + '<label style="' + SUB + '">引哪封来信 · 指纹<input id="' + ID.refSha + '" placeholder="原信指纹（留空 ⇒ 显「缺」）" style="' + INP + '"></label>'
       + '<label style="grid-column:1/3;' + SUB + '" title="工程之据：decision_id（拍板之键）">拍板件号（真拍板由对端读 · 不由本面编号）'
       + '<input id="' + ID.dec + '" placeholder="d…（可点下方「取最新拍板」）" style="' + INP + '"></label>'
       + '<div style="grid-column:1/3;' + SUB + '">拍板来源：<span id="' + ID.decSrc + '">未取</span>'

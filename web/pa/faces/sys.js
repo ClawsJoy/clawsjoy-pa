@@ -349,7 +349,7 @@ function paSysRender(){
     + '<div style="border:1px solid var(--border);border-radius:9px;padding:7px 9px;background:var(--card2)">'
     + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
     + '<b style="font-size:12px;color:var(--text)">本机体检（文本）</b>'
-    + '<span style="font-size:10.5px;color:var(--sub)">这一段就是上面七面读数之纯文本 —— 可全选后复制（唯前端 · 不写盘）。</span>'
+    + '<span style="font-size:10.5px;color:var(--sub)">这一段就是上面七面读数之纯文本 —— 可全选后复制（只在这页上 · 不写盘）。</span>'
     + '<span class="chip" onclick="paSysCopy()" title="全选这段文本并试着复制到剪贴板（唯前端 · 不写盘）">全选复制</span>'
     + '<span id="paSysFlash" style="font-size:10.5px;color:var(--green)"></span>'
     + '</div>'
