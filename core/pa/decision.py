@@ -156,7 +156,16 @@ class DecisionStore:
 
 
 def generate_plan(task_text, mode="work", user_id=None):
-    """问题4修复: 任务类型→固定步骤模板(确定性 stage), 可选 LLM 细化 label(不改 stage)。"""
+    """问题4修复: 任务类型→固定步骤模板(确定性 stage), 可选 LLM 细化 label(不改 stage)。
+
+    ⭐ PM 2110 §一（`source` 之标**不实** · 归我域）：回执之 `source` **按实书** ——
+       细化**成** ⇒ `llm`；否则 ⇒ `template`（此前**恒书** `template` ⇒ 面 `renderPlan` 直书之 ⇒
+       **屏上之字与实不合** · 违「不实之辞 ⛔ 入屏」）。其义 ＝ **label 之出处**（stage 恒自模板）。
+    ⭐ PM 2110 §二.2（⛔ 静默之败）：模型之跑**留痕**于 `refine`（`ok` ／ `ms` ／ `error`）——
+       读者可辨「回空」（`error` ＝ 模型回空）与「跑而败」（`error` ＝ 异常类名 ＋ 首句）
+       （此前 `except: pass` ⇒ 二态一名蔽）。⚠ 超时**已自带**（`LLMClient._call`：远端 `or 60` ／
+       本机 `or config.timeout`＝120）⇒ ⛔ 另设（免改其语义）。
+    """
     tt = _detect_task_type(task_text)
     template = TASK_TEMPLATES.get(tt, TASK_TEMPLATES["办公"])
     stages = [t[0] for t in template]
@@ -164,6 +173,9 @@ def generate_plan(task_text, mode="work", user_id=None):
     produces = [t[2] for t in template]
     verifies = [t[3] for t in template]
     owners = [t[4] for t in template]
+    #: 细化之痕（一处定形）：`ok` ＝ 模型之 label 已采纳；`error` 空而 `ok` 假 ⇒ ⛔ 有（今无此态）。
+    refine = {"ok": False, "ms": 0, "error": ""}
+    _t0 = time.time()
     try:
         from core.lib.llm_client import LLMClient
 
@@ -184,10 +196,21 @@ def generate_plan(task_text, mode="work", user_id=None):
                     arr2 = [str(x).strip()[:20] for x in arr]
                     if all(arr2):
                         labels = arr2
-    except Exception:
-        pass
+                        refine["ok"] = True
+                    else:
+                        refine["error"] = "回形：有空项"
+                else:
+                    refine["error"] = "回形：⛔ 数组 ∨ 长 ⛔ 合"
+            else:
+                refine["error"] = "回形：未见 JSON 数组"
+        else:
+            refine["error"] = "模型回空"
+    except Exception as e:
+        refine["error"] = "%s: %s" % (type(e).__name__, str(e)[:120])
+    refine["ms"] = int((time.time() - _t0) * 1000)
     steps = [
         {"stage": s, "label": l, "produces": p, "verify": v, "owner": o}
         for s, l, p, v, o in zip(stages, labels, produces, verifies, owners)
     ]
-    return {"steps": steps, "source": "template", "task_type": tt}
+    return {"steps": steps, "source": ("llm" if refine["ok"] else "template"),
+            "task_type": tt, "refine": refine}
