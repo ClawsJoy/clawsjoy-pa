@@ -36,16 +36,23 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from core.lib import feedback_target as FT      # noqa: E402
 FB = ROOT / "web" / "pa" / "faces" / "feedback.js"
 SU = ROOT / "web" / "pa" / "faces" / "startup.js"
 HTML = ROOT / "web" / "pa.html"
 MAN = ROOT / "web" / "pa" / "faces.json"
 SCRATCH = ROOT / "data" / "tmp" / "_cw_fb1635"
 
-NOTICE = u"内测版：留言只存在你这台机器上（⛔ 出机 · ⛔ 联网发送）"
+#: ⭐ 端之**真源**（⛔ 手抄 —— 手抄者 ⇒ 端字一改此齿即**脱钩**：齿绿而真形变）；
+#:   本件 F1 之样唯由此取（承 PM 2077 §三.2「宜同真形」）。
+NOTICE = FT.NOTICE_LOCAL
 CS = u"\u5ba2\u670d\u5e2d"            # 客服席
 
 
@@ -110,7 +117,7 @@ def _harness() -> str:
         u"const paFbRun = {send: null, t: null, bannerT: null, agreed: false};",
     ]
     cases = u"""
-const N = "内测版：留言只存在你这台机器上（⛔ 出机 · ⛔ 联网发送）";
+const N = __N__;
 const T_OK = {state:"ok", notice:N, outbound:false, mode:"local", channel:"internal",
               dir:"data/pa/feedback", resolved_dir:"D:/clawsjoy_v9/data/pa/feedback",
               consent_buses:["health","logs","env","diag"], note:""};
@@ -165,6 +172,9 @@ out.m.start_fb = paPrepMerge(START, null, FB_DONE);
 out.m.updfail_fb = paPrepMerge(START, UPD_FAIL, FB_DONE);
 console.log(JSON.stringify(out));
 """
+    assert u"const N = __N__;" in cases, u"齿之样已变：__N__ 之占位 ⛔ 见（承「同真形」之修）"
+    cases = cases.replace(u"const N = __N__;",
+                          u"const N = " + json.dumps(FT.NOTICE_LOCAL, ensure_ascii=False) + u";")
     return "\n".join(parts) + cases
 
 
@@ -190,12 +200,16 @@ def test_F1_明书唯取后端notice之逐字():
 
     ⭐ pm_2061 §二.2（裁⒉ · 平文唯人话）之后：**原字仍逐字**（⇒ `title` · 可查 · 不丢），
     屏上之形唯净（剔饰四符 ＋ 我方内部记号 `⛔` ⇒ 「不」）。
+
+    ⭐ PM 2077 §二（端之 notice 去饰）之后：**端之字已净** ⇒ 屏上之形 ＝ 端之逐字（raw ≡ 屏
+    ⇒ `title` 自除 · 无可丢之真源）；其剔饰仍为**兜底**之守 —— 以 `cross` ／ `marks` 二控持之。
     """
     v = _v()
     assert v["t"]["ok"]["state"] == "ok", v["t"]["ok"]
     assert v["nt"]["ok_raw"] == NOTICE, u"原字（真源 · 供 `title`）须逐字：" + v["nt"]["ok_raw"]
     assert u"⛔" not in v["nt"]["ok"], u"屏上之形不得载我方内部记号：" + v["nt"]["ok"]
-    assert v["nt"]["ok"] == u"内测版：留言只存在你这台机器上（不出机 · 不联网发送）", v["nt"]["ok"]
+    assert v["nt"]["ok"] == FT.NOTICE_LOCAL, (u"屏上之形须 ＝ 端之逐字（真源今已净 ⇒ ⛔ 待面剔）："
+                                              + v["nt"]["ok"])
     assert v["nt"]["marks"] == u"a · b · c", v["nt"]["marks"]
     assert v["nt"]["cross"] == u"不出机 · 不联网发送", v["nt"]["cross"]
     assert v["g"]["ok"]["ok"] is True, v["g"]["ok"]

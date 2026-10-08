@@ -58,11 +58,13 @@ def test_target_one_place_default_local_no_outbound(fed):
 
 
 def test_notice_local_carries_outlet(fed):
-    u"""(a) 我裁（pm_1647 §一.1）：常驻提示须含**去处**之半句（⛔ 唯言「⛔ 出机」而不言「如何到我方」）。
+    u"""(a) 我裁（pm_1647 §一.1）：常驻提示须含**去处**之半句（⛔ 唯言「不外发」而不言「如何到我方」）。
     —— 「凡不可用必有因 ＋ 去处」；面（web）唯取此字（CW 之齿 F1 证「⛔ 自撰」）。
     """
     assert u"只存在你这台机器上" in FT.NOTICE_LOCAL, FT.NOTICE_LOCAL
-    assert u"⛔ 出机" in FT.NOTICE_LOCAL, FT.NOTICE_LOCAL
+    assert u"不外发" in FT.NOTICE_LOCAL, FT.NOTICE_LOCAL
+    assert u"⛔" not in FT.NOTICE_LOCAL, (
+        u"平文唯人话（PM 2077 §二）：用户面之字 ⛔ 载我方内部记号 —— " + FT.NOTICE_LOCAL)
     assert (u"上门取" in FT.NOTICE_LOCAL) or (u"复制给我们" in FT.NOTICE_LOCAL), FT.NOTICE_LOCAL
     src = FT.load()
     assert FT.notice(src) == FT.NOTICE_LOCAL, FT.notice(src)
