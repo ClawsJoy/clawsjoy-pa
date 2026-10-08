@@ -23,6 +23,9 @@ S2 **反控**（防「假牙」）：造一处于**屏上**字面 ⇒ **必咬**
 S3 **真渲齿**（真 Chrome × CDP）：`更多 ▾`（本机体检 ＋ 关于 ＋ 会话历史）＋ `tasks` 面（`#paT1Panel`）
    之**在屏**文 —— 活树遍历 ＋ `checkVisibility` ＋ **`details.eng` 之折判**（钳开诸折后取字）
    ⇒ 平文（⛔ 折内）之禁记号 = 0 ∧ 端字段名 = 0。
+S5 **守卫之真路齿**（真 Chrome × CDP · pm_2104 §二）：停手卡（`#paStopAsk`）由 `stopAsk()` 自建
+   ⇒ 守卫 ⛔ 得于建卡前索其存在；**正控**（真路 · ⛔ 预置 `#paStopAsk`）⇒ 必见卡题；
+   **反控**（删 `window.paStopAsk`）⇒ 必见「停手卡不可用」。
 
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_faceclean_2095.py -q -p no:cacheprovider --basetemp=D:\\pa_tmp\\pt2095
@@ -595,3 +598,110 @@ def test_S3_真渲之屏净(tmp_path):
     for lit in _MUST_SHOW:
         assert lit in txt, u"逐字 ⛔ 见（面未渲 ∨ 辞漂）：%r" % (lit,)
     assert shot > 0 and shot2 > 0, u"图须落盘（跑毕必收 ∧ 入账）"
+
+# ============================== S5 · 停手卡之守卫（真路 · 真 Chrome × CDP） ==============================
+#: 填表（**真用户之路** · ⛔ 预置 `#paStopAsk`）
+_FILL = (u"(function(){"
+         u" function setv(id, v){ var e=document.getElementById(id); if(!e) return 'no:'+id;"
+         u" e.value = v; e.dispatchEvent(new Event('input',{bubbles:true})); return 'ok'; }"
+         u" var r=[];"
+         u" r.push(setv('paT1Decision', 'd-test-2104'));"
+         u" r.push(setv('paT1Task', 'pm_2104 \u6d4b\u4e4b\u4ea4\u529e'));"
+         u" r.push(setv('paT1To', '\u672c\u4eba'));"
+         u" r.push(setv('paT1Subject', '\u6d4b\u4e4b\u4e3b\u9898'));"
+         u" return r.join(','); })()")
+
+#: 交付（真路 · `window.paT1.deliver()`）
+_DELIVER = (u"(function(){ try{ window.paT1.deliver(); return 'ok'; }"
+            u"catch(e){ return 'ERR:'+String(e); } })()")
+
+#: 观测：卡在否 ＋ 卡题 ＋ `#paT1Out` 之字（⭐ ⛔ 预置桩 · ⛔ 改源码）
+_OBS = (u"(function(){"
+        u" var c=document.getElementById('paStopAsk');"
+        u" var o=document.getElementById('paT1Out');"
+        u" return JSON.stringify({card:!!c,"
+        u" title:(c?String(c.textContent).replace(/\\s+/g,' ').trim().slice(0,60):null),"
+        u" out:(o?String(o.textContent).replace(/\\s+/g,' ').trim():null)}); })()")
+
+_ASK_TYPE = u"(function(){ return typeof window.paStopAsk; })()"
+
+#: 反控之桩：删 `window.paStopAsk`（⭐ 唯反控用之）
+_UNASK = (u"(function(){ try{ window.paStopAsk = null; }catch(e){}"
+          u" var c=document.getElementById('paStopAsk');"
+          u" if(c && c.parentNode) c.parentNode.removeChild(c);"
+          u" return 'ok'; })()")
+
+#: 清场（备复走）
+_CLOSE = (u"(function(){ var c=document.getElementById('paStopAsk');"
+          u" if(c && c.parentNode) c.parentNode.removeChild(c); return 'ok'; })()")
+
+#: 上屏之锚（本批之逐字 ⇒ 真渲须见 · ⛔ 见 ⇒ 辞漂）
+_CARD_TITLE = u"\u505c\u624b\uff1a\u5373\u5c06\u4ee5\u4f60\u540d\u4e49\u53d1\u4fe1\uff08\u4ea4\u4ed8\uff09"
+_NO_CARD_MSG = u"\u505c\u624b\u5361\u4e0d\u53ef\u7528"
+
+
+def _fc_obs(c):
+    u"""取观测（`_OBS` ⇒ dict ∨ 空）—— ⛔ 静默（`⛔ 可读` ⇒ 空 ⇒ 上游之断言自会咬）。"""
+    raw = c.js(_OBS)
+    try:
+        d = json.loads(raw)
+    except Exception:
+        return {}
+    return d if isinstance(d, dict) else {}
+
+
+def test_S5_停手卡之守卫之真路():
+    u"""pm_2104 §二：`#paStopAsk` **唯由 `stopAsk()` 自建**（`selfdesc.js:3709`–`:3724`）⇒ 守卫（`:4282`）
+    ⛔ 得于**建卡之前**索其存在（原 `|| !Q('paStopAsk')` **恒真** ⇒ 卡恒 ⛔ 开 ⇒ 真用户之路断）。
+
+    ⭐ 形（承 `test_S1c`）：**正控** ＝ 真用户之路（⛔ 预置 `#paStopAsk` · 唯 `window.paStopAsk` 在）
+      ⇒ **必见卡题** ∧ ⛔ 见「停手卡不可用」；
+      **反控** ＝ 删 `window.paStopAsk` ⇒ **必见**「停手卡不可用」∧ 卡 ⛔ 开。
+    ⚠ 二控皆须**真咬**：反控之绿 ⇒ 证正控之绿 ⛔ 为「恒绿之空跑」。
+    环境不就绪 ⇒ **skip**（⛔ 红）；真跑毕 ⇒ 必收（`cw_chrome_reap`）。
+    """
+    R = _reap()
+    reason = _env_reason(R)
+    if reason:
+        pytest.skip(u"环境不就绪：" + reason)
+    port = _free_port()
+    with R.run_headless(port=port, tag="cw2095s5", wait_s=15.0,
+                        extra=("--remote-allow-origins=*",),
+                        why=u"pm_2104 令：停手卡之守卫（真路之正控 ／ 反控）"):
+        c = _CDP(_ws_url(port))
+        c.cmd("Page.enable")
+        c.cmd("Runtime.enable")
+        c.cmd("Emulation.setDeviceMetricsOverride", width=1440, height=940,
+              deviceScaleFactor=1, mobile=False)
+        c.cmd("Page.navigate", url="http://127.0.0.1:%d/web/pa.html" % GATEWAY)
+        time.sleep(7.0)
+        c.js(_DISMISS)
+        assert c.js(_TASKS) == "ok", u"切 `tasks` 面 ⛔ 成"
+        time.sleep(2.5)
+        c.js(_OPEN)
+        # ⭐ 前提之锚（否则二控皆空跑）
+        assert c.js(_ASK_TYPE) == "function", u"`window.paStopAsk` ⛔ 为函数（面未挂载）"
+        fill = c.js(_FILL)
+        assert fill == u"ok,ok,ok,ok", u"填表（交办 ／ 收件人 ／ 拍板件号）⛔ 成：%r" % (fill,)
+        time.sleep(0.6)
+        assert _fc_obs(c).get("card") is False, u"前提：`#paStopAsk` 须 ⛔ 在（否则正控成空跑）"
+        # ---------- 正控（真路 · ⛔ 预置 `#paStopAsk`）----------
+        assert c.js(_DELIVER) == "ok", u"交付（正控）⛔ 成"
+        time.sleep(0.8)
+        ok = _fc_obs(c)
+        assert ok.get("card") is True, \
+            u"正控（真路）：卡**必开** —— ⛔ 开 ⇒ 守卫之衍字复发 ∨ 面未挂载：%r" % (ok,)
+        assert _CARD_TITLE in (ok.get("title") or u""), \
+            u"正控：卡题逐字 ⛔ 见（辞漂 ∨ 未渲）：%r" % (ok.get("title"),)
+        assert _NO_CARD_MSG not in (ok.get("out") or u""), \
+            u"正控：屏上 ⛔ 得见「停手卡不可用」：%r" % (ok.get("out"),)
+        # ---------- 反控（删 `window.paStopAsk`）----------
+        c.js(_CLOSE)
+        c.js(_UNASK)
+        assert c.js(_ASK_TYPE) != "function", u"反控之桩 ⛔ 成（`paStopAsk` 仍在）"
+        assert c.js(_DELIVER) == "ok", u"交付（反控）⛔ 成"
+        time.sleep(0.8)
+        bad = _fc_obs(c)
+        assert bad.get("card") is False, u"反控：无 `paStopAsk` ⇒ 卡 ⛔ 得开：%r" % (bad,)
+        assert _NO_CARD_MSG in (bad.get("out") or u""), \
+            u"反控：须见「停手卡不可用」—— ⛔ 见 ⇒ 正控之绿为假（⛔ 假牙）：%r" % (bad.get("out"),)

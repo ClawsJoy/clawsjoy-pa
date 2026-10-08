@@ -4279,7 +4279,10 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   function openAuthzCard(tid, b, needAdopt){
     var out = Q(ID.out);
     var ask = window.paStopAsk;
-    if(typeof ask !== 'function' || !Q('paStopAsk')){
+    /* ⭐ pm_2104 §二：停手卡（`#paStopAsk`）**唯由 `stopAsk()` 自建**（建即追于 `body`）
+       ⇒ 守卫 **⛔ 得于建卡之前**索其「在否」（恒真 ⇒ 卡恒 ⛔ 开）
+       ⇒ 唯查函数（与 `tasks.js:1539` 同法 · 一处定形）。 */
+    if(typeof ask !== 'function'){
       if(out) out.textContent = '交付：停手卡不可用 ⇒ 未发（宁不发）';
       return;
     }
