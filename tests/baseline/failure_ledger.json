@@ -679,6 +679,15 @@
  ],
  "flaky_watch": [
   {
+   "id": "tests/unit/test_pa_update_1621.py::test_U13_缺available键须不充已最新",
+   "nature": "flaky",
+   "scope": "序依赖 —— 断言之件在 web/pa/faces/update.js ／ web/pa/faces/startup.js（⛔ TD 本批之改之果）",
+   "solo_reproducible": false,
+   "evidence": "一手(2026-10-08 · 端 9e5def9)：单跑本文件 32 passed；与 TD 四新齿(test_guard_win_probe_1913 ／ test_install_tasks_silent_1896 ／ test_pa_agent_chat_1859 ／ test_identity_1858)邻跑 72 passed；唯全员(tests/unit)跑时红(2764 passed ＋ 23 failed ＋ 6 skipped) ⇒ 单跑 ／ 邻跑皆 ⛔ 可复现「红」。依 policy solo_reproducible=false ⇒ 脆弱桶。",
+   "owner": "待定",
+   "plan": "定位其前置污染件(疑与 1897 壳更新齿 / web 面齿共用现场)后修，或 hermetic 化；复现形：python -m pytest -q -p no:cacheprovider tests/unit"
+  },
+  {
    "id": "tests/integration/test_http_audit.py::test_http_exec_route_writes_audit",
    "nature": "flaky",
    "scope": "与 live 活动/并发 pytest 共享 data/ 现场",
@@ -731,6 +740,51 @@
    "evidence": "⚠ 本刻(2026-10-06)单跑 1 passed; 与另 8 条同批(9 条一会话)亦 passed; **门之正令之全量批(python -m pytest -q --tb=line -p no:cacheprovider tests: 42 failed / 2393 passed)亦 passed** ⇒ 单跑 ／ 全量批皆 ⛔ 可复现「红」。而 TD 1378 §一 之批(tests/unit tests/pes tests/e2e/faults)中红 ⇒ 二读 ⛔ 合 ⇒ 待 TD 报「以何形调用」(套件 ／ 顺序 ／ 并发 ／ 环境)。依 policy solo_reproducible=false ⇒ 脆弱桶。",
    "owner": "待定",
    "plan": "待 TD 报「以何形调用」复现其红; 定位其前置污染件后修, 或 hermetic 化"
+  },
+  {
+   "id": "tests/unit/test_v9_context_shim.py::test_ledger_registered",
+   "nature": "flaky",
+   "scope": "顺序依赖 —— 容器 `V9Context` 缺 `ledger`（前置用例改脏全局服务表 ⇒ 单跑绿 ／ 同批红）",
+   "solo_reproducible": false,
+   "evidence": "一手(2026-10-08 · 端 9e5def9)：**单跑本件 8 passed**；同批八件(test_filter_reliability ／ test_manual_registration ／ test_manual_usage ／ test_query_index_entity_type ／ test_retrieval_breaker ／ test_sag_bridge ／ test_tools_filter ／ test_v9_context_shim) ⇒ 5 failed ／ 36 passed。⭐ **A/B 对跑**（同批八件 · 唯易 `core/lib/sag_audit_bridge.py`：旧 ef4e624a5430353c ／ 新 2c6cf777183bcd3c）⇒ 旧 11 failed ／ 新 5 failed ⇒ **差集「仅新桥败」＝ 空** ⇒ 与本批之改**无关**。失败皆 `KeyError`（容器未注册）⇒ 类 `test_test_hygiene` 之机制③「全局 V9Context 服务被前置用例改脏」之**顺序依赖**。依 policy solo_reproducible=false ⇒ 脆弱桶。",
+   "owner": "待定",
+   "plan": "定位其前置污染件（疑 `provide_override(..., None)` 之族 —— 见 tests/unit/test_test_hygiene.py 机制③）后修，或 hermetic 化；复现形：`python -m pytest -q -p no:cacheprovider` 同批八件"
+  },
+  {
+   "id": "tests/unit/test_v9_context_shim.py::test_roster_engine_registered",
+   "nature": "flaky",
+   "scope": "顺序依赖 —— 容器 `V9Context` 缺 `roster_engine`（前置用例改脏全局服务表 ⇒ 单跑绿 ／ 同批红）",
+   "solo_reproducible": false,
+   "evidence": "一手(2026-10-08 · 端 9e5def9)：**单跑本件 8 passed**；同批八件(test_filter_reliability ／ test_manual_registration ／ test_manual_usage ／ test_query_index_entity_type ／ test_retrieval_breaker ／ test_sag_bridge ／ test_tools_filter ／ test_v9_context_shim) ⇒ 5 failed ／ 36 passed。⭐ **A/B 对跑**（同批八件 · 唯易 `core/lib/sag_audit_bridge.py`：旧 ef4e624a5430353c ／ 新 2c6cf777183bcd3c）⇒ 旧 11 failed ／ 新 5 failed ⇒ **差集「仅新桥败」＝ 空** ⇒ 与本批之改**无关**。失败皆 `KeyError`（容器未注册）⇒ 类 `test_test_hygiene` 之机制③「全局 V9Context 服务被前置用例改脏」之**顺序依赖**。依 policy solo_reproducible=false ⇒ 脆弱桶。",
+   "owner": "待定",
+   "plan": "定位其前置污染件（疑 `provide_override(..., None)` 之族 —— 见 tests/unit/test_test_hygiene.py 机制③）后修，或 hermetic 化；复现形：`python -m pytest -q -p no:cacheprovider` 同批八件"
+  },
+  {
+   "id": "tests/unit/test_v9_context_shim.py::test_shared_state_registered",
+   "nature": "flaky",
+   "scope": "顺序依赖 —— 容器 `V9Context` 缺 `shared_state`（前置用例改脏全局服务表 ⇒ 单跑绿 ／ 同批红）",
+   "solo_reproducible": false,
+   "evidence": "一手(2026-10-08 · 端 9e5def9)：**单跑本件 8 passed**；同批八件(test_filter_reliability ／ test_manual_registration ／ test_manual_usage ／ test_query_index_entity_type ／ test_retrieval_breaker ／ test_sag_bridge ／ test_tools_filter ／ test_v9_context_shim) ⇒ 5 failed ／ 36 passed。⭐ **A/B 对跑**（同批八件 · 唯易 `core/lib/sag_audit_bridge.py`：旧 ef4e624a5430353c ／ 新 2c6cf777183bcd3c）⇒ 旧 11 failed ／ 新 5 failed ⇒ **差集「仅新桥败」＝ 空** ⇒ 与本批之改**无关**。失败皆 `KeyError`（容器未注册）⇒ 类 `test_test_hygiene` 之机制③「全局 V9Context 服务被前置用例改脏」之**顺序依赖**。依 policy solo_reproducible=false ⇒ 脆弱桶。",
+   "owner": "待定",
+   "plan": "定位其前置污染件（疑 `provide_override(..., None)` 之族 —— 见 tests/unit/test_test_hygiene.py 机制③）后修，或 hermetic 化；复现形：`python -m pytest -q -p no:cacheprovider` 同批八件"
+  },
+  {
+   "id": "tests/unit/test_v9_context_shim.py::test_tool_executor_registered",
+   "nature": "flaky",
+   "scope": "顺序依赖 —— 容器 `V9Context` 缺 `tool_executor`（前置用例改脏全局服务表 ⇒ 单跑绿 ／ 同批红）",
+   "solo_reproducible": false,
+   "evidence": "一手(2026-10-08 · 端 9e5def9)：**单跑本件 8 passed**；同批八件(test_filter_reliability ／ test_manual_registration ／ test_manual_usage ／ test_query_index_entity_type ／ test_retrieval_breaker ／ test_sag_bridge ／ test_tools_filter ／ test_v9_context_shim) ⇒ 5 failed ／ 36 passed。⭐ **A/B 对跑**（同批八件 · 唯易 `core/lib/sag_audit_bridge.py`：旧 ef4e624a5430353c ／ 新 2c6cf777183bcd3c）⇒ 旧 11 failed ／ 新 5 failed ⇒ **差集「仅新桥败」＝ 空** ⇒ 与本批之改**无关**。失败皆 `KeyError`（容器未注册）⇒ 类 `test_test_hygiene` 之机制③「全局 V9Context 服务被前置用例改脏」之**顺序依赖**。依 policy solo_reproducible=false ⇒ 脆弱桶。",
+   "owner": "待定",
+   "plan": "定位其前置污染件（疑 `provide_override(..., None)` 之族 —— 见 tests/unit/test_test_hygiene.py 机制③）后修，或 hermetic 化；复现形：`python -m pytest -q -p no:cacheprovider` 同批八件"
+  },
+  {
+   "id": "tests/unit/test_v9_context_shim.py::test_tool_registry_registered",
+   "nature": "flaky",
+   "scope": "顺序依赖 —— 容器 `V9Context` 缺 `tool_registry`（前置用例改脏全局服务表 ⇒ 单跑绿 ／ 同批红）",
+   "solo_reproducible": false,
+   "evidence": "一手(2026-10-08 · 端 9e5def9)：**单跑本件 8 passed**；同批八件(test_filter_reliability ／ test_manual_registration ／ test_manual_usage ／ test_query_index_entity_type ／ test_retrieval_breaker ／ test_sag_bridge ／ test_tools_filter ／ test_v9_context_shim) ⇒ 5 failed ／ 36 passed。⭐ **A/B 对跑**（同批八件 · 唯易 `core/lib/sag_audit_bridge.py`：旧 ef4e624a5430353c ／ 新 2c6cf777183bcd3c）⇒ 旧 11 failed ／ 新 5 failed ⇒ **差集「仅新桥败」＝ 空** ⇒ 与本批之改**无关**。失败皆 `KeyError`（容器未注册）⇒ 类 `test_test_hygiene` 之机制③「全局 V9Context 服务被前置用例改脏」之**顺序依赖**。依 policy solo_reproducible=false ⇒ 脆弱桶。",
+   "owner": "待定",
+   "plan": "定位其前置污染件（疑 `provide_override(..., None)` 之族 —— 见 tests/unit/test_test_hygiene.py 机制③）后修，或 hermetic 化；复现形：`python -m pytest -q -p no:cacheprovider` 同批八件"
   }
  ],
  "windows_baseline": {

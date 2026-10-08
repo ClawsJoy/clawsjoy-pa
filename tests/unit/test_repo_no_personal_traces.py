@@ -43,8 +43,41 @@ LEGACY = {
     u"组织物之名": re.compile(u"|".join(re.escape(x) for x in _ORG)),
 }
 
-#: 日当值（器取 · 2026-10-07 清毕）—— **须 ＝ 实**：增 ⇒ 红（⛔ 静增）；减 ⇒ 红（一处定形：清了就并降基）。
-BASELINE = {u"本机之库根": 19, u"WSL 之家": 1, u"开发机之根": 16, u"组织物之名": 100}
+#: 日当值（器取 · 2026-10-08 二次核毕 · pm_1936 §二 之裁 ⓜ）—— **须 ＝ 实**：增 ⇒ 红（⛔ 静增）；
+#: 减 ⇒ 红（一处定形：清了就并降基）。
+#: ⭐ 改基之由（**逐处列毕** · 承 TD_1919 §一「凡报 N 处须先逐处列毕再数」之戒）——
+#:   ① 本机之库根 19 ⇒ 20（8 处 · 盘符 ＋ 库名 之「运行必需」之径）：
+#:      test_vault_root_paired_change(6) ／ core/lib/paths.py(5) ／ scripts/dev/投一步.py(2) ／
+#:      test_tools_path_true_source(2) ／ tools/win_alias_bridge.py(2) ／ scripts/win_pa/静默启动.vbs(1) ／
+#:      test_vault_write_faces(1) ／ tools/scan_heartbeat.mjs(1)。
+#:   ② WSL 之家 1（1 处 · 不变）：test_file_isolation_fix(1)。
+#:   ③ 开发机之根 16 ⇒ 30（20 处 · 产线诸根之径 · 皆「运行必需」）：
+#:      test_pa_feedback_1635(4) ／ scripts/dev/投一步.py(3) ／ test_data_root_1698(2) ／
+#:      test_vault_root_paired_change(2) ／ test_vault_write_faces(2) ／ tools/scan_heartbeat.mjs(2) ／
+#:      tools/win_alias_bridge.py(2) ／ config/v9/vault_write_faces.yaml(1) ／ core/lib/config_helper.py(1) ／
+#:      core/lib/paths.py(1) ／ scripts/dev/safe_edit.py(1) ／ scripts/dev/scan_abs_paths.py(1) ／
+#:      scripts/win_pa/install_win_pa.py(1) ／ scripts/win_pa/netmachine_steps.md(1) ／ shell/main.js(1) ／
+#:      test_pa_face_clean_1853(1) ／ test_pa_first_run(1) ／ test_pa_shell_bridge_1657(1) ／
+#:      test_tools_path_true_source(1) ／ test_vector_center_guard_1694(1)。
+#:   ④ 组织物之名 100 ⇒ 109（31 处 · 面之组织定位：组织名三串）：
+#:      core/pa/gateway_routes.py(16) ／ scripts/win_pa/boot_resume.py(15) ／ config/v9/vault_write_faces.yaml(10) ／
+#:      core/pa/resume_face.py(10) ／ core/pa/env_face.py(8) ／ scripts/dev/投一步.py(6) ／
+#:      scripts/dev/recipes/edit_闸三_tou1.py(4) ／ core/gateway/ui_state.py(3) ／
+#:      docs/reports/platform_publish_workflow.md(3) ／ scripts/dev/查散落浏览器.py(3) ／ web/pa/faces/selfdesc.js(3) ／
+#:      docs/design/v9_pa_capability_pluginization_standard.md(2) ／
+#:      scripts/dev/recipes/edit_1057_元问答话与死件路界与器病.py(2) ／
+#:      scripts/dev/recipes/edit_接线批四_丙己庚.py(2) ／ scripts/dev/scan_abs_paths.py(2) ／
+#:      scripts/win_pa/make_client_bundle.py(2) ／ scripts/win_pa/pa_nowindow.py(2) ／
+#:      scripts/win_pa/stop_win_pa.bat(2) ／ tests/unit/test_pa_kb_col.py(2) ／ core/pa/agent_scan.py(1) ／
+#:      core/routes/skill_routes.py(1) ／ scripts/dev/recipes/edit_1055_源标与拒答与死件直读.py(1) ／
+#:      scripts/dev/scan_line_refs.py(1) ／ scripts/win_pa/netmachine_check.py(1) ／
+#:      scripts/win_pa/task_migrate.py(1) ／ scripts/win_pa/净机安装一页.md(1) ／
+#:      tests/unit/test_pa_faces_lazy.py(1) ／ tests/unit/test_stray_chrome_1898.py(1) ／
+#:      tests/unit/test_today_boot_1852.py(1) ／ tools/win_alias_bridge.py(1) ／ web/pa/faces/sources.js(1)。
+#:   ⭐ 本批之新件 ＋4（**悉在 ④** · 承 pm_1936 §二.2ⓝ 认「正当」）：scripts/dev/查散落浏览器.py(3 ——
+#:      散落实例「归属判」之表 · **功能必需**) ＋ tests/unit/test_stray_chrome_1898.py(1)。
+#:   ⚠ HARD（邮箱 ／ 用户档之径 ／ 裸名）仍 ＝ 0（pm_1936 §二.3ⓜ 之守 · 一手核我之新件皆 0）。
+BASELINE = {u"本机之库根": 20, u"WSL 之家": 1, u"开发机之根": 30, u"组织物之名": 109}
 
 
 def _tracked(root):

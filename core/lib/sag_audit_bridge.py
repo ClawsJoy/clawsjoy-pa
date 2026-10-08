@@ -3,6 +3,9 @@
 所有非代码落盘数据（审计/越权/快照/goal/说明书）通过本模块注册进 SAG
 （code_entities 表），使 query_index 可检索。DB 不可用时自动降级（仅落盘，
 不影响现有行为）。
+
+**注销**（unregister_entity ／ unregister_stale）亦归本模块 ⇒ **唯此一处** `DELETE`
+（一处定形 —— 承 pm_1951 §二.1）。
 """
 import os
 import time
@@ -78,6 +81,73 @@ def register_entity(entity_type, entity_name, signature="", file_path="", relate
     except Exception as e:
         _note_degraded(e)
         return False
+
+
+def _exec_delete(sql, params):
+    """跑一条 `code_entities` 之注销 ⇒ 行数 ／ `-1`（DB 不可用）。
+
+    ⚠ 注销**唯经此处执行**（一处定形 ⇒ ⛔ 调用者自撰 SQL ／ ⛔ 自建连接）。
+    """
+    try:
+        import psycopg2
+        ext = _get_extractor()
+        if ext is None:
+            return -1
+        db_url = ext.db_url
+        if not db_url:
+            print("[SAG_BRIDGE] DB URL 不可用，注销返回 -1")
+            return -1
+        conn = psycopg2.connect(db_url)
+        try:
+            cur = conn.cursor()
+            cur.execute(sql, params)
+            n = cur.rowcount
+            conn.commit()
+            cur.close()
+        finally:
+            conn.close()
+        _note_recovered()
+        return int(n)
+    except Exception as e:
+        _note_degraded(e)
+        return -1
+
+
+def unregister_entity(entity_type, entity_name, file_path="", project_id="default"):
+    """注销**一条**编目（`register_entity` 之逆）⇒ `True` ／ `False`。
+
+    键与 `register_entity` 同（`UNIQUE(project_id, entity_name, file_path)`）。
+    DB 不可用 ⇒ `False`（降级照实 · 印 `[SAG_BRIDGE][DEGRADE]`）。
+    """
+    return _exec_delete(
+        "DELETE FROM code_entities WHERE project_id = %s AND entity_type = %s "
+        "AND entity_name = %s AND file_path = %s",
+        (project_id, entity_type, str(entity_name)[:200], str(file_path)[:500]),
+    ) >= 0
+
+
+def unregister_stale(entity_type, file_path_like, keep_names, project_id="default"):
+    """注销一族之「无主」条目（如**件变后之余段**）⇒ 注销数 ／ `-1`（不可用）。
+
+    `file_path LIKE file_path_like` ∧ `entity_name` **不在** `keep_names` 者 ⇒ 注销。
+    ⚠ 唯及 `file_path_like` **一前缀**之族（⛔ 全表）；⛔ 空 `file_path_like` ⇒ 拒。
+    ⚠ `keep_names` ＝ `None` ⇒ 拒（**须显式给表**）；**空表合法**（件结成空之用例）
+      ⇒ ⛔ 勿以之充安全阀（会致假降级 —— 承 pm_1951 §二.3 之族）。
+    """
+    if not file_path_like:
+        print("[SAG_BRIDGE] unregister_stale 拒：file_path_like 空（免全族误销）")
+        return -1
+    if keep_names is None:
+        print("[SAG_BRIDGE] unregister_stale 拒：keep_names=None（须显式给表）")
+        return -1
+    _keep = tuple(str(x)[:200] for x in keep_names)
+    sql = ("DELETE FROM code_entities WHERE project_id = %s AND entity_type = %s "
+           "AND file_path LIKE %s")
+    params = [project_id, entity_type, str(file_path_like)]
+    if _keep:
+        sql += " AND entity_name NOT IN %s"
+        params.append(_keep)
+    return _exec_delete(sql, tuple(params))
 
 
 def query_entities(entity_type=None, query=None, limit=50, project_id="default"):
