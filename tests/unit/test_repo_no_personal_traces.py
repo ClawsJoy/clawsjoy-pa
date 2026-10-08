@@ -4,22 +4,42 @@ u"""入仓之守（pm_1580 §二.4）：本仓（tracked）之件 ⛔ 载「个�
 二类（判据 · 一处定形）：
   ⭐ HARD（须 ＝ 0）：个人邮箱 ／ 用户档之径（盘符 ＋ `Users` 目录之形）／ 裸用户名。
      由：真 PII —— 认得出「是谁 ／ 哪台机」· 一 push 即出到外网之盘。
-  ⭐ LEGACY（须 ＝ 基）：本机之库根（盘符 ＋ 库名）／ WSL 之家（`/home/<名>`）／
+  ⭐ LEGACY（**逐件**符基 · ⛔ 族之总）：本机之库根（盘符 ＋ 库名）／ WSL 之家（`/home/<名>`）／
      开发机之根（盘符 ＋ paseo ／ codex ／ npm ／ clawsjoy 之根）／ 组织物之名（面名三串）。
      留 ∵ **运行 ／ 组织版所必需**（真源表 ／ 径归一 ／ 面之组织定位）—— 逐处之由见回件
      pm_1581。⚠ 其剔之准 ⛔ 随族（⛔ 一刀切 —— 那会把「运行所必需」一并清掉）。
      由：⛔ 静增（其数 ＝ 面之量 ⇒ 须可回指）｜⚠ 清之则**须并降基**（一处定形）。
 
+⭐⭐ 尺之改（承 PM 2054 §三.1⒝ 之荐 · 归端）：
+  旧尺 ＝ 「**族之总** ＝ 基」⇒ 他席**每一提交**皆可使之为红。本刻之病即此 ——
+  `b544906` 之「改基」其数**取于同批新件之前**：其批并落 `test_sag_catalog_1949.py`（名族 `13`）
+  ＋ `编目_要件入SAG.py`（名族 `12`）而基 ⛔ 含之 ⇒ 自该批（10:11）起**恒红**。
+  （一手复算该刻：名族之实 ＝ `134`，基 ＝ `109`，差 `25` ＝ 该二件之和 —— 同源同刻之律未落。）
+  ⇒ ⭐ 今尺 ＝ 「**逐件**（`rel` → 数）符基」：红时**唯指其件**（⛔ 以族之总累及无辜），
+  而**件内之增**仍显形（⛔ 静增之守 ⛔ 丢）。⚠ 并由：改基**须以本器现取**（`--write`）——
+  ⛔ 手抄（手抄之数 ＝ 另刻之实 ⇒ 本尺所治之病即此）。
+  基线（一处定形）：`tests/baseline/personal_traces_baseline.json`。
+
 ⚠ 本档 ⛔ 载其字面：诸式皆以**碎片**拼成（如 `"fly" + "bo"`）⇒ 本档自扫亦清
   ⇒ **⛔ 自指之洞**（⛔ 以「排除本档」为解 —— 那会把本档留作藏身之所）。
 
-何形调用：python -X utf8 -B -m pytest tests/unit/test_repo_no_personal_traces.py -q
+何形调用：
+  python -X utf8 -B -m pytest tests/unit/test_repo_no_personal_traces.py -q   # 判（四齿）
+  python -X utf8 -B tests/unit/test_repo_no_personal_traces.py                # 只报差（⛔ 落盘）
+  python -X utf8 -B tests/unit/test_repo_no_personal_traces.py --write        # 现取改基（先印差）
 """
+import io
+import json
 import os
 import re
 import subprocess
+import sys
+import time
+from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASELINE_PATH = os.path.join(ROOT, "tests", "baseline", "personal_traces_baseline.json")
+SCHEMA = "personal-traces-baseline/1"
 
 #: 用户名（碎片拼 · 本档自清）—— 先于下文用
 _U = "fly" + "bo"
@@ -43,41 +63,23 @@ LEGACY = {
     u"组织物之名": re.compile(u"|".join(re.escape(x) for x in _ORG)),
 }
 
-#: 日当值（器取 · 2026-10-08 二次核毕 · pm_1936 §二 之裁 ⓜ）—— **须 ＝ 实**：增 ⇒ 红（⛔ 静增）；
-#: 减 ⇒ 红（一处定形：清了就并降基）。
-#: ⭐ 改基之由（**逐处列毕** · 承 TD_1919 §一「凡报 N 处须先逐处列毕再数」之戒）——
-#:   ① 本机之库根 19 ⇒ 20（8 处 · 盘符 ＋ 库名 之「运行必需」之径）：
-#:      test_vault_root_paired_change(6) ／ core/lib/paths.py(5) ／ scripts/dev/投一步.py(2) ／
-#:      test_tools_path_true_source(2) ／ tools/win_alias_bridge.py(2) ／ scripts/win_pa/静默启动.vbs(1) ／
-#:      test_vault_write_faces(1) ／ tools/scan_heartbeat.mjs(1)。
-#:   ② WSL 之家 1（1 处 · 不变）：test_file_isolation_fix(1)。
-#:   ③ 开发机之根 16 ⇒ 30（20 处 · 产线诸根之径 · 皆「运行必需」）：
-#:      test_pa_feedback_1635(4) ／ scripts/dev/投一步.py(3) ／ test_data_root_1698(2) ／
-#:      test_vault_root_paired_change(2) ／ test_vault_write_faces(2) ／ tools/scan_heartbeat.mjs(2) ／
-#:      tools/win_alias_bridge.py(2) ／ config/v9/vault_write_faces.yaml(1) ／ core/lib/config_helper.py(1) ／
-#:      core/lib/paths.py(1) ／ scripts/dev/safe_edit.py(1) ／ scripts/dev/scan_abs_paths.py(1) ／
-#:      scripts/win_pa/install_win_pa.py(1) ／ scripts/win_pa/netmachine_steps.md(1) ／ shell/main.js(1) ／
-#:      test_pa_face_clean_1853(1) ／ test_pa_first_run(1) ／ test_pa_shell_bridge_1657(1) ／
-#:      test_tools_path_true_source(1) ／ test_vector_center_guard_1694(1)。
-#:   ④ 组织物之名 100 ⇒ 109（31 处 · 面之组织定位：组织名三串）：
-#:      core/pa/gateway_routes.py(16) ／ scripts/win_pa/boot_resume.py(15) ／ config/v9/vault_write_faces.yaml(10) ／
-#:      core/pa/resume_face.py(10) ／ core/pa/env_face.py(8) ／ scripts/dev/投一步.py(6) ／
-#:      scripts/dev/recipes/edit_闸三_tou1.py(4) ／ core/gateway/ui_state.py(3) ／
-#:      docs/reports/platform_publish_workflow.md(3) ／ scripts/dev/查散落浏览器.py(3) ／ web/pa/faces/selfdesc.js(3) ／
-#:      docs/design/v9_pa_capability_pluginization_standard.md(2) ／
-#:      scripts/dev/recipes/edit_1057_元问答话与死件路界与器病.py(2) ／
-#:      scripts/dev/recipes/edit_接线批四_丙己庚.py(2) ／ scripts/dev/scan_abs_paths.py(2) ／
-#:      scripts/win_pa/make_client_bundle.py(2) ／ scripts/win_pa/pa_nowindow.py(2) ／
-#:      scripts/win_pa/stop_win_pa.bat(2) ／ tests/unit/test_pa_kb_col.py(2) ／ core/pa/agent_scan.py(1) ／
-#:      core/routes/skill_routes.py(1) ／ scripts/dev/recipes/edit_1055_源标与拒答与死件直读.py(1) ／
-#:      scripts/dev/scan_line_refs.py(1) ／ scripts/win_pa/netmachine_check.py(1) ／
-#:      scripts/win_pa/task_migrate.py(1) ／ scripts/win_pa/净机安装一页.md(1) ／
-#:      tests/unit/test_pa_faces_lazy.py(1) ／ tests/unit/test_stray_chrome_1898.py(1) ／
-#:      tests/unit/test_today_boot_1852.py(1) ／ tools/win_alias_bridge.py(1) ／ web/pa/faces/sources.js(1)。
-#:   ⭐ 本批之新件 ＋4（**悉在 ④** · 承 pm_1936 §二.2ⓝ 认「正当」）：scripts/dev/查散落浏览器.py(3 ——
-#:      散落实例「归属判」之表 · **功能必需**) ＋ tests/unit/test_stray_chrome_1898.py(1)。
-#:   ⚠ HARD（邮箱 ／ 用户档之径 ／ 裸名）仍 ＝ 0（pm_1936 §二.3ⓜ 之守 · 一手核我之新件皆 0）。
-BASELINE = {u"本机之库根": 20, u"WSL 之家": 1, u"开发机之根": 30, u"组织物之名": 109}
+#: 族之「由」（落基线 · 一处定形）—— 为何 ⛔ 清零，见本档头「二类」。
+FAMILY_WHY = {
+    u"本机之库根": u"运行必需：盘符 ＋ 库名之径（真源表 ／ 径归一之落处）",
+    u"WSL 之家": u"运行必需：WSL 侧「家」之径（径隔离之齿之样）",
+    u"开发机之根": u"运行必需：产线诸根之径（paseo ／ codex ／ npm ／ clawsjoy）",
+    u"组织物之名": u"组织定位：面名三串（组织 ／ 仓 ／ 信箱）—— 面之组织定位所必需",
+}
+POLICY = (u"入仓之守：本仓（tracked）之件 ⛔ 载「个人痕」。"
+          u"HARD（真 PII：个人邮箱 ／ 用户档之径 ／ 裸用户名）须 ＝ 0；"
+          u"LEGACY（运行 ／ 组织版所必需之径与名）**逐件**符基 —— 新增件 ／ 件内之增 ／ 陈旧条目 皆红。")
+NOTE = (u"本档是**逐件白名单**（`族 -> {rel: 数}`），由 tests/unit/test_repo_no_personal_traces.py 读取："
+        u"新增件或件内之增 ⇒ 红（须明书其由）；条目不再复现 ⇒ 红（陈旧 ＝ 噪声掩体 · 清了须并降基）。"
+        u"⚠ 改基唯以本器**现取** —— `python -X utf8 -B tests/unit/test_repo_no_personal_traces.py --write`"
+        u"（⛔ 手抄：手抄之数 ＝ 另刻之实 ⇒ 本尺所治之病即此 · 同「同源同刻」之律）。")
+DECISION_REF = (u"pm_1580 二.4（立齿）／ pm_1936 二（二次核基）／ PM 2054 三.1b（改逐件之判法 · 归端）。")
+
+_CACHE = {}
 
 
 def _tracked(root):
@@ -110,15 +112,134 @@ def scan(root=None):
     return out
 
 
+def _got():
+    u"""一遍之扫（四齿共用 · ⛔ 各扫一遍）。"""
+    if "got" not in _CACHE:
+        _CACHE["got"] = scan()
+    return _CACHE["got"]
+
+
+def ledger(got=None):
+    u"""还 {族: {rel: 数}} —— **逐件**（判据与改基同以此为骨 · 一处定形）。"""
+    got = _got() if got is None else got
+    return {fam: dict(sorted(Counter(rel for rel, _i, _t in got[fam]).items()))
+            for fam in LEGACY}
+
+
+def _load(path=None):
+    with io.open(path or BASELINE_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _base_files(doc):
+    fams = doc.get("families") or {}
+    return {fam: dict((fams.get(fam) or {}).get("files") or {}) for fam in LEGACY}
+
+
+def _baseline_or_fail():
+    assert os.path.exists(BASELINE_PATH), (
+        u"⛔ 基线档缺（%s）⇒ 判据无据。请以本器**现取**（⛔ 手造）：\n"
+        u"    python -X utf8 -B tests/unit/test_repo_no_personal_traces.py --write"
+        % os.path.relpath(BASELINE_PATH, ROOT))
+    doc = _load()
+    assert doc.get("schema") == SCHEMA, u"⛔ 基线之 schema ⛔ 符：%r" % doc.get("schema")
+    return _base_files(doc)
+
+
+def _diff(base, now):
+    u"""还 (新／增, 陈旧／减) —— 逐件比（⛔ 比族之总 · 尺之改即此）。"""
+    add, sub = [], []
+    for fam in LEGACY:
+        b, n = base.get(fam, {}), now.get(fam, {})
+        for rel in sorted(set(b) | set(n)):
+            if n.get(rel, 0) == b.get(rel, 0):
+                continue
+            line = u"%s ｜ %s：%d ⇒ %d" % (fam, rel, b.get(rel, 0), n.get(rel, 0))
+            (add if n.get(rel, 0) > b.get(rel, 0) else sub).append(line)
+    return add, sub
+
+
+def _spots(spec, got=None):
+    u"""spec（`族 ｜ rel`）⇒ 其件之首三处（照实 —— 供判「是否属运行 ／ 组织所必需」）。"""
+    got = _got() if got is None else got
+    fam, _sep, rel = spec.partition(u" ｜ ")
+    return [u"%s:%d  %s" % (r, i, t) for r, i, t in got.get(fam, []) if r == rel][:3]
+
+
 def test_仓内无个人痕():
-    got = scan()
+    u"""旧名保留为锚（PM 2054 ／ CW 2050 皆引此 nodeid）—— 其义今 ＝ **HARD ＝ 0**（真 PII）。
+    旧属此齿之 LEGACY 一族（「族之总 ＝ 基」）⇒ 已拆为 test_旧痕逐件符基 ／ test_基线无陈旧条目。"""
+    got = _got()
     bad = [k for k in HARD if got[k]]
     assert not bad, (u"⛔ 硬 PII 入仓：%s\n" % u"、".join(bad)
                      + u"\n".join(u"  %s:%d  %s" % t for k in bad for t in got[k][:8]))
-    for k in LEGACY:
-        assert len(got[k]) == BASELINE[k], (
-            u"⛔ 旧痕之数 ⛔ 符基（%s）⇒ ⛔ 静增 ／ 静减。\n"
-            u"  当：%s\n  基：%s\n  前三：%s\n"
-            u"  若为正当 ⇒ 请明书并改基（一处定形）") % (
-            k, u"  ".join(u"%s = %d" % (n, len(got[n])) for n in LEGACY), BASELINE,
-            u" · ".join(u"%s:%d" % (r, i) for r, i, _t in got[k][:3]))
+
+
+def test_旧痕逐件符基():
+    u"""新件 ／ 件内之增 ＝ 红（⛔ 静增）—— 逐件比，红时唯指其件。"""
+    got = _got()
+    add, _sub = _diff(_baseline_or_fail(), ledger(got=got))
+    assert not add, (
+        u"⛔ 旧痕有新增件 ／ 件内之增（%d 条）—— 逐条：\n    %s\n"
+        u"  其件之处（照实 · 判其是否「运行 ／ 组织版所必需」）：\n%s\n"
+        u"  若为正当 ⇒ 请以本器**现取**改基（⛔ 手抄 ／ ⛔ 静增）：\n"
+        u"    python -X utf8 -B tests/unit/test_repo_no_personal_traces.py --write\n"
+        u"  若不正当 ⇒ 清其痕（真 PII ⇒ 归 HARD · 须 ＝ 0）。"
+        % (len(add), u"\n    ".join(add),
+           u"\n".join(u"    %s ⇒ %s" % (a, u" ／ ".join(_spots(a, got)) or u"（⛔ 见）")
+                     for a in add)))
+
+
+def test_基线无陈旧条目():
+    u"""陈旧 ＝ 红：条目已 ⛔ 复现而仍留 ⇒ 基线成了噪声掩体（一处定形：清了就并降基）。"""
+    got = _got()
+    _add, sub = _diff(_baseline_or_fail(), ledger(got=got))
+    assert not sub, (
+        u"⛔ 基线有陈旧条目（%d 条）—— 已 ⛔ 复现（件去 ／ 痕清）而条目仍留：\n    %s\n"
+        u"  请以本器**现取**改基（一处定形）：\n"
+        u"    python -X utf8 -B tests/unit/test_repo_no_personal_traces.py --write"
+        % (len(sub), u"\n    ".join(sub)))
+
+
+def test_判据非空转():
+    u"""扫描量之下限（防判据静默空转 —— `git ls-files` 若失手则命中同为 0）。"""
+    tracked = _tracked(ROOT)
+    hits = sum(len(v) for v in _got().values())
+    assert len(tracked) >= 3000, u"扫描件数过少 ⇒ 判据可能空转：%d" % len(tracked)
+    assert hits >= 150, u"命中处过少 ⇒ 判据可能空转：%d" % hits
+
+
+def _cli(argv):
+    got = _got()
+    now = ledger(got=got)
+    base = _base_files(_load()) if os.path.exists(BASELINE_PATH) else {fam: {} for fam in LEGACY}
+    add, sub = _diff(base, now)
+    print(u"[旧痕·逐件] 族之总：%s"
+          % u"  ".join(u"%s=%d" % (f, sum(now[f].values())) for f in LEGACY))
+    print(u"[旧痕·逐件] 件数：%s" % u"  ".join(u"%s=%d" % (f, len(now[f])) for f in LEGACY))
+    print(u"[旧痕·逐件] 新／增 %d 条：%s" % (len(add), u" ／ ".join(add) or u"无"))
+    print(u"[旧痕·逐件] 陈旧／减 %d 条：%s" % (len(sub), u" ／ ".join(sub) or u"无"))
+    if u"--write" not in argv:
+        print(u"（⛔ 未落盘 · 加 --write 方以今之树**现取**改基）")
+        return 0
+    doc = {
+        "schema": SCHEMA,
+        "policy": POLICY,
+        "note": NOTE,
+        "updated": time.strftime("%Y-%m-%d"),
+        "decision_ref": DECISION_REF,
+        "scan": u"git ls-files（tracked · 全仓 · ⛔ 跳二进制）",
+        "hard_must_be": 0,
+        "families": {fam: {"由": FAMILY_WHY[fam], "files": now[fam]} for fam in LEGACY},
+    }
+    d = os.path.dirname(BASELINE_PATH)
+    if d and not os.path.isdir(d):
+        os.makedirs(d)
+    with io.open(BASELINE_PATH, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(doc, ensure_ascii=False, indent=2) + u"\n")
+    print(u"[改基] 已以今之树**现取**落盘：%s" % os.path.relpath(BASELINE_PATH, ROOT))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(_cli(sys.argv[1:]))

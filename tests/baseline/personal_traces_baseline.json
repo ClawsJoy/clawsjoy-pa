@@ -1,0 +1,99 @@
+{
+  "schema": "personal-traces-baseline/1",
+  "policy": "入仓之守：本仓（tracked）之件 ⛔ 载「个人痕」。HARD（真 PII：个人邮箱 ／ 用户档之径 ／ 裸用户名）须 ＝ 0；LEGACY（运行 ／ 组织版所必需之径与名）**逐件**符基 —— 新增件 ／ 件内之增 ／ 陈旧条目 皆红。",
+  "note": "本档是**逐件白名单**（`族 -> {rel: 数}`），由 tests/unit/test_repo_no_personal_traces.py 读取：新增件或件内之增 ⇒ 红（须明书其由）；条目不再复现 ⇒ 红（陈旧 ＝ 噪声掩体 · 清了须并降基）。⚠ 改基唯以本器**现取** —— `python -X utf8 -B tests/unit/test_repo_no_personal_traces.py --write`（⛔ 手抄：手抄之数 ＝ 另刻之实 ⇒ 本尺所治之病即此 · 同「同源同刻」之律）。",
+  "updated": "2026-10-08",
+  "decision_ref": "pm_1580 二.4（立齿）／ pm_1936 二（二次核基）／ PM 2054 三.1b（改逐件之判法 · 归端）。",
+  "scan": "git ls-files（tracked · 全仓 · ⛔ 跳二进制）",
+  "hard_must_be": 0,
+  "families": {
+    "本机之库根": {
+      "由": "运行必需：盘符 ＋ 库名之径（真源表 ／ 径归一之落处）",
+      "files": {
+        "core/lib/paths.py": 5,
+        "scripts/dev/备份轮转_1971.py": 1,
+        "scripts/dev/投一步.py": 2,
+        "scripts/win_pa/静默启动.vbs": 1,
+        "tests/unit/test_tools_path_true_source.py": 2,
+        "tests/unit/test_vault_root_paired_change.py": 6,
+        "tests/unit/test_vault_write_faces.py": 1,
+        "tools/scan_heartbeat.mjs": 1,
+        "tools/win_alias_bridge.py": 2
+      }
+    },
+    "WSL 之家": {
+      "由": "运行必需：WSL 侧「家」之径（径隔离之齿之样）",
+      "files": {
+        "tests/unit/test_file_isolation_fix.py": 1
+      }
+    },
+    "开发机之根": {
+      "由": "运行必需：产线诸根之径（paseo ／ codex ／ npm ／ clawsjoy）",
+      "files": {
+        "config/v9/vault_write_faces.yaml": 1,
+        "core/lib/config_helper.py": 1,
+        "core/lib/paths.py": 1,
+        "scripts/dev/safe_edit.py": 1,
+        "scripts/dev/scan_abs_paths.py": 1,
+        "scripts/dev/备份轮转_1971.py": 1,
+        "scripts/dev/投一步.py": 3,
+        "scripts/win_pa/install_win_pa.py": 1,
+        "scripts/win_pa/netmachine_steps.md": 1,
+        "scripts/win_pa/publish_share.py": 2,
+        "shell/main.js": 1,
+        "tests/unit/test_data_root_1698.py": 2,
+        "tests/unit/test_pa_face_clean_1853.py": 1,
+        "tests/unit/test_pa_feedback_1635.py": 4,
+        "tests/unit/test_pa_first_run.py": 1,
+        "tests/unit/test_pa_first_run_2022.py": 2,
+        "tests/unit/test_pa_human_receipt_2025.py": 1,
+        "tests/unit/test_pa_shell_bridge_1657.py": 1,
+        "tests/unit/test_tools_path_true_source.py": 1,
+        "tests/unit/test_vault_root_paired_change.py": 2,
+        "tests/unit/test_vault_write_faces.py": 2,
+        "tests/unit/test_vector_center_guard_1694.py": 1,
+        "tools/scan_heartbeat.mjs": 2,
+        "tools/win_alias_bridge.py": 2
+      }
+    },
+    "组织物之名": {
+      "由": "组织定位：面名三串（组织 ／ 仓 ／ 信箱）—— 面之组织定位所必需",
+      "files": {
+        "config/v9/vault_write_faces.yaml": 10,
+        "core/gateway/ui_state.py": 3,
+        "core/pa/agent_scan.py": 1,
+        "core/pa/env_face.py": 8,
+        "core/pa/gateway_routes.py": 16,
+        "core/pa/resume_face.py": 10,
+        "core/routes/skill_routes.py": 1,
+        "docs/design/v9_pa_capability_pluginization_standard.md": 2,
+        "docs/reports/platform_publish_workflow.md": 3,
+        "scripts/dev/recipes/edit_1055_源标与拒答与死件直读.py": 1,
+        "scripts/dev/recipes/edit_1057_元问答话与死件路界与器病.py": 2,
+        "scripts/dev/recipes/edit_接线批四_丙己庚.py": 2,
+        "scripts/dev/recipes/edit_闸三_tou1.py": 4,
+        "scripts/dev/scan_abs_paths.py": 2,
+        "scripts/dev/scan_line_refs.py": 1,
+        "scripts/dev/备份轮转_1971.py": 2,
+        "scripts/dev/投一步.py": 6,
+        "scripts/dev/查散落浏览器.py": 3,
+        "scripts/dev/编目_要件入SAG.py": 12,
+        "scripts/win_pa/boot_resume.py": 15,
+        "scripts/win_pa/make_client_bundle.py": 2,
+        "scripts/win_pa/netmachine_check.py": 1,
+        "scripts/win_pa/pa_nowindow.py": 2,
+        "scripts/win_pa/stop_win_pa.bat": 2,
+        "scripts/win_pa/task_migrate.py": 1,
+        "scripts/win_pa/净机安装一页.md": 1,
+        "tests/unit/test_pa_faces_lazy.py": 1,
+        "tests/unit/test_pa_kb_col.py": 2,
+        "tests/unit/test_sag_catalog_1949.py": 13,
+        "tests/unit/test_stray_chrome_1898.py": 1,
+        "tests/unit/test_today_boot_1852.py": 1,
+        "tools/win_alias_bridge.py": 1,
+        "web/pa/faces/selfdesc.js": 4,
+        "web/pa/faces/sources.js": 1
+      }
+    }
+  }
+}
