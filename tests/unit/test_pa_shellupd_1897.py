@@ -26,6 +26,7 @@ u"""令 1886 ／ 1890 ／ 1897 之齿 —— 壳层（桌面程序本体）更�
   F4d 码可查（裁 ⒝）：屏 ⛔ 载码 ∧ `title` ＋ 工程注记载之。
   F5 态之映射 ＋ chip 之文（有新版 ⇒ 现 ／ 已下好 ⇒ 「重启并安装」／ 在办 ⇒ ⛔ 可点 ／ 已是最新 ⇒ ⛔ 现）。
   F5b 进度（`done` ／ `total` ⇒ `pct` ＋ 量级自适应）。
+  F5d 可升态之 `title` 载「有新版本 X ⇒ 点一下 ⇒ 交桌面程序去下装」＋去处（pm_1909 §二.2 之一加）。
   F6 败 ⇒ 人话（含「没装坏 · 可重试」＋ 去处）∧ 未知码 ⇒ `unknown`。
   F7 交出安装 ⇒ 投横幅为 `done` ⇒ 现 ∧ 逾 20 s 自退（DOM）。
   F8 横幅之优先级：壳之「有新版 ／ 已下好」**⛔ 占**；壳之「在办 ／ 交出安装 ／ 败」占；
@@ -597,6 +598,23 @@ def test_F5b_进度与chip():
     assert v["chip"]["failed"].startswith(u"\u2b06 桌面程序更新"), v["chip"]["failed"]
     for k in ("available", "wait", "running", "failed", "launching"):
         assert u"桌面程序" in v["chip"][k], (k, v["chip"][k])
+
+
+def test_F5d_可升态之title载下一步与去处():
+    u"""pm_1909 §二.2 之一加（我之补 · 认）：**可升**态之 `title` 须载「有新版本 X ⇒ 点一下 ⇒
+    交桌面程序去下装」＋**去处** ⇒ 使「点了会怎样」**可查**（承 pa.html:41 之律）。
+
+    判：其数（版号）唯取自**桥之回**（`v.latest` ⇒ ⛔ 硬编 —— 见 `S6` 之 `\\d+\\.\\d+\\.\\d+` 之禁）
+    ∧ **非**可升态 ⛔ 载此句（免各处一句话）。
+    """
+    e = _e2e()
+    t = e["chip_title"]
+    assert u"有新版本" in t, t
+    assert u"9.0.11" in t, u"版号须取自桥之回（v.latest）：" + t
+    assert u"点一下" in t, t
+    assert u"交桌面程序" in t and u"下载并安装" in t, t
+    assert u"去处" in t and u"更多" in t, u"去处须可查：" + t
+    assert u"有新版本" not in e["fail_chip_title"], u"非可升态 ⛔ 载此句：" + e["fail_chip_title"]
 
 
 def test_F5c_无当前版本之人话():

@@ -185,7 +185,14 @@ function paShellUpdRender(v){
     chip.disabled = !v.can_start;
     if(on){
       chip.textContent = paShuChipTxt(v.state);
-      chip.title = '更新桌面程序本体（与内容之版本无关）· 唯由你之点 · ' + PA_SHU_RESTART_NOTE
+      /* ⭐⭐ pm_1909 §二.2 之一加（我之补 · 认）：**可升**态之 `title` 须载「有新版本 X ⇒
+         点一下 ⇒ 交桌面程序去下装」＋**去处** ⇒ 使「点了会怎样」**可查**（承 pa.html:41 之律）。
+         其数（版号）唯取自桥之回（v.latest ⇒ ⛔ 硬编 · 齿钉）∧ ⛔ 行话上屏。 */
+      const mid = (v.state === 'available')
+        ? ('有新版本' + (v.latest ? ('（' + v.latest + '）') : '') + ' ⇒ 点一下 ⇒ 交桌面程序去下载并安装 ·'
+           + ' 去处：详情在「更多 ▾ → 系统」那一行 · ')
+        : '';
+      chip.title = '更新桌面程序本体（与内容之版本无关）· 唯由你之点 · ' + mid + PA_SHU_RESTART_NOTE
                  + (v.code ? (' ｜ 码：' + v.code) : '');
     }
   }
