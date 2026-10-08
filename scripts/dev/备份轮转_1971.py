@@ -19,6 +19,7 @@ u"""台账存底轮转（一次性 · 承 PM 令 `1971` ／ CEO 席 `1968` 之�
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --stage purge --go
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --stage restore --go [--only <件名>]
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --stage read [--json]      # 只读读数（夜办之证物）
+  （`--pattern` 可多次 · 默认**二式**：`.before_*` ＋ `.bak_*` ⇒ 一处定形 · 承 PM `1992 §二.3`）
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --stage repl [--json]      # 主册复现测试（唯一存底之正尺）
   python -X utf8 -B scripts\\dev\\备份轮转_1971.py --self-test
 """
@@ -36,7 +37,8 @@ import zipfile
 
 VAULT = r"D:\Obsidian\ClawsJoy\ClawsJoy"
 DEF_DIR = os.path.join(VAULT, u"内容工坊", u"02_协作", u"信通")
-DEF_PAT = u"投递台账.csv.before_*"
+DEF_PAT = u"投递台账.csv.before_*"          # ⚠ 旧形（单式 · 兼容）
+DEF_PATS = (u"投递台账.csv.before_*", u"投递台账.csv.bak_*")   # ⭐ 二式一器（承 PM `1992 §二.3` 之裁：同 stem ＝ 同族）
 DEF_KEEP = 20
 DEF_ARCH = r"D:\paseo-workspace\_仓\_备份轮转"
 TAG = u"投递台账存底"
@@ -58,11 +60,16 @@ def sha16(p):
     return sha256_file(p)[:16]
 
 
+def _pats(pat):
+    u"""⇒ 归一为元组（`str` ⇒ 单元素）—— ⭐ **二式一器**（承 PM `1992 §二.3`）。"""
+    return (pat,) if isinstance(pat, str) else tuple(pat)
+
+
 def family(d, pat):
     u"""⇒ 该族之件（按 mtime 降序 · 同刻以名定序）。⛔ 收伴生（`.sha256`）。"""
     rows = []
     for n in sorted(os.listdir(d)):
-        if not fnmatch.fnmatch(n, pat) or n.endswith(u".sha256"):
+        if not any(fnmatch.fnmatch(n, p) for p in _pats(pat)) or n.endswith(u".sha256"):
             continue
         p = os.path.join(d, n)
         if not os.path.isfile(p):
@@ -266,6 +273,17 @@ def do_restore(stg, only=None, limit=0):
     return back, skip, fail
 
 
+def _id_key(s):
+    u"""⇒ 号之**归一**（承 PM `1992 §二.4` 之自咬：`77 ≠ 077` ⇒ 假「真唯一」）。
+
+    数字号 ⇒ 去前导零（`int`）｜非数字 ⇒ 原字（`strip`）｜空 ⇒ None。
+    """
+    if not s:
+        return None
+    t = s.strip()
+    return str(int(t)) if t.isdigit() else t
+
+
 def _csv_id(line):
     u"""⇒ 该行之首栏（序号）。解析败 ⇒ None。"""
     try:
@@ -275,13 +293,14 @@ def _csv_id(line):
         return None
 
 
-def replica_test(d, pat=DEF_PAT, main_name=None, now=None):
+def replica_test(d, pat=DEF_PATS, main_name=None, now=None):
     u"""⭐⭐ **主册复现测试**（承 CEO 席 `1983 §二` 之裁）—— 判 append-only 族之「唯一存底」。
 
     尺（**一处出** · 由 CEO 席裁 · ⛔ 沿「族内尺差 ≥10%」之代理）：
       ①（前缀）该快照**逐字节**为主册之前缀 ⇒ **⛔ 唯一存底**（截取即复得）；
       ②（行集）非前缀 ⇒ 逐行核（**剥 BOM**）：其行皆在主册 ⇒ **⛔ 唯一存底**；
         异行之序号皆在主册 ⇒ **⛔ 唯一存底**（同号之早稿）；
+        ⚠ **表头之号（`序号`）⛔ 计「数据行」**（列后加（如 `时点`）⇒ 旧快照表头必异 ⇒ 假阳；计入 `hdr_only`）；
         若有行之序号**不在主册** ⇒ ⭐ **真·唯一存底**。
     由：CEO 一手（`1983 §一.3`）—— 该族逐件测 ⇒ 真·唯一存底 `0`；其「甲」标系**尺之差**
         （假阳之根 ＝ 主册首栏带 `\\ufeff`（BOM）⇒ 逐字节必异）。
@@ -295,8 +314,9 @@ def replica_test(d, pat=DEF_PAT, main_name=None, now=None):
     mb = io.open(mp, "rb").read()
     mlines = [x.rstrip(u"\r") for x in mb.decode("utf-8-sig", errors="replace").splitlines()]
     mset = set(mlines)
-    mids = set(x for x in (_csv_id(y) for y in mlines[1:]) if x)
-    n = {"prefix": 0, "rowset": 0, "early": 0, "real": 0, "bom": 0}
+    hid = _id_key(_csv_id(mlines[0])) if mlines else None   # ⭐ 主册表头之号（`序号`）⇒ 快照之表头 ⛔ 计「数据行」
+    mids = set(x for x in (_id_key(_csv_id(y)) for y in mlines[1:]) if x)
+    n = {"prefix": 0, "rowset": 0, "early": 0, "real": 0, "bom": 0, "hdr": 0}
     det = []
     for r in rows:
         b = io.open(r["p"], "rb").read()
@@ -313,18 +333,21 @@ def replica_test(d, pat=DEF_PAT, main_name=None, now=None):
                 if bom:
                     n["bom"] += 1
             else:
-                bad = [i for i in (_csv_id(x) for x in diff) if i and i not in mids]
+                nh = sum(1 for x in diff if hid and _id_key(_csv_id(x)) == hid)
+                bad = [i for i in (_id_key(_csv_id(x)) for x in diff) if i and i != hid and i not in mids]
+                tail = u"（含表头异 %d 行 · ⛔ 计）" % nh if nh else u""
                 if bad:
-                    v, ev = u"⭐ 真唯一存底", u"异 %d 行 · 序号不在主册：%s" % (len(diff), u"、".join(bad[:5]))
+                    v, ev = u"⭐ 真唯一存底", u"异 %d 行%s · 序号不在主册：%s" % (len(diff), tail, u"、".join(bad[:5]))
                     n["real"] += 1
                 else:
-                    v, ev = u"⛔ 同号早稿", u"异 %d 行 · 其序号皆在主册" % len(diff)
+                    v, ev = u"⛔ 同号早稿", u"异 %d 行%s · 其序号皆在主册" % (len(diff), tail)
                     n["early"] += 1
+                n["hdr"] += nh
         det.append({"n": r["n"], "size": r["size"], "bom": bom, "verdict": v, "evidence": ev})
     return {"at": at, "dir": d, "main": mp, "main_bytes": len(mb), "main_lines": len(mlines),
-            "pattern": pat, "n": len(rows), "bytes": sum(x["size"] for x in rows),
+            "pattern": u" ∨ ".join(_pats(pat)), "n": len(rows), "bytes": sum(x["size"] for x in rows),
             "prefix": n["prefix"], "rowset": n["rowset"], "early": n["early"],
-            "bom_only": n["bom"], "real_unique": n["real"], "det": det}
+            "bom_only": n["bom"], "real_unique": n["real"], "hdr_only": n["hdr"], "det": det}
 
 
 def report(rows, keep, title):
@@ -460,6 +483,31 @@ def self_test():
         c(u"复现：前缀 1 ／ 行集 1 ／ 早稿 1", rp["prefix"] == 1 and rp["rowset"] == 1 and rp["early"] == 1)
         c(u"复现：BOM 假阳 1", rp["bom_only"] == 1)
         c(u"复现：只读（盘上不动）", len(family(root3, u"投递台账.csv.before_*")) == 4)
+        # ⒤ 号形归一 ＋ 正控 ＋ 二式一器（承 PM `1992 §二.3`／`§二.4`／`§三`）
+        root4 = os.path.join(root, u"d")
+        os.makedirs(root4, exist_ok=True)
+        ml4 = [u"序号,日期", u"001,a", u"077,b"]
+        io.open(os.path.join(root4, u"投递台账.csv"), "wb").write(
+            (u"\n".join(ml4) + u"\n").encode("utf-8"))
+        def _w4(nm, sv):
+            io.open(os.path.join(root4, nm), "wb").write(sv.encode("utf-8"))
+        _w4(u"投递台账.csv.before_000000000000000e", ml4[0] + u"\n001,a\n")                     # 前缀
+        _w4(u"投递台账.csv.before_000000000000000f", ml4[0] + u"\n001,a\n77,b\n")              # 号形之差（归一 ⇒ 早稿）
+        _w4(u"投递台账.csv.before_0000000000000010", ml4[0] + u"\n001,a\n077,b\n断行无序号\n")   # 误写态之形 ⇒ 真唯一
+        rp4 = replica_test(root4, u"投递台账.csv.before_*", now=1700000000)
+        c(u"归一二验：号形之差（77 vs 077）⇒ 早稿 ⛔ 计真唯一", rp4[u"early"] == 1)
+        c(u"正控：断行（无序号）⇒ 真唯一 1（rc 7 须护）", rp4[u"real_unique"] == 1)
+        # ␥ 表头异 ⇒ ⛔ 计真唯一（假阳之根 · 承 PM `1992 §三` 之验）
+        root5 = os.path.join(root, u"e")
+        os.makedirs(root5, exist_ok=True)
+        io.open(os.path.join(root5, u"投递台账.csv"), "wb").write((u"\n".join(ml4) + u"\n").encode("utf-8"))
+        io.open(os.path.join(root5, u"投递台账.csv.before_0000000000000011"), "wb").write((ml4[0] + u",备注\n001,a\n").encode("utf-8"))
+        io.open(os.path.join(root5, u"投递台账.csv.before_0000000000000012"), "wb").write((ml4[0] + u",备注\n001,a\n断行无序号\n").encode("utf-8"))
+        rp5 = replica_test(root5, u"投递台账.csv.before_*", now=1700000000)
+        c(u"表头异 ⛔ 计真唯一（假阳之根）", rp5[u"real_unique"] == 1 and rp5[u"hdr_only"] == 2 and rp5[u"early"] == 1)
+        _w4(u"投递台账.csv.bak_20260925_1318_误写态_x", ml4[0] + u"\n001,a\n077,b\n9,z\n")
+        c(u"二式一器：.bak_* 入族 ⇒ 4", len(family(root4, DEF_PATS)) == 4)
+        c(u"旧 glob 唯 .before_ ⇒ 3（⛔ 破兼容）", len(family(root4, u"投递台账.csv.before_*")) == 3)
         c(u"读数齿只读（盘上 ⛔ 变）", snap0 == snap1)
     finally:
         shutil.rmtree(root, ignore_errors=True)
@@ -473,7 +521,8 @@ def self_test():
 def main(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default=DEF_DIR)
-    ap.add_argument("--pattern", default=DEF_PAT)
+    ap.add_argument("--pattern", action="append", default=None,
+                    help=u"族之 glob（可多次 · 默认二式：`.before_*` ＋ `.bak_*`）")
     ap.add_argument("--keep", type=int, default=DEF_KEEP)
     ap.add_argument("--arch", default=DEF_ARCH)
     ap.add_argument("--stage", default=u"dry",
@@ -485,6 +534,7 @@ def main(argv):
     ap.add_argument("--main", default=DEF_MAIN, help=u"主册之名（`repl` 用）")
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args(argv)
+    pats = tuple(a.pattern) if a.pattern else DEF_PATS
     if a.self_test:
         return self_test()
     if not os.path.isdir(a.dir):
@@ -492,7 +542,7 @@ def main(argv):
         return 2
     day = time.strftime("%Y%m%d")
     if a.stage == u"repl":
-        rr = replica_test(a.dir, a.pattern, a.main)
+        rr = replica_test(a.dir, pats, a.main)
         if a.json:
             print(json.dumps(rr, ensure_ascii=False))
             return 0 if rr.get("real_unique", -1) == 0 else 7
@@ -508,7 +558,7 @@ def main(argv):
         print(u"   ⚠ 本数系**一刻之读**（族为活）｜⛔ 唯一存底 ＝ 内容别无可替（⛔ 尺差代理）")
         return 0 if rr["real_unique"] == 0 else 7
     if a.stage == u"read":
-        rr = read_report(a.dir, a.pattern, a.keep, a.arch)
+        rr = read_report(a.dir, pats, a.keep, a.arch)
         if a.json:
             print(json.dumps(rr, ensure_ascii=False))
             return 0
@@ -523,8 +573,8 @@ def main(argv):
                      _l["bytes"] / 1048576.0)) if _l else u"（无）"))
         print(u"   ⚠ 本数系**一刻之读**（族为活）｜⛔ 以此为「率」（率须书**窗** ＋ **形**）")
         return 0
-    rows = family(a.dir, a.pattern)
-    k, r = report(rows, a.keep, u"[读] %s ／ %s" % (a.dir, a.pattern))
+    rows = family(a.dir, pats)
+    k, r = report(rows, a.keep, u"[读] %s ／ %s" % (a.dir, u" ∨ ".join(pats)))
     if a.stage == u"dry" or not a.go:
         return 0
     if a.stage == u"archive":
@@ -550,7 +600,7 @@ def main(argv):
                  sum(x["size"] for x in back) / 1048576.0))
         for x in rfail[:5]:
             print(u"   ⚠ %s ⇒ %s" % x)
-        left = family(a.dir, a.pattern)
+        left = family(a.dir, pats)
         print(u"[复量] 族今 %d 枚 ／ %.1f MiB" % (len(left), sum(x["size"] for x in left) / 1048576.0))
         return 0 if not rfail else 6
     t0 = time.time()
@@ -560,7 +610,7 @@ def main(argv):
              sum(x["size"] for x in done) / 1048576.0, time.time() - t0))
     for x in fail[:5]:
         print(u"   ⚠ %s ⇒ %s" % x)
-    left = family(a.dir, a.pattern)
+    left = family(a.dir, pats)
     print(u"[复量] 族今 %d 枚 ／ %.1f MiB" % (len(left), sum(x["size"] for x in left) / 1048576.0))
     return 0 if not fail else 6
 

@@ -138,3 +138,22 @@ def test_主册复现测试之尺(tmp_path):
     assert r[u"prefix"] == 1 and r[u"rowset"] == 1 and r[u"early"] == 1 and r[u"bom_only"] == 1
     assert sorted(os.listdir(d)) == before
     assert m.replica_test(d, u"投递台账.csv.before_*")[u"main_lines"] == 3
+
+
+def test_表头异不计真唯一(tmp_path):
+    u"""假阳之根（PM `1992 §三` 之验）：旧快照表头异（列后加 如 `时点`）⇒ ⛔ 计真唯一。"""
+    m = _load()
+    d = os.path.join(str(tmp_path), u"hdr")
+    os.makedirs(d)
+    ls = [u"序号,日期,发件,收件", u"001,a,b,c", u"002,d,e,f"]
+    t = u"\n".join(ls) + u"\n"
+
+    def _w(nm, sv):
+        with io.open(os.path.join(d, nm), "wb") as f:
+            f.write(sv.encode("utf-8"))
+
+    _w(u"投递台账.csv", t)
+    _w(u"投递台账.csv.before_0000000000000001", ls[0] + u",时点\n001,a,b,c\n")
+    _w(u"投递台账.csv.before_0000000000000002", ls[0] + u",时点\n001,a,b,c\n断行无号\n")
+    r = m.replica_test(d, m.DEF_PAT)
+    assert r[u"n"] == 2 and r[u"real_unique"] == 1 and r[u"hdr_only"] == 2 and r[u"early"] == 1
