@@ -52,11 +52,17 @@ function paKeyStateText(kstate, configured){
       `paEngCleanDrawer`（`selfdesc.js:1048`）就地把 `#paMorePanel` 内之文案之引剥去，而**其径 ＝
       直改文字节之 `nodeValue`**（`:1063`）⇒ 凡以 `textContent` 为 spy 者**逮之不得**（我之器曾误判为「谜」）；
       且其剥后**留「（）」残** ⇒ 用户面之字**随刻而二**（⛔ 一处定形）⇒ 故其引**唯留源码**（本件 L2 ／ L15），⛔ 入屏。 */
+function paKeyNoticeTip(p){
+  if(!p) return '源：GET /v9/pa/providers（只读）';
+  const env = String(p.key_env == null ? '' : p.key_env);
+  return '源：GET /v9/pa/providers · 密钥之行：' + (env || '（未给）')
+       + ' · 落处：本机 .env';
+}
 function paKeyNoticeText(p){
   if(!p || !p.id) return '密钥：先选供应商 —— 本面唯显「已配 ／ 未配 ／ 不需」（⛔ 值 · ⛔ 掩码）。';
   const env = String(p.key_env == null ? '' : p.key_env);
-  if(!env) return '此供应商 ⛔ 需密钥（后端 `key_env` 未给 —— 如本机 Ollama）⇒ 本面 ⛔ 可填 ／ 清。';
-  return '所填之密钥唯落本机（后端之 `.env` 之 `' + env + '` 之行）· ⛔ 上屏 ／ ⛔ 掩码 ／ ⛔ 入日志 ／ ⛔ 出机。';
+  if(!env) return '此供应商不需密钥（如本机 Ollama）⇒ 本面不可填 ／ 清。';
+  return '所填之密钥只落本机一处 · 不上屏 ／ 不留掩码 ／ 不写日志 ／ 不出机。';
 }
 
 /* ⭐ **一处定形**（纯函）：`GET /v9/pa/providers` 之 `providers[]` ⇒ 本面之行（**唯取后端 · ⛔ 造项**）。 */
@@ -81,7 +87,7 @@ function paKeyWritable(p){ return !!(p && p.id && p.key_env); }
    ⚠ 其 `why` **⛔ 含值**（值 ⛔ 入此函 —— 承守⒞）。 */
 function paKeyGate(p, raw, clearing){
   if(!p || !p.id) return {ok: false, act: null, why: '先选供应商'};
-  if(!p.key_env) return {ok: false, act: null, why: '此供应商 ⛔ 需密钥（`key_env` 未给 —— 如本机 Ollama）'};
+  if(!p.key_env) return {ok: false, act: null, why: '此供应商不需密钥（如本机 Ollama）'};
   if(clearing) return {ok: true, act: 'cleared', why: ''};
   if(!String(raw == null ? '' : raw).trim())
     return {ok: false, act: null, why: '密钥 ⛔ 空（填 ／ 换须有值；清 ⇒ 用「清」键）'};
@@ -101,7 +107,7 @@ function paKeyMsgText(res, p){
   const act = (o.action === 'cleared') ? '已清' : '已落';
   const nm = (p && (p.label || p.id)) || String(o.provider || '—');
   const env = (p && p.key_env) || String(o.key_env || '');
-  return act + '：' + nm + (env ? ('（' + env + '）') : '') + ' ⇒ 态 '
+  return act + '：' + nm + ' ⇒ 态 '
        + paKeyStateText(o.key_state, o.key_configured);
 }
 
@@ -110,18 +116,18 @@ function paKeyErrFace(status, error){
   const s = Number(status || 0);
   const e = String(error == null ? '' : error).trim();
   if(s === 403) return '令牌失效（一次性令牌过期 ／ 已用）⇒ 重领令牌后再试；仍败 ⇒ ' + PA_KEY_OUTLET;
-  if(s === 404 || s === 501) return '后端 ⛔ 挂此端（HTTP ' + s + '）⇒ 报「密钥界面之端未挂」（⛔ 等于「密钥坏」）';
-  if(!s) return '连不上本机后端 ⇒ 看服务窗口是否在运行（⛔ 等于「密钥坏」）';
-  return '密钥 ⛔ 落（HTTP ' + s + '）' + (e ? ('：' + e) : ' ⇒ 照实（后端 ⛔ 给因）') + '｜' + PA_KEY_OUTLET;
+  if(s === 404 || s === 501) return '密钥界面之端本机还没挂（' + s + '）⇒ 不等于「密钥坏」';
+  if(!s) return '连不上本机服务 ⇒ 看服务窗口是否在运行（不等于「密钥坏」）';
+  return '密钥没落成（' + s + '）' + (e ? ('：' + e) : ' ⇒ 照实（本机没给因）') + '｜' + PA_KEY_OUTLET;
 }
 
 /* ⭐ **一处定形**（纯函）：读数之面（**照实** —— 承 L103 ／ L1052「未应答之义 ≠ 0 行之义」）。 */
 function paKeyReadFace(status, j){
   const s = Number(status || 0);
-  if(!s) return '连不上本机后端（GET /v9/pa/providers 未答）⇒ 看服务窗口是否在运行';
-  if(s === 404 || s === 501) return '后端 ⛔ 挂 GET /v9/pa/providers（HTTP ' + s + '）⇒ 照实（⛔ 当「无供应商」）';
-  if(!(j && j.ok === true)) return 'GET /v9/pa/providers 回 HTTP ' + s + ' 而 ⛔ 形（⛔ 当 0 项）';
-  if(!Array.isArray(j.providers)) return 'GET /v9/pa/providers 回 200 而无 providers[]（⛔ 猜 ／ ⛔ 当 0 项）';
+  if(!s) return '连不上本机服务（供应商清单未答）⇒ 看服务窗口是否在运行';
+  if(s === 404 || s === 501) return '供应商清单之端本机还没挂（' + s + '）⇒ 照实（不当「无供应商」）';
+  if(!(j && j.ok === true)) return '供应商清单回了 ' + s + ' 而不合形（不当 0 项）';
+  if(!Array.isArray(j.providers)) return '供应商清单回了 200 而无清单体（不猜 ／ 不当 0 项）';
   return '';
 }
 
@@ -179,13 +185,14 @@ function paKeyPaint(){
   paKeyFill();
   const p = paKeySel();
   const nt = paKeyEl('paKeyNotice');
-  if(nt) nt.textContent = (paKeyRun.state === 'unread')
-    ? '密钥之去处明书：读数中（GET /v9/pa/providers）…'
-    : paKeyNoticeText(p);
+  if(nt){
+    nt.textContent = (paKeyRun.state === 'unread') ? '密钥之去处明书：读数中…' : paKeyNoticeText(p);
+    nt.title = paKeyNoticeTip(p);
+  }
   const now = paKeyEl('paKeyNow');
   if(now) now.textContent = p ? ('态 ' + paKeyStateText(p.key_state, p.key_configured)) : '态 —（未选）';
   const msg = paKeyEl('paKeyMsg');
-  if(msg) msg.textContent = paKeyRun.msg ? String(paKeyRun.msg) : '';
+  if(msg){ msg.textContent = paKeyRun.msg ? String(paKeyRun.msg) : ''; msg.title = paKeyRun.msg ? '' : ''; }
   const bSet = paKeyEl('paKeySet'), bClr = paKeyEl('paKeyClear');
   const w = paKeyWritable(p);
   if(bSet){
@@ -243,7 +250,7 @@ async function paKeySend(clearing){
     let yes = false;
     if(typeof window !== 'undefined' && window.confirm){
       yes = window.confirm('清「' + nm + '」之密钥行（' + (p.key_env || '—') + '）？\n\n'
-                         + '此动删后端 `.env` 之其行 ⇒ 该供应商即不可用（可再填）。继续？');
+                         + '此动删后端 .env 之其行 ⇒ 该供应商即不可用（可再填）。继续？');
     }
     if(!yes){ paKeyRun.msg = '清：已取消（⛔ 未发端）'; paKeyPaint(); return null; }
   }

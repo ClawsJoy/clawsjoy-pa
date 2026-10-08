@@ -116,6 +116,10 @@ const ACTION_SEMANTIC={
   read_file:'读取文件', list_dir:'查看目录', search_files:'搜索文件',
   write_file:'写入文件', wps_office:'处理文档',
   pa_audit:'评审校验',
+  // ⭐ pm_2061 §三.1⒜（物⒈ 真迹上屏）：**本机族之口**
+  //   —— `pa_read` ／ `note_kb` ／ `file_center` 等本已登记于 `_TOOL_REGISTRY`
+  //   而本表缺之 ⇒ 落兜底「执行操作」 ⇒ 用户**辨不出它做了什么**。
+  pa_read:'读本机记录', note_kb:'整理笔记', file_center:'核对交付件',
   lingxi:'灵犀排版',
   execute_command:'执行操作',
   browser_local:'操作浏览器', playwright_browser:'操作浏览器', browser_hybrid:'操作浏览器',
@@ -143,6 +147,56 @@ function semanticArg(tool, arg){
   }
   return null;
 }
+
+/* ⭐⭐ pm_2061 §三.1（物⒈ 真迹上屏）—— 工具步之「回了什么（摘要）」＋「可否退」。
+   律：⒜ 摘要**唯取端之 `tool_steps[].result`** ⇒ 端⛔ 给即 ⛔ 现本段
+       （⛔ 造其辞 ╱ ⛔ 补其数 —— pm_2061 §三.1⒝）；
+   ⒝ 屏上**唯人话** —— 端之回若含本机之径 ╱ 件号 ⇒ 先剔之（原文逐字入 `title`）
+       （pm_2061 §二.2 之界）；
+   ⒞ 可否退**唯照实** —— 只读之族 ⇒ 明书「未动你的件」；
+       余者 **⛔ 许「可撤」之妄诺**（写类之步 ⛔ 必可退 ⇒ 只可书「动过了」）。 */
+const PA_STEP_SUM_MAX = 20;
+const PA_STEP_RO_TOOLS = ['read_file','list_dir','search_files','query_index','fetch_web','browse_web',
+                          'web_search','table_extract','pa_read','pa_audit','obsidian_knowledge','file_center'];
+function paStepReadOnly(tool){ return PA_STEP_RO_TOOLS.indexOf(String(tool||'')) >= 0; }
+function paStepUndoText(tool){
+  return paStepReadOnly(tool) ? '（这一步只读 · 未动你的件）'
+                              : '（本步动过你的件 —— 要复核就说一声）';
+}
+function paStepSummary(result){
+  const r = String(result == null ? '' : result);
+  if(!r.trim()) return '';
+  let head = r.split(/\r?\n/)[0].replace(/\s+/g, ' ').trim();
+  head = head.replace(/[A-Za-z]:[\\\/][^\s，。；、）】]*/g, ' ');
+  head = head.replace(/\S{0,40}\.(?:jsonl|json|py|js|ts|md|txt|log|yaml|yml|csv|png|jpg|pptx|docx)\b/gi, ' ');
+  head = head.replace(/[\s·，。；、：:|—-]+/g, ' ').trim();
+  if(!head) return '（回了内容 —— 原文在下方「来源 ／ 详情」内）';
+  return head.length > PA_STEP_SUM_MAX ? (head.slice(0, PA_STEP_SUM_MAX) + '…') : head;
+}
+/* ⭐ 一处定形：**陪伴轴**之不实之辞标（回执之 `channel.untrue_wording`）⇒ 面之人话块。
+   端之真样（`core/pa/gateway_routes.py::pa_dialog`）：`channel.untrue_wording == [命中之辞…]`
+   （⛔ 布尔 ╱ ⛔ 自判 —— 面唯引用；端 ⛔ 给 ╱ 空表 ⇒ ⛔ 现）。
+   其工程之据（原键 ╱ 真源）入 `title`（pm_2061 §二.2 之界）。 */
+function paUntrueWordingView(d){
+  const ch = (d && d.channel && typeof d.channel === 'object') ? d.channel : null;
+  const raw = (ch && Array.isArray(ch.untrue_wording)) ? ch.untrue_wording : [];
+  const hits = raw.map(function(x){ return String(x == null ? '' : x).trim(); }).filter(function(x){ return x; });
+  if(!hits.length) return {show:false, text:'', eng:''};
+  const n = hits.join(' ／ ');
+  return {show:true,
+    text: '⚠ 本轮之回话里有「未做而似做」之词（' + n
+        + '）—— 本轮没有真调，下面这些字不作数 · 请当「待核实」看。',
+    eng: 'untrue_wording=' + n + '（真源：回执 channel.untrue_wording）'};
+}
+/* ⭐ 一处定形（人话块之落地）：命中 ⇒ 一行入线程（`paRunLog`）。
+   其工程之据 ⇒ `title`（可查 · ⛔ 上屏 · ⛔ 丢真源）；存入对话档 ⇒ 刷新后仍可回看。 */
+function paUntrueWordingRender(d){
+  const v = paUntrueWordingView(d);
+  if(!v.show) return v;
+  if(typeof paRunLog === 'function') paRunLog(v.text, 'warn', true, v.eng);
+  return v;
+}
+try{ window.paUntrueWordingView = paUntrueWordingView; window.paUntrueWordingRender = paUntrueWordingRender; }catch(e){}
 
 /* ===== 批78 选项a：带上下文的语义阶段（纯函数，可脱离浏览器验）=====
    ctx 四源中本批用前三源：工具入参 arg / 计划步骤 / 会话已知产物。

@@ -62,7 +62,7 @@
     <button class="chip" id="paShellUpdGo" onclick="paShellUpdGo()" style="display:none;flex:0 0 auto" disabled
             title="更新桌面程序本体（与内容之版本无关 · 唯在桌面程序内可用 · 唯由你之点）">⬆ 桌面程序更新</button>
     <span class="chip" id="paKeyBtn" onclick="paKeyOpen()" title="密钥（模型供应商 · 唯落本机）：填 ／ 换 ／ 清 —— 值 ⛔ 上屏 ／ ⛔ 掩码 ／ ⛔ 入日志 ／ ⛔ 出机">🔑 密钥</span>
-    <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · ⛔ 出机）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
+    <span class="chip" id="paFbBtn" onclick="paFbOpen()" title="留言板（内测 · 不出机）：写给我们的留言 ＋ 随件之诊断 —— 只存在你这台机器上（我们上门取 ∨ 你自己复制给我们）">✉ 留言</span>
     <span class="chip" id="paMoreBtn" onclick="paMore(true)" title="更多：轨迹 ／ 产出 ／ 文件 ／ 模式 ／ 常驻 ／ 系统 ／ 设置 ／ 私面（各一步可达）">更多 ▾</span>
     <span class="chip" id="drawerRightBtn" onclick="paSettings()" title="设置（老板 ／ 配置 ／ 建档）">⚙ 设置</span>
     <!-- ⭐⭐ pm_1855（承 pm_1853 §一.1）：首屏 ⛔ 载机器号（`web_…`）——
@@ -86,12 +86,12 @@
 <!-- 更多 ▾（折叠收纳所 · 承 pm_997 §四；⛔ 主面环不占位） -->
 <div class="more" id="paMorePanel" hidden>
   <div class="morebox">
-    <div class="morehead"><b>更多</b><span class="hint">折叠收纳所 · 各一步可达 · ⛔ 丢功能</span><span class="x" onclick="paMore(false)" title="关闭">✕</span></div>
+    <div class="morehead"><b>更多</b><span class="hint">折叠收纳所 · 各一步可达 · 功能不减</span><span class="x" onclick="paMore(false)" title="关闭">✕</span></div>
     <div class="morebody" id="paMoreBody">
 
       <details class="mgrp" id="paMoreGrpDo"><summary>① 做 · 轨迹 ／ 产出 ／ 文件</summary>
       <section class="msec" id="paMoreTrail"><h6>轨迹</h6>
-        <p class="mnote">真源：<code>GET /v9/pes/runs</code>（run 投影）＋ 会话内任务时间轴（<code>#timeline</code>）。</p>
+        <p class="mnote" title="真源：GET /v9/pes/runs（run 投影）＋ 会话内任务时间轴（#timeline）">来源：本机跑批记录 ＋ 本页会话内的任务时间轴。</p>
         <div class="timeline" id="timeline">
           <div class="tl-head">
             <span class="tl-title">📋 任务时间轴</span>
@@ -118,7 +118,7 @@
       </section>
 
       <section class="msec" id="paMoreDeliver"><h6>产出</h6>
-        <p class="mnote">真源：<code>GET /v9/plans/list</code>（计划资产）＋ 卡片出口 <code>#paCards</code>。</p>
+        <p class="mnote" title="真源：GET /v9/plans/list（计划资产）＋ 卡片出口 #paCards">来源：本机计划资产 ＋ 本页卡片区。</p>
         <div id="paMorePlansSrc" class="msrc">读数中…</div>
         <div class="lwrap">
           <div class="lfind"><input id="paPlanQ" oninput="paPlanFilter()" placeholder="筛：种类 ／ 会话 ／ 文件名…"><select id="paPlanKind" onchange="paPlanFilter()"><option value="">全部种类</option></select><span class="lcnt" id="paPlanCnt">—</span></div>
@@ -129,7 +129,7 @@
       </section>
 
       <section class="msec" id="paMoreFiles"><h6>文件</h6>
-        <p class="mnote">真源：<code>POST /v9/sandbox/list</code>（读义 POST）。</p>
+        <p class="mnote" title="真源：POST /v9/sandbox/list（读义）">来源：本机工作区文件面。</p>
         <div class="fsrc" id="fileSrc" title=""></div>
         <div class="lwrap">
           <div class="lfind"><input id="paFileQ" oninput="paFileFilter()" placeholder="筛：文件名…"><span class="lcnt" id="paFileCnt">—</span></div>
@@ -140,13 +140,13 @@
       </details>
       <details class="mgrp" id="paMoreGrpCtl"><summary>② 控 · 工具 ／ 模式 ／ 常驻 ／ 权限</summary>
       <section class="msec" id="paMoreTools"><h6>工具</h6>
-        <p class="mnote">口径面板 <code>/v9/pa/caliber</code> ｜ 授权面板 <code>/v9/pa/proxy/gate</code> ／ <code>/v9/pa/permission</code>。</p>
+        <p class="mnote" title="真源：口径 /v9/pa/caliber ｜ 授权 /v9/pa/proxy/gate ／ /v9/pa/permission">口径面板 ｜ 授权面板。</p>
         <div id="caliberPanel" class="cbpanel"></div>
         <div id="permPanel" class="cbpanel"></div>
       </section>
 
       <section class="msec" id="paMoreModes"><h6>模式（领域／场景条 · 折叠）</h6>
-        <p class="mnote">⛔ 常驻平铺（原 ≥ 5 项同屏）⇒ 折叠于此。</p>
+        <p class="mnote">不常驻平铺（原 ≥ 5 项同屏）⇒ 折叠于此。</p>
         <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_997 §四.1</div></details>
         <details class="msub" id="paMoreModeList"><summary>模式（8 项 · 点开）</summary>
           <div class="modes" id="modes"></div>
@@ -162,25 +162,25 @@
       </section>
 
       <section class="msec" id="paMoreDuty"><h6>常驻（F5 形态与口径）</h6>
-        <p class="mnote">真读数须后端方有 ⇒ 四态各明标（一处定形 · 承 core.js:73-84（锚：「四态（唯此一处）」之块 · 即 PA_STALE 之注））：⒜ 未接 · 待办（M1） ｜ ⒝ ⛔ 不接（其 kind：红线 ／ 已转产品线 ／ 无后端面） ｜ ⒞ 不可达（特形 ＝ 回退支：后端应答在 · 唯键不在） ｜ ⭐ ⒟ 陈旧（数是真的 · 刻是旧的）· ⛔ 以「未接」一名盖之 · ⛔ 冒真读数。</p>
-        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 L76</div></details>
+        <p class="mnote">真读数须本机在答方有 ⇒ 四态各明标：⒜ 未接（待办）｜ ⒝ 不接（红线 ／ 已转产品线 ／ 本机没这一面）｜ ⒞ 不可达（应答在 · 唯键不在）｜ ⒟ 陈旧（数是真的 · 刻是旧的）。不以「未接」一名盖之 · 不冒真读数。</p>
+        <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 L76 · 一处定形：承 core.js:73-84（锚：「四态（唯此一处）」之块 · 即 PA_STALE 之注）｜⒝ 之 kind：红线 ／ 已转产品线 ／ 无后端面。</div></details>
         <div class="duty" id="paDuty">
-          <div class="r"><span class="k">托盘</span><span>⛔ 不接（无后端面：常驻的是壳与调度 · ⛔ 模型 · 真源 ＝ Electron 壳（HKCU\...\Run ／ 壳之菜单）· PA 后端 ⛔ 持此值 ⇒ ⛔ 冒真读数）</span></div>
-          <div class="r"><span class="k">自启</span><span>⛔ 不接（无后端面：默认开 ＋ 设置里一键关（首启问一次）· 其面已读（GET /v9/pa/resume · version 2026-10-05.2 · 22 键）· 唯不含自启之值（其键皆断点续）⇒ 真源 ＝ 壳 ／ 注册表（HKCU\...\Run）⇒ 候「壳行为之实做」立项 ⇒ 一并开面）</span></div>
-          <div class="r"><span class="k">关窗</span><span>⛔ 不接（无后端面：真源 ＝ Electron 壳（默认隐到托盘 · ≠退出）· PA 后端 ⛔ 持此值）</span></div>
-          <div class="r"><span class="k">夜间整合</span><span title="真源 ＝ Electron 壳 ／ 调度（轻量路径 · ⛔ 抢显卡 · 与出图互斥检测）· PA 后端 ⛔ 持此值｜运行期之文见 today.js:413（paLoadToday 内）⇒ 本行静文 ≡ 其渲形（承 pm 1297 §三①）">暂无（本机版还没接这一项）</span></div>
+          <div class="r"><span class="k">托盘</span><span title="真源 ＝ Electron 壳（HKCU\...\Run ／ 壳之菜单）· PA 后端不持此值">不接（本机没这一面：常驻的是桌面程序与调度 · 不涉模型 ⇒ 不冒真读数）</span></div>
+          <div class="r"><span class="k">自启</span><span title="其面已读：GET /v9/pa/resume · version 2026-10-05.2 · 22 键 · 唯不含自启之值（其键皆断点续）⇒ 真源 ＝ 壳 ／ 注册表（HKCU\...\Run）">不接（本机没这一面：默认开 ＋ 设置里一键关（首启问一次）· 断点续之读数已读得到 ⇒ 候这一面开工 ⇒ 一并开面）</span></div>
+          <div class="r"><span class="k">关窗</span><span title="真源 ＝ Electron 壳（默认隐到托盘 · ≠退出）· PA 后端不持此值">不接（本机没这一面：默认隐到托盘 · 不是退出）</span></div>
+          <div class="r"><span class="k">夜间整合</span><span title="真源 ＝ Electron 壳 ／ 调度（轻量路径 · 不抢显卡 · 与出图互斥检测）· PA 后端 不持此值｜运行期之文见 today.js:413（paLoadToday 内）⇒ 本行静文 ≡ 其渲形（承 pm 1297 §三①）">暂无（本机版还没接这一项）</span></div>
           <div class="r"><span class="k">退出</span><span>须显式（退出前提示「夜间整合将停止」）</span></div>
-          <div class="foot">纪律：任何载模型 ⇒ 过显存门 ＋ 用后即卸（⛔ keep_alive -1）；自启只查更新并提示（⛔ 静默安装）。</div>
+          <div class="foot">纪律：任何载模型 ⇒ 过显存门 ＋ 用后即卸（不留常驻）；自启只查更新并提示（不静默安装）。</div>
         </div>
       </section>
 
       <section class="msec" id="paMorePerm"><h6>权限（四层 · 如实）</h6>
         <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_1001</div></details>
-        <p class="mnote">四层：<b>读（全局）／ 写（每次问）／ 外发（默认关）／ 凭据（只取布尔）</b>。⛔ 冒充真读数：后端无此读数者明标「口径 · 前端常量」。</p>
+        <p class="mnote">四层：<b>读（全局）／ 写（每次问）／ 外发（默认关）／ 凭据（只取布尔）</b>。不冒充真读数：本机没此读数者明标「口径 · 本页常量」。</p>
         <div class="perm4" id="paPermLayers"><div class="r">读数中…</div></div>
         <div class="phead">已读面 ／ 未接面（与左栏「来源面」同源）<span class="src" id="paPermFacesSrc">读数中…</span></div>
         <div class="pfaces" id="paPermFaces">读数中…</div>
-        <details class="msub" id="paPermExcept"><summary>例外清单（⛔ 读值之三类 ＋ ⛔ 外发）</summary>
+        <details class="msub" id="paPermExcept"><summary>例外清单（不读值之三类 ＋ 不外发）</summary>
           <div class="pexcept" id="paPermExceptBody">读数中…</div>
         </details>
       </section>
@@ -202,8 +202,8 @@
               （Chromium 之内建）⇒ **一途通二处**（⛔ 二源 · 承 pm_1657 §二.2 之「回落 ∨ 并存」之问）。
            ⛔ 载绝对径 ／ ⛔ 起停。 -->
       <section class="msec" id="paFeedback">
-        <h6>留言板（内测 · ⛔ 出机）</h6>
-        <p class="mnote" id="paFbNotice" role="status" aria-live="polite">留言板之「⛔ 出机」明书：正在读后端（⛔ 自撰其辞）…</p>
+        <h6>留言板（内测 · 不出机）</h6>
+        <p class="mnote" id="paFbNotice" role="status" aria-live="polite">留言板之「不出机」明书：正在读本机（不自行编辞）…</p>
         <div class="fb-reply" id="paFbReply" role="status" aria-live="polite" hidden></div>
         <div class="fb-form">
           <input class="fb-in" id="paFbTitle" maxlength="120" placeholder="题（必填 · 一句话说清你遇到的问题）">
@@ -245,7 +245,7 @@
         </div>
         <div class="ks-row">
           <input class="ks-in" type="password" id="paKeyVal" autocomplete="off" spellcheck="false"
-                 placeholder="粘贴密钥 —— ⛔ 回显 ／ ⛔ 掩码（连首尾亦 ⛔）／ ⛔ 入日志">
+                 placeholder="粘贴密钥 —— 不回显 ／ 不留掩码（连首尾也不）／ 不写日志">
         </div>
         <div class="ks-row">
           <button class="ks-btn" id="paKeySet" onclick="paKeySend(false)" title="填 ／ 换 ⇒ POST /v9/pa/providers/key">填</button>
@@ -255,15 +255,12 @@
       </section>
 
       <section class="msec" id="paMoreAbout"><h6>关于 PA（自述 · 九问九答 · 逐条带源）</h6>
-        <p class="mnote">真源：面册 <code>GET /web/pa/faces.json</code> ｜ 工具流水 <code>GET /v9/metrics/tool_flow</code>
-          ｜ 画像 <code>GET /v9/pa/context</code> ｜ 权限 <code>GET /v9/pa/permission</code>
-          ｜ 快照 <code>web/pa/ui_state.json</code> ⇒ ⛔ 走 <code>/v9/pa/ask</code>
-          （该闸只看「知识库 ＋ 收件箱」⇒ 退化成知识库机器人）。<br>
-          ⚠ 身份类为「<b>口径 · 前端常量</b>」；读数类为<b>真源读数</b> ⇒ 逐条末行标源 · ⛔ 冒充。</p>
+        <p class="mnote" title="真源：面册 GET /web/pa/faces.json ｜ 工具流水 GET /v9/metrics/tool_flow ｜ 画像 GET /v9/pa/context ｜ 权限 GET /v9/pa/permission ｜ 快照 web/pa/ui_state.json ⇒ 不走 /v9/pa/ask（该闸只看「知识库 ＋ 收件箱」⇒ 退化成知识库机器人）">来源：面册 ｜ 工具流水 ｜ 画像 ｜ 权限 ｜ 快照，皆取自本机。<br>
+          ⚠ 身份类为「<b>口径 · 本页常量</b>」；读数类为<b>本机读数</b> ⇒ 逐条末行标源 · 不冒充。</p>
         <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_1000 §一</div></details>
         <div class="sysrow"><span class="chip" onclick="paAboutLoad(true)" title="重取本机真源并重排九问九答">↻ 重取自述</span>
           <span class="src" id="paAboutWhen">—</span></div>
-        <div class="about" id="paAboutBody"><div class="t">展开「更多」时按需读取（⛔ 每次开都拉）。</div></div>
+        <div class="about" id="paAboutBody"><div class="t">展开「更多」时按需读取（不是每次打开都拉）。</div></div>
       </section>
 
       <section class="msec" id="paMoreSys"><h6>系统</h6>
@@ -290,7 +287,7 @@
            真源 GET /v9/pa/sys/snapshot（唯本机 · ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默）；由 pa/faces/sys.js 收放。
            ⛔ 后端写盘（唯前端之便）：文本块可全选复制。 -->
       <section class="msec" id="paMoreSysFace"><h6>本机体检（只读 · 七面）</h6>
-        <p class="mnote">真源：<code>GET /v9/pa/sys/snapshot</code>（唯本机 · ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权静默 · 一阶段只读）。</p>
+        <p class="mnote" title="真源：GET /v9/pa/sys/snapshot">来源：本机体检（唯本机 · 不出机 ／ 不写 ／ 不静默提权 · 只读）。</p>
         <div class="sysrow">
           <span class="chip" id="paSysOpen" onclick="paSysOpen()" title="本机体检（只读 · 七面）：展开 ／ 收起（唯本机 · 取一次）">🩺 本机体检</span>
           <span class="chip" onclick="paSysScan()" title="重扫（真扫 · 有界 6 s）">↻ 重扫</span>
@@ -340,8 +337,8 @@
         </div>
       </section>
 
-      <section class="msec" id="paMorePrivate"><h6>私面（⛔ 入开源仓 · 客户端闸）</h6>
-        <p class="mnote">此三页 ⛔ 入开源仓；页内闸为<b>客户端闸</b>（⛔ 服务端闸 · 非 JS 取件仍见骨架）。</p>
+      <section class="msec" id="paMorePrivate"><h6>私面（不入开源仓 · 客户端闸）</h6>
+        <p class="mnote">此三页不入开源仓；页内闸为<b>客户端闸</b>（不是服务端闸 · 非 JS 取件仍见骨架）。</p>
         <details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">承 pm_995 §四</div></details>
         <div class="plinks">
           <a href="admin.html">管理面板（admin）</a>
@@ -370,7 +367,7 @@
       <div class="it" id="srcRowRuns">🧰 在办作业<span class="n" id="srcRuns">⚠ 无 JS：无读数（须运行期）</span></div>
       <div class="it">🎨 出图<span class="n na">暂时读不到</span></div>
       <div class="it">🧠 记忆<span class="n" id="srcCtx">⚠ 无 JS：无读数（须运行期）</span></div>
-      <div class="foot">素材只索引；画像只存摘要条，每条可回指素材。⛔ 编数。</div>
+      <div class="foot">素材只索引；画像只存摘要条，每条可回指素材。不编数。</div>
     </div>
   </div>
 

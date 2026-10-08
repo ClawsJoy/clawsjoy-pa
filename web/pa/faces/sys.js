@@ -18,7 +18,7 @@ const PA_SYS_ORDER = ['disk', 'disk_c', 'windows', 'startup', 'perf', 'net', 'gu
 const PA_SYS_V = {ok: '好', info: '知', warn: '须看', crit: '急', unknown: '未取'};
 const PA_SYS_VC = {ok: 'ok', info: 'ok', warn: 'warn', crit: 'warn', unknown: 'unk'};
 const PA_SYS_ST = {ok: '完整（七面皆取到）', partial: '部分取不得', unavailable: '皆取不得'};
-const PA_SYS_OUTLET = '本器唯报（一阶段只读）：须动手者为二阶段之事 —— 本面 ⛔ 代你动。';
+const PA_SYS_OUTLET = '本器唯报（一阶段只读）：须动手者为二阶段之事 —— 本面不代你动手。';
 
 let paSysRun = {doc: null, err: '', busy: false, open: false};
 
@@ -93,7 +93,7 @@ function paSysActBoxHtml(k){
     const r = st.receipt, rc = r['回执'] || {};
     h += '<div style="font-size:11.5px;color:var(--text)">回执：' + E(String(rc['果'] || '—'))
       + ' · 件 ' + E(String(rc['件号'] == null ? '—' : rc['件号']))
-      + (r['幂等'] ? '（幂等回 · 同一次授权，⛔ 二动）' : '') + '</div>';
+      + (r['幂等'] ? '（幂等回 · 同一次授权，不重复动手）' : '') + '</div>';
     if(r['字节'] != null) h += '<div style="font-size:10.5px;color:var(--sub)">动了 ' + E(String(r['字节'])) + ' 字节</div>';
     const kept = r['留之件'] || [];
     if(kept.length) h += '<div style="font-size:10.5px;color:var(--sub)">留了最近一份：' + E(kept.join(' ／ ')) + '</div>';
@@ -122,7 +122,7 @@ function paSysActBoxHtml(k){
   if(p['去哪看']) h += '<div style="font-size:10.5px;color:var(--sub)">去哪看：' + E(String(p['去哪看'])) + '</div>';
   if(st.ttl) h += '<div style="font-size:10.5px;color:var(--sub)">本授权之窗 ' + E(String(st.ttl)) + ' s（过了要重取预案）</div>';
   if(p['须管理员']){
-    h += '<div style="font-size:11px;color:var(--amber)">须管理员 ⇒ 本器 ⛔ 自提权 —— 请你自己去点（上「去哪看」）。</div>';
+    h += '<div style="font-size:11px;color:var(--amber)">须管理员 ⇒ 本器不自行提权 —— 请你自己去点（上「去哪看」）。</div>';
   }else if(st.confirm){
     h += '<div style="margin-top:4px"><span class="chip" style="color:#fca5a5" onclick="paSysActGo(' + k + ')">⚠ 再点一次 ⇒ 真动（'
       + E(String(p['件数'])) + ' 件）</span> <span class="chip" onclick="paSysActCancel(' + k + ')">算了</span></div>';
@@ -169,9 +169,18 @@ function paSysVColor(c){
   return 'var(--green)';
 }
 
+/* ⭐ pm_2061 §二.2（裁⒉）：端所给之 `源`（如 `psutil.disk_usage('C:\\')`）＝**工程之据** ⇒ 入本行 `title`（可查 · ⛔ 丢真源 · 承 P2「可寻得」）；屏上唯人话（端辜 ≠ 面自拟：人话标只言「哪一类读数」，不改端之值）。 */
+function paSysSrcHuman(s){
+  const t = String(s == null ? '' : s);
+  if(t.indexOf('disk_usage') >= 0) return '本机磁盘读数';
+  if(t.indexOf('os.scandir') >= 0 || t.indexOf('os.listdir') >= 0) return '本机目录读数';
+  if(t.indexOf('winreg') >= 0 || t.indexOf('Winreg') >= 0) return '本机注册表读数';
+  if(t.indexOf('psutil') >= 0) return '本机系统读数';
+  return '本机读数';
+}
 function paSysItemsHtml(panel){
   const its = (panel && panel.items) || [];
-  if(!its.length) return '<div style="font-size:11px;color:var(--sub)">本面 ⛔ 得任何读数。</div>';
+  if(!its.length) return '<div style="font-size:11px;color:var(--sub)">本面没取到任何读数。</div>';
   const out = [];
   for(let i = 0; i < its.length; i++){
     const it = its[i] || {};
@@ -184,7 +193,10 @@ function paSysItemsHtml(panel){
       + '</div>'
       + '<div style="font-size:11.5px;color:var(--text);white-space:pre-wrap;word-break:break-word;user-select:text">'
       + paSysEsc(it['读数'] || '—') + '</div>'
-      + '<div style="font-size:10.5px;color:var(--sub)">源：' + paSysEsc(it['源'] || '—') + '</div>';
+      /* ⛔ 句首字面「源：」慧：端值不入屏 ⇒ 入本行 `title` */
+      + '<div style="font-size:10.5px;color:var(--sub)" title="'
+      + paSysEsc('源：' + (it['源'] || '—')) + '">来源：'
+      + paSysSrcHuman(it['源']) + '（其据 ⇒ 悬停本行即见）</div>';
     if(it['清之险']) h += '<div style="font-size:10.5px;color:var(--sub)">清之险：' + paSysEsc(it['清之险']) + '</div>';
     if(it['可否清']) h += '<div style="font-size:10.5px;color:var(--sub)">可否清：' + paSysEsc(it['可否清']) + '</div>';
     const _a = paSysActOf(it);
@@ -200,7 +212,7 @@ function paSysItemsHtml(panel){
     }else if(act['kind'] === 'guide' && act['label']){
       h += '<div style="font-size:10.5px;color:var(--blue)">去处：' + paSysEsc(act['label']) + '</div>';
     }else if(act['kind'] === 'none'){
-      h += '<div style="font-size:10.5px;color:var(--sub)">去处：本器唯报（一阶段只读 —— ⛔ 代你动）</div>';
+      h += '<div style="font-size:10.5px;color:var(--sub)">去处：本器唯报（一阶段只读 —— 不代你动手）</div>';
     }
     h += '</div>';
     out.push(h);
@@ -236,12 +248,12 @@ function paSysFoldReadingsHtml(){
   if(!rs && !ui && !uid) return '';
   let rows = '';
   if(uid) rows += '<div style="font-size:11px;color:var(--text)">本机身份：' + paSysEsc(uid)
-    + '<span style="font-size:10.5px;color:var(--sub)">（本机唯一之会话归属键 · ⛔ 静默回落默认 ／ 他人 —— 见「关于 PA → 判定规则」）</span></div>';
+    + '<span style="font-size:10.5px;color:var(--sub)">（本机唯一之会话归属键 · 不会静默回落默认 ／ 他人 —— 见「关于 PA → 判定规则」）</span></div>';
   if(rs) rows += '<div style="font-size:10.5px;color:var(--sub)">' + paSysEsc(rs) + '</div>';
   if(ui) rows += '<div style="font-size:10.5px;color:var(--sub)">' + paSysEsc(ui) + '</div>';
   return '<div style="border:1px solid var(--border);border-radius:9px;padding:7px 9px;margin-bottom:7px;background:var(--card2)">'
     + '<div style="font-size:11.5px;color:var(--text)">本页顶栏之原读数'
-    + '<span style="font-size:10.5px;color:var(--sub)">（首屏已收起 ⇒ 原字收此 · ⛔ 丢）</span></div>'
+    + '<span style="font-size:10.5px;color:var(--sub)">（首屏已收起 ⇒ 原字收此 · 不丢）</span></div>'
     + rows + '</div>';
 }
 
@@ -259,7 +271,7 @@ function paSysRender(){
   if(!r.doc){
     h += '<div style="font-size:11px;color:var(--sub)">'
       + (r.busy ? '正在本机体检（唯读 · 有界 6 s）…'
-                : '点「🩺 本机体检」取一次（唯本机 · ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权）。')
+                : '点「🩺 本机体检」取一次（唯本机 · 不出机 ／ 不写 ／ 不提权）。')
       + '</div>';
     box.innerHTML = h;
     return;
@@ -284,15 +296,15 @@ function paSysRender(){
     + '<div style="font-size:10.5px;color:var(--sub)">取于 ' + paSysEsc(d.generated_at || '—')
     + '（耗 ' + paSysEsc(String(d.elapsed_s)) + ' s' + (d.cached ? ' · 皆缓存' : ' · 本次真扫')
     + '）｜源：' + paSysEsc(d.source_note || '—') + '</div>'
-    + '<div style="font-size:10.5px;color:var(--sub)">本器一阶段全程 ⛔ 出机 ／ ⛔ 写 ／ ⛔ 提权（本面纯读）；清删类之真动仅经「去处」之红钮（逐次授权 · 二次确认 · 可撤）—— 须授权之项已标「须授权」（本器 ⛔ 自提权）。</div>'
+    + '<div style="font-size:10.5px;color:var(--sub)">本器一阶段全程不出机 ／ 不写 ／ 不提权（本面纯读）；清删类之真动仅经「去处」之红钮（逐次授权 · 二次确认 · 可撤）—— 须授权之项已标「须授权」（本器不自行提权）。</div>'
     + '<div style="margin-top:6px">';
   for(let i = 0; i < order.length; i++) h += paSysPanelHtml(by[order[i]]);
   h += '</div>'
     + '<div style="border:1px solid var(--border);border-radius:9px;padding:7px 9px;background:var(--card2)">'
     + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
     + '<b style="font-size:12px;color:var(--text)">本机体检（文本）</b>'
-    + '<span style="font-size:10.5px;color:var(--sub)">这一段就是上面七面读数之纯文本 —— 可全选后复制（唯前端 · ⛔ 写盘）。</span>'
-    + '<span class="chip" onclick="paSysCopy()" title="全选这段文本并试着复制到剪贴板（唯前端 · ⛔ 写盘）">全选复制</span>'
+    + '<span style="font-size:10.5px;color:var(--sub)">这一段就是上面七面读数之纯文本 —— 可全选后复制（唯前端 · 不写盘）。</span>'
+    + '<span class="chip" onclick="paSysCopy()" title="全选这段文本并试着复制到剪贴板（唯前端 · 不写盘）">全选复制</span>'
     + '<span id="paSysFlash" style="font-size:10.5px;color:var(--green)"></span>'
     + '</div>'
     + '<textarea id="paSysText" readonly rows="14" spellcheck="false" '
@@ -329,14 +341,14 @@ async function paSysFetch(fresh){
     if(j && j.ok === true && j.panels){
       paSysRun.doc = j;
     }else if(r.status === 403){
-      msg = '唯本机可用（本页 ⛔ 由本机打开 ⇒ 端拒之）'
+      msg = '唯本机可用（本页不是由桌面程序打开 ⇒ 本机拒之）'
         + ((j && j.error) ? ('：' + j.error) : '') + '。';
     }else{
       msg = '端未答可读之果（HTTP ' + r.status + '）'
-        + ((j && j.error) ? ('：' + j.error) : '') + ' —— ⛔ 不等于「七面皆好」。';
+        + ((j && j.error) ? ('：' + j.error) : '') + ' —— 不等于「七面皆好」。';
     }
   }catch(e){
-    msg = '取不得（' + ((e && e.message) ? e.message : '连不上本机之端') + '）—— ⛔ 不等于「七面皆好」。';
+    msg = '取不得（' + ((e && e.message) ? e.message : '连不上本机之端') + '）—— 不等于「七面皆好」。';
   }
   paSysRun.busy = false;
   if(msg) paSysRun.err = msg;

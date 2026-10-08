@@ -190,12 +190,19 @@ function paSrcClaim(){
   return bad.length ? {ok:false, why:('认领 ⛔ 齐：' + bad.join(' · '))} : {ok:true};
 }
 /* 写**一行**（标签 ＋ 值 ＋ **源之径（独立一行）**）—— 内联样式（⛔ 动 *.css）。 */
+/* ⭐ pm_2061 §二.2（裁⒉）：「工程之据 ⇒ 折 ∨ `title`」之**一处定形** —— 本列表各行：
+   可见文 ＝ **标签 ＋ 值**（人话）；工程之据（端径 ／ 件名 ／ 盘符径 ／ 内部符号）⇒ 本行之 `title`
+   （可查之地 · ⛔ 删真源 —— 承 `P2`「可寻得」｜承 `1855 §三.2`「原身份之去处 ⇒ 入悬停」）。
+   ⚠ `title` 亦用户可读 ⇒ 饰之四符（`**` ／ `*` ／ 反引号 ／ `~~`）须先剔（承 `pm_1928 §一.2` 裁⒝）。 */
+function paSrcTitleClean(s){
+  return String(s == null ? '' : s).replace(/\*\*/g, '').replace(/~~/g, '').replace(/`/g, '');
+}
 function paSrcWrite(id, label, value, srcLine, bad){
   const el = document.getElementById(id); if(!el) return null;
   el.style.flexWrap = 'wrap';
   el.innerHTML = '<span>' + paSrcEsc(label) + '</span>'
-    + '<span class="n"' + (bad ? ' style="color:#f85149"' : '') + '>' + paSrcEsc(value) + '</span>'
-    + (srcLine ? '<span style="flex:0 0 100%;font-size:10px;line-height:1.5;color:var(--sub);opacity:.9">' + paSrcEsc(srcLine) + '</span>' : '');
+    + '<span class="n"' + (bad ? ' style="color:#f85149"' : '') + '>' + paSrcEsc(value) + '</span>';
+  if(srcLine) el.title = paSrcTitleClean(srcLine); else el.removeAttribute('title');
   return el;
 }
 /* 增**一行**（幂等 · 插于 beforeId 之前）；用于②「两名分列」。 */
@@ -222,10 +229,10 @@ function paLedgerFold(name, j, fallbackSrc, numFn){
   return {
     name: name, miss: miss,
     value: j ? ((numFn && numFn(j)) || '（后端应答无该读数 ⇒ 照实缺）') : PA_GAP.down('后端无应答'),
-    src: g['面之径逐字'] || (fallbackSrc || '⚠ 后端未给 `面之径逐字`'),
+    src: g['面之径逐字'] || (fallbackSrc || '⚠ 后端未给 面之径逐字'),
     srcKey: !!g['面之径逐字'],
     at: g['at'] || null,
-    atTxt: g['at'] || '⚠ 刻缺（后端未给 `at` ⇒ ⛔ 以屏刻充数刻 · 承 L76）',
+    atTxt: g['at'] || '⚠ 刻缺（后端未给 at ⇒ ⛔ 以屏刻充数刻 · 承 L76）',
     stamp: g['印'] || '⚠ 印缺',
     xing: g['刻之性'] || null
   };
@@ -260,17 +267,17 @@ function paSrcFaceSrc(sf, name, f){
     + ((f && f['印']) ? ('｜本面之印 ' + f['印'])
                        : ('｜面册之印（全印 · ⛔ 逐面） ' + ((sf && sf['印']) ? sf['印'] : '⚠ 印缺')))
     + '｜器之印 ' + ((sf && sf['印器']) ? sf['印器'] : '⚠ 印器缺')
-    + '｜⛔ 检索面（PA_FACES 之「文件·产出」）≠ 本面 ⇒ 两轨两名分列';
+    + '｜非检索面（面册之「文件·产出」）≠ 本面 ⇒ 两轨两名分列';
 }
 /* ②③ 之渲染 ＋ 左栏摘要（⛔ 手搓数：三本机账之数皆取各自后端响应）。 */
 async function paLoadSrcFaces(o){
   const srcOk = paSrcClaim();
-  if(!srcOk.ok){ paV3Txt('paSrcSum', '素材面认领 ⛔ 成：' + srcOk.why + '（⛔ 静默降级 ⇒ 报 PM）'); return srcOk; }
+  if(!srcOk.ok){ paV3Txt('paSrcSum', '素材面未认领成：' + srcOk.why + '（不静默降级 · 已记）'); return srcOk; }
   /* ① 一词之性质（⛔ 以「未接」盖「红线」） */
   /* ⚠ why 归**值格**（⛔ 源行）—— 源行之义 ＝ 源之径（承 today.js:111）；且「⛔ 以「未接」暗许「将来会接」＝ 软性虚诺」
      属**辨义**类 ⇒ ⛔ 上屏（承 pm 1272 §三）。平台面 ⛔ 后端源 ⇒ 源行 ＝ **空**。出处 ＝ PM 17:47 §二改①。 */
   paSrcWrite('srcRowPlatform', '🌐 平台', '不会代你操作（这是红线）',
-    '设计如此：⛔ 代操作他方平台（红线 · 承 pm 18:00 批一）');
+    '设计如此：不代操作他方平台（红线）');
   /* ⭐ 素材面两行（承 pm 20:16 §三.⒞）：自 GET /v9/pa/source_faces 取（⛔ 硬编码 · ⛔ 手搓数）。
      ⛔ 缺读源 ／ 缺面 ⇒ 照实「⒜ 未接 · 待办（M1）＋ 为何未接」—— 读源一落 ⇒ 自动转绿（⛔ 装绿）。 */
   const _sf = (o && o.sf) || null;
@@ -305,8 +312,8 @@ async function paLoadSrcFaces(o){
   books.forEach(function(b){ if(b.miss.length) missAll.push(b.name + ' 缺 ' + b.miss.join(' ／ ')); });
   paSrcWrite('srcRowLedger', '🧾 台账',
     books.map(function(b){ return b.name + ' ' + b.value; }).join(' ｜ ')
-      + (missAll.length ? (' ⚠ 四键 ⛔ 齐（' + missAll.join(' · ') + '）⇒ 已报 PM · ⛔ 静默降级') : ''),
-    '⛔ ≠ `context.counts.ledger`（＝ **PA 待办** · 同名异域 ⇒ 两名分列）｜源（皆 GET · 唯读 · 逐面读其数）：'
+      + (missAll.length ? (' ⚠ 四键不齐（' + missAll.join(' · ') + '）⇒ 已报 PM · 不静默降级') : ''),
+    '不等于「PA 待办」（同名异域 ⇒ 两名分列）｜源（皆只读 · 逐面读其数）：'
       + books.map(function(b){ return b.name + ' ⇒ ' + b.src + '（' + b.stamp + ' · 刻 ' + b.atTxt + '）'; }).join(' ｜ '),
     missAll.length > 0);
   /* 左栏摘要（一句人话 ⇒ 一行 · ⛔ 数字墙） */
@@ -400,9 +407,9 @@ function paTodayBriefHtml(brief, stat){
   out.push('');
   const bad = !!(S && (S.conf !== g.fact.length || S.prop !== g.prop.length));
   out.push('（附注 · 面内派生 · brief 之行）无「(提案)」标 ' + g.fact.length + ' 行 ／ 带「(提案)」标 ' + g.prop.length + ' 行'
-    + (S ? (bad ? ' ⇒ ⚠ **两源 ⛔ 齐**（⛔ 当「已定」· 真数见上二行）' : ' ⇒ 与后端 status 轴 ≡')
+    + (S ? (bad ? ' ⇒ ⚠ 两源 ⛔ 齐（⛔ 当「已定」· 真数见上二行）' : ' ⇒ 与后端 status 轴 ≡')
          : ' ⇒ ⚠ 后端未应答 ⇒ ⛔ 可对')
-    + ' ｜ ⛔ 后端 status=proposed 若未落此标 ⇒ 本处显 0（**未下 ⇔ 真 0 ⇔ 不可辨** · 承 pm_刀10）');
+    + ' ｜ ⛔ 后端 status=proposed 若未落此标 ⇒ 本处显 0（未下 ⇔ 真 0 ⇔ 不可辨 · 承 pm_刀10）');
   out.push('· 无「(提案)」标之行（' + g.fact.length + '）：');
   if(g.fact.length){ g.fact.forEach(function(it){ out.push(row(it)); }); } else { out.push('  （无）'); }
   out.push('· 带「(提案)」标之行（' + g.prop.length + '）：');
@@ -491,9 +498,9 @@ async function paLoadToday(){
        + ' · 摘要 ' + nLine + ' 行' + (xBad ? '（⚠ 两处读数 ⛔ 齐 · 见「▾」）' : ''))
     : '未知（后端未应答 ／ 无读数）');
   paV3Txt('paTodayProfileSrc', _whenRaw + ' ｜ ' + _profRaw + ' ｜ 源：GET /v9/pa/context（brief）｜已定 ／ 待裁 之真源：GET /v9/pa/profile（字段 status · '
-    + (statOk ? ('实 entries ' + nEnt + ' ⇒ confirmed ' + nConf + ' ／ proposed ' + nProp + ' ／ revised ' + nRev) : '**' + PA_GAP.down('后端未应答') + '**')
+    + (statOk ? ('实 entries ' + nEnt + ' ⇒ confirmed ' + nConf + ' ／ proposed ' + nProp + ' ／ revised ' + nRev) : PA_GAP.down('后端未应答'))
     + '）｜⛔ 不以「行数 − 节数」自算充之（承 pm_刀10）｜待裁之第二源：GET /v9/pa/context 之 counts.pending（'
-    + (pendOk ? (nPendCtx + ' 条') : '**' + pendGap + '**')
+    + (pendOk ? (nPendCtx + ' 条') : pendGap)
     + '）｜两源不等 ⇒ 显红（承 pm_刀16p §二.1）｜画像件 '
     + ((pmeta && pmeta.exists) ? (String(pmeta.path || '') + '（sha16 ' + String(pmeta.sha16 || '未知') + '）') : '未知（GET /v9/pa/build 未应答）')
     + ' ｜ 采样刻 ' + (pstamp || '未知（GET /v9/pa/build 未应答）')
@@ -540,7 +547,7 @@ async function paLoadToday(){
   /* 会话面头：后端会话史（源 /api/v5/session/list）—— 真数据（⛔ 编） */
   /* ⭐ pm_1853 §一.3：端名（`GET /api/v5/session/list`）⛔ 上用户面 ⇒ 入本行之 `title`（悬停可取 · ⛔ 丢真源）。
      ⚠ 本行之可见文 唯人话（数 ＋ 名）；取不得 ⇒「读数暂缺」（⛔ 以端名熟眼）。 */
-  paV3Txt('paChatHistSrc', '本机线程 ' + (nThr === null ? PA_GAP.down() : nThr + ' 条') + ' · 后端会话史 '
+  paV3Txt('paChatHistSrc', '本机对话 ' + (nThr === null ? PA_GAP.down() : nThr + ' 条') + ' · 更早的对话 '
     + (nSess === null ? PA_GAP.down() : nSess + ' 条'));
   try{
     const _hs = document.getElementById('paChatHistSrc');
@@ -620,7 +627,7 @@ else { paInitToday(); }
   var OLD_B = '读（全局）／ 写（每次问）／ 外发（默认关）／ 凭据（只取布尔）';
   var NEW_B = '读（全局）／ 写（主面每次问 ／ 派活路免审批）／ 外发（默认关）／ 凭据（只取布尔）';
   var OLD_A = '（该闸只看「知识库 ＋ 收件箱」⇒ 退化成知识库机器人）';
-  var NEW_A = '（⛔ 以检索闸之答代本面板读数 · 检索面之实况另见左栏「来源面」）';
+  var NEW_A = '（不用检索闸之答代替本面板读数 · 检索面之实况另见左栏「来源面」）';
   function coverPerm(){
     var sec = document.getElementById('paMorePerm');
     if(!sec) return 0;

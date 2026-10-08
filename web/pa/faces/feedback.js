@@ -13,7 +13,7 @@
    ⭐⭐ **壳之桥**（pm_1657 §二.2 · **一处定形**）：开「落点目录」⇒ 唯调 `window.paShell.openFeedbackDir()` ——
       **名** ＝ `window.paShell.openFeedbackDir`｜**参** ＝ **无**（径由**壳**自算 ⇒ 守「桥 ⛔ 触他径」）｜
       **返** ＝ `Promise<{ok:true, path} | {ok:false, code, message}>`（`code ：: E_NO_DIR ／ E_OPEN ／ E_SHELL`）｜
-      **失败之面** ＝ **⛔ 静默** —— 明书「⛔ 开得（<因>）⇒ 去处：自行打开 <落点之径>」（承「凡面之支须能真达」）。
+      **失败之面** ＝ **⛔ 静默** —— 屏上明书「没开得（<因>）⇒ 去处」（其径与因入 `title` · 承「凡面之支须能真达」∧ pm_2061 §二.2）。
       ⚠ **其取 ⇒ preload 暴露**（⛔ 后端出端）：其能 ＝ 「开**我这一台**之目录」—— 唯「页与落点同机」时成立；
       若由后端开窗 ⇒ 于「局域网内测（他人之浏览器）」会在**服务机**上弹窗（⛔ 用户所要）∧ 增攻击面。
       ⚠ **附件 ⇒ ⛔ 须桥**：`<input type=file>` 于 Electron 渲染器内即调**系统原生对话框** ⇒ 一途通二处。
@@ -63,13 +63,21 @@ function paFbTarget(h){
   return o;
 }
 
-/* ⭐ **一处定形**（**常驻明书** · pm_1635 §二.2）：唯取后端 `notice` 之逐字（⛔ 自撰其辞）；
-   ⛔ 给 ⇒ **明书「后端未给」**（照实 · 承「未知 ⛔ 充知」）∧ 由 `paFbGate` 停发。 */
-function paFbNoticeText(t){
-  if(!t || t.state !== 'ok') return '留言板未答：后端未给落点之声明（⛔ 自撰 —— 候后端）';
-  if(t.notice) return t.notice;
-  return '后端未给「内容出机 ∨ 不出机」之明书 —— ⛔ 自撰（故停发：候后端）';
+/* ⭐ **一处定形**（**常驻明书** · pm_1635 §二.2）：唯取本机 `notice` 之逐字（不自行编辞）；
+   未给 ⇒ **明书「本机未给」**（照实 · 承「未知不充知」）∧ 由 `paFbGate` 停发。
+   ⭐ pm_2061 §二.2（裁⒉ · 平文唯人话）：端之 `notice` **逐字仍为真源**（⇒ `title` · 可查 · 不丢），
+   屏上唯净形（剔饰四符 ＋ 我方内部记号 `⛔` ⇒ 「不」）。
+   判：仅「`⛔` ＋ 空格」之形方判「不」（避把「⛔ 缺 X」此等记号误译成句 —— 一手教训）。 */
+function paFbHumanLine(s){
+  return String(s == null ? '' : s)
+    .replace(/⛔\s*/g, '不').replace(/\*\*/g, '').replace(/\~\~/g, '').replace(/`/g, '');
 }
+function paFbNoticeRaw(t){
+  if(!t || t.state !== 'ok') return '留言板未答：本机还没给落点之声明（不自行编辞 —— 候本机）';
+  if(t.notice) return String(t.notice);
+  return '本机还没给「内容出机 ∨ 不出机」之明书 —— 不自行编辞（故停发：候本机）';
+}
+function paFbNoticeText(t){ return paFbHumanLine(paFbNoticeRaw(t)); }
 
 /* ---- 壳之桥（**一处定形** · pm_1657 §二.2）：见件首之约（名 ／ 参 ／ 返 ／ 失败之面） ---- */
 function paFbShell(){
@@ -79,20 +87,33 @@ function paFbShell(){
   }catch(e){}
   return null;
 }
-/* 一处定形（纯函 · ⛔ DOM）：开目录之态 ⇒ 人话。`res` ＝ 后端之 `feedback`（取 `resolved_dir` ／ `dir`）；
-   `hasBridge` ＝ 有桥否；`st` ＝ 末次之果（`{state:'opening'|'ok'|'fail', path, code, message}`）。 */
+/* 一处定形（纯函 · ⛔ DOM）：开目录之态 ⇒ 人话（屏上 · ⛔ 载绝对径 · 承 pm_2061 §二.2）；
+   其真源（落点径 ／ 码 ／ 因）另出 `paFbDirRaw` ⇒ `title`（工程之据之地 · ⛔ 丢）。
+   `res` ＝ 本机之 `feedback`（取 `resolved_dir` ／ `dir`）；`hasBridge` ＝ 有桥否；
+   `st` ＝ 末次之果（`{state:'opening'|'ok'|'fail', path, code, message}`）。 */
 function paFbDirText(res, hasBridge, st){
   const dir = (res && (res.resolved_dir || res.dir)) ? String(res.resolved_dir || res.dir) : '';
-  const outlet = ' ⇒ 去处：自行打开 ' + (dir ? dir : '（后端未给落点之径）');
-  if(!hasBridge) return '此壳 ⛔ 供此能（唯 Electron 壳内有 window.paShell）' + outlet;
-  if(!st || !st.state) return '打开落点目录' + (dir ? ('（' + dir + '）') : '（径由壳自算）');
+  const outlet = ' ⇒ 去处：点「打开落点目录」（其径见此钮之悬停）';
+  if(!hasBridge) return '此壳不供此能（唯桌面程序内有此能）' + outlet;
+  if(!st || !st.state) return '打开落点目录' + (dir ? '（其径见此钮之悬停）' : '（径由壳自算）');
   if(st.state === 'opening') return '正在打开落点目录…';
   if(st.state === 'ok'){
     const p = st.path ? String(st.path) : '';
-    if(p && dir && p !== dir) return '已开：' + p + '（⚠ 与后端之落点径 ⛔ 同：' + dir + '）';
-    return '已开：' + (p || dir || '（壳未回径）');
+    if(p && dir && p !== dir) return '已开（⚠ 与落点之径不同）';
+    return '已开（其径见此钮之悬停）';
   }
-  return '⛔ 开得（' + (st.code || 'E_SHELL') + (st.message ? (' ' + String(st.message)) : '') + '）' + outlet;
+  return '没开得（' + (st.code || 'E_SHELL') + (st.message ? (' ' + String(st.message)) : '') + '）' + outlet;
+}
+function paFbDirRaw(res, hasBridge, st){
+  const dir = (res && (res.resolved_dir || res.dir)) ? String(res.resolved_dir || res.dir) : '';
+  const src = '落点径：' + (dir || '（本机未给 · 由桌面程序自算）');
+  if(!hasBridge) return src + ' ⇒ 去处：自行打开其径（此能唯桌面程序内有）';
+  if(!st || !st.state || st.state === 'opening') return src;
+  if(st.state === 'ok'){
+    const p = st.path ? String(st.path) : '';
+    return src + (p ? (' ⇒ 已开：' + p) : ' ⇒ 已开（桌面程序未回径）');
+  }
+  return src + ' ⇒ 未开得：' + (st.code || 'E_SHELL') + (st.message ? (' ' + String(st.message)) : '');
 }
 function paFbDirEnabled(res, hasBridge, st){
   if(!hasBridge) return false;
@@ -122,13 +143,13 @@ function paFbOpenDirClick(){
    `outbound === true` ⇒ ③ **同意之口**（其位先留 · 承 pm_1635 §二.2「将来接中转 ⇒ 其辞须变 ＋ 其同意之口」）。 */
 function paFbGate(t, agreed, sending, form){
   if(sending) return {ok: false, why: '发送中…'};
-  if(!t || t.state !== 'ok') return {ok: false, why: '留言板未答（后端未给落点之声明）⇒ ⛔ 发'};
-  if(!t.notice) return {ok: false, why: '后端未给「出机」之明书 ⇒ 停发（候后端）'};
+  if(!t || t.state !== 'ok') return {ok: false, why: '留言板未答（本机还没给落点之声明）⇒ 暂不发'};
+  if(!t.notice) return {ok: false, why: '本机还没给「出机」之明书 ⇒ 停发（候本机）'};
   /* ⭐ 形之判 ⇒ **照后端 `feedback_store.submit` 之实**（题必填 ∧ 文必填 —— 后端拒收之人话亦即此）——
      ⛔ 前端自拟其则 ∧ ⛔ 由后端之败来「教」用户（承「凡面之支须能真达」）。 */
   const _f = (form && typeof form === 'object') ? form : {};
-  if(!String(_f.title == null ? '' : _f.title).trim()) return {ok: false, why: '题必填（后端之判：⛔ 题 ⇒ 拒收）'};
-  if(!String(_f.body == null ? '' : _f.body).trim()) return {ok: false, why: '说明必填（后端之判：⛔ 文 ⇒ 拒收）'};
+  if(!String(_f.title == null ? '' : _f.title).trim()) return {ok: false, why: '题必填（无题 ⇒ 拒收）'};
+  if(!String(_f.body == null ? '' : _f.body).trim()) return {ok: false, why: '说明必填（无说明 ⇒ 拒收）'};
   if(t.outbound === true && !agreed) return {ok: false, why: '内容将出机 ⇒ 须先勾「同意出机」（其位先留）'};
   return {ok: true, why: ''};
 }
@@ -150,7 +171,7 @@ function paFbItemsText(items, t){
   const d = (t && (t.resolved_dir || t.dir)) ? (t.resolved_dir || t.dir) : '';
   let s = '我之收件：' + its.length + ' 条';
   if(its.length && its[0] && its[0].at) s += '（最近 ' + String(its[0].at) + '）';
-  s += ' · 落点 ' + (d || '（后端未给）');
+  s += ' · 落点：点「打开落点目录」可见其径';
   return s;
 }
 
@@ -168,12 +189,12 @@ function paFbSendText(st, t){
   if(st.state === 'sending') return '发送中…';
   if(st.state === 'ok'){
     const d = (t && (t.resolved_dir || t.dir)) ? (t.resolved_dir || t.dir) : '';
-    let s = '已落本机：' + (d ? (d + '/' + st.id) : String(st.id));
+    let s = '已落本机（其径见「打开落点目录」之悬停）：' + String(st.id);
     if(st.at) s += '（' + String(st.at) + '）';
     if(st.hint) s += ' · ' + String(st.hint);
     return s;
   }
-  if(st.state === 'fail') return '发送失败：' + (st.error || '（后端未给因）') + ' · ' + PA_FB_OUTLET;
+  if(st.state === 'fail') return '发送失败：' + (st.error || '（本机未给因）') + ' · ' + PA_FB_OUTLET;
   return '';
 }
 
@@ -201,7 +222,12 @@ function paFbFormFromDom(){
 
 function paFbRender(){
   const t = paFbRun.t;
-  const nt = paFbEl('paFbNotice'); if(nt) nt.textContent = paFbNoticeText(t);
+  const nt = paFbEl('paFbNotice');
+  if(nt){
+    const _nr = paFbNoticeRaw(t);
+    nt.textContent = paFbHumanLine(_nr);
+    if(_nr && _nr !== nt.textContent){ nt.title = _nr; } else if(nt.removeAttribute){ nt.removeAttribute('title'); }
+  }
   /* ③ 同意之口（其位先留 —— 唯 `outbound === true` 方显） */
   const aw = paFbEl('paFbAgreeWrap');
   if(aw){
@@ -209,7 +235,7 @@ function paFbRender(){
     aw.hidden = !need;
     if(need){
       const lb = paFbEl('paFbAgreeLb');
-      if(lb) lb.textContent = '内容将出机（后端之明书）⇒ 我同意此落点';
+      if(lb) lb.textContent = '内容将出机（本机之明书）⇒ 我同意此落点';
       const c = paFbEl('paFbAgree');
       if(c && c.checked !== paFbRun.agreed) c.checked = !!paFbRun.agreed;
     }
@@ -239,14 +265,16 @@ function paFbRender(){
       ? ('附件 ' + fs.length + ' 件：' + fs.map(function(f){ return String(f.name); }).join(' ／ '))
       : '（无附件）';
   }
-  /* 壳之桥（开「落点目录」· pm_1657 §二.2）：其辞唯 `paFbDirText` 一处（⛔ 二处各写）——
-     **⛔ 桥 ⇒ 禁 ＋ 明书「此壳 ⛔ 供此能」＋ 现示径**（⛔ 静默 · 承「凡面之支须能真达」）。 */
+  /* 壳之桥（开「落点目录」· pm_1657 §二.2）：其辞一处出 —— 屏上唯 `paFbDirText` ∧ 其据唯 `paFbDirRaw`（⛔ 二处各写）——
+     **⛔ 桥 ⇒ 禁 ＋ 明书「此壳不供此能」＋ 去处**（⛔ 静默 · 承「凡面之支须能真达」；
+     径 ⛔ 上屏 · 其据唯入 `title` · 承 pm_2061 §二.2）。 */
   const hb = !!paFbShell();
   const dt = paFbDirText(t, hb, paFbRun.dir);
+  const dr = paFbDirRaw(t, hb, paFbRun.dir);
   const od = paFbEl('paFbOpenDir');
   if(od){
     od.disabled = !paFbDirEnabled(t, hb, paFbRun.dir);
-    if(od.getAttribute('title') !== dt) od.setAttribute('title', dt);
+    if(od.getAttribute('title') !== dr) od.setAttribute('title', dr);
   }
   const ds = paFbEl('paFbDirState');
   if(ds && ds.textContent !== dt) ds.textContent = dt;
@@ -256,7 +284,7 @@ function paFbRender(){
   const sb = paFbEl('paFbSend');
   if(sb){
     sb.disabled = !g.ok;
-    sb.setAttribute('title', g.ok ? '发送 ⇒ POST /v9/pa/feedback（落本机 · ⛔ 出站）' : g.why);
+    sb.setAttribute('title', g.ok ? '发送 ⇒ POST /v9/pa/feedback（落本机 · 不出站）' : g.why);
   }
   const li = paFbEl('paFbItems');
   if(li){
@@ -378,11 +406,10 @@ async function paFbOpenItem(fid){
    ⚠ 其位 ＝ **最低**优先级（put · `paPrepMerge` 之末判）⇒ 唯「他事皆无」时显。 */
 function paFbBannerView(st, t){
   if(!st || !st.state) return null;
-  const d = (t && (t.resolved_dir || t.dir)) ? (t.resolved_dir || t.dir) : '';
-  if(st.state === 'sending') return {state: 'running', text: '正在发送留言…（落本机 · ⛔ 出机）', note: ''};
+  if(st.state === 'sending') return {state: 'running', text: '正在发送留言…（落本机 · 不出机）', note: ''};
   if(st.state === 'ok') return {state: 'done',
-      text: '留言已落本机：' + (d ? (d + '/' + String(st.id)) : String(st.id)),
-      note: '内测 · ⛔ 出机：我们上门取 ∨ 你自己复给我们'};
+      text: '留言已落本机：' + String(st.id),
+      note: '内测 · 不出机：我们上门取 ∨ 你自己复给我们'};
   if(st.state === 'fail') return {state: 'failed',
       text: '留言未发出：' + (st.error || '（后端未给因）'), note: PA_FB_OUTLET};
   return null;
@@ -452,6 +479,7 @@ try{
   window.paFbBannerView = paFbBannerView; window.paFbFeedBanner = paFbFeedBanner;
   window.paFbFormFromDom = paFbFormFromDom; window.paFbOpen = paFbOpen;
   window.paFbShell = paFbShell; window.paFbDirText = paFbDirText;
+window.paFbDirRaw = paFbDirRaw;
   window.paFbDirEnabled = paFbDirEnabled; window.paFbOpenDirClick = paFbOpenDirClick;
   window.PA_SHELL_BRIDGE = PA_SHELL_BRIDGE;
 }catch(e){}

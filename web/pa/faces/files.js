@@ -4,8 +4,9 @@ function renderFileSource(d){
   const el=$('fileSrc'); if(!el) return;
   const src = (d && d.source) ? String(d.source) : '';
   const p = (d && d.path) ? String(d.path) : '';
-  el.textContent = (src ? ('来源 '+src) : '来源未知') + (p ? (' · '+p) : '');
-  el.title = (src ? ('source='+src+'\n') : '') + (p || '');
+  /* ⭐ pm_2061 §二.2（裁⒉）：平文唯人话 —— 端之 `source` ＋ 端径（含盘符径）⇒ 入 `title`（工程之据之地 · ⛔ 删真源 · 承 P2「可寻得」）。 */
+  el.textContent = '来源：本机工作区文件（真源与径 ⇒ 悬停本行即见）';
+  el.title = (src ? ('来源：' + src + '\n') : '来源未知\n') + (p || '');
 }
 async function loadFiles(){
   const box=$('fileList'); box.innerHTML='<div class="fitem">…</div>';

@@ -106,8 +106,11 @@ function paSelfFlow(d){
   rows.sort(function(a,b){ return b.n - a.n; });
   return {hours: st.window_hours, total: st.total, tools: rows, nTask: Object.keys(bj).length, at: st.generated_at, probe: probe, probeCalls: probeCalls};
 }
+/* ⭐ pm_2061 §二.2（裁⒉）：本函所读 ＝ 左栏各行之**可见文**（＝ 标签 ＋ 值 · 人话）
+   —— 各行之源行（端径 ／ 件名 ／ 径）已迁入其 `title`（`today.js` 之 `paSrcWrite` 一处定形）
+   ⇒ 此处**另收** `raw`（各行 `title` 之原字）供「来源 ／ 详情」之折内用（工程之据 ⇒ 折 · ⛔ 丢）。 */
 function paSelfSrcFaces(){
-  const out = {read:[], miss:[], off:[], unreach:[], note:''};
+  const out = {read:[], miss:[], off:[], unreach:[], raw:[], note:''};
   const box = document.getElementById('paSrcList');
   if(!box){ out.note = '来源面清单未载入（左栏来源面不在）'; return out; }
   const its = box.querySelectorAll('.it');
@@ -115,6 +118,8 @@ function paSelfSrcFaces(){
     /* ⭐ pm 17:47 §二改①：「未接」须分二义 ⇒ 三桶 —— ⒜未接·待办 ／ ⒝⛔不接·红线 ／ 不可达（后端此刻不在）。
        ⛔ 以「未接」盖「红线」（软性虚诺）· ⛔ 把「不可达」读成「未接」（承 pm_刀12p §〇：三态分显）。 */
     const t = String(its[i].textContent || '').replace(/\s+/g, ' ').trim();
+    const _raw = String((its[i].getAttribute && its[i].getAttribute('title')) || '').replace(/\s+/g, ' ').trim();
+    if(_raw) out.raw.push(t + ' ⇒ ' + _raw);
     if(/不接/.test(t)) out.off.push(t);
     else if(/不可达/.test(t)) out.unreach.push(t);
     else if(/未接/.test(t)) out.miss.push(t);
@@ -132,7 +137,7 @@ function paSelfPermRows(){
     {n:'①', k:'读（全局开）',   v:'本机全上下文', s:'本机固定口径'},
     {n:'②', k:'写（主面每次问 ／ 派活路免审批）',   v:'主面写须你点头；派活（子任务）之写免审批（老板 2026-10-04 批）· 越权写仍由锚点B 拦', s:'本机固定口径'},
     {n:'③', k:'外发（默认关）', v:'发布 ／ 上传 ／ 外发须你显式点头', s:'本机固定口径'},
-    {n:'④', k:'凭据（只取布尔）', v:'只报「已配 ／ 未配」· ⛔ 不读值', s:'本机固定口径'},
+    {n:'④', k:'凭据（只取布尔）', v:'只报「已配 ／ 未配」· 不读值', s:'本机固定口径'},
     {n:'⑤', k:'权限档（读数）', v:lvtxt + (has === null ? '' : (has ? '（已授予）' : '（未授予 ⇒ 用默认档）')), s:'GET /v9/pa/permission'}
   ];
 }
@@ -283,7 +288,7 @@ function paSelfUnchkNote(q, a, seen){
   const u = PA_UNC_MARK + why + PA_UNC_TAIL;
   const e = '答体复核（未复核 · pm_1038 §三.1）：本问为算术类问 ∧ 答体无可判之式（' + why + '）'
     + '\n⇒ 本机复核与工具径皆⛔ 触发（承 pm_1038 §二：无标 ⇒ ⛔ 触工具）⇒ ⛔ 泛标顶替（⛔ 让用户以为已核）。'
-    + '\n⚠ 如实：本格之数字**未经任何核**（⛔ 表示其对 ∨ 错）⇒ 请以他法复核。';
+    + '\n⚠ 如实：本格之数字未经任何核（⛔ 表示其对 ∨ 错）⇒ 请以他法复核。';
   return {u:u, e:e, why:why};
 }
 try{ window.paSelfUnchkNote = paSelfUnchkNote; }catch(e){}
@@ -639,7 +644,7 @@ function paSelfArithCheck(a, q){
           + '（本次 ' + bad.length + ' ／ ' + mq.length + ' · 本页累计已核 ' + paSelfChkStat.n + ' 条式）'
           + bad.map(function(x){ return '\n式「' + x.disp + '」（重算式「' + x.lhs + '」）本机前端重算 = ' + x.got + ' ／ 答体所写 = ' + x.said + '（容差 ' + x.tol + '）'; }).join('')
           + mq.map(function(x){ return '\n同量「' + x.key + '」之值：' + x.vals.join(' ／ '); }).join('')
-          + '\n⚠ 界限（⛔ 假读数）：式内含字母 ／ 单位 ／ 汉字者⛔ 判；**裸量词**（件 ／ 个 ／ 人）⛔ 判；'
+          + '\n⚠ 界限（⛔ 假读数）：式内含字母 ／ 单位 ／ 汉字者⛔ 判；裸量词（件 ／ 个 ／ 人）⛔ 判；'
           + '数与「算子 ／ =」紧邻者⛔ 判（换算非矛盾）⇒ 本标⛔ 覆盖全部不一致'
           + '；工具径：POST /api/tools/calc（判据主源）｜技能面仍未实装（已转产品线）。';
   return {u:u, e:e, eqText:eqText, mqTexts:mqTexts, eq0:firstEq};
@@ -1224,9 +1229,9 @@ function paSelfRuleHtml(){
     + '｜本件为回答层件（⛔ 面体 · ⛔ 入册）｜后端判层路由 ⇒ 另立件候批</div>'
     /* ⭐ pm_1855 §三.3：本机身份（「当前用户」）之一句安全义 —— 原文在 `faces/session.js:54-62`（PM-011 · N9）。
        ⛔ 删其真源 · ⛔ 二处各表（本处唯摘要一句 · 其详在彼）。 */
-    + '<div class="t">本机身份（顶栏「当前用户」）：本页必持一个**显式可见**之本机身份'
-    + '（落本机存储 · 首访之刻所铸）—— 由：旧形之「我是谁」**无生产者** ⇒'
-    + '无本机存储之浏览器一打开即以**别人（默认 ／ 老板）**之主体发请求'
+    + '<div class="t">本机身份（顶栏「当前用户」）：本页必持一个显式可见之本机身份'
+    + '（落本机存储 · 首访之刻所铸）—— 由：旧形之「我是谁」无生产者 ⇒'
+    + '无本机存储之浏览器一打开即以别人（默认 ／ 老板）之主体发请求'
     + '（改权限档 ／ 接口调用）。今收敛为一生产者 ∨ ⛔ 静默变别人。'
     + '其值显于「当前用户」之悬停 ∨ 本面。</div></details>';
 }
@@ -1405,12 +1410,12 @@ async function paSelfCompose(key, pre){
     U.push('· 界面快照：采样刻 ' + (ui && ui['刻'] ? ui['刻'] : '未知') + '（约每小时一轮）');
     U.push('· 权限档 ' + (pm && pm.level ? pm.level : '未知') + ' · 工具流水 ' + (fl ? (fl.nTask + ' 任务 ／ ' + fl.tools.length + ' 工具') : PA_GAP.down()));
     U.push('未接 ' + paSelfCount(sf) + '：');
-    U.push('· 画像素材面（左栏「来源面」· ⛔ 检索面）' + PA_GAP.todo() + '：' + (sf.miss.length ? sf.miss.join(' ／ ') : '（无）'));
+    U.push('· 画像素材面（左栏「来源面」· 非检索面）' + PA_GAP.todo() + '：' + (sf.miss.length ? sf.miss.join(' ／ ') : '（无）'));
     U.push('· ⭐ ⒝ ⛔ 不接（红线）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
     U.push('· ⚠ 不可达（后端此刻不在）：' + (sf.unreach.length ? sf.unreach.join(' ／ ') : '（无）'));
     U.push('· 操作：改令：准接 · POST /v9/pa/steer｜接管：待立项 · 须先定义｜真实平台面 ⛔ 不接（红线）｜夜间整合：无后端面');
     U.push('障碍：');
-    U.push('· 检索面（逐面件数 · 源 /v9/pa/ask 之 scope ／ faces ／ searched · ⛔ 画像素材面）：'
+    U.push('· 检索面（逐面件数 · 源 /v9/pa/ask 之 scope ／ faces ／ searched · 非画像素材面）：'
       + (paSelfFaceText(paSelfAskStat.lastScope, paSelfAskStat.lastFaces) || '本页尚未检索')
       + (paSelfAskStat.lastSearched == null
           ? ' ｜ 共搜：本页尚未检索 ⇒ ⛔ 本面板不硬编目录名。'
@@ -1467,14 +1472,14 @@ async function paSelfCompose(key, pre){
     const sf = paSelfSrcFaces();
     U.push('权限与边界（五层 · 如实）');
     paSelfPermRows().forEach(function(r){ U.push(r.n + ' ' + r.k + '：' + r.v); });
-    U.push('已接 ' + sf.read.length + ' 面 ／ 未接 ' + sf.miss.length + ' 面 ／ ⛔ 不接（红线）' + sf.off.length + ' 面（＝画像素材面 · 与左栏「来源面」同源 · ⛔ 检索面）：');
+    U.push('已接 ' + sf.read.length + ' 面 ／ 未接 ' + sf.miss.length + ' 面 ／ 不接（红线）' + sf.off.length + ' 面（＝画像素材面 · 与左栏「来源面」同源 · ⛔ 检索面）：');
     U.push('· 已接：' + (sf.read.length ? sf.read.join(' ／ ') : '（无）'));
     U.push('· ' + PA_GAP.todo() + '：' + (sf.miss.length ? sf.miss.join(' ／ ') : '（无）'));
     U.push('· ⭐ ⒝ ⛔ 不接（红线）：' + (sf.off.length ? sf.off.join(' ／ ') : '（无）'));
     U.push('· ⚠ 不可达：' + (sf.unreach.length ? sf.unreach.join(' ／ ') : '（无）'));
-    U.push('· 检索面（源 POST /v9/pa/ask 之 scope ／ faces · ⛔ 画像素材面）：' + paSelfAskFaceBody());
+    U.push('· 检索面（源 POST /v9/pa/ask 之 scope ／ faces · 非画像素材面）：' + paSelfAskFaceBody());
     U.push('· 面之差：「文件」在来源面（＝画像素材面）标未接；但工作区文件面另有来源'
-      + '（更多 ▾ · ① 做 · 文件 ⇒ 真数据 25 项）⇒ 二者面不同 · ⛔ 混为一谈。');
+      + '（更多 ▾ · ① 做 · 文件 ⇒ 真数据 25 项）⇒ 二者面不同 · 不当混为一谈。');
     U.push('· 私面（admin ／ registry_dashboard ／ web_summary）只在浏览器内校验。');
     U.push('⛔ 不读 .credentials.yaml ／ Cookies ／ token 的值（只报已配 ／ 未配）｜⛔ 不外发（默认关）。');
     U.push('源：权限档 GET /v9/pa/permission ｜ 前面四层为本机固定口径');
@@ -1522,8 +1527,8 @@ async function paSelfCompose(key, pre){
     U.push('· 编队花名册（可调用之外脑 ／ 工人）：' + (ro && ro.count != null ? (ro.count + ' 卡（' + ((ro.by_level && Object.keys(ro.by_level).length) ? Object.keys(ro.by_level).sort().join('／') : '—') + '）· ' + (((ro.rows || []).slice(0,4).map(function(x){ return x.name || x.id; }).join(' · ')) || '—')) : '未知（后端未应答）') + '（实时读数）');
     U.push('· 派活提交：本批未实际调用（会真起子任务 · 须经演示批）。');
     U.push('· 中止：需要真实会话号（现无在办 ⇒ 无对可验）。');
-    U.push('源：GET /v9/subtask/status（子代理读数）｜GET /v9/pa/roster（**能力端点册**）｜GET /v9/pa/seats（**组织席位册** · 面名分列）｜GET /v9/pa/env 之 cols.agents（**实时驻留态**）');
-    E.push('⭐ **自纠**（承 pm_1024 §二 · 先查真源）：前版云「席位无前端真源」（所查三径 /v9/agents ⇒ 404 ／ /v9/pa/seats ⇒ 404 ／ /v8/roster/list ⇒ 200 空）—— ⚠ **非真源** ⇒ 此读**误**；真源为 GET /v9/pa/roster（编队花名册 · 200 · 见上读数）⇒ **已接**（承 tasks.js）。⚠ **本刻再纠**：上句「组织席位 14 席仍 ⛔ 无 HTTP 真源 ⇒ 明标未接」**已过期** —— TD 刀8 §一 已落 `GET /v9/pa/seats`（面名「组织席位册」· 本刻实测 count=14）＋ `GET /v9/pa/env` 之 `cols.agents`（`kind=seat`）携实时驻留态 ⇒ **本面已改接**（承 pm_刀13p §二：⛔ 两说并存）。派活干跑 · 中止须真 sid（承 pm_998 §二 格③）。');
+    U.push('源：GET /v9/subtask/status（子代理读数）｜GET /v9/pa/roster（能力端点册）｜GET /v9/pa/seats（组织席位册 · 面名分列）｜GET /v9/pa/env 之 cols.agents（实时驻留态）');
+    E.push('⭐ 自纠（承 pm_1024 §二 · 先查真源）：前版云「席位无前端真源」（所查三径 /v9/agents ⇒ 404 ／ /v9/pa/seats ⇒ 404 ／ /v8/roster/list ⇒ 200 空）—— ⚠ 非真源 ⇒ 此读误；真源为 GET /v9/pa/roster（编队花名册 · 200 · 见上读数）⇒ 已接（承 tasks.js）。⚠ 本刻再纠：上句「组织席位 14 席仍 ⛔ 无 HTTP 真源 ⇒ 明标未接」已过期 —— TD 刀8 §一 已落 GET /v9/pa/seats（面名「组织席位册」· 本刻实测 count=14）＋ GET /v9/pa/env 之 cols.agents（kind=seat）携实时驻留态 ⇒ 本面已改接（承 pm_刀13p §二：⛔ 两说并存）。派活干跑 · 中止须真 sid（承 pm_998 §二 格③）。');
   }
   if(key === 'cmp'){
     U.push('对照与差距（逐轴「它有 ／ 我有 ／ 差」· 如实）');
@@ -1623,7 +1628,7 @@ function paSelfFaceDefNote(scope, kb, faces, missing, skipped){
     + '\n    · 逐面尺寸闸（照后端）：文件 ／ 收件箱 ／ 知识库 ＝ 2 MiB；台账类 ＝ 16 MiB ⇒ 单件超闸 ⇒ ⛔ 收且 ⛔ 计件'
     + (zeros.length ? ('\n    · 本次为 0 之面：' + zeros.join(' ／ ') + ' ⇒ ⚠ 须以 faces_missing ／ faces_skipped 辨因（⛔ 读作「无料」）') : '')
     + '\n    · ⭐ 真源字段（本响应）：faces_missing ＝ ' + JSON.stringify(miss) + ' ｜ faces_skipped ＝ ' + JSON.stringify(skipped || {})
-    + '\n    ⚠ 本表为**声明层**（承 L102 声明面 ≠ 执行面）：后端若于响应加 `face_defs` 字段 ⇒ 我一行可接（⛔ 前端硬编 · 已转产品线）。';
+    + '\n    ⚠ 本表为声明层（承 L102 声明面 ≠ 执行面）：后端若于响应加 face_defs 字段 ⇒ 我一行可接（⛔ 前端硬编 · 已转产品线）。';
 }
 /* ⭐ pm_1041 §四：**面之状态**（缺根 ／ 跳件）—— 「0 件」两因之上屏明标（⛔ 只显示 0 件）。 */
 function paSelfFaceFlagText(faces, missing, skipped){
@@ -1645,9 +1650,9 @@ function paSelfFaceFlagNote(faces, missing, skipped){
   if(!t) return '';
   return '面之状态（真源 ＝ 本响应之 faces_missing ／ faces_skipped · ⛔ 前端自算）：\n    · faces_missing ＝ '
     + JSON.stringify((missing && missing.length) ? missing : [])
-    + ' ⇒ 该面之根**不存在** ⇒ 其「0 件」之义 ＝ **无根**（⛔ 「无料」）'
+    + ' ⇒ 该面之根不存在 ⇒ 其「0 件」之义 ＝ 无根（⛔ 「无料」）'
     + '\n    · faces_skipped ＝ ' + JSON.stringify(skipped || {})
-    + ' ⇒ 该面有件**因超尺寸闸而未计件**（⛔ 静默 ⇒ 本面板明标）';
+    + ' ⇒ 该面有件因超尺寸闸而未计件（⛔ 静默 ⇒ 本面板明标）';
 }
 function paSelfFaceText(scope, faces){
   const sc = (scope && scope.length) ? scope : [];
@@ -1665,7 +1670,7 @@ function paSelfFaceText(scope, faces){
    真源：检索面之件数取本回应（⛔ 硬编）；画像素材面之清单取左栏「来源面」（#paSrcList）。 */
 function paSelfAskFaceBody(){
   const t = paSelfFaceText(paSelfAskStat.lastScope, paSelfAskStat.lastFaces);
-  if(!t) return '本页尚未检索 ⇒ 此处 ⛔ 硬编。';
+  if(!t) return '本页尚未检索 ⇒ 此处不硬编。';
   return t + '（共搜 ' + (paSelfAskStat.lastSearched == null ? '刻未记' : (paSelfAskStat.lastSearched + ' 件'))
     + ' · 刻 ' + (paSelfAskStat.lastFacesRead || paSelfAskStat.lastFacesAt || '刻未记') + '）';
 }
@@ -1898,32 +1903,42 @@ function paPermGpuWarnRender(){
 function paPermRender(){
   const l = document.getElementById('paPermLayers');
   if(l){
+    /* ⭐ pm_2061 §二.2（裁⒉）：端径（`GET /v9/…`）⇒ **唯入本行之 `title`**（工程之据之地 · ⛔ 丢真源）。 */
     l.innerHTML = paSelfPermRows().map(function(r){
-      return '<div class="r"><span class="n">' + paSelfEsc(r.n) + '</span><span class="k">' + paSelfEsc(r.k)
-        + '</span><span class="v">' + paSelfEsc(r.v) + '</span><span class="s">来源：' + paSelfEsc(r.s) + '</span></div>';
+      return '<div class="r" title="来源：' + paSelfEsc(r.s) + '"><span class="n">' + paSelfEsc(r.n) + '</span><span class="k">' + paSelfEsc(r.k)
+        + '</span><span class="v">' + paSelfEsc(r.v) + '</span></div>';
     }).join('');
   }
   const f = document.getElementById('paPermFaces'), fs = document.getElementById('paPermFacesSrc');
   const sf = paSelfSrcFaces();
   if(f){
-    f.innerHTML = '<div class="ok"><b>画像素材面 · 已读 ' + sf.read.length + ' 面</b>：' + paSelfEsc(sf.read.join(' ／ ') || '（无）') + '</div>'
+    /* ⭐ pm_2061 §二.2（裁⒉）：**平文唯人话**（数 ＋ 名）；工程之据（端径 ／ 折名 ／ 径 ／ 内部符号）
+       ⇒ 入「来源 ／ 详情」之折（＝工程注记之地 · 承 `P2`）⇒ ⛔ 丢（折内照载原字）。 */
+    f.innerHTML = '<div class="ok"><b>画像素材面 · 已读 ' + sf.read.length + ' 面 ／ 未接 ' + sf.miss.length
+      + ' 面 ／ 不可达 ' + sf.unreach.length + ' 面 ／ 不接（红线）' + sf.off.length + ' 面</b></div>'
+      + '<details class="eng"><summary>来源 ／ 详情</summary><div class="engbody">'
+      + '<div class="ok"><b>已读面（逐面）</b>：' + paSelfEsc(sf.read.join(' ／ ') || '（无）') + '</div>'
       + '<div class="na">画像素材面 · ' + PA_GAP.todo() + ' ' + sf.miss.length + ' 面：' + paSelfEsc(sf.miss.join(' ／ ') || '（无）') + '</div>'
-      + '<div class="na">⭐ 画像素材面 · ⒝ ⛔ 不接（红线） ' + sf.off.length + ' 面：' + paSelfEsc(sf.off.join(' ／ ') || '（无）') + '</div>'
-      + '<div class="na">⚠ 不可达 ' + sf.unreach.length + ' 面：' + paSelfEsc(sf.unreach.join(' ／ ') || '（无）') + '</div>'
-      + '<div class="ok"><b>检索面（源 POST /v9/pa/ask · ⛔ 画像素材面）</b>：' + paSelfEsc(paSelfAskFaceBody()) + '</div>'
-      + '<div>⚠ 面之差：「文件」在来源面（＝画像素材面）标未接；工作区文件面另有来源 <code>POST /v9/sandbox/list</code>'
-      + '（更多 ▾ · ① 做 · 文件 ⇒ 真数据 25 项）⇒ 二者面不同 · ⛔ 混为一谈。</div>'
+      + '<div class="na">画像素材面 · 不接（红线） ' + sf.off.length + ' 面：' + paSelfEsc(sf.off.join(' ／ ') || '（无）') + '</div>'
+      + '<div class="na">不可达 ' + sf.unreach.length + ' 面：' + paSelfEsc(sf.unreach.join(' ／ ') || '（无）') + '</div>'
+      + (sf.raw && sf.raw.length ? ('<div>各面之真源（原字）：' + paSelfEsc(sf.raw.join(' ｜ ')) + '</div>') : '')
+      + '<div class="ok"><b>检索面（源 POST /v9/pa/ask · 非画像素材面）</b>：' + paSelfEsc(paSelfAskFaceBody()) + '</div>'
+      + '<div>面之差：「文件」在来源面（＝画像素材面）标未接；工作区文件面另有来源 POST /v9/sandbox/list'
+      + '（更多 ▾ · ① 做 · 文件 ⇒ 真数据 25 项）⇒ 二者面不同 · 不当混为一谈。</div>'
+      + '</div></details>'
       + '<div class="na" id="paPermGpuWarn" style="display:none"></div>';
   }
-  if(fs) fs.textContent = '来源：#paSrcList（左栏「画像素材面」· ⛔ 检索面）｜检索面另列：POST /v9/pa/ask';
+  /* ⭐ pm_2061 §二.2（裁⒉）：内部元素名 ／ 端径 ⇒ 平文 ⛔ 载（原字入 `title` · ⛔ 丢真源）。 */
+  if(fs){ fs.textContent = '来源：左栏「画像素材面」（另列：检索面 —— 真源悬停本行即见）';
+    fs.title = '来源：#paSrcList（左栏「画像素材面」· 非检索面）｜检索面另列：POST /v9/pa/ask'; }
   paPermGpuWarnRender();
   const ex = document.getElementById('paPermExceptBody');
   if(ex){
-    ex.innerHTML = '<div>⛔ 不读值之三类：<code>.credentials.yaml</code> ／ <code>Cookies</code> ／ <code>token</code> ⇒ 只报「已配 ／ 未配」。</div>'
-      + '<div>⛔ 外发：发布 ／ 上传 ／ 外发默认关（须你显式点头）。</div>'
-      + '<div>私面（<code>admin</code> ／ <code>registry_dashboard</code> ／ <code>web_summary</code>）：仅在浏览器内校验 · ⛔ 入开源仓。</div>'
+    ex.innerHTML = '<div>不读值之三类：<code>.credentials.yaml</code> ／ <code>Cookies</code> ／ <code>token</code> ⇒ 只报「已配 ／ 未配」。</div>'
+      + '<div>不外发：发布 ／ 上传 ／ 外发默认关（须你显式点头）。</div>'
+      + '<div>私面（<span title="admin.html ／ registry_dashboard.html ／ web_summary.html">三页</span>）：仅在浏览器内校验 · 不入开源仓。</div>'
       + '<div>⚠ 这不是服务端隔离：非 JS 取件（curl 等）仍能看到页面骨架。</div>'
-      + '<details class="msub" data-engskip="1"><summary>来源 ／ 详情</summary><div class="t">凭据只取布尔承 L74｜私面闸承 pm_995 §四（客户端闸 · 非服务端闸）。</div></details>';
+      + '<details class="msub" data-engskip="1" title="凭据只取布尔承 L74｜私面闸承 pm_995 §四"><summary>来源 ／ 详情</summary><div class="t">凭据只取布尔（红线）；私面之闸在客户端（非服务端隔离）。</div></details>';
   }
   return sf;
 }
@@ -2025,7 +2040,7 @@ let paSelfLastSub = null;
   window.paSend = async function(){
     const inp = document.getElementById('input');
     const text = inp ? String(inp.value || '').trim() : '';
-    /* ⭐ 双击之实况（pm_1018 ⓝ 之判据）：首击发送后，输入框**同步清空** ⇒ 次击所见 text ⽕ ''。
+    /* ⭐ 双击之实况（pm_1018 ⓝ 之判据）：首击发送后，输入框**同步清空** ⇒ 次击所见 text ≠ ''。
        故：若只按输入框判 ⇒ 合并闸 ⛔ 触发（即「静默吞」）。
        补：空输入 ∧ 近期（≤ 1500 ms）提交之同问仍在办 ⇒ 亦判「已并入」（回执照给）。 */
     let dup = null;
@@ -2326,8 +2341,8 @@ function paSelfFailText(s){
           E2.push(fx
             ? ('⚠ 模型路之读数（⛔ 不作答 · ⛔ 不改上判）：' + fx.e)
             : ('⚠ 模型路之辞（⛔ 不作据 —— 其形即后端所令之「无命中只许说查不到」）：' + raw));
-          E2.push('⚠ 本层所改唯**呈现**（⛔ 改路由 ／ ⛔ 改后端值）· 承 pm_1073 §二.1；'
-            + '模型路之试（pm_1032 §三.1 之回落）**仍在**（承 pm_1073 §三 Ⅳ）。');
+          E2.push('⚠ 本层所改唯呈现（⛔ 改路由 ／ ⛔ 改后端值）· 承 pm_1073 §二.1；'
+            + '模型路之试（pm_1032 §三.1 之回落）仍在（承 pm_1073 §三 Ⅳ）。');
           E2.push('原问：' + fbf.q);
           const U2s = U2.join('\n');
           let _sid = null;
@@ -2361,8 +2376,8 @@ function paSelfFailText(s){
           const au = (hs ? (hs + '\n') : '') + wa(raw) + '\n' + paSelfScanSay(fbf)
             + (_arcF ? '\n（档案面另有旁证 —— 那是我们自己的汇报，⛔ 当世界之实。）' : '');
           const fe = tl + '\n' + ((!_gSay.ok) ? ('⚠ ' + _gSay.note + '\n') : '')   /* ⭐ pm_1492 §二.3：键 ⛔ 得 ⇒ 显形（⛔ 词形兜底） */
-            + '本问先过「有据才答」闸（/v9/pa/ask）⇒ ⭐ 闸判 **本机无据（拒答）**'
-            + '（承 pm_1076 §三：与答体**两段并标** · ⛔ 单标）⇒ 已按 pm_1032 §三.1 **回落模型**'
+            + '本问先过「有据才答」闸（/v9/pa/ask）⇒ ⭐ 闸判 本机无据（拒答）'
+            + '（承 pm_1076 §三：与答体两段并标 · ⛔ 单标）⇒ 已按 pm_1032 §三.1 回落模型'
             + '（POST /v9/pa/dialog · 分流同一出口 paAskDomain）⇒ 此处之答由模型生成（⛔ 非本机素材）。'
             + '\n检索侧读数（逐面件数 · 源 /v9/pa/ask 之 scope ／ faces ／ searched）：范围 ' + fbf.scope
             + ' ｜ 逐面 ' + (fbf.facesText || '—') + ' ｜ 实搜 ' + fbf.searched + ' 件 ｜ 阈值 ' + fbf.thr + ' ｜ 读数 ' + fbf.read
@@ -2417,7 +2432,7 @@ function paSelfFailText(s){
           const _cn = (typeof PA_REFUSE_CANON === 'string') ? PA_REFUSE_CANON : '本机无据 ⇒ 我不答此问。';
           const _cu = wa(_cn);
           return emit.call(this, 'assistant', _cu, skipStore,
-            say(_cu, '⚠ 后端 ／ 模型之拒答**原辞**（⛔ 载入答话 · 承 pm 22:34 §一.E「载径 ⛔ 载值」）：' + raw), tid);
+            say(_cu, '⚠ 后端 ／ 模型之拒答原辞（⛔ 载入答话 · 承 pm 22:34 §一.E「载径 ⛔ 载值」）：' + raw), tid);
         }
         /* ⭐ pm_1492 §二.3：键 ⛔ 得（旧后端 ∨ 键缺）⇒ **显形**（⛔ 词形兜底）—— 唯闸之轮（`fbf` 在）报之 */
         const _gateNote = (fbf && !_gSay2.ok) ? ('⚠ ' + _gSay2.note) : '';
@@ -2667,10 +2682,10 @@ function paSelfFailText(s){
     e.push(paSelfJudgeText({judge:(m && m.judge) || null, read_at:at}));
     e.push('本答之原文 ＝ 后端 answer（⛔ 前端包装 ／ ⛔ 拼「查不到」／ ⛔ 掺模型句 · 承 pm_1068 §二）；'
       + '答源之轴归后端（ask_domain：meta ／ retrieve · 承 L151 · 与前端 paAskDomain 分轴 · ⛔ 二处各判同一物）。');
-    if(trace) e.push('⚠ 后端所给之「上一句」经本层判为**自测痕**（端到端自检 ／ （自测） 类）⇒ 未引作你之上一句'
+    if(trace) e.push('⚠ 后端所给之「上一句」经本层判为自测痕（端到端自检 ／ （自测） 类）⇒ 未引作你之上一句'
       + '（⛔ 作答 · 承 pm_1068 §四 ／ L138）；其出处见后端 context_meta。');
-    if(!paSelfMarks) e.push('⚠ 自测痕词表未取到（真源 GET /v9/pa/context 之 selftest_marks）⇒ ⭐ 本轮判**不可判**'
-      + '（⛔ 引其句 ／ ⛔ 静默放行 · 承 pm_1070 §三 ／ L159）；后端 `_last_user_before` 本已排自测痕'
+    if(!paSelfMarks) e.push('⚠ 自测痕词表未取到（真源 GET /v9/pa/context 之 selftest_marks）⇒ ⭐ 本轮判不可判'
+      + '（⛔ 引其句 ／ ⛔ 静默放行 · 承 pm_1070 §三 ／ L159）；后端 _last_user_before 本已排自测痕'
       + '（前端 ⛔ 最后防线 · 承 L83）。');
     const bits = [];
     if(pick) bits.push('picked_by ' + pick);
@@ -2754,7 +2769,7 @@ function paSelfStubHit(s){
   return /（桩答）|这是对话通道的答复|（桩）/.test(x);
 }
 function paSelfStubText(){
-  return '⚠ 本轮没有可用答复：这条是**占位文本**（⛔ 不是模型的回答 · ⛔ 也不是本机素材）。'
+  return '⚠ 本轮没有可用答复：这条是占位文本（⛔ 不是模型的回答 · ⛔ 也不是本机素材）。'
     + '\n可：① 再发一次 ② 若本机模型未载 ⇒ 首次发问会触发载入（约 40 s · 载入后 5 分钟自卸）';
 }
 function paSelfStubPass(){
@@ -2825,9 +2840,9 @@ function paSelfWaitPaint(el, secs, over){
        + '\n法：① 再等片刻（载入完成即出答） ② 看顶栏「本地在」确认模型在不在 ③ 需要时可请我载本机模型（默认 5 分钟后自卸 · 须你准 · ⛔ 我不会自动载）')
     : ('⏳ 已发问 · 等待' + who + '回复 —— 已等 ' + secs + ' 秒'
        + '\n因：' + (k === 'remote'
-           ? '本轮走**云端**（内容将出机）。上限 ' + bound + ' s。'
+           ? '本轮走云端（内容将出机）。上限 ' + bound + ' s。'
            : (k === 'local'
-              ? '本次请求会**触发**本机模型载入（未载时首次约 40 s）；载入后 5 分钟自卸。上限 ' + bound + ' s。'
+              ? '本次请求会触发本机模型载入（未载时首次约 40 s）；载入后 5 分钟自卸。上限 ' + bound + ' s。'
               : '本轮之模型由后端定（若走本机 · 未载时首次约 40 s）。上限 ' + bound + ' s。')));
   if(box.textContent !== txt) box.textContent = txt;
   el.setAttribute('data-wait-secs', String(secs));
@@ -2905,6 +2920,10 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   var PA_DOM_ORDER = { decision:0, emotion:1, aesthetic:2, style:3, lesson:4, fact:5, product:6, channel:7 };
   function paStEsc(x){ return String(x == null ? "" : x).replace(/[&<>"]/g, function(c){
       return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]; }); }
+  /* ⭐ pm_2061 §二.2（裁⒉）：画像之**值**系本机（端）之数据 ⇒ 屏上唯净形
+     （剔饰四符 ＋ 我方内部记号 `⛔` ⇒ 「不」），原值 ⇒ 本卡 `title`（可查 · 不丢真源 · 不代端改字）。 */
+  function paProfileHuman(x){ return String(x == null ? "" : x)
+      .replace(/⛔\s*/g, "不").replace(/\*\*/g, "").replace(/~~/g, "").replace(/`/g, ""); }
   function paRenderProfileStatus(){
     var pc = document.getElementById("profileCards"); if(!pc) return;
     /* ⭐ pm_1105 §一.1：起窗卡**优先** —— 本路（`GET /v9/pa/profile`）⛔ 覆盖之。
@@ -2930,10 +2949,11 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
           div.innerHTML = "<div class=\"k\">" + paStEsc(PA_DOM_LABEL[e.domain] || e.domain)
             + "<span class=\"pa-st\" style=\"float:right;font-size:10px;font-weight:400;color:" + (PA_ST_COLOR[e.status] || "#8b949e") + "\">"
             + paStEsc(PA_ST_LABEL[e.status] || e.status || "?") + "</span></div>"
-            + paStEsc(e.value || "")
+            + paStEsc(paProfileHuman(e.value || ""))
             + "<div style=\"color:#6e7681;font-size:10.5px;margin-top:3px\">[" + paStEsc(e.confidence || "") + "] " + paStEsc(e.date || "") + "</div>"
             + "<div class=\"pa-src\" style=\"color:#6e7681;font-size:10.5px;margin-top:2px\">来源：" + paStEsc(e.source || "—")
             + (e.supersedes ? " · 替 " + paStEsc(e.supersedes) : "") + "</div>";
+          if(e.value){ try{ div.title = String(e.value); }catch(er){} }
           pc.appendChild(div);
         });
       })
@@ -3380,7 +3400,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     if(!box){
       box = document.createElement('details');
       box.className = 'mgrp'; box.id = PANEL_ID;
-      box.innerHTML = '<summary>④ 续 · 会话历史（真源：盘上 <code>data\\v9\\pa\\sessions</code> · ⛔ 页态镜像）'
+      box.innerHTML = '<summary>④ 续 · 会话历史（真源：盘上 <code>data\\v9\\pa\\sessions</code> · 非页态镜像）'
         + '<button id="paHistReload" style="margin-left:6px;font-size:11px">↻ 刷新</button></summary>'
         + '<div id="' + LIST_ID + '" style="padding:6px 1px;font-size:12px;line-height:1.75">…</div>';
       body.appendChild(box);
@@ -4021,7 +4041,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   }
   function spendLine(rc){
     var s = (rc && rc['花了多少']) || null;
-    if(!s) return '未取得（后端未给 `花了多少` 键）';
+    if(!s) return '未取得（后端未给 花了多少 键）';
     var b = s['bytes'] || {};
     return 'wall_s ' + numOr(s['wall_s'], ' 秒') + ' · 入 ' + numOr(b['in'], ' B') + ' ／ 出 ' + numOr(b['out'], ' B')
       + ' · ' + numOr(s['money']) + ' ' + String(s['currency'] || 'CNY')
@@ -4030,7 +4050,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   }
   function costLine(rc){
     var c = (rc && rc['成本']) || null;
-    if(!c) return '未取得（后端未给 `成本` 键）';
+    if(!c) return '未取得（后端未给 成本 键）';
     return '单价 ' + numOr(c['单价_元每件']) + ' ' + String(c['币'] || 'CNY') + ' ／ 件 · 总 ' + numOr(c['总花费_元'])
       + ' · 件数 ' + numOr(c['件数']) + '（口径 ' + String(c['口径'] || '—') + '）'
       + (c['本地_远端'] ? (' · ' + String(c['本地_远端'])) : '')
@@ -4262,7 +4282,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
         ['做什么', '发信给 ' + b.to.join(', ') + '（主题：' + b.subject + '）'],
         ['凭什么', refLine()],
         ['通道', 'POST /v9/pa/deliver/mail（我方闭环 · 后端真闸）'],
-        ['代价', '未取得（后端于**发后**之回执给 wall_s ／ bytes ／ tokens ／ $/件 ⇒ ⛔ 前端估）'],
+        ['代价', '未取得（后端于发后之回执给 wall_s ／ bytes ／ tokens ／ $/件 ⇒ ⛔ 前端估）'],
         ['报给谁', stopTo() + '（停手时由后端 POST /v9/pa/deliver/stop 定 · 其「报给谁」恒有字段）'],
         ['可撤销性', '未批即未动 —— 此刻后悔 ＝ 什么都不发生'],
         ['弱保证', '未批 ⇒ 前端不发（前端之弱保证）⇔ 后端拒执（真闸 · 在发信路由内）'],

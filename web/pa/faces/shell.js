@@ -29,13 +29,21 @@ function paPermBadge(modePerm, level, grant, err){
   var srcs = [];
   if(grant.pa && grant.pa.exists) srcs.push(String(grant.pa.path||''));
   if(grant.pes && grant.pes.exists) srcs.push(String(grant.pes.path||''));
-  if(!srcs.length) return '权限: ⛔ 未授予（默认档「'+_s(level)+'」）' + req;          /* ⒝ */
-  return '权限: '+_s(level)+'（来源 '+srcs.join(' ／ ')+'）' + req;                    /* ⒜ */
+  if(!srcs.length) return '权限: 未授予（默认档「'+_s(level)+'」）' + req;          /* ⒝ */
+  return '权限: '+_s(level)+'（来源：本机授予档）' + req;                    /* ⒜ */
+}
+function paPermBadgeTip(grant){
+  if(!grant) return '';
+  var srcs = [];
+  if(grant.pa && grant.pa.exists) srcs.push(String(grant.pa.path||''));
+  if(grant.pes && grant.pes.exists) srcs.push(String(grant.pes.path||''));
+  return srcs.length ? ('来源：' + srcs.join(' ／ ')) : '';
 }
 function renderPermBadge(){
   var el = $('modePerm'); if(!el) return;
   var cfg = MODES[state.mode] || {};
   el.textContent = paPermBadge(cfg.perm, paGrantLevel, paGrant, paGrantErr);
+  el.title = paPermBadgeTip(paGrant);
 }
 function fetchPaGrant(){
   return fetch(API+'/v9/pa/permission?user_id='+encodeURIComponent(curUser()))

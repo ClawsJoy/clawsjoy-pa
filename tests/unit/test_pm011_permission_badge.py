@@ -6,7 +6,8 @@
 
 判据（PM §三，逐条）：
   J1  ②③ 文件均不存在 ⇒ 顶栏**必须出现「未授予」**，且 ⛔ 不得只显示「标准」；
-  J2  存在**真实**授予文件 ⇒ 文案**必须含来源路径**；
+  J2  存在**真实**授予文件 ⇒ 来源**可查**（屏上唯人话且 ⛔ 载径 · 原径入悬停 `title`
+      —— pm_2061 §二.2 之界）；
   J3  读不到 ⇒ 文案**与 ⒜⒝ 均不相同**。
 反例门：删/挪授予文件 ⇒ 顶栏**必须**从 ⒜ 变 ⒝（⛔ 不许停在一个像读数的「标准」）。
 
@@ -48,8 +49,9 @@ def _j1_ok(text: str) -> bool:
     return ("未授予" in text) and ("默认档" in text) and (not text.startswith("权限: 标准"))
 
 
-def _j2_ok(text: str, path: str) -> bool:
-    return path in text
+def _j2_ok(txt: str, tip: str, path: str) -> bool:
+    """J2（pm_2061 §二.2 之界改）：来源**可查** —— 屏上唯人话（⛔ 载径），原径入悬停 `title`。"""
+    return (path in tip) and (path not in txt)
 
 
 def _j3_ok(unread: str, a: str, b: str) -> bool:
@@ -81,13 +83,15 @@ def _fn(src: str, name: str) -> str:
 
 def _render(cases: dict, fn_src: str = None) -> dict:
     """cases: name -> [modePerm, level, grant, err]（err 用 UNDEF 表示 undefined）。"""
+    tip = _fn(_pa(), "paPermBadgeTip")
     fn = fn_src if fn_src is not None else _fn(_pa(), "paPermBadge")
     SCRATCH.mkdir(parents=True, exist_ok=True)
-    js = (fn + "\n"
+    js = (tip + "\n" + fn + "\n"
           "const SCEN=" + json.dumps(cases, ensure_ascii=False) + ";\n"
           "const out={};\n"
           "for(const k of Object.keys(SCEN)){const a=SCEN[k];"
-          " out[k]=paPermBadge(a[0],a[1],a[2],(a[3]===" + json.dumps(UNDEF) + "?undefined:a[3]));}\n"
+          " out[k]=paPermBadge(a[0],a[1],a[2],(a[3]===" + json.dumps(UNDEF) + "?undefined:a[3]));"
+          " out[k+'__tip']=paPermBadgeTip(a[2]);}\n"
           "console.log(JSON.stringify(out));\n")
     f = SCRATCH / "badge_harness.js"
     io.open(f, "w", encoding="utf-8", newline="\n").write(js)
@@ -106,15 +110,17 @@ def test_j1_no_grant_file_must_say_not_granted():
 
 
 def test_j2_real_file_must_show_source_path():
-    t = _render({"pafile": ["标准", "只读", G_PA_FILE, None]})["pafile"]
-    assert _j2_ok(t, G_PA_FILE["pa"]["path"]), "J2：有真文件却不给来源路径：%r" % t
+    o = _render({"pafile": ["标准", "只读", G_PA_FILE, None]})
+    t, tip = o["pafile"], o["pafile__tip"]
+    assert _j2_ok(t, tip, G_PA_FILE["pa"]["path"]), "J2：有真文件却不给来源（悬停）：%r" % ((t, tip),)
     assert "只读" in t, "J2：该档要取后端给的 level：%r" % t
 
 
 def test_j2b_both_files_are_listed_without_merging():
     """两处授予**语义不同**（PM §四）⇒ 都在就都要列出来，⛔ 不合并成一个数。"""
-    t = _render({"both": ["标准", "标准", G_BOTH, None]})["both"]
-    assert _j2_ok(t, G_BOTH["pa"]["path"]) and _j2_ok(t, G_BOTH["pes"]["path"])
+    o = _render({"both": ["标准", "标准", G_BOTH, None]})
+    t, tip = o["both"], o["both__tip"]
+    assert _j2_ok(t, tip, G_BOTH["pa"]["path"]) and _j2_ok(t, tip, G_BOTH["pes"]["path"])
 
 
 def test_j3_unreadable_differs_from_a_and_b():
@@ -139,7 +145,7 @@ def test_neg_flip_file_present_to_absent_changes_badge():
                    "absent": ["标准", "标准", G_NOFILE, None]})
     present, absent = out["present"], out["absent"]
     assert present != absent, "反例失效：文件在不在，顶栏文案一样"
-    assert _j2_ok(present, G_PA_FILE["pa"]["path"])
+    assert _j2_ok(present, out["present__tip"], G_PA_FILE["pa"]["path"])
     assert _j1_ok(absent)
 
 

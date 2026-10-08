@@ -6,6 +6,7 @@ u"""pm_1545 §二.1 ／ §二.2 之齿（CW b2a5182 · 2026-10-06）。
      ⇒ `local` 书「本机模型」／`remote` 书「云端模型」／表未得书「模型」（⛔ 恒书「本机」）。
      （病：旧文硬编 ⇒ 闲聊轮回落云端时其上屏 ⇒ 不实之辞 · 老板之屏一手。）
   L2 反控（旧字绝迹）：`'等待本机模型回复'` 之字面 ⛔ 在。
+  ⭐ pm_2061 §二.2（裁⒉ · 屏上唯人话）：云端轮之「因」句已剔饰符（反控：`**` ⛔ 在）。
   L3 正控（自述轮之源 ⇒ 一轮一清）：`busy0` ⇒ 唯落本轮之源（`paRunSrc = SRC`）；
      非 `busy0` ⇒ 走 `paSetState(…, SRC)`（旧链一字不动）。
   L4 反控（旧法之残）：以旧形（无 `else`）跑 `busy0` ⇒ `paRunSrc` 承前轮
@@ -82,7 +83,8 @@ def test_L1_等待提示之字依本轮实走何路():
     assert u"本机模型" in out["local"], out["local"]
     assert u"触发" in out["local"], out["local"]
     assert u"云端模型" in out["remote"], out["remote"]
-    assert u"走**云端**" in out["remote"], out["remote"]
+    assert u"本轮走云端（内容将出机）" in out["remote"], out["remote"]
+    assert u"**" not in out["remote"], u"用户面载饰符（承 pm_2061 §二.2 裁⒉）—— " + out["remote"]
     assert u"本机模型" not in out["remote"], out["remote"]          # ⭐ 旧病：云端轮书「本机」
     assert u"等待模型回复" in out["none"], out["none"]               # 未得 ⇒ 中性
     assert (u"本机模型" not in out["none"]) and (u"云端模型" not in out["none"]), out["none"]

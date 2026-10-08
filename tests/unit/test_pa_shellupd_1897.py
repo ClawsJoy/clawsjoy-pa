@@ -684,7 +684,7 @@ def test_F6_败必明书():
     assert f["state"] == "failed" and f["can_start"] is True, f
     assert f["code"] == "offline", f["code"]
     assert u"没装坏" in f["text"] and u"可重试" in f["text"], f["text"]
-    assert u"通网" in f["note"], f["note"]
+    assert u"连不上网" in f["note"], f["note"]
     assert u"再点" in f["note"], u"去处（人话）：" + f["note"]
     assert v["failed_weird"]["code"] == "unknown", u"不在集内之码 ⇒ unknown（⛔ 造码）"
 
@@ -809,3 +809,68 @@ def test_S8_页与样与脚本():
     assert u"#paShellUpdGo{flex:0 0 auto" in blk, u"顶栏之件（⛔ 被压）"
     i_upd = c.find(u"#paUpdGo{")
     assert u"var(--amber)" in c[i_upd:i_upd + 260], u"载荷钮仍琥珀（既有）"
+
+
+# ============ pm_2061 §三.1⒟（物 5 之二新齿 · CW b2a5182 · 2026-10-08） ============
+
+CASE_2061 = u"""
+var window = {paShell: {shellUpdateState: function(){ return Promise.resolve(null); }}};
+var document = {getElementById: function(){ return null; }};
+function paShuRenderSnap(r){
+  var CHIP = {id:'paShellUpdGo', style:{display:''}, disabled:false, textContent:'', title:''};
+  var ROW  = {id:'paShellVer',  style:{display:''}, disabled:false, textContent:'', title:''};
+  var ENG  = {id:'paShellUpdEng', style:{display:''}, disabled:false, textContent:'', title:''};
+  document.getElementById = function(id){
+    return (id === 'paShellUpdGo') ? CHIP : ((id === 'paShellVer') ? ROW : ((id === 'paShellUpdEng') ? ENG : null));
+  };
+  var v = paShellUpdView(r, null, {now:1});
+  paShellUpdRender(v);
+  return {state:v.state, can_start:v.can_start, chip_disp:CHIP.style.display, chip_dis:CHIP.disabled,
+          chip_txt:CHIP.textContent, chip_title:CHIP.title,
+          row:ROW.textContent, row_title:ROW.title, eng:ENG.textContent, view_text:v.text};
+}
+var out = {};
+out.dev   = paShuRenderSnap({ok:true, phase:'unsupported', current:'9.0.10'});
+out.idle  = paShuRenderSnap({ok:true, phase:'idle', current:'9.0.10'});
+out.avail = paShuRenderSnap({ok:true, phase:'available', current:'9.0.10', latest:'9.0.11'});
+out.fail  = paShuRenderSnap({ok:false, code:'offline', message:'x'});
+console.log(JSON.stringify(out));
+"""
+
+
+def _v2061() -> dict:
+    if "v61" not in _C:
+        _C["v61"] = _node("\n".join(_parts_shu()) + "\n" + CASE_2061, "shu2061")
+    return _C["v61"]
+
+
+def test_F3c_层一正控_开发态之chip与辞():
+    u"""pm_2061 §三.1⒟（物 5 · 新齿一 · **层①正控**）：开发态（`phase=unsupported`）⇒
+    ⒜ 顶栏 chip **⛔ 现**（`display:'none'` · `disabled:true` —— ⛔ 放占位 · ⛔ 假可点）；
+    ⒝ `can_start === False`（装之门 ⛔ 供）；⒞ 其辞 ＝ pm_2061 §二.1 之逐字 ∧ ⛔ 载 `⛔`。"""
+    d = _v2061()["dev"]
+    assert d["state"] == "unsupported" and d["can_start"] is False, d
+    assert d["chip_disp"] == "none", u"层① ⇒ chip ⛔ 现（⛔ 占位 · ⛔ 假可点）：%r" % (d,)
+    assert d["chip_dis"] is True, u"层① ⇒ ⛔ 可点：%r" % (d,)
+    assert u"⛔" not in d["row"], u"用户面 ⛔ 载 ⛔：%r" % d["row"]
+    assert d["row"] == u"9.0.10 · 本机是开发态 ⇒ 此处装不上桌面程序的更新（装好的正式版才有此能）", d["row"]
+    assert d["view_text"] == u"本机是开发态 ⇒ 此处装不上桌面程序的更新（装好的正式版才有此能）", d["view_text"]
+    assert u"unsupported" in d["eng"], d["eng"]
+
+
+def test_F3d_版本不重字():
+    u"""pm_2061 §三.1⒟（物 5 · 新齿二 · **版本重字之扫**）：静件 `pa.html` 已书
+    「桌面程序（壳）版本」⇒ 读数段 ⛔ 再书「版本 」。
+    正控：四态之屏文 ⛔ 含「版本 版本」；反控：旧形（读数段自书「版本 」）⇒ 必咬。"""
+    h = _read(HTML)
+    assert u'桌面程序（壳）版本 <span id="paShellVer"' in h, u"其行之静件须在（承 F4b）"
+    v = _v2061()
+    for k in ("dev", "idle", "avail", "fail"):
+        assert u"版本 版本" not in v[k]["row"], (k, v[k]["row"])
+    for k in ("dev", "idle", "avail", "fail"):
+        assert not v[k]["row"].startswith(u"版本 "), (k, v[k]["row"],
+                u"读数段 ⛔ 以「版本 」起（静件「桌面程序（壳）版本」已书 ⇒ 屏成「版本 版本」）")
+    s = _read(SHU)
+    assert u"('版本 ' + (v.current" not in s, u"旧形（读数段自书「版本 」）⛔ 复归"
+    mutant = u"桌面程序（壳）版本 " + u"版本 " + v["idle"]["row"]
+    assert u"版本 版本" in mutant, u"反控：旧形（静件 ＋ 读数段自书「版本 」）⇒ 必咬（否则本齿为假）"

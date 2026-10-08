@@ -37,8 +37,8 @@ const PA_SHU_CODES = ['no-updater', 'offline', 'check-failed', 'download-failed'
                       'verify-failed', 'install-failed', 'unknown'];
 /* 态 ⇒ 人话（用户面 · ⛔ 行话）。 */
 const PA_SHU_PHASE_TXT = {
-  unsupported: '此机 ⛔ 供桌面程序之更新',
-  idle:        '已是最新',
+  unsupported: '本机是开发态 ⇒ 此处装不上桌面程序的更新（装好的正式版才有此能）',
+  idle:        '已是最新（与内容之版本无关）',
   checking:    '正在查有无新版…',
   available:   '有新版本',
   downloading: '正在下载新版本',
@@ -48,18 +48,18 @@ const PA_SHU_PHASE_TXT = {
 };
 /* 码 ⇒ 人话（⛔ 上屏 —— 唯入 `title` ／ 工程注记之折叠 · 裁 ⒝）。 */
 const PA_SHU_CODE_TXT = {
-  'no-updater':     '此桌面程序 ⛔ 带更新之能',
-  offline:          '本机 ⛔ 通网',
-  'check-failed':   '查新版 ⛔ 成',
-  'download-failed':'下 ⛔ 成',
-  'verify-failed':  '校验 ⛔ 成',
-  'install-failed': '装 ⛔ 成',
+  'no-updater':     '这一版桌面程序不带更新之能',
+  offline:          '本机连不上网',
+  'check-failed':   '查新版没查成',
+  'download-failed':'下载没成',
+  'verify-failed':  '校验没成',
+  'install-failed': '安装没成',
   unknown:          '未明之故'
 };
 /* 去处（人话 · 唯二处：重试 ∨ 更多之系统行）。 */
 const PA_SHU_OUTLET = '再点「⬆ 桌面程序更新」可重试 ∨ 「更多 ▾ → 系统」看细节';
 /* 重启之**明书**（承 pm_1886 §一.2「重启前须明书」· TD_1895 §三.2⒝「由面出」）。 */
-const PA_SHU_RESTART_NOTE = '点了之后：桌面程序会关掉并重开 · 本页会跟着重开（你的数据 ⛔ 动）';
+const PA_SHU_RESTART_NOTE = '点了之后：桌面程序会关掉并重开 · 本页会跟着重开（你的数据不动）';
 
 function paShuBridge(){
   try{ return (typeof window !== 'undefined' && window[PA_SHU_BRIDGE]) ? window[PA_SHU_BRIDGE] : null; }
@@ -105,7 +105,7 @@ function paShellUpdView(r, local, ctx){
              term_deadline:null, term_key:'', why:paShellUpdWhy()};
   if(v.why){
     const b = paShuBridge();
-    v.text = b ? '此桌面程序 ⛔ 带更新之能（须先装一次新版桌面程序）'
+    v.text = b ? '这一版桌面程序不带更新之能（须先装一次新版桌面程序）'
                : '本页在浏览器里打开 ⇒ 桌面程序之更新不在此处';
     v.note = '真源：桌面程序本体（唯在桌面程序内有此能）';
     return v;
@@ -156,7 +156,7 @@ function paShellUpdView(r, local, ctx){
   } else if(v.state === 'running' && ph === 'downloading'){
     v.text = '正在更新桌面程序 · 正在下载新版本'
            + (v.progress ? ('（已下 ' + paShuMB(v.progress.done) + ' ／ ' + paShuMB(v.progress.total) + '）') : '');
-    v.note = '下载中 ⇒ 可继续用 · ⛔ 关窗';
+    v.note = '下载中 ⇒ 可继续用 · 别关窗';
   } else if(v.state === 'running'){
     v.text = '正在更新桌面程序 · 正在安装 · 别关窗';
     v.note = PA_SHU_RESTART_NOTE;
@@ -166,7 +166,7 @@ function paShellUpdView(r, local, ctx){
   } else if(ph === 'checking'){
     v.text = '正在查桌面程序有无新版…';
   } else if(ph === 'unsupported'){
-    v.text = '此桌面程序 ⛔ 供更新（其未带此能）';
+    v.text = PA_SHU_PHASE_TXT.unsupported;
   } else {
     v.text = '桌面程序（壳）版本 ' + (v.current || '—（桌面程序未给）') + ' · 已是最新（与内容之版本无关）';
   }
@@ -200,8 +200,9 @@ function paShellUpdRender(v){
   const row = doc ? doc.getElementById('paShellVer') : null;
   if(row){
     row.textContent = v.why
-      ? (v.why === 'browser' ? '本页在浏览器里 · 此能 ⛔ 供' : '此桌面程序 ⛔ 带更新之能')
-      : ('版本 ' + (v.current || '—（桌面程序未给）') + ' · ' + PA_SHU_PHASE_TXT[v.phase]
+      ? (v.why === 'browser' ? '本页在浏览器里 ⇒ 此处装不上桌面程序的更新'
+                            : '这一版桌面程序不带更新之能')
+      : ((v.current || '—（桌面程序未给）') + ' · ' + PA_SHU_PHASE_TXT[v.phase]
          + (v.latest && v.state === 'available' ? ('（' + v.latest + '）') : ''));
     row.title = '真源：桌面程序本体（唯在桌面程序内有此能）· ' + PA_SHU_RESTART_NOTE
               + (v.code ? (' ｜ 码：' + v.code) : '');

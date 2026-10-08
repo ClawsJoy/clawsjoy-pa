@@ -91,7 +91,7 @@ def _strip_js(t):
     return s
 
 
-PURE = [u"paKeyEsc", u"paKeyStateText", u"paKeyNoticeText", u"paKeyOpts", u"paKeyWritable",
+PURE = [u"paKeyEsc", u"paKeyStateText", u"paKeyNoticeText", u"paKeyNoticeTip", u"paKeyOpts", u"paKeyWritable",
         u"paKeyGate", u"paKeyBody", u"paKeyMsgText", u"paKeyErrFace", u"paKeyReadFace"]
 
 
@@ -116,6 +116,8 @@ out.st = {ok: paKeyStateText('configured', true), missing: paKeyStateText('missi
           state_only_ok: paKeyStateText('configured', null)};
 out.nt = {sel: paKeyNoticeText(P), ok: paKeyNoticeText(P_OK), nr: paKeyNoticeText(P_NR),
           none: paKeyNoticeText(null)};
+out.nt_tip = {sel: paKeyNoticeTip(P), ok: paKeyNoticeTip(P_OK), nr: paKeyNoticeTip(P_NR),
+              none: paKeyNoticeTip(null)};
 out.opts = paKeyOpts([P, P_NR, {id:''}, null, {id:'x', label:'X'}]);
 out.w = {p: paKeyWritable(P), nr: paKeyWritable(P_NR), none: paKeyWritable(null)};
 out.g = {nonsel: paKeyGate(null, 'k', false), nr: paKeyGate(P_NR, 'k', false),
@@ -174,10 +176,13 @@ def test_K1_三态唯取后端之布尔(v):
 
 
 def test_K2_明书唯述值之处且env名取后端(v):
-    assert u"DEEPSEEK_API_KEY" in v["nt"]["sel"], v["nt"]["sel"]
-    assert u"唯落本机" in v["nt"]["sel"], v["nt"]["sel"]
-    assert u"⛔ 上屏" in v["nt"]["sel"] and u"⛔ 掩码" in v["nt"]["sel"], v["nt"]["sel"]
-    assert u"⛔ 需密钥" in v["nt"]["nr"], v["nt"]["nr"]
+    u"""K2（改 · pm_2061 §二.1／§二.2 之界）：屏上唯人话 —— 端字段名
+    （`key_env`）⛔ 上屏 · 唯入悬停 `title`（`paKeyNoticeTip`）；其「值之处」之明书照述。"""
+    assert u"DEEPSEEK_API_KEY" in v["nt_tip"]["sel"], v["nt_tip"]["sel"]
+    assert u"DEEPSEEK_API_KEY" not in v["nt"]["sel"], v["nt"]["sel"]
+    assert u"只落本机一处" in v["nt"]["sel"], v["nt"]["sel"]
+    assert u"不上屏" in v["nt"]["sel"] and u"不留掩码" in v["nt"]["sel"], v["nt"]["sel"]
+    assert u"不需密钥" in v["nt"]["nr"], v["nt"]["nr"]
     assert u"先选供应商" in v["nt"]["none"], v["nt"]["none"]
 
 
@@ -185,7 +190,7 @@ def test_K2_明书唯述值之处且env名取后端(v):
 
 def test_K3_形之判(v):
     assert v["g"]["nonsel"]["ok"] is False and u"先选供应商" in v["g"]["nonsel"]["why"], v["g"]["nonsel"]
-    assert v["g"]["nr"]["ok"] is False and u"⛔ 需密钥" in v["g"]["nr"]["why"], v["g"]["nr"]
+    assert v["g"]["nr"]["ok"] is False and u"不需密钥" in v["g"]["nr"]["why"], v["g"]["nr"]
     assert v["g"]["blank"]["ok"] is False and u"⛔ 空" in v["g"]["blank"]["why"], v["g"]["blank"]
     assert v["g"]["nul"]["ok"] is False, u"null ⇒ 与「空」同判（填 ／ 换）"
     assert v["g"]["set"]["ok"] is True and v["g"]["set"]["act"] == "set", v["g"]["set"]
@@ -244,11 +249,11 @@ def test_K8_所引路由唯三形且同源与二次确认(v):
     assert src.count(u"credentials: 'same-origin'") == 2, u"领令牌 ＋ 落 ／ 清 皆须同源带 Cookie"
     assert "window.confirm(" in _fn(_read(KY), "paKeySend"), u"清 ⇒ 二次确认"
     assert u"刷新本页重试" in v["e"]["t403"], v["e"]["t403"]
-    assert u"连不上本机后端" in v["e"]["t0"] and u"连不上本机后端" in v["rf"]["down"], (v["e"], v["rf"])
-    assert u"⛔ 挂此端" in v["e"]["t404"], v["e"]["t404"]
-    assert u"providers[]" in v["rf"]["no"], v["rf"]["no"]
+    assert u"连不上本机服务" in v["e"]["t0"] and u"连不上本机服务" in v["rf"]["down"], (v["e"], v["rf"])
+    assert u"本机还没挂" in v["e"]["t404"], v["e"]["t404"]
+    assert u"清单体" in v["rf"]["no"], v["rf"]["no"]
     assert v["rf"]["fine"] == "", u"形正 ⇒ ⛔ 判（⛔ 假红）"
-    assert u"⛔ 形" in v["rf"]["http"], v["rf"]["http"]
+    assert u"不合形" in v["rf"]["http"], v["rf"]["http"]
 
 
 # ---------- K9：页之骨 ＋ 面册 ＋ 面册闸 ----------

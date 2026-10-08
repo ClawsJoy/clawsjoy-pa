@@ -420,7 +420,7 @@ async function paLoadTasks(){
         : '未知（后端未应答）',
       dhSrcLine)
   + paRow('待你裁', (nA === null ? '未知（后端未应答 ／ 无参 ⇒ 400）' : (nA === 0 ? '0 件（后端 approvals: []）' : nA + ' 件')),
-      '源：GET /v9/audit/approvals · 属会话 ' + paEsc(curSession()) + '（**本会话** · ⛔ 全局数）｜无参 ⇒ 400（⛔ 把错误渲染成 0）')
+      '源：GET /v9/audit/approvals · 属会话 ' + paEsc(curSession()) + '（本会话 · ⛔ 全局数）｜无参 ⇒ 400（⛔ 把错误渲染成 0）')
   + paRow('已完成', (nR === null ? '未知（后端未应答）' : (nR === 0 ? '0 件（后端 runs: []）' : nR + ' 件（state=done）')),
       '源：GET /v9/pes/runs（按 user_id 取 · ⛔ 会话轴 ⇒ ⛔ 与本会话之数互校）');
 
@@ -795,11 +795,11 @@ function paXMoreHost(){
     /* ⭐ 端名亦**自本旗出**（⛔ 手搓 ⇒ 换位后之「源：…」必与实同 —— 面之辞**须如实**）。 */
     var _outSrc = _outList.map(function(f){
       var m = /GET \/v9\/[A-Za-z0-9_\/]+/.exec(String(f[2] || ''));
-      return m ? ('<code>' + m[0] + '</code>（' + f[1] + '）') : '';
+      return m ? (f[1] + '：' + m[0]) : '';
     }).filter(function(t){ return !!t; }).join('｜');
     box.innerHTML = '<summary>④ 面 · ' + _out.join(' ／ ') + '（这两面不占主面环 ⇒ 收在此处）</summary>'
       + '<section class="msec" id="paXMoreTabs" style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 2px"></section>'
-      + '<p class="mnote">源：' + _outSrc + '。皆收在此处 · 功能一字未减。</p>';
+      + '<p class="mnote" title="源：' + _outSrc + '">源：' + _out.join(' ／ ') + ' 之读数（悬停可见其接口）。皆收在此处 · 功能一字未减。</p>';
     body.insertBefore(box, body.firstChild);
   }
   return document.getElementById('paXMoreTabs');
@@ -1022,7 +1022,7 @@ async function paLoadEnvFace(){
     jr.push(paRow('agents 两源', ro === null ? PA_GAP.down('GET /v9/pa/roster 未应答') : PA_GAP.fallback('rows'), '面：GET /v9/pa/roster', true));
   }
   if(bd) jr.push(paRow('两个 14 之分列', '组织席位册 ' + (bd['组织席位册'] == null ? '缺' : bd['组织席位册']) + ' ／ 能力端点册 ' + (bd['能力端点册'] == null ? '缺' : bd['能力端点册']),
-    '承 刀8p §一：`GET /v9/pa/roster`（无 kind）所回者自题面名「' + String((ro && ro['面名']) || '缺') + '」；`GET /v9/pa/seats` 所回者 ＝ 组织席位册（kind=seat）⇒ 两名分列，⛔ 一词盖两义', !bd));
+    '承 刀8p §一：GET /v9/pa/roster（无 kind）所回者自题面名「' + String((ro && ro['面名']) || '缺') + '」；GET /v9/pa/seats 所回者 ＝ 组织席位册（kind=seat）⇒ 两名分列，⛔ 一词盖两义', !bd));
   jr.push(paRow('判', red ? '⚠ 显红（有栏不齐）' : '全齐 ✓', '本表之判据：⛔ 手搓 ／ ⛔ 补齐；不齐 ⇒ 显红', red));
   if(jd) jd.innerHTML = jr.join('');
 
@@ -1036,10 +1036,10 @@ async function paLoadEnvFace(){
       + '（counts.' + c + ' ＝ ' + decl + '）' + (srcs && srcs[c] ? (' · 实源 ' + String(srcs[c])) : '');
     if(!host) return;
     if(!arr){ paXMissing('paEnvCol-' + c, c, 'GET /v9/pa/env · 字段 cols.' + c + ' 不在', 'cols.' + c); return; }
-    if(!arr.length){ host.innerHTML = paRow(c, '空（后端「cols.' + c + '」为 []）', '面：GET /v9/pa/env · **空 ≠ 缺**（承 pm_076 §一）', true); return; }
+    if(!arr.length){ host.innerHTML = paRow(c, '空（后端「cols.' + c + '」为 []）', '面：GET /v9/pa/env · 空 ≠ 缺（承 pm_076 §一）', true); return; }
     var head = (c === 'tools' && arr.length > CAP)
       ? paRow('（显前 ' + CAP + ' ／ 共 ' + arr.length + '）', '⛔ 非全量',
-          '本栏共 ' + arr.length + ' 件 ⇒ 显前 ' + CAP + ' 件（**面之数 ＝ counts.' + c + ' ＝ ' + decl + '** · ⛔ 以「显前之数」充总 · 承 刀12p §一.2 之同族病）')
+          '本栏共 ' + arr.length + ' 件 ⇒ 显前 ' + CAP + ' 件（面之数 ＝ counts.' + c + ' ＝ ' + decl + ' · ⛔ 以「显前之数」充总 · 承 刀12p §一.2 之同族病）')
       : '';
     host.innerHTML = head + arr.slice(0, (c === 'tools' ? CAP : arr.length)).map(function(it){ return paEnvItemRow(c, it); }).join('');
   });
@@ -1075,7 +1075,7 @@ async function paLoadLinesFace(){
   var lines = Array.isArray(j.lines) ? j.lines : null;
   if(!list) return 0;
   if(!lines){ list.innerHTML = '<div class="tstates">' + paRow('线', PA_GAP.fallback('lines'), '面：字段 lines', true) + '</div>'; return 0; }
-  if(!lines.length){ list.innerHTML = '<div class="tstates">' + paRow('（无）', '空（后端 lines: []）', '面：字段 lines · **空 ≠ 缺**', true) + '</div>'; return 0; }
+  if(!lines.length){ list.innerHTML = '<div class="tstates">' + paRow('（无）', '空（后端 lines: []）', '面：字段 lines · 空 ≠ 缺', true) + '</div>'; return 0; }
   list.innerHTML = lines.map(function(L){
     var nm   = String((L && L['线名']) || '缺（后端无线名）');
     var seat = String((L && L['席']) || '缺');
@@ -1142,7 +1142,7 @@ async function paLoadResumeFace(){
   L.push(paRow('last_boot_at', paEsc(br ? String(br.last_boot_at || '缺') : '缺'), '面：字段 上次断点.last_boot_at（后端自报之刻）'));
   L.push(paRow('prev_boot_at', paEsc(br ? String(br.prev_boot_at || '缺') : '缺'), '面：字段 上次断点.prev_boot_at'));
   L.push(paRow('离线区间', offline ? (offline + '（面内派生：prev_boot_at ⇒ last_boot_at）') : '缺（两刻不可解 ⇒ ⛔ 编）',
-    '面：由 上次断点.prev_boot_at ⇒ last_boot_at 面内相减（**派生之数 · 明标** · ⛔ 后端无此键）'));
+    '面：由 上次断点.prev_boot_at ⇒ last_boot_at 面内相减（派生之数 · 明标 · ⛔ 后端无此键）'));
   L.push(paRow('水印 sha16', paEsc(br ? String(br.sha16 || '缺') : '缺'), '面：字段 上次断点.sha16'));
   L.push(paRow('done.inbox ／ done.mail', paEsc(br ? (String((br.done || {}).inbox) + ' ／ ' + String((br.done || {}).mail)) : '缺'), '面：字段 上次断点.done（两路已完成之计数）'));
   L.push(paRow('攒件数', paEsc(String(j['攒件数'] == null ? '缺' : j['攒件数'])), '面：字段 攒件数 —— 出：' + String((j['数之出'] || {})['攒件数／续办数／失败件'] || '缺')));
@@ -1202,7 +1202,7 @@ async function paLoadRcptFace(){
   b.push(paRow('催策', cp ? ('距末次刻 > ' + cp.after_min + ' min ⇒ 催 · 限 ' + cp.max + ' 次') : '缺（后端无 chase_policy）',
     '面：字段 chase_policy（' + (j.store ? ('store ' + String(j.store)) : '后端无 store') + '）', !cp));
   b.push(paRow('印 ／ 版', paEsc(String(j['印'] || '缺') + ' ／ ' + String(j.version || '缺')), '面：字段 印 ／ version'));
-  b.push(paRow('四段之序', paEsc(stages.join(' ⇒ ')), '面：字段 stages —— 四段**只进不退**（承 刀4）'));
+  b.push(paRow('四段之序', paEsc(stages.join(' ⇒ ')), '面：字段 stages —— 四段只进不退（承 刀4）'));
   if(bEl) bEl.innerHTML = b.join('');
 
   var states = Array.isArray(j.states) ? j.states : null;
@@ -1210,7 +1210,7 @@ async function paLoadRcptFace(){
     + ' · 每件自带「件之刻」（stage_at ／ transitions[].at）';
   if(!lEl) return 0;
   if(!states){ lEl.innerHTML = '<div class="tstates">' + paRow('件', PA_GAP.fallback('states'), '面：字段 states', true) + '</div>'; return 0; }
-  if(!states.length){ lEl.innerHTML = '<div class="tstates">' + paRow('（无）', '空（后端 states: []）', '面：字段 states · **空 ≠ 缺**', true) + '</div>'; return 0; }
+  if(!states.length){ lEl.innerHTML = '<div class="tstates">' + paRow('（无）', '空（后端 states: []）', '面：字段 states · 空 ≠ 缺', true) + '</div>'; return 0; }
   lEl.innerHTML = states.map(function(S){
     var tid = String((S && S.task_id) || '?');
     var seat = (S && S.to_seat != null && String(S.to_seat).trim()) ? String(S.to_seat) : null;
@@ -1226,7 +1226,7 @@ async function paLoadRcptFace(){
     var rows2 = [
       paRow('席', seat ? paEsc(seat) : '缺（后端无 to_seat ⇒ ⛔ 非席轴件）', '面：字段 states[].to_seat（空 ⇒ 池路件 · ⛔ 编「未派」）', !seat),
       paRow('段', paEsc(stage), '面：字段 states[].stage'),
-      paRow('件之刻', paEsc(stageAt || '缺（后端无 stage_at）'), '面：字段 states[].stage_at —— ⭐ **每件自带件之刻**（⛔ 以「本轮」刻充件刻 · 承 刀11p §零）', !stageAt),
+      paRow('件之刻', paEsc(stageAt || '缺（后端无 stage_at）'), '面：字段 states[].stage_at —— ⭐ 每件自带件之刻（⛔ 以「本轮」刻充件刻 · 承 刀11p §零）', !stageAt),
       paRow('末次刻', paEsc(lastAt || '缺'), '面：字段 states[].last_at'),
       paRow('果', guo ? paEsc(guo) : PA_GAP.fallback('果'), '面：字段 states[].transitions[].果', !guo),
       paRow('印', yin ? paEsc(yin) : PA_GAP.fallback('印'), '面：字段 states[].transitions[].印 —— 印须载器（承 PM 089 §二）', !yin),
@@ -1350,11 +1350,11 @@ async function paSlotLearn(){
     biz: sB, probe: sP, all: sA, keyed: keyed.length, other: nOther, bad: bad,
     /* ⭐ 枚举（后端 `usage_认` 逐字 ⇒ ⛔ 前端硬编 · 承 PM `1155` §四 ／ 我 `1162` §三.3 之照实） */
     认: (j && Array.isArray(j['usage_认']) && j['usage_认'].length) ? j['usage_认'].slice() : null,
-    src: bk ? 'GET /v9/pa/deliver/authz?usage=all 之 `用途之数`（后端真源 · ⛔ 前端自持判据）'
-            : '⚠ 响应无 `用途之数`（后端未载 `刀20 §二`）⇒ 唯以 `rows[].用途` 自数',
+    src: bk ? 'GET /v9/pa/deliver/authz?usage=all 之 用途之数（后端真源 · ⛔ 前端自持判据）'
+            : '⚠ 响应无 用途之数（后端未载 刀20 §二）⇒ 唯以 rows[].用途 自数',
     judge: (j && j['用途之判据']) ? String(j['用途之判据']) : null,
     key: (keyed.length === nAll) ? ('rows[].用途（后端读时标 · 全 ' + nAll + ' 行皆带）')
-                                 : ('⚠ 唯 ' + keyed.length + ' ／ ' + nAll + ' 行带 `用途`') };
+                                 : ('⚠ 唯 ' + keyed.length + ' ／ ' + nAll + ' 行带 用途') };
   paSlotSt.usageMap = {};
   keyed.forEach(function(r){
     var t = String((r && (r['件号'] || r['task_id'])) || '');
@@ -1370,7 +1370,7 @@ async function paSlotLearn(){
   var ks = Object.keys(cnt).sort(function(a, b){ return cnt[b] - cnt[a]; });
   paSlotSt.who = ks.length ? ks[0] : null;
   paSlotSt.whoSrc = 'GET /v9/pa/deliver/authz?usage=all · rows ' + nAll
-    + '（业务 ' + sB + ' ／ 探针 ' + sP + ' · ' + (bk ? '后端 `用途之数`' : '⚠ 后端未给 `用途之数`') + '）'
+    + '（业务 ' + sB + ' ／ 探针 ' + sP + ' · ' + (bk ? '后端 用途之数' : '⚠ 后端未给 用途之数') + '）'
     + (ks.length ? (' · 报给谁 众数（' + cnt[ks[0]] + ' 行 · ' + (nBiz ? '取业务行' : '⚠ 无业务行 ⇒ 取全量') + '）') : ' · 无「报给谁」值');
   return paSlotSt.who;
 }
@@ -1382,7 +1382,7 @@ function paSlotVerdict(obj){
     var inA = allow.indexOf(o) >= 0 || (!o && allow.indexOf(paSlotSt.who) >= 0);
     return { ok: inA, known: true, table: allow,
       txt: inA ? ('\u2705 \u5728\u5141\u8bb8\u8868\u5185\uff08\u6e90\uff1aPOST /v9/pa/deliver/mail \u54cd\u5e94 policy.allow_to \u00b7 ' + allow.length + ' \u6761\uff09')
-               : ('\u26d4 \u6b64\u5bf9\u8c61\u4e0d\u5728\u5141\u8bb8\u8868 \u21d2 \u987b\u5148\u51c6\u53d1\uff08\u589e `PA_MAIL_ALLOW_TO` \u00b7 \u2b50 \u8be5\u589e\u4ea6\u987b\u8001\u677f\u70b9\uff09') };
+               : ('\u26d4 \u6b64\u5bf9\u8c61\u4e0d\u5728\u5141\u8bb8\u8868 \u21d2 \u987b\u5148\u51c6\u53d1\uff08\u589e PA_MAIL_ALLOW_TO \u00b7 \u2b50 \u8be5\u589e\u4ea6\u987b\u8001\u677f\u70b9\uff09') };
   }
   if(!o){
     return { ok: !!paSlotSt.who, known: !!paSlotSt.who, table: null,
@@ -1394,12 +1394,12 @@ function paSlotVerdict(obj){
     if(o === paSlotSt.who) return { ok: true, known: true, table: null,
       txt: '\u2705 \uff1d \u672c\u4eba\uff08\u6e90 deliver/authz \u00b7 \u62a5\u7ed9\u8c01\uff09\u00b7 \u5728\u518c' };
     return { ok: false, known: false, table: null,
-      txt: '\u26a0 \u6b64\u5bf9\u8c61 \u26d4 \u5df2\u77e5\u4e4b\u672c\u4eba\uff08' + paSlotSt.who + '\uff09\u21d2 **\u53ef\u80fd\u4e0d\u5728\u767d\u540d\u5355** \u21d2 '
-         + '\u987b\u5148\u51c6\u53d1\uff08\u589e `PA_MAIL_ALLOW_TO` \u00b7 \u2b50 \u8be5\u589e\u4ea6\u987b\u8001\u677f\u70b9\uff09\u00b7 '
-         + '\u5141\u8bb8\u8868\u5168\u91cf **\u672a\u53d6\u5f97**\uff08\u540e\u7aef\u552f\u4e8e deliver/mail \u54cd\u5e94\u4e4b policy.allow_to \u7ed9\u4e4b \u00b7 \u26d4 \u524d\u7aef\u9020\uff09' };
+      txt: '\u26a0 \u6b64\u5bf9\u8c61 \u26d4 \u5df2\u77e5\u4e4b\u672c\u4eba\uff08' + paSlotSt.who + '\uff09\u21d2 \u53ef\u80fd\u4e0d\u5728\u767d\u540d\u5355 \u21d2 '
+         + '\u987b\u5148\u51c6\u53d1\uff08\u589e PA_MAIL_ALLOW_TO \u00b7 \u2b50 \u8be5\u589e\u4ea6\u987b\u8001\u677f\u70b9\uff09\u00b7 '
+         + '\u5141\u8bb8\u8868\u5168\u91cf \u672a\u53d6\u5f97\uff08\u540e\u7aef\u552f\u4e8e deliver/mail \u54cd\u5e94\u4e4b policy.allow_to \u7ed9\u4e4b \u00b7 \u26d4 \u524d\u7aef\u9020\uff09' };
   }
   return { ok: false, known: false, table: null,
-    txt: '\u5141\u8bb8\u8868 **\u672a\u53d6\u5f97**\uff08\u6e90\u7f3a\uff1adeliver/authz \u672a\u5e94\u7b54 \u2227 \u5c1a\u65e0 deliver/mail \u54cd\u5e94 \u00b7 \u26d4 \u524d\u7aef\u9020\uff09' };
+    txt: '\u5141\u8bb8\u8868 \u672a\u53d6\u5f97\uff08\u6e90\u7f3a\uff1adeliver/authz \u672a\u5e94\u7b54 \u2227 \u5c1a\u65e0 deliver/mail \u54cd\u5e94 \u00b7 \u26d4 \u524d\u7aef\u9020\uff09' };
 }
 function paSlotJudgeRender(){
   var host = paSlotQ('paSlotJudge'); if(!host) return 0;
@@ -1418,9 +1418,9 @@ function paSlotJudgeRender(){
   R.push(paRow('用途（探针 ⇒ ⛔ 业务）', U ? ('业务 ' + U.biz + ' 行 ／ 探针 ' + U.probe + ' 行（全 ' + U.all + ' 行）') : '未取得',
     (U ? ('真源：' + U.src + (U.key ? (' ／ ' + U.key) : '')) : '源缺')
     + (U ? (' · 自洽复核（⛔ 前端映）：业务 ＋ 探针 ＝ ' + (U.biz + U.probe) + ' ／ 全 ' + U.all
-            + ' ∧ 带 `用途` ' + U.keyed + ' 行 ∧ 他值 ' + U.other + ' ⇒ ' + (U.bad ? '⚠ **后端 ⛔ 自洽**（显红）' : '≡')) : '')
+            + ' ∧ 带 用途 ' + U.keyed + ' 行 ∧ 他值 ' + U.other + ' ⇒ ' + (U.bad ? '⚠ 后端 ⛔ 自洽（显红）' : '≡')) : '')
     + (U && U.judge ? (' · 判据（后端逐字）：' + paEsc(U.judge)) : '')
-    + (U ? (' · 枚举值（后端 `usage_认` 逐字 · ⛔ 前端硬编）：' + (U.认 ? U.认.join(' ／ ') : '⚠ 后端未给 `usage_认`')) : '')
+    + (U ? (' · 枚举值（后端 usage_认 逐字 · ⛔ 前端硬编）：' + (U.认 ? U.认.join(' ／ ') : '⚠ 后端未给 usage_认')) : '')
     , !U || (U ? U.bad : false)));
   R.push(paRow('\u4eba\u5de5\u6b65\u6570', paSlotSt.steps + '\uff0f2' + (paSlotSt.steps > 2 ? ' \u26a0 \u8d85' : ''),
     '\u5224\u636e\uff08\u627f pm_\u520018p \u00a7\u4e09 \uff0f \u520015p-\u8865 \u00a7\u4e00.1\uff09\uff1a\u586b\u4e24\u7a7a \u21d2 \u3010\u51fa\u4ef6\u3011 1 \u6b65 \uff0b \u5361\u4e0a\u70b9 1 \u6b65 \u21d2 \u2264 2\uff08\u26d4 \u63a8\u7b97\uff09', paSlotSt.steps > 2));

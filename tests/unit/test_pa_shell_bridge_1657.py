@@ -6,7 +6,7 @@ u"""pm_1657 §二.2 之齿（CW b2a5182 · 2026-10-07）—— **壳之桥之页
 
   ⭐ 其约（pm_1657 §二.2 · **一处定形**）：**名** ＝ `window.paShell.openFeedbackDir`｜**参** ＝ **无**（径由壳自算
      ⇒ 守「桥 ⛔ 触他径」）｜**返** ＝ `Promise<{ok,path}|{ok:false,code,message}>`｜**失败之面** ＝ **⛔ 静默**
-     （明书「⛔ 开得（因）⇒ 去处：自行打开 <径>」）。
+     （明书「没开得（因）⇒ 去处」· 其径与因入 `title`）。
 
   B1 一处定形：`PA_SHELL_BRIDGE` 之字面唯 1 处 ∧ 其调唯 1 处 ∧ **⛔ 传参**（⛔ 触他径）。
   B2 ⛔ 出网：桥之诸函之体 ⛔ 含 `fetch` ／ `XMLHttpRequest` ／ `sendBeacon`。
@@ -14,9 +14,10 @@ u"""pm_1657 §二.2 之齿（CW b2a5182 · 2026-10-07）—— **壳之桥之页
   B4 面之册：`faces.json` 之 feedback 条之 `dom` 含此二 id（⛔ 则面册闸必判「悬」）。
   B5 附件之取（**报之证**）：`#paFbFiles` 仍为 `<input type=file multiple>` ∧ feedback.js ⛔ 自造「选附件」之桥法
      （⛔ 二源 —— 承 pm_1657 §二.2「回落 ∨ 并存」之问 ⇒ 取「一途通二处」）。
-  B6 行为（Node 台架 · 纯函）：无桥 ⇒ 禁 ＋ 明书「⛔ 供此能」＋ 去处（⛔ 空 ／ ⛔ 静默）；有桥之 idle ／ opening ／
+  B6 行为（Node 台架 · 纯函）：无桥 ⇒ 禁 ＋ 明书「不供此能」＋ 去处（⛔ 空 ／ ⛔ 静默）；有桥之 idle ／ opening ／
      ok（同径 ／ 异径 ／ 壳未回径）／ fail 之诸支 ⇒ 逐字。
   B7 实跑（Node 台架）：无桥 ⇒ `paFbRun.dir.state = 'fail'` ∧ `code = 'E_NO_BRIDGE'`；有桥 ⇒ `ok` ∧ `path` 逐字。
+  B9 反控（pm_2061 §二.2）：桥之诸明书 ⛔ 载内部记号 ∧ ⛔ 载饰符；落点之绝对径唯入 `title`（`paFbDirRaw`）。
 
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_shell_bridge_1657.py -q
@@ -37,10 +38,10 @@ FACES = ROOT / "web" / "pa" / "faces.json"
 SCRATCH = ROOT / "data" / "tmp" / "_cw_shell1657"
 
 BRIDGE = u"openFeedbackDir"
-NOBRIDGE = u"\u6b64\u58f3 \u26d4 \u4f9b\u6b64\u80fd"     # 此壳 ⛔ 供此能
+NOBRIDGE = u"\u6b64\u58f3\u4e0d\u4f9b\u6b64\u80fd"       # 此壳不供此能
 OUTLET = u"\u53bb\u5904"                                    # 去处
 OPENED = u"\u5df2\u5f00"                                    # 已开
-FAILED = u"\u26d4 \u5f00\u5f97"                             # ⛔ 开得
+FAILED = u"\u6ca1\u5f00\u5f97"                             # 没开得
 
 
 def _read(p: Path) -> str:
@@ -86,7 +87,7 @@ def _harness() -> str:
         u"var paFbRun = {dir: null};",
         u"var RENDER_N = 0;",
         u"function paFbRender(){ RENDER_N += 1; }",
-        _fn(t, u"paFbShell"), _fn(t, u"paFbDirText"),
+        _fn(t, u"paFbShell"), _fn(t, u"paFbDirText"), _fn(t, u"paFbDirRaw"),
         _fn(t, u"paFbDirEnabled"), _fn(t, u"paFbOpenDirClick"),
     ]
     cases = u"""
@@ -103,6 +104,10 @@ U.bridge_ok_diff   = paFbDirText(res, true, {state:'ok', path: 'D:\\\\x'});
 U.bridge_ok_nopath = paFbDirText(res, true, {state:'ok'});
 U.bridge_fail      = paFbDirText(res, true, {state:'fail', code:'E_OPEN', message:'拒绝'});
 U.no_dir_bridge    = paFbDirText({state:'ok'}, true, null);
+U.title_no_bridge  = paFbDirRaw(res, false, null);
+U.title_bridge_idle= paFbDirRaw(res, true, null);
+U.title_bridge_ok  = paFbDirRaw(res, true, {state:'ok', path: DIR});
+U.title_bridge_fail= paFbDirRaw(res, true, {state:'fail', code:'E_OPEN', message:'拒绝'});
 U.en_no_bridge     = paFbDirEnabled(res, false, null);
 U.en_bridge        = paFbDirEnabled(res, true, null);
 U.en_opening       = paFbDirEnabled(res, true, {state:'opening'});
@@ -216,7 +221,8 @@ def test_B6_无桥须禁且明书供能与去处():
     assert u["shell_absent"] is True, u"无壳 ⇒ `paFbShell()` 须 null"
     assert NOBRIDGE in u["no_bridge_idle"], u["no_bridge_idle"]
     assert OUTLET in u["no_bridge_idle"], u["no_bridge_idle"]
-    assert u"data/pa/feedback" in u["no_bridge_idle"], u"须现示落点之径（可自复制）—— " + u["no_bridge_idle"]
+    assert u"data/pa/feedback" not in u["no_bridge_idle"], u"落点之绝对径 ⛔ 上屏（pm_2061 §二.2 之界）—— " + u["no_bridge_idle"]
+    assert u"其径见此钮之悬停" in u["no_bridge_idle"], u"径之去处须有可查之告 —— " + u["no_bridge_idle"]
     assert NOBRIDGE in u["no_bridge_after"] and OUTLET in u["no_bridge_after"], u["no_bridge_after"]
     assert u["en_no_bridge"] is False, u"无桥 ⇒ 其钮禁（⛔ 死路之虚能）"
 
@@ -224,11 +230,13 @@ def test_B6_无桥须禁且明书供能与去处():
 def test_B7_有桥之诸态逐字():
     u = _v()["u"]
     assert u["bridge_name"] == BRIDGE, u["bridge_name"]
-    assert u"打开落点目录" in u["bridge_idle"] and u"data/pa/feedback" in u["bridge_idle"], u["bridge_idle"]
+    assert u"打开落点目录" in u["bridge_idle"] and u"其径见此钮之悬停" in u["bridge_idle"], u["bridge_idle"]
+    assert u"data/pa/feedback" not in u["bridge_idle"], u"落点之绝对径 ⛔ 上屏（pm_2061 §二.2 之界）—— " + u["bridge_idle"]
     assert u"正在打开落点目录" in u["bridge_opening"], u["bridge_opening"]
     assert u["en_opening"] is False, u"opening ⇒ 禁（⛔ 连点）"
     assert u["en_bridge"] is True, u"有桥 ∧ ⛔ opening ⇒ 可"
-    assert OPENED in u["bridge_ok_same"] and u"data/pa/feedback" in u["bridge_ok_same"], u["bridge_ok_same"]
+    assert OPENED in u["bridge_ok_same"], u["bridge_ok_same"]
+    assert u"data/pa/feedback" not in u["bridge_ok_same"], u"落点之绝对径 ⛔ 上屏（pm_2061 §二.2 之界）—— " + u["bridge_ok_same"]
     assert u"⚠" in u["bridge_ok_diff"], u"壳回之径 ≠ 后端之落点径 ⇒ 须照实警（⛔ 掩）—— " + u["bridge_ok_diff"]
     assert OPENED in u["bridge_ok_nopath"], u["bridge_ok_nopath"]
     assert FAILED in u["bridge_fail"] and u"E_OPEN" in u["bridge_fail"], u["bridge_fail"]
@@ -249,3 +257,22 @@ def test_B8_实跑之落():
     fail = u["click_bridge_fail"]
     assert fail["dir"]["state"] == "fail" and fail["dir"]["code"] == "E_OPEN", fail
     assert FAILED in fail["text"] and OUTLET in fail["text"], fail["text"]
+# ---------- B9 反控（用户面唯人话 · 承 pm_2061 §二.2 裁⒉） ----------
+
+def test_B9_桥之诸明书无内部记号与饰符():
+    u = _v()["u"]
+    texts = [u["no_bridge_idle"], u["no_bridge_after"], u["bridge_idle"], u["bridge_opening"],
+             u["bridge_ok_same"], u["bridge_ok_diff"], u["bridge_ok_nopath"], u["bridge_fail"],
+             u["no_dir_bridge"], u["click_no_bridge"]["text"], u["click_bridge_end"]["text"],
+             u["click_bridge_fail"]["text"]]
+    for s in texts:
+        assert u"\u26d4" not in s, u"用户面载我方内部记号：" + s
+        for ch in (u"**", u"~~", u"`"):
+            assert ch not in s, u"用户面载饰符 " + ch + u"：" + s
+
+
+def test_B9b_落点之径唯入title():
+    u = _v()["u"]
+    for k in ("title_no_bridge", "title_bridge_idle", "title_bridge_ok", "title_bridge_fail"):
+        assert u"data/pa/feedback" in u[k], u"落点之径须入 `title`（可查 · ⛔ 丢真源）" + k + u" ⇒ " + u[k]
+    assert u"E_OPEN" in u["title_bridge_fail"], u["title_bridge_fail"]

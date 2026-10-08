@@ -192,6 +192,9 @@ async function sendPA(text, t, meta){
       return;
     }
     addMsg('assistant', d.reply || '（无回复）');
+    /* ⭐ pm_2061 §三.1（物⒉ 禁辞之显形 · 面侧）：陪伴轴之回执若载 `channel.untrue_wording`
+       ⇒ 渲**一处人话块**（⛔ 静默 · ⛔ 自造辞）；其工程之据入 `title`。端 ⛔ 给 ╱ 空表 ⇒ 一字 ⛔ 现。 */
+    try{ paUntrueWordingRender(d); }catch(e){}
     paRun.receipt = d.persisted || null;   /* P9 · BUG-1：落盘回执**由后端给**，前端不复述 */
     paSetState('done');
   }catch(e){
@@ -368,6 +371,13 @@ async function readSSE(resp){
           const _sem=semanticStage(s.tool,s.arg,semanticCtx(s.tool,s.arg))||semanticArg(s.tool,s.arg)||ACTION_SEMANTIC[s.tool]||'执行操作';
           const _raw=s.tool+' '+String(s.arg||'').slice(0,60);
           const _res=(s.result&&typeof s.result==='object')?s.result:null;
+          /* ⭐ pm_2061 §三.1⒝⒞（物⒈ 真迹）：回了什么（**唯取端之 `result`**）＋ 可否退（**唯照实**）。
+             端 ⛔ 给回 ⇒ 摘要段 ⛔ 现（⛔ 造辞 ╱ ⛔ 补数）；其逐字回（前 120 字）入 `title`（工程之据之地）。 */
+          const _stepSum=paStepSummary(s.result);
+          const _stepSuf=(_stepSum ? (' · '+_stepSum) : '') + ' ' + paStepUndoText(s.tool);
+          const _stepTip=_raw+((s.result!=null && String(s.result).trim())
+                             ? (' ｜ 端之回（逐字 · 前 120 字）：'+String(s.result).replace(/\s+/g,' ').trim().slice(0,120))
+                             : '');
           if(_res&&_res.blocked){
             /* M2-A · Step 3.1（语义修正）：阻断**不再借 `tool` 态**显示（设计稿 §2.3 三个不许之①）。
                事实来源 = 该次工具结果的 `reason` / `suggestion`（guard 原文，非前端编造）；
@@ -389,7 +399,7 @@ async function readSSE(resp){
             paWpsReadyCardRender(s.tool, _res.hint, _vis.artifact, _vis);
           }
           // 批183 · C3：桥就绪（ready===true）⇒ 引导卡片自动消失
-          else { paSetState('tool', '正在跑工具：'+_sem); paRunLog((s.success?'  ✅ ':'  ❌ ')+_sem, s.success?'ok':'err', true, _raw); if(_res&&_res.ready===true) paWpsReadyCardClear(); }
+          else { paSetState('tool', '正在跑工具：'+_sem); paRunLog((s.success?'  ✅ ':'  ❌ ')+_sem+_stepSuf, s.success?'ok':'err', true, _stepTip); if(_res&&_res.ready===true) paWpsReadyCardClear(); }
           tickPlan(s.tool, s.arg, s.success); });
         if(evt.type==='done' && evt.status!=='ask') onTaskDone();   // 批175：请示不是交付 —— 跑交付核验会报「交付未经核验」= 新的假警报
       }
@@ -482,7 +492,7 @@ async function paAttachOnPick(inp){
 function paAttachRender(){
   var box = document.getElementById('paAttachList');
   if(!box) return;
-  while(box.firstChild) box.removeChild(box.firstChild);
+  box.innerHTML = '';
   if(!paAttachRecs.length){ box.style.display = 'none'; return; }
   box.style.display = '';
   var head = document.createElement('div');

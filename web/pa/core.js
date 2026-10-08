@@ -166,13 +166,15 @@ window.PA_STALE = (function(){
       var nStale = 0, nNo = 0, worst = null;
       reg.forEach(function(rec){
         var s = stOf(rec), txt = '', cls = 'pastale';
-        if(s.k === 'nostamp'){ txt = '⚠ 取数刻未给（后端未给 `at` ⇒ 报 PM 转 TD · ⛔ 以屏刻充）'; cls += ' warn'; nNo++; }
+        /* ⭐ pm_2061 §二.2（裁⒉）：屏上唯人话 —— 端字段名 ＋ 反引号 ＋ 内部语（报 PM 转 TD）＋ 符号 ⇒ 入本徽标之 `title`（工程之据之地）。 */
+        if(s.k === 'nostamp'){ txt = '⚠ 取数刻未给（本机未报「取数刻」—— 不以屏幕刻充当）'; cls += ' warn'; nNo++; }
         else if(s.k === 'badstamp'){ txt = '⚠ 取数刻不可解析（' + String(rec.at) + '）'; cls += ' warn'; nNo++; }
         else if(s.k === 'stale'){ txt = '⏳ 已陈旧 · 请刷新（取数刻 ' + fmtStamp(rec.at) + ' · 已逾 ' + fmtAge(s.age) + '）'; cls += ' on'; nStale++; if(worst === null || s.age > worst) worst = s.age; }
         var b = rec.badge;
         if(b && b.parentNode){
           b.textContent = txt; b.className = cls;
-          b.title = '活面：' + rec.label + '（取数刻 ' + ((rec.at === null || rec.at === undefined || rec.at === '') ? '未给' : fmtStamp(rec.at)) + ' · 阈 ' + fmtAge(THRESH_MS) + '）';
+          b.title = '活面：' + rec.label + '（取数刻 ' + ((rec.at === null || rec.at === undefined || rec.at === '') ? '未给' : fmtStamp(rec.at)) + ' · 阈 ' + fmtAge(THRESH_MS) + '）'
+            + ((s.k === 'nostamp') ? ('｜本行之真根：本机未给取数刻（已记 · 候修）') : '');
         }
         try{ if(rec.el) rec.el.setAttribute('data-pa-stale', s.k); }catch(e){}
       });

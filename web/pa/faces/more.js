@@ -69,29 +69,32 @@ function paRenderPlans(){
   const qEl = document.getElementById('paPlanQ'), kEl = document.getElementById('paPlanKind');
   const cntEl = document.getElementById('paPlanCnt');
   if(paPlanAll === null){
-    if(srcEl) srcEl.textContent = '源：GET /v9/plans/list?view=' + paPlanView + ' · 未知（后端未应答）· ⛔ 编';
+    if(srcEl){ srcEl.textContent = '来源：本机计划清单 · 未知（本机没应答）'; srcEl.title = '源：GET /v9/plans/list?view=' + paPlanView + ' · 未应答（照实 · 不编）'; }
     box.innerHTML = '<div>未知（后端未应答）</div>';
     /* ⭐ pm_1052 §二（甲）：未应答之义 ≠ 0 行之义 ⇒ ⛔ 一符套两义（承 L103）。
        本处义 ＝ 未应答 ⇒ 人话（原炸裸 「—」）。 */
-    if(cntEl) cntEl.textContent = '未知（后端未应答）';
+    if(cntEl) cntEl.textContent = '未知（本机没应答）';
     return null;
   }
   const hit = paPlanHit(paPlanAll, qEl ? qEl.value : '', kEl ? kEl.value : '');
   const shown = hit.slice(0, 20);
   const pc = paPlanCounts || {};
-  if(srcEl) srcEl.textContent = '源：GET /v9/plans/list?view=' + paPlanView + ' · 共 ' + paPlanAll.length + ' 项（本页最多显示 20）'
-    + ((pc.real != null) ? (' · 后端 counts：真产出 ' + pc.real + ' ／ 测试痕 ' + pc.test_trace + ' ／ 全部 ' + pc.before) : ' · counts 未给（照实）');
+  if(srcEl){
+    srcEl.textContent = '来源：本机计划清单 · 共 ' + paPlanAll.length + ' 项（本页最多显示 20）'
+      + ((pc.real != null) ? (' · 本机计数：真产出 ' + pc.real + ' ／ 测试痕 ' + pc.test_trace + ' ／ 全部 ' + pc.before) : ' · 计数未给（照实）');
+    srcEl.title = '源：GET /v9/plans/list?view=' + paPlanView + ' · counts 键：real ／ test_trace ／ before';
+  }
   if(!shown.length){
     /* ⭐ 空 ≠ 缺：真产出为 0 而测试痕非 0 ⇒ 明标「已滤」（⛔ 以空充缺） */
     const hint = (paPlanView === 'real' && pc.test_trace)
       ? ('真产出 0 项 · 测试痕 ' + pc.test_trace + ' 项已滤（切「测试痕」可见）')
-      : (paPlanAll.length ? '筛选后 0 项（清空筛词即复原）' : '0 项（后端 assets: []）· 空态');
+      : (paPlanAll.length ? '筛选后 0 项（清空筛词即复原）' : '0 项（本机没这项）· 空态');
     box.innerHTML = '<div>' + hint + '</div>';
   } else {
     box.innerHTML = shown.map(function(a){
       const ts = (a.ts == null || a.ts === '') ? '—' : (PA_STAMP.fmt(a.ts) || '—');
-      return '<div class="p"><span class="k">' + paEsc(a.kind || '—') + '</span><span class="t">'
-        + paEsc(a.session_id || '—') + '</span><span class="s">' + paEsc(a.file || '') + ' · ' + ts + '</span></div>';
+      return '<div class="p" title="' + paEsc((a.session_id || '—') + ' · ' + (a.file || '')) + '">'
+        + '<span class="k">' + paEsc(a.kind || '—') + '</span><span class="s">' + ts + '</span></div>';
     }).join('');
   }
   const st = {shown: shown.length, hit: hit.length, total: paPlanAll.length};
@@ -663,7 +666,7 @@ function paProvRowHtml(p){
   const kindTxt = (kind === 'local') ? '本机' : ((kind === 'remote') ? '远端（租算力）' : (kind || '未给'));
   let mtxt;
   if(!Array.isArray(o.models)) mtxt = '未给';
-  else if(!o.models.length) mtxt = '0 个（后端 models: []）';
+  else if(!o.models.length) mtxt = '0 个（本机清单为空）';
   else mtxt = o.models.map(function(m){
     const mm = m || {};
     let s = String(mm.label || mm.id || '—');
@@ -711,33 +714,33 @@ async function paVendorScan(){
   const srcEl = document.getElementById('paProvSrc');
   const rowsEl = document.getElementById('paProvRows');
   const at = new Date().toLocaleString('zh-CN', {hour12: false});
-  if(srcEl) srcEl.textContent = '源：GET /v9/pa/providers · 扫于 ' + at + ' …';
+  if(srcEl){ srcEl.title = '源：GET /v9/pa/providers'; srcEl.textContent = '来源：本机模型清单 · 扫于 ' + at + ' …'; }
   let st = 0, d = null, err = null;
   try{ const r = await fetch(API + '/v9/pa/providers', {cache: 'no-store'}); st = r.status; if(r.ok) d = await r.json(); }
   catch(e){ err = e; }
   let out;
   if(err){
     out = {state: 'unreachable'};
-    if(srcEl) srcEl.textContent = '源：GET /v9/pa/providers · 未应答 · 扫于 ' + at;
+    if(srcEl) srcEl.textContent = '来源：本机模型清单 · 未应答 · 扫于 ' + at;
     if(rowsEl) rowsEl.innerHTML = '<div class="r"><span class="k">未应答</span><span>'
-      + '后端未回（' + paEsc(String((err && err.message) || err)) + '）⇒ ⛔ 不等于「没有供应商」'
+      + '本机没回（' + paEsc(String((err && err.message) || err)) + '）⇒ 不等于「没有供应商」'
       + '（承 L103 ／ L1052：未应答之义 ≠ 0 行之义）</span></div>';
   } else if(st === 404 || st === 501){
     out = {state: 'not_implemented', status: st};
-    if(srcEl) srcEl.textContent = '源：GET /v9/pa/providers · HTTP ' + st + ' · 扫于 ' + at;
+    if(srcEl) srcEl.textContent = '来源：本机模型清单 · 这一面本机没挂 · 扫于 ' + at;
     if(rowsEl) rowsEl.innerHTML = '<div class="r"><span class="k">' + PA_GAP.tag('down') + '</span><span>'
-      + '后端<b>' + PA_GAP.fallback('providers') + '</b>此读数（HTTP ' + st + '）⇒ 候 `_to_td_034`。本面板已就位：后端一接 ⇒ 本节即亮（⛔ 硬编充数）。'
+      + '后端<b>' + PA_GAP.fallback('providers') + '</b>此读数（HTTP ' + st + '）⇒ 候 _to_td_034。本面板已就位：后端一接 ⇒ 本节即亮（⛔ 硬编充数）。'
       + '</span></div>';
   } else if(st !== 200 || !d){
     out = {state: 'bad', status: st};
-    if(srcEl) srcEl.textContent = '源：GET /v9/pa/providers · HTTP ' + st + '（坏体）· 扫于 ' + at;
+    if(srcEl) srcEl.textContent = '来源：本机模型清单 · 回了不可解之体 · 扫于 ' + at;
     if(rowsEl) rowsEl.innerHTML = '<div class="r"><span class="k">坏体</span><span>HTTP ' + st
       + ' · 体不可解 ⇒ 如实报（⛔ 当 0 行）</span></div>';
   } else {
     const arr = Array.isArray(d) ? d : (Array.isArray(d.providers) ? d.providers : (Array.isArray(d.items) ? d.items : null));
     if(!arr){
       out = {state: 'shape', keys: Object.keys(d || {})};
-      if(srcEl) srcEl.textContent = '源：GET /v9/pa/providers · 应答（形状未给）· 扫于 ' + at;
+      if(srcEl) srcEl.textContent = '来源：本机模型清单 · 应答（形状未给）· 扫于 ' + at;
       if(rowsEl) rowsEl.innerHTML = '<div class="r"><span class="k">形状</span><span>应答 200 而无 providers[] ⇒ 键：'
         + paEsc(Object.keys(d || {}).join(' ／ ') || '（无）') + '（⛔ 猜 ／ ⛔ 当 0 行）</span></div>';
     } else {
@@ -746,12 +749,12 @@ async function paVendorScan(){
         ? (String(def.provider || '—') + ' ／ ' + String(def.model || '—') + (def.thinking ? (' ／ 思考 ' + String(def.thinking)) : ''))
         : '未给（⛔ 猜本机）';
       out = {state: 'ok', n: arr.length, def: defTxt};
-      if(srcEl) srcEl.textContent = '源：GET /v9/pa/providers · ' + arr.length + ' 项 · 默认 ' + defTxt + ' · 扫于 ' + at;
+      if(srcEl) srcEl.textContent = '来源：本机模型清单 · ' + arr.length + ' 项 · 默认 ' + defTxt + ' · 扫于 ' + at;
       if(rowsEl) rowsEl.innerHTML = (arr.length
         ? arr.map(function(x){ return paProvRowHtml(x); }).join('')
-        : '<div class="r"><span class="k">0 项</span><span title="⛔ 与「未接」同词（辨义 · ⛔ 上屏 · 承 pm 1272 §三 · 承 pm 1310 §二.1）">后端 providers: [] ⇒ 照实报 0</span></div>')
-        + '<div class="foot">逐行探法：`GET /v9/pa/providers`（后端读注册表 · 本页唯显示）｜密钥：唯布尔（⛔ 值入屏）｜本段 ⛔ 切换（候 P1）</div>'
-      + '｜⚠ 辨义（承 pm 1367 §二.3）：本栏「远端」＝**模型供应商（租算力）**，与「🌐 平台」栏（红线 · ⛔ 代操作他方平台）二名分列；与宿主远端机之「远端态」（未配 ／ 配了但不通 ／ 配了且通）亦非一物</div>';
+        : '<div class="r"><span class="k">0 项</span><span title="与「未接」不同词（辨义）">本机清单为空 ⇒ 照实报 0</span></div>')
+        + '<div class="foot" title="逐行探法：GET /v9/pa/providers（读本机注册表 · 本页唯显示）">逐行探法：本机注册表 · 本页唯显示｜密钥：唯布尔（值不入屏）｜本段不切换</div>'
+      + '｜⚠ 辨义：本栏「远端」＝模型供应商（租算力），与「🌐 平台」栏（红线 · 不代操作他方平台）二名分列；与宿主远端机之「远端态」（未配 ／ 配了但不通 ／ 配了且通）亦非一物</div>';
     }
   }
   const el = document.getElementById('paProvBox');
@@ -889,8 +892,8 @@ async function paRosterScan(){
         : '<div class="r"><span class="k">—</span><span>本格 0 卡（该级暂无卡）</span></div>';
     });
     html += '<div class="foot">逐行来路／探法：卡之 <code>access.channel</code> ＋ <code>access.entry</code> ＝ 来路；'
-      + '<code>verified[]</code> 各条 ＝ **实测来源**（名册纪律：未验证标 unverified · ⛔ 写「应该可以」）。<br>'
-      + '本机扫描器 ＋ 握手在<b>后端</b>（候 `_to_td_035` 修正版）⇒ 本页唯重取 ＋ 比差'
+      + '<code>verified[]</code> 各条 ＝ 实测来源（名册纪律：未验证标 unverified · ⛔ 写「应该可以」）。<br>'
+      + '本机扫描器 ＋ 握手在<b>后端</b>（候 _to_td_035 修正版）⇒ 本页唯重取 ＋ 比差'
       + '（⛔ 前端直起进程 ／ ⛔ 自动信任 ／ ⛔ 凭据入屏）｜本段 ⛔ 连接（候 Q1）</div>';
     if(rowsEl) rowsEl.innerHTML = html;
   }

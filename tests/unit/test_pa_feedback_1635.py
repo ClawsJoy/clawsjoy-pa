@@ -6,7 +6,8 @@ u"""pm_1635 五令 ＋ pm_1641 §二 之齿（CW b2a5182 · 2026-10-07）—— 
   ⒝ 读一处（`/health` 之 `feedback` 键）· 动分端（`/v9/pa/feedback`）—— 承 pm_1641 裁 ①；
   ⒞ 三面（起服 ／ 更新 ／ 反馈）⇒ **一幅横幅**（`paPrepMerge` 之末判 · 最低优先级 · ⛔ 三横幅）。
 
-  F1  正控：`/health.feedback` 有 notice ⇒ 常驻明书 ＝ 后端之**逐字**（⛔ 自撰）。
+  F1  正控：`/health.feedback` 有 notice ⇒ 常驻明书 ＝ 本机之**逐字**（不自撰）；
+      ⭐ pm_2061 §二.2：原字仍逐字（⇒ `title`）、屏上惟净形（`⛔` ⇒ 「不」＋剔饰四符）。
   F2  反控：无 `feedback` 键 ⇒ 明书「后端未给落点之声明」∧ **停发**。
   F3  反控：有 `feedback` 而 `notice` 空 ／ 白 ⇒ 明书「⛔ 自撰 ⇒ 停发」∧ **停发**。
   F4  正控：勾选逐项 ＝ 后端 `consent_buses` ∧ **默认全关**（⛔ 造项 ／ ⛔ 一个「全选」之便键）。
@@ -98,7 +99,8 @@ def _harness() -> str:
         _decl(s, u"const PA_FB_ITEM"), _decl(s, u"const PA_FB_POLL_MS"), _decl(s, u"const PA_FB_OUTLET"),
         _decl(s, u"const PA_FB_BANNER_TTL_MS"), _decl(s, u"const PA_FB_BANNER_FAIL_MS"),
         _block(s, u"const PA_FB_BUS = {", u"};"),
-        _fn(s, u"paFbBusLabel"), _fn(s, u"paFbTarget"), _fn(s, u"paFbNoticeText"),
+        _fn(s, u"paFbBusLabel"), _fn(s, u"paFbTarget"),
+        _fn(s, u"paFbHumanLine"), _fn(s, u"paFbNoticeText"), _fn(s, u"paFbNoticeRaw"),
         _fn(s, u"paFbGate"), _fn(s, u"paFbBusTags"), _fn(s, u"paFbItemsText"),
         _fn(s, u"paFbReplyText"), _fn(s, u"paFbSendText"), _fn(s, u"paFbBannerView"),
         _fn(s, u"paFbFeedBanner"),
@@ -124,8 +126,11 @@ const H_NOB = {status:"healthy", feedback:{mode:"local", outbound:false, dir:"da
 const out = {t:{}, nt:{}, g:{}, b:{}, s:{}, i:{}, r:{}, bv:{}, bb:{}, m:{}};
 out.t.ok = paFbTarget(H_OK); out.t.noans = paFbTarget(H_NOFB);
 out.t.blank = paFbTarget(H_BLANK); out.t.nob = paFbTarget(H_NOB); out.t.out = paFbTarget(H_OUT);
-out.nt.ok = paFbNoticeText(out.t.ok); out.nt.noans = paFbNoticeText(out.t.noans);
+out.nt.ok = paFbNoticeText(out.t.ok); out.nt.ok_raw = paFbNoticeRaw(out.t.ok);
+out.nt.noans = paFbNoticeText(out.t.noans);
 out.nt.blank = paFbNoticeText(out.t.blank);
+out.nt.marks = paFbHumanLine("**a** \u00b7 `b` \u00b7 ~~c~~");
+out.nt.cross = paFbHumanLine("\u26d4 出机 \u00b7 \u26d4 联网发送");
 out.g.ok = paFbGate(out.t.ok, false, false, {title:"t", body:"b"});
 out.g.noans = paFbGate(out.t.noans, false, false, {title:"t", body:"b"});
 out.g.blank = paFbGate(out.t.blank, false, false, {title:"t", body:"b"});
@@ -181,23 +186,32 @@ def _v() -> dict:
 # ---------- F1 ～ F3：常驻明书（唯后端之辞 · ⛔ 自撰） ----------
 
 def test_F1_明书唯取后端notice之逐字():
+    u"""守原意（pm_1635 §二.2）不变：常驻明书 ＝ 取端之 `notice`（不自行编辞）。
+
+    ⭐ pm_2061 §二.2（裁⒉ · 平文唯人话）之后：**原字仍逐字**（⇒ `title` · 可查 · 不丢），
+    屏上之形唯净（剔饰四符 ＋ 我方内部记号 `⛔` ⇒ 「不」）。
+    """
     v = _v()
     assert v["t"]["ok"]["state"] == "ok", v["t"]["ok"]
-    assert v["nt"]["ok"] == NOTICE, v["nt"]["ok"]
+    assert v["nt"]["ok_raw"] == NOTICE, u"原字（真源 · 供 `title`）须逐字：" + v["nt"]["ok_raw"]
+    assert u"⛔" not in v["nt"]["ok"], u"屏上之形不得载我方内部记号：" + v["nt"]["ok"]
+    assert v["nt"]["ok"] == u"内测版：留言只存在你这台机器上（不出机 · 不联网发送）", v["nt"]["ok"]
+    assert v["nt"]["marks"] == u"a · b · c", v["nt"]["marks"]
+    assert v["nt"]["cross"] == u"不出机 · 不联网发送", v["nt"]["cross"]
     assert v["g"]["ok"]["ok"] is True, v["g"]["ok"]
 
 
 def test_F2_无feedback键须明书且停发():
     v = _v()
     assert v["t"]["noans"]["state"] == "unanswered", v["t"]["noans"]
-    assert u"后端未给落点之声明" in v["nt"]["noans"], v["nt"]["noans"]
+    assert u"本机还没给落点之声明" in v["nt"]["noans"], v["nt"]["noans"]
     assert v["g"]["noans"]["ok"] is False, v["g"]["noans"]
 
 
 def test_F3_notice空须明书且停发():
     v = _v()
     assert v["t"]["blank"]["state"] == "ok" and v["t"]["blank"]["notice"] == "", v["t"]["blank"]
-    assert u"⛔ 自撰" in v["nt"]["blank"] and u"停发" in v["nt"]["blank"], v["nt"]["blank"]
+    assert u"不自行编辞" in v["nt"]["blank"] and u"停发" in v["nt"]["blank"], v["nt"]["blank"]
     assert v["g"]["blank"]["ok"] is False and u"明书" in v["g"]["blank"]["why"], v["g"]["blank"]
 
 
@@ -234,7 +248,8 @@ def test_F7_发之三态():
     v = _v()
     assert v["s"]["sending"] == u"发送中…", v["s"]["sending"]
     ok = v["s"]["ok"]
-    assert u"D:/clawsjoy_v9/data/pa/feedback/fb_x1" in ok, ok
+    assert u"D:/" not in ok, u"落点之绝对径 ⛔ 上屏（pm_2061 §二.2 之界）：" + ok
+    assert u"fb_x1" in ok, ok
     assert u"已存本机；内测期不联网发送" in ok, ok
     fail = v["s"]["fail"]
     assert u"请填「题目」" in fail and u"去处" in fail, fail
@@ -243,7 +258,8 @@ def test_F7_发之三态():
 def test_F8_我之收件之痕():
     v = _v()
     assert u"我之收件：0 条" in v["i"]["zero"], v["i"]["zero"]
-    assert u"D:/clawsjoy_v9/data/pa/feedback" in v["i"]["zero"], v["i"]["zero"]
+    assert u"点「打开落点目录」可见其径" in v["i"]["zero"], v["i"]["zero"]
+    assert u"D:/" not in v["i"]["zero"], u"落点之绝对径 ⛔ 上屏"
     two = v["i"]["two"]
     assert u"我之收件：2 条" in two and u"最近 2026-10-07T13:00:00+0800" in two, two
 
