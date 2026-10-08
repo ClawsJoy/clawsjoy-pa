@@ -187,6 +187,7 @@ def _register_tools():
     from core.tools.note_kb import NoteKbPlugin  # ⭐ note 内核之六面之口（pm_1444 §二.2）
     from core.tools.obsidian_knowledge import ObsidianKnowledgePlugin  # S4 单轨(原 elif 迁 handler)
     from core.tools.pa_audit import PaAuditPlugin  # 2026-09-11 PA 验收(preflight/postcheck)
+    from core.tools.pa_read import PaReadPlugin  # ⭐ pm_1859 §一.4：PA 只读面之真工具（由路由表生）
     from core.tools.playwright_browser import PlaywrightBrowserPlugin
     from core.tools.query_index import QueryIndexPlugin
     from core.tools.read_file import ReadFilePlugin
@@ -216,6 +217,7 @@ def _register_tools():
             "wps_office": WpsOfficePlugin,
             "lingxi": LingxiPlugin,
             "pa_audit": PaAuditPlugin,
+            "pa_read": PaReadPlugin,  # ⭐ pm_1859 §一.4（治）：办事轴能真调本 PA 之只读面
             "file_center": FileCenterPlugin,
         }
     )
@@ -437,7 +439,11 @@ def _filter_tools_by_mode(tools, session_id, messages=None):
             return tools
         _filtered = [t for t in (tools or []) if t.get("function", {}).get("name") in _allowed]
         # 核心工具兜底(模式配置意外缺项时写审批/基本操作不受影响)
-        for _core in ("write_file", "read_file", "execute_command"):
+        # ⭐ pm_1859 §一.4（令）：`pa_read` **亦恒保** —— 它是 **PA 自己的读数口**，
+        #   ⛔ 属「能力广度」（模式白名单之职是**按任务收敛广度**）。
+        #   ⚠ ⛔ 保 ⇒ 模型仍看不见该工具 ⇒ 老板「只看得见一张能力单」之病**照旧**
+        #     （守此保，本批之修方**不是空的**）。⛔ 写类面仍**照旧受白名单**。
+        for _core in ("write_file", "read_file", "execute_command", "pa_read"):
             if not any(t.get("function", {}).get("name") == _core for t in _filtered):
                 _src = next((t for t in (tools or []) if t.get("function", {}).get("name") == _core), None)
                 if _src:

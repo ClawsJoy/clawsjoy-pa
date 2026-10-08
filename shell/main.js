@@ -20,6 +20,7 @@ const fs = require('fs');
 const http = require('http');
 const ID = require('./identity');   // ⭐ 身份之判（**一处定形** · pm_1679 §四）
 const UP = require('./update');     // ⭐ 载荷层之更新之器（**一处定形** · pm_1684 §二）
+const SU = require('./shell_update');  // ⭐ 壳层之更新之策（**一处定形** · pm_1885 §三 ／ pm_1890 §一）
 
 const APP_ID = 'com.clawsjoy.pa';
 const SELFTEST = !!process.env.CLAWSJOY_SHELL_SELFTEST;
@@ -152,6 +153,32 @@ async function firstRunCheck() {
   }
   return res;
 }
+
+// ------------------------------------------------ 安装期之记（任务定形之果 · 上报一次 · 承 pm_1896 §二.3⒞）
+/* 由：NSIS 壳器于装毕跑 `scripts/win_pa/install_tasks_silent.py --go`（`shell/build/tasks.nsh` —— 其转调
+ *   `install_win_pa` 之任务之路 ⇒ 一处定形）⇒ 其记唯落 `%LOCALAPPDATA%\ClawsJoyPA\shell\`（与 `shell.log`
+ *   同处）；⭐ 壳首启**报一次**：rc ⛔ 0 ⇒ 上屏明书（**因 ＋ 去处**）· 报毕**改名**（⛔ 每启皆报 —— 免噪声）
+ *   ∧ ⛔ 阻壳（任务败而阻壳 ＝ 更坏之态 · 承 pm_1896 §二.3⒞）。 */
+function installTasksRecord() { return path.join(localDir(), 'install_tasks.rc'); }
+async function reportInstallTasksOnce() {
+  const rcFile = installTasksRecord();
+  let txt = null;
+  try { if (fs.existsSync(rcFile)) { txt = fs.readFileSync(rcFile, 'utf8'); } } catch (e) { txt = null; }
+  if (txt == null) { return null; }
+  try { fs.renameSync(rcFile, rcFile + '.reported'); } catch (e) { /* ⛔ 改得 ⇒ 唯日志 */ }
+  const m = String(txt).match(/rc=(\S*)/);
+  const raw = m ? m[1] : '';
+  const rc = /^-?\d+$/.test(raw) ? Number(raw) : null;   // ⭐ ⛔ 编数：⛔ 数字者 ⇒ null（照实）
+  log('安装期之记（计划任务之形）：rc=' + (rc === null ? ('⛔ 数（' + raw + '）') : rc));
+  if (rc === 0) { return { rc: 0 }; }
+  await showLines('安装：计划任务之形 ⛔ 成（桌面程序照装）', [
+    '因：装桌面程序时「计划任务之形」定形 ⛔ 成（rc=' + (rc === null ? (raw || '未记') : rc) + '）',
+    '果：开机 ／ 定时那两条任务或仍旧形 ⇒ 可能仍有控制台窗一闪',
+    '去处：' + path.join(localDir(), 'install_tasks.log')
+  ]);
+  return { rc: rc };
+}
+
 
 // 器之核（**唯自测用之** —— 产品之径 ⛔ 重解版号：⛔ 二处各写）
 function payloadVersionByRead() {
@@ -314,7 +341,7 @@ function buildTray() {
     { label: '留言 / 反馈', submenu: fb },
     { type: 'separator' },
     { id: UPDATE_ENTRY_ID, label: UP.entryLabel(null), click: function () { onUpdateClick(); } },
-    { label: '检查更新（壳层）', click: function () { checkShellUpdate(); } },
+    { id: SHELL_UPD_ID, label: '检查更新（壳层）', click: function () { onShellUpdateClick(); } },
     { type: 'separator' },
     { label: '退出', click: function () { isQuitting = true; saveWindowState(); app.quit(); } }
   ]);
@@ -327,7 +354,7 @@ function buildAppMenu() {
   appMenu = Menu.buildFromTemplate([
     { label: 'ClawsJoy', submenu: [
       { id: UPDATE_ENTRY_ID, label: UP.entryLabel(null), click: function () { onUpdateClick(); } },
-      { label: '检查更新（壳层）', click: function () { checkShellUpdate(); } },
+      { id: SHELL_UPD_ID, label: '检查更新（壳层）', click: function () { onShellUpdateClick(); } },
       { type: 'separator' },
       { label: '退出', click: function () { isQuitting = true; saveWindowState(); app.quit(); } } ] },
     { label: '视图', submenu: [ { role: 'reload' }, { role: 'toggleDevTools' }, { type: 'separator' },
@@ -422,19 +449,69 @@ async function onUpdateClick() {
   if (run.ok) { reloadPage(); }
 }
 
-// ---------------------------------------------------------------- 壳层之更新（electron-updater · ⛔ 与载荷层相撞）
-function checkShellUpdate() {
-  let autoUpdater = null;
-  try { autoUpdater = require('electron-updater').autoUpdater; }
-  catch (e) { log('⛔ 见 electron-updater（壳层之更新 ⛔ 可查）：' + (e && e.message)); return { ok: false, why: 'no-updater' }; }
-  try {
-    autoUpdater.autoDownload = false;
-    autoUpdater.on('update-available', function (i) { log('壳层：有新版 ' + (i && i.version)); });
-    autoUpdater.on('update-not-available', function () { log('壳层：已是最新'); });
-    autoUpdater.on('error', function (e) { log('壳层之查败（⛔ 充「已是最新」）：' + (e && e.message)); });
-    autoUpdater.checkForUpdates();
-    return { ok: true };
-  } catch (e) { log('壳层之查 ⛔ 得：' + (e && e.message)); return { ok: false, why: String(e && e.message) }; }
+// ------------------------------------------------ 壳层之更新（electron-updater · 策唯在 shell_update.js）
+/* 一处定形（承 pm_1885 §三 ／ pm_1886 §一 ／ pm_1890 §一 ／ pm_1896 §三）：
+ *   * **策**（态机 ／ 人话 ／ 门）唯在 `shell_update.js`（**纯** ⇒ 可单测）；本档唯**注入** electron-updater ＋ 接 IPC。
+ *   * **A 式**：有新版 ⇒ 下载（可显进度）；下载毕 ⇒ 唯**人点**（面之钮 ∨ 本菜单）方装 ⇒ ⛔ 偷重启。
+ *   * 「推」唯唤面**再拉**（⛔ 传态 —— 免得「拉与推不一」而用户见二真相 · pm_1890 §一.2）。
+ *   * ⛔ 动 `app-update.yml` 之四栏（pm_1889 §一：不签名之正解在「本来未声明校验」）。
+ */
+const SHELL_UPD_ID = 'pa-shell-update-entry';
+let ShellUpd = null;
+
+function shellUpdater() {
+  if (ShellUpd) { return ShellUpd; }
+  let up = null;
+  if (PACKAGED) {
+    try { up = require('electron-updater').autoUpdater; }
+    catch (e) { log('壳层之更新：⛔ 见 electron-updater（' + ((e && e.message) || e) + '）⇒ 态 ＝ unsupported'); }
+  } else {
+    log('壳层之更新：开发态（⛔ 打包）⇒ 态 ＝ unsupported（⛔ 真跑更新器 —— 免误触）');
+  }
+  ShellUpd = SU.createController({
+    updater: up, current: app.getVersion(), packaged: PACKAGED, log: log,
+    notify: function () {
+      try { if (win && !win.isDestroyed()) { win.webContents.send('pa:shell-update-ping'); } }
+      catch (e) { /* 推之侧之错 ⛔ 阻壳 */ }
+      refreshShellUpdateMenu();
+    }
+  });
+  log('壳层之更新之策已立：态 ＝ ' + ShellUpd.state().phase);
+  return ShellUpd;
+}
+
+function shellUpdateLabel() {
+  const st = shellUpdater().state();
+  if (st.phase === 'downloaded') { return '重启并安装新版（壳 ' + (st.latest || '') + '）'; }
+  if (st.phase === 'available' || st.phase === 'downloading') { return '壳层：下载新版中…'; }
+  if (st.phase === 'checking') { return '壳层：查新版中…'; }
+  if (st.phase === 'installing') { return '壳层：正在安装（本程序将重启）…'; }
+  if (st.phase === 'unsupported') { return '检查更新（壳层）· 本壳 ⛔ 带更新器'; }
+  if (st.phase === 'failed') { return '检查更新（壳层）· 上次 ⛔ 成'; }
+  return '检查更新（壳层）';
+}
+
+function refreshShellUpdateMenu() {
+  const st = shellUpdater().state();
+  const menus = [trayMenu, appMenu];
+  for (let i = 0; i < menus.length; i++) {
+    if (!menus[i]) { continue; }
+    const it = menus[i].getMenuItemById(SHELL_UPD_ID);
+    if (!it) { continue; }
+    it.label = shellUpdateLabel();
+    it.enabled = (st.phase === 'downloaded') || (st.phase === 'idle') || (st.phase === 'failed');
+  }
+}
+
+/* 菜单之点：已下毕 ⇒ 装（**唯人点** · 明书在其题）；余 ⇒ 查。 */
+async function onShellUpdateClick() {
+  const st = shellUpdater().state();
+  if (st.phase === 'downloaded') {
+    log('壳层之装：人点 ⇒ quitAndInstall（将重启）');
+    log('壳层之装 ⇒ ' + JSON.stringify(shellUpdater().install()));
+    return;
+  }
+  log('壳层之查 ⇒ ' + JSON.stringify(shellUpdater().check()));
 }
 
 // ---------------------------------------------------------------- 自测（⛔ 入产品之面）
@@ -552,6 +629,15 @@ async function selfTest() {
   if (win) { saveWindowState(); }
   r.window_state_file = windowStateFile();
   r.window_state_ok = fs.existsSync(windowStateFile());
+  // ⭐ pm_1896 §三 之齿（壳层之更新 · 一处定形）：返之形 ＋ unsupported 之判 ＋ 装之门（⛔ 谎报）
+  const _su = shellUpdater().state();
+  r.shellupd_phase = _su.phase;
+  r.shellupd_shape_ok = (typeof _su.ok === 'boolean') && (SU.PHASES.indexOf(_su.phase) >= 0)
+    && ('current' in _su) && ('latest' in _su) && ('progress' in _su)
+    && (_su.ok ? true : (SU.CODES.indexOf(_su.code) >= 0 && typeof _su.message === 'string'));
+  r.shellupd_unsupported = (!PACKAGED) ? (_su.phase === 'unsupported') : true;
+  r.shellupd_install_refused = (shellUpdater().install().phase === _su.phase);
+
   console.log('SHELL_RESULT ' + JSON.stringify(r));
   isQuitting = true;
   app.quit();
@@ -560,6 +646,8 @@ async function selfTest() {
 
 // ---------------------------------------------------------------- 启
 ipcMain.handle('pa:open-feedback-dir', function () { return openFeedbackDir(); });
+ipcMain.handle('pa:shell-update-state', function () { return shellUpdater().state(); });
+ipcMain.handle('pa:shell-update-install', function () { return shellUpdater().install(); });
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -580,11 +668,14 @@ if (!gotLock) {
     log('身份之核：' + JSON.stringify(IDENTITY));
     await readUpdateState();
     refreshUpdateMenu();
+    try { shellUpdater().check(); } catch (e) { log('壳层之查 ⛔ 得：' + (e && e.message)); }
     setInterval(function () { readUpdateState().then(refreshUpdateMenu); }, 60000);
     const _dec = ID.decidePage(IDENTITY);
     if (_dec.load === 'msg') { log('⛔ 载载荷之页（他之 PA 应答）⇒ 以「人话 ＋ 去处」代之'); }
     createWindow(_dec.load === 'msg' ? _dec.msg : null);
     try { buildTray(); } catch (e) { log('托盘 ⛔ 得：' + (e && e.message)); }
     buildAppMenu();
+    refreshShellUpdateMenu();
+    await reportInstallTasksOnce();
   });
 }

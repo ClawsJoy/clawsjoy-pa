@@ -191,6 +191,37 @@ def _set_capability_brief(app):
     return PA_CAPABILITY_BRIEF
 
 
+# ⭐⭐ pm_1859 §一.4（**端**）：只读面之工具（`core/tools/pa_read.py`）须**同源**调面
+#   ⇒ 挂载时**钉住真 app**（承 `capability_brief()` 之同法 · 一处定形）。
+#   ⚠ 由（一手 · 2026-10-08）：器已成而**门未接** ⇒ `_app()` 恒 None ⇒ 六面皆得
+#     「未挂载」之拒（齿 `test_pa_agent_chat_1859.py::test_today_really_calls_the_face` 咬 ·
+#      此即**正控之效** —— 齿先于发布咬出缺口）。
+_PA_APP = None
+
+
+def pa_app():
+    u"""**门**（一处定形 · 内读者唯此门）：取当前**真 app** —— 未挂载过 ⇒ 以**临时 app** 现挂一次。
+
+    ⚠ 与 `capability_brief()` 同法：临时 app 与真 app 走**同一套蓝图** ⇒ 视图同源。
+    ⚠ ⛔ 自建一套读者（承 pm_1859 §一.4 之防漂 ⇒ 二套必歧）。
+    """
+    global _PA_APP
+    if _PA_APP is None:
+        try:
+            from flask import Flask as _Flask
+            register_pa_routes(_Flask("pa_read_standalone"), brain=None)
+        except Exception as _e:
+            print("[PA] ⚠ 只读面之 app（临时生）未成：%s: %s" % (type(_e).__name__, _e), flush=True)
+    return _PA_APP
+
+
+def _set_pa_app(app):
+    u"""挂载即定形（承 pm_1859 §一.4）：真 app 一挂 ⇒ 只读面之工具**即**可进程内真调。"""
+    global _PA_APP
+    _PA_APP = app
+    return _PA_APP
+
+
 # ⭐ 058 §一.3（裁）：`/v9/pa/ask` 复问缓存（进程级 · 只读检索面）。
 #   ⚠ ⛔ 改 `searched` 之语义（承 057 §一.2 唯加键）⇒ 新键 `from_cache` ／ `scanned` ／ `saved_wall_s`。
 _ASK_CACHE = {}
@@ -368,6 +399,34 @@ def _uid_safe(raw):
     if not s or chr(0) in s or s in (".", "..") or "/" in s or "\\" in s or ":" in s:
         return ""
     return s
+
+# ---------------------------------------------------------------- 身份之归一（pm_1858 §二 · 9.0.11）
+# ⛔ 各路由另判「谁」：带「按 user_id 归档」之处，一律经本处归一到 owner（一处定形）。
+# ⚠ 由（一手）：本机 data/v9/pa 曾积 16 枚 id（真身份 1 枚 · 老板会话史 197397 B ＋ 验跑空壳 15 枚）
+#   —— 铸它的不是机器，是每一个浏览器上下文（身份落 localStorage）⇒ 换浏览器 ⇒ 又生一新 id
+#   ⇒ 「本机线程」随之清零（承 pm_1858 §一）。
+
+
+def _identity():
+    u"""身份之器（**一处出**）—— ⛔ 各路由另写「铸 ／ 认领 ／ 恒用既有」之判。"""
+    from core.pa import identity as _ID
+    return _ID
+
+
+def _uid_identity(raw):
+    u"""hint（浏览器之 user_id）⇒ **本机 owner 之 id**（归一 · pm_1858 §二.2）。
+
+    · 客户端标签（ web_* ）⇒ 归一：owner 既立 ⇒ **恒返它**（⛔ 由 hint 定归属）；首见 ⇒ 认领（其件非空）∘ 铸；
+    · 余者（ u1 式兼容之值 ／ 空）⇒ **直通**（本轮兼容 · 承 pm_1858 §四.3 旧齿之保）。
+    ⚠ owner.json **存在但不可用** ⇒ **抛 identity.OwnerCorrupt** ⇒ 调用方 409（⛔ 回落空身份续跑）。
+    """
+    return str(_identity().resolve(_data_dir(), hint=str(raw or "").strip()))
+
+
+def _owner_corrupt_json(_oc):
+    u"""坏身份档之报（**一处定形** · 409）：⛔ 回落空身份 ／ ⛔ 另铸（承 pm_1858 §四.1）。"""
+    return jsonify({"ok": False, "error": "owner_state_corrupt",
+                    "message": str(_oc), "path": getattr(_oc, "path", "")}), 409
 
 
 def session_model_of(uid, req=None):
@@ -2815,7 +2874,11 @@ def register_pa_routes(app, brain=None):
         from core.pa.threads import ThreadStore, ThreadStoreCorrupt
         from core.pa import threads as _TH
 
-        _uid = request.args.get("user_id")
+        from core.pa import identity as _ID
+        try:
+            _uid = _uid_identity(request.args.get("user_id"))     # ⭐ 归一
+        except _ID.OwnerCorrupt as _oc:
+            return _owner_corrupt_json(_oc)
         ts = ThreadStore(_data_dir())
         try:
             _tstate = ts.load(_uid)
@@ -2826,6 +2889,35 @@ def register_pa_routes(app, brain=None):
         _th = _session_binding(_tstate, _uid)
         _th["印"] = _code_sha16(pa_threads_get, _TH)
         return ok(_th)
+
+    # ---- 身份之端（pm_1858 §二.2 · 9.0.11）：面唯问「我是谁」（⛔ 由远机定身份）----
+    @bp.route("/v9/pa/whoami", methods=["GET"])
+    def pa_whoami():
+        u"""本机身份之**唯一读面**：hint（浏览器之标签）⇒ owner id ＋ 人话之 display。
+
+        ⭐ 唯本机（承 pm_1858 §四.1）：远机 ⇒ 403（身份 ⛔ 由远机定）。
+        ⭐ 人话（承 §二.3）：display 唯「画像之名 ∘ 本机」⇒ ⛔ 机器号 ／ ⛔ 内部缩写上屏。
+        ⚠ owner.json 坏 ⇒ 409（fail-loud · ⛔ 回落空身份 ／ ⛔ 另铸）。
+        ⭐ 并报「未认领之旧史」（⛔ 窃 ／ ⛔ 静默 · 承 pm_1858 §三.3）—— 旧史在盘上就得看得见。
+        """
+        from core.pa import identity as _ID
+
+        if not _loopback(request):
+            return err(u"唯本机之请求（身份 ⛔ 由远机定 —— 承 pm_1858 §四.1）", 403)
+        _hint = str(request.args.get("user_id") or "").strip()
+        if _hint and not _uid_safe(_hint):
+            return err(u"user_id 非法（须单段标识 · ⛔ 路径分隔 ／ 穿越）", 400)
+        try:
+            _doc = _ID.ensure_owner(_data_dir(), hint=_hint)
+        except _ID.OwnerCorrupt as _oc:
+            return _owner_corrupt_json(_oc)
+        _disp, _dsrc = _ID.display_of(_data_dir())
+        _out = {"owner_id": str(_doc.get("id") or ""), "source": str(_doc.get("source") or ""),
+                "owner_file": _ID.OWNER_FILE, "display": _disp, "display_source": _dsrc,
+                u"未认领之旧史": _ID.unclaimed_legacy(_data_dir(), owner_id=_doc.get("id"))}
+        if _doc.get("claimed_from"):
+            _out["claimed_from"] = str(_doc["claimed_from"])
+        return ok(_out)
 
     @bp.route("/v9/pa/threads", methods=["POST"])
     def pa_threads_post():
@@ -3175,14 +3267,14 @@ def register_pa_routes(app, brain=None):
         from core.pa import providers as _PV
 
         if request.method == "GET":
-            _m, _src = session_model_of(_uid_safe(request.args.get("user_id")))
+            _m, _src = session_model_of(_uid_identity(_uid_safe(request.args.get("user_id"))))
             return ok({"model": _m or "", "model_source": _src,
                        "default": _PV.default_view(),
                        "known_models": list(_PV.known_models()),
                        "model_aliases": _PV.model_aliases()},
                       印=_code_sha16(pa_session_model, _PV))
         body = request.get_json(silent=True) or {}
-        _uid = _uid_safe(body.get("user_id"))
+        _uid = _uid_identity(_uid_safe(body.get("user_id")))     # ⭐ 归一
         _raw = body.get("model")
         if _raw is None or not str(_raw).strip():
             _okc, _src = session_model_clear(_uid)
@@ -4311,6 +4403,11 @@ def register_pa_routes(app, brain=None):
             uid = _archive_uid(body.get("user_id"))
         except ValueError as _ve:
             return err(_ve, 400)
+        from core.pa import identity as _ID
+        try:
+            uid = _uid_identity(uid)          # ⭐ 归一（pm_1858 §二.2）：⛔ 由 hint 定归属
+        except _ID.OwnerCorrupt as _oc:
+            return _owner_corrupt_json(_oc)
         items = body.get("items")
         if not isinstance(items, list) or not items:
             return err("items 必须是非空数组", 400)
@@ -4393,6 +4490,11 @@ def register_pa_routes(app, brain=None):
             uid = _archive_uid(request.args.get("user_id"))
         except ValueError as _ve:
             return err(_ve, 400)
+        from core.pa import identity as _ID
+        try:
+            uid = _uid_identity(uid)          # ⭐ 归一（与 POST 同规）：⛔ 读面之径 ≠ 写面之径
+        except _ID.OwnerCorrupt as _oc:
+            return _owner_corrupt_json(_oc)
         try:
             state = ThreadStore(_data_dir()).load(uid)
         except ThreadStoreCorrupt as _c:
@@ -4621,6 +4723,7 @@ def register_pa_routes(app, brain=None):
     # ⭐⭐ pm_1802 §一.1（令）：**挂载即定形** —— 能力面清单由**本次挂载后**之路由表现生
     #   （新路由一上 ⇒ 清单自跟 · ⛔ 手写常量 ⇒ 防漂）。
     _set_capability_brief(app)
+    _set_pa_app(app)          # ⭐ pm_1859 §一.4：只读面之工具（pa_read）⇒ 钉真 app（一处定形）
     return bp
 
 

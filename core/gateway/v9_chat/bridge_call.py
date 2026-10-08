@@ -444,6 +444,13 @@ def make_stream_response(
                 except Exception:
                     _done_payload["verify_verdict"] = None
                 _done_payload["type"] = "done"
+                # ⭐⭐ pm_1859 §一.4（令）：流式路之**同一闸**（与 run_bridge_sync ／
+                #   /v9/pa/dialog **同源** · 一处定形）—— 含禁辞 ∧ ⛔ 真调 ⇒ 标 ＋ 重写。
+                try:
+                    from core.pa import untrue_wording as _uw_t
+                    _uw_t.apply_gate(_done_payload)
+                except Exception as _e_uw_t:
+                    print("[UNTRUE_WORDING] 流式闸未跑（⛔ 阻断主路）: %s: %s" % (type(_e_uw_t).__name__, _e_uw_t))
                 try:
                     # 批189 · #5：把本 session 最近一次上下文压缩统计随 done 下发
                     # （前端据此显示「已压缩 N 条」；压缩不是丢弃，是转记忆的第一步可见化）
@@ -596,4 +603,12 @@ def run_bridge_sync(
     else:
         _resp_ns["reason"] = _r_ns
         _resp_ns["reason_detail"] = _rd_ns
+    # ⭐⭐ pm_1859 §一.4（令）：**禁辞之运行期闸** —— 本轮输出含禁辞 ∧ 本轮 ⛔ 有 tool_call
+    #   ⇒ 标 ＋ 重写（⛔ 静默）。判据／表 ／标之字面**一处定形**在 `core/pa/untrue_wording.py`
+    #   （与 `/v9/pa/dialog` 之回执**同源**）。⚠ 有真调之轮**一字不动**（⛔ 误伤）。
+    try:
+        from core.pa import untrue_wording as _uw_s
+        _uw_s.apply_gate(_resp_ns)
+    except Exception as _e_uw_s:
+        print("[UNTRUE_WORDING] 闸未跑（⛔ 阻断主路）: %s: %s" % (type(_e_uw_s).__name__, _e_uw_s))
     return _resp_ns

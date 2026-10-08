@@ -20,10 +20,12 @@ r"""投一步.py —— 件-投-醒 一步之器（落箱 ＋ 落行 ＋ 醒 · 
 
 退出码：0 = 三步皆成（演毕亦然）｜2 = 用法错｜3 = 草稿不在｜4 = 落箱败（BOM ／ CR ／ 件之完 ／ 箱内异）
         ｜5 = 落行败（透传其 rc）｜6 = 已落行（复合键在 ⇒ ⛔ 复落）｜7 = **醒败**｜8 = 已投（凭在 ⇒ ⛔ 复投）
+        ｜9 = **号撞**（本日之号面 ⇒ 拒投 ＋ 荐空号 · 承 pm_1889 §三 ／ pm_1894 §一）
 
 界：⭐ 本器唯「编排」三步（⛔ 自撰字面 ／ ⛔ 自裁）；其三步之闸各归其器（落台账_行 ／ wake_send）。
 """
 import argparse
+import csv as csvmod
 import datetime
 import hashlib
 import io
@@ -335,7 +337,17 @@ def step_wake(name, tid, dry=False):
 
 # ---------------------------------------------------------------- 自证
 def selftest():
+    u"""自证 ⇒ rc（0 ／ 1）· ⭐ temp **自清**（承 `make_setup.py` 之族：唯自测之 temp 清理 · ⛔ 删产物）。"""
+    import shutil
     import tempfile
+    tmp = tempfile.mkdtemp(prefix="tou1_")
+    try:
+        return _selftest_body(tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _selftest_body(tmp):
     ok = True
 
     def res(name, got, want):
@@ -344,7 +356,6 @@ def selftest():
         ok = ok and hit
         print(u"  %s %s ⇒ %s（期 %s）" % (u"OK " if hit else u"✗ ", name, got, want))
 
-    tmp = tempfile.mkdtemp(prefix="tou1_")
     good = os.path.join(tmp, "a.md")
     open(good, "wb").write(u"# 甲\n正文\n".encode("utf-8"))
     bom = os.path.join(tmp, "b.md")
@@ -431,6 +442,33 @@ def selftest():
     res(u"其报含「席名 ⛔ 给」逐字", (u"席名 ⛔ 给" in m_n), True)
     res(u"--from ＝ 空白 ⇒ 2", check_sender(u"   ")[0], 2)
     res(u"明书席名 ⇒ 0（反控 · 可达零）", check_sender(u"技术总监")[0], 0)
+    print(u"[自证 7 号撞（承 pm_1889 §三 ／ pm_1894 §一 · ⭐ 逐字 ＋ 幂等 ＋ 荐号真可用）]")
+    _tb = os.path.join(tmp, "box2")
+    os.makedirs(_tb)
+    _tc = os.path.join(tmp, "led.csv")
+    _d = now_date()
+    io.open(_tc, "w", encoding="utf-8").write(
+        u"序号,日期,发件,收件,文件名,类别,状态,动作需求,回执件,备注,时点\n"
+        + (u"1888,%s,项目经理,技术总监,_令_TD_1888.md,令,open,x,,,2026-10-08T07:00:00+08:00\n" % _d)
+        + (u"1889,%s,项目经理,技术总监,_补_TD_1889.md,补,open,x,,,2026-10-08T07:01:00+08:00\n" % _d))
+    io.open(os.path.join(_tb, u"_报_CW_1890.md"), "w", encoding="utf-8").write(u"x\n")
+    _u = day_numbers(_d, csv=_tc, box=_tb)
+    res(u"号面二源并取（台账 2 ＋ 箱 1 ⇒ %s）" % sorted(_u), sorted(_u), [1888, 1889, 1890])
+    rc, m = check_number(1889, _d, u"技术总监", u"_报_TD_1899.md", box=_tb, csv=_tc)
+    res(u"反控：撞（异席之号）⇒ 9", rc, 9)
+    print(u"    其报：" + m.replace(u"\n", u" ／ "))
+    res(u"逐字 ⒜ 撞谁", (u"撞号：1889 已被 项目经理（2026-10-08T07:01:00+08:00 · _补_TD_1889.md）占用" in m), True)
+    res(u"逐字 ⒝ 荐一空号：1891", (u"荐一空号：1891" in m), True)
+    res(u"逐字 ⒞ 本日之号面", (u"本日之号面（近十）：" in m), True)
+    _c = int(re.search(u"荐一空号：([0-9]+)", m).group(1))
+    res(u"荐号**真可用**（不在号面）", (_c not in _u), True)
+    res(u"⛔ 静默改号（报 ⛔ 含「已改」）", (u"已改" in m), False)
+    rc, m = check_number(1888, _d, u"技术总监", u"_令_TD_1888.md", box=_tb, csv=_tc)
+    res(u"幂等：同席 ＋ 同件名 ⇒ 0（复投之径）", rc, 0)
+    rc, m = check_number(1877, _d, u"技术总监", u"_报_TD_1877.md", box=_tb, csv=_tc)
+    res(u"正控：未用之号 ⇒ 0", rc, 0)
+    rc, m = check_number(1890, _d, u"技术总监", u"_报_TD_1895.md", box=_tb, csv=_tc)
+    res(u"反控：箱内之号（账未及）亦算撞 ⇒ 9", rc, 9)
     print(u"[总判] %s" % (u"PASS" if ok else u"FAIL"))
     return 0 if ok else 1
 
@@ -444,6 +482,100 @@ def check_sender(sender):
     return 2, (u"席名 ⛔ 给（--from）⇒ 静默之默认 ＝ 误归（承 pm_1844 §二.3 · CW 1842 即中招）"
                u"｜表：%s" % u" ／ ".join(sorted(SEATS)))
 
+
+# ------------------------------------------------ 号之面（承 pm_1889 §三 ／ pm_1894 §一）
+
+#: 件名之尾号（`_报_TD_1884.md` ⇒ 1884 · 承 pm_1889 §三）
+NUM_TAIL = re.compile(u"_([0-9]{3,4})[.]md$")
+
+
+def day_numbers(date, csv=CSV, box=XT):
+    u"""本日各席**已用**之号 ⇒ {号: [(席, 件名, 刻, 源)]}（**二源并取** · 承 pm_1889 §三 ／ pm_1894 §一.1⒞）。
+
+    ⭐ 「预扫 ⛔ 足」：预扫与落箱之间有窗 —— 一手之真场景：pm 令 `1880` ts `07:22:43`
+      ∧ CW 报 `1880` ts `07:22:58` ⇒ 15 s 之窗 ⇒ ⭐ **唯落箱之刻为准**。
+    ① **台账**（`投递台账.csv` · 日期 ∧ 序号 ∧ 发件 ＋ 文件名 ＋ 时点）＝ 已入账者；
+    ② **箱**（本日 mtime ∧ 名尾 `_<号>.md`）＝ 已落箱而账未及者（他席并发之行中）。
+    ⭐ 二源**须并取**（任一漏 ⇒ 拒投失守 —— 与「两数须同源」之律同族 · 此处之「源」＝ 落箱那一瞬）。
+    """
+    used = {}
+    try:
+        with io.open(csv, encoding="utf-8-sig", newline=u"") as f:
+            for r in csvmod.DictReader(f):
+                if (r.get(u"日期") or u"").strip() != date:
+                    continue
+                _n = (r.get(u"序号") or u"").strip()
+                if not _n.isdigit():
+                    continue
+                used.setdefault(int(_n), []).append(
+                    ((r.get(u"发件") or u"").strip(), (r.get(u"文件名") or u"").strip(),
+                     (r.get(u"时点") or u"").strip(), u"台账"))
+    except Exception as _e:
+        print(u"⚠ 台账 ⛔ 读（%s）⇒ 号之面唯见箱（照实 · ⛔ 静默）" % type(_e).__name__)
+    try:
+        for fn in os.listdir(box):
+            m = NUM_TAIL.search(fn)
+            if not m:
+                continue
+            fp = os.path.join(box, fn)
+            try:
+                _dt = datetime.datetime.fromtimestamp(os.path.getmtime(fp))
+            except Exception:
+                continue
+            if _dt.strftime(u"%Y-%m-%d") != date:
+                continue
+            _n = int(m.group(1))
+            if any(_x[1] == fn for _x in used.get(_n, [])):
+                continue
+            used.setdefault(_n, []).append((u"?（箱内 · 席待账）", fn,
+                                            _dt.strftime(u"%H:%M:%S"), u"箱"))
+    except Exception as _e:
+        print(u"⚠ 箱 ⛔ 读（%s）⇒ 号之面唯见台账（照实 · ⛔ 静默）" % type(_e).__name__)
+    return used
+
+
+def num_face(used, upto=10):
+    u"""本日之号面 ⇒ 一行（近 `upto` 号 ＋ 各席用之者 · 降序 · 承 pm_1894 §一.1⒞）。"""
+    _ns = sorted(used, reverse=True)[:upto]
+    if not _ns:
+        return u"（本日 0 号）"
+    _out = []
+    for n in _ns:
+        _seats = []
+        for _x in used[n]:
+            _k = u"%s%s" % (_x[0], u"" if _x[3] == u"台账" else u"/箱")
+            if _k not in _seats:
+                _seats.append(_k)
+        _out.append(u"%d(%s)" % (n, u"∧".join(_seats)))
+    return u" ｜ ".join(_out)
+
+
+def check_number(num, date, sender, name, box=XT, csv=CSV, used=None):
+    u"""落箱之刻**复核号**（承 pm_1889 §三 ／ pm_1894 §一）⇒ (rc, 报)。
+
+    撞 ⇒ (9, 三事逐字：撞谁 ＋ 荐一空号 ＋ 本日之号面)｜⛔ 撞 ⇒ (0, 空串)。
+    ⭐ 幂等：**同件名**之号 ⛔ 算撞（＝复投之径 · 免得「拒投之后 ⛔ 得复投」）；
+      件名内嵌发件席（`_报_TD_1884.md` 族）⇒ 件名同 ⇒ 同席同件。
+    ⛔ 静默改号 ／ ⛔ 代改（唯报 ＋ 荐 —— 承 pm_1894 §一.2）。
+    """
+    try:
+        _n = int(num)
+    except Exception:
+        return 0, u""
+    if used is None:
+        used = day_numbers(date, csv, box)
+    _others = [_x for _x in used.get(_n, []) if _x[1] != name]
+    if not _others:
+        return 0, u""
+    _lines = [u"撞号：%d 已被 %s（%s · %s）占用" % (_n, _x[0], _x[2] or u"刻未记", _x[1])
+              for _x in _others]
+    _cand = (max(used) + 1) if used else 1
+    while _cand in used:
+        _cand += 1
+    _lines.append(u"荐一空号：%d（本日极大 %d ＋ 1 · 已复核不在本日号面）"
+                  % (_cand, max(used) if used else 0))
+    _lines.append(u"本日之号面（近十）：" + num_face(used))
+    return 9, u"\n".join(_lines)
 
 # ---------------------------------------------------------------- main
 def main():
@@ -488,6 +620,13 @@ def main():
     if recv != a.to:
         print(u"落账之名（归一）＝ %s（别名「%s」唯作入 · ⛔ 入账 · 承 pm 1298 §二）" % (recv, a.to))
     print(u"刻（器取）＝ %s ／ 箱 ＝ %s" % (ts, XT))
+    _used_n = day_numbers(date)
+    _rc_n, _msg_n = check_number(a.num, date, a.sender, name, used=_used_n)
+    if _rc_n != 0:
+        print(u"[号撞] " + _msg_n)
+        print(u"[止] 号 ⛔ 可用 ⇒ **拒投**（承 pm_1889 §三 ／ pm_1894 §一 · ⛔ 静默改号 ／ ⛔ 代改）｜rc=%s" % _rc_n)
+        return _rc_n
+    print(u"本日之号面（近十）＝ %s" % num_face(_used_n))
     skipped = []
     for label, fn in ((u"① 落箱", lambda: step_box(a.src, name, dry=dry)),
                       (u"② 落行", lambda: step_land(a.num, date, a.sender, recv, name, a.cat,
