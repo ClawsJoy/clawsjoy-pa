@@ -57,9 +57,16 @@ class _LocalOllamaAdapter:
     def execute_with_tools(self, messages, tools, user_id=None, temperature=0.7, max_tokens=2000, thinking=False):
         from core.gateway.execute_agent_task import _ollama_execute_with_tools
 
-        return _ollama_execute_with_tools(
+        _out = _ollama_execute_with_tools(
             messages=messages, tools=tools, model=self.model, temperature=temperature, max_tokens=max_tokens
         )
+        # 本地小模型 tool-call JSON 偶发不闭合 ⇒ 去掉 tools 再试一次（保留纯聊天能力）。
+        _err = str((_out or {}).get("error") or "")
+        if tools and not _out.get("success") and "Value looks like object" in _err:
+            _out = _ollama_execute_with_tools(
+                messages=messages, tools=[], model=self.model, temperature=temperature, max_tokens=max_tokens
+            )
+        return _out
 
 
 def _make_model_adapter(model, api_key):
