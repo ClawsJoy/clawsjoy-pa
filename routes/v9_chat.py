@@ -85,30 +85,71 @@ def _get_run_service():
 
 
 def _chat_entry_runner(record):
-    """runner 先接现有 run_chat_entry（单次任务，非 DSH）；返回 done/failed。"""
-    from core.gateway.v9_chat.entry import run_chat_entry
+    """runner：独立 subprocess 调 scripts/pa_run_worker.py（⛔ 重入 Flask）。
 
-    data = {
-        "user_id": record.get("user_id") or "default",
-        "session_id": record.get("session_id") or "default",
-        "model": record.get("model") or "",
-        "messages": [{"role": "user", "content": record.get("task") or ""}],
-        "stream": False,
-    }
+    病：RunService worker 在 Flask 进程内 HTTP 调同一服务会卡住（同进程等待自身）。
+    修：worker 只起**独立 python 子进程**；子进程再 POST 旧 /v9/agent/chat（stream=False），
+    回单行 JSON；本函数解析 done/failed，超时/坏输出明确失败。旧 chat 语义未改。
+    """
+    import json as _json
+    import os as _os
+    import subprocess as _sp
+    import sys as _sys
+
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    script = _os.path.join(root, "scripts", "pa_run_worker.py")
+    port = str(_os.environ.get("PA_GATEWAY_PORT") or "5102")
+    timeout = float(record.get("timeout") or 60.0)
+    cmd = [
+        _sys.executable,
+        "-X",
+        "utf8",
+        "-B",
+        script,
+        "--port",
+        port,
+        "--user",
+        str(record.get("user_id") or "default"),
+        "--session",
+        str(record.get("session_id") or "default"),
+        "--model",
+        str(record.get("model") or ""),
+        "--task",
+        str(record.get("task") or ""),
+        "--timeout",
+        str(timeout),
+    ]
     try:
-        payload, kind = run_chat_entry(data=data, deps=_deps)
-        if kind == "stream":
-            payload = {"ok": True, "text": "".join(str(x) for x in payload)}
-        if isinstance(payload, dict):
-            ok = payload.get("ok", payload.get("success", True))
-            return {
-                "status": "done" if ok else "failed",
-                "output": payload,
-                "error": "" if ok else str(payload.get("error") or "run_chat_entry failed"),
-            }
-        return {"status": "done", "output": payload}
+        proc = _sp.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
+    except _sp.TimeoutExpired:
+        return {"status": "failed", "error": f"worker timeout after {timeout}s", "reason": "runner_timeout"}
     except Exception as exc:  # noqa: BLE001
-        return {"status": "failed", "error": f"{type(exc).__name__}: {str(exc)[:300]}", "reason": "runner_exception"}
+        return {
+            "status": "failed",
+            "error": f"worker spawn: {type(exc).__name__}: {str(exc)[:300]}",
+            "reason": "runner_spawn",
+        }
+    stdout = (proc.stdout or "").strip()
+    payload = None
+    for line in reversed(stdout.splitlines()):
+        line = line.strip()
+        if line.startswith("{"):
+            try:
+                payload = _json.loads(line)
+                break
+            except Exception:  # noqa: BLE001
+                payload = None
+    if not isinstance(payload, dict):
+        tail = (proc.stderr or "")[-300:]
+        return {
+            "status": "failed",
+            "error": "worker output unparsable: %s" % (tail or stdout[-300:]),
+            "reason": "runner_output",
+        }
+    status = payload.get("status")
+    if status not in ("done", "failed"):
+        status = "failed"
+    return {"status": status, "output": payload.get("output"), "error": str(payload.get("error") or "")[:300]}
 
 
 # ---------------- API：4 端点 ----------------
