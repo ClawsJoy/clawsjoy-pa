@@ -1,42 +1,39 @@
 # ============================================================
-# ClawsJoy 网关 — 生产级 Dockerfile（多阶段构建）
-# 一键容器化部署：docker build -t clawsjoy-gateway . && docker run -p 8000:8000 clawsjoy-gateway
+# ClawsJoy 缃戝叧 鈥?鐢熶骇绾?Dockerfile锛堝闃舵鏋勫缓锛?# 涓€閿鍣ㄥ寲閮ㄧ讲锛歞ocker build -t clawsjoy-gateway . && docker run -p 8000:8000 clawsjoy-gateway
 # ============================================================
 
-# ---------- 阶段 1: builder ----------
-# 安装所有 Python 依赖到 /install，供 runtime 阶段复用
+# ---------- 闃舵 1: builder ----------
+# 瀹夎鎵€鏈?Python 渚濊禆鍒?/install锛屼緵 runtime 闃舵澶嶇敤
 FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-# 安装编译工具（部分依赖可能含 C 扩展），装完即清理，控制镜像体积
-RUN apt-get update && apt-get install -y --no-install-recommends \\
-    build-essential \\
+# 瀹夎缂栬瘧宸ュ叿锛堥儴鍒嗕緷璧栧彲鑳藉惈 C 鎵╁睍锛夛紝瑁呭畬鍗虫竻鐞嗭紝鎺у埗闀滃儚浣撶Н
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# 先复制 requirements.txt，充分利用 Docker 层缓存
-COPY requirements.txt .
+# 鍏堝鍒?requirements.txt锛屽厖鍒嗗埄鐢?Docker 灞傜紦瀛?COPY requirements.txt .
 
-# 将所有依赖安装到独立前缀 /install
+# 灏嗘墍鏈変緷璧栧畨瑁呭埌鐙珛鍓嶇紑 /install
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# ---------- 阶段 2: runtime ----------
+# ---------- 闃舵 2: runtime ----------
 FROM python:3.12-slim AS runtime
 
-# 环境变量：日志即时输出、不生成 __pycache__
-ENV PYTHONUNBUFFERED=1 \\
+# 鐜鍙橀噺锛氭棩蹇楀嵆鏃惰緭鍑恒€佷笉鐢熸垚 __pycache__
+ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-# 从 builder 复制已安装的依赖（site-packages / bin 合并进 /usr/local）
-COPY --from=builder /install /usr/local
+# 浠?builder 澶嶅埗宸插畨瑁呯殑渚濊禆锛坰ite-packages / bin 鍚堝苟杩?/usr/local锛?COPY --from=builder /install /usr/local
 
-# 复制项目源码
+# 澶嶅埗椤圭洰婧愮爜
 COPY . .
 
-# 暴露网关 HTTP 端口
+# 鏆撮湶缃戝叧 HTTP 绔彛
 EXPOSE 8000
 
-# 启动命令
+# 鍚姩鍛戒护
 CMD ["python3", "agent_gateway_enhanced.py"]
