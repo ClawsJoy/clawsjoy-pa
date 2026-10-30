@@ -920,7 +920,21 @@
     window.__paWinStopResolve = null;
     window.paWinSay('已发 · 等回…');
     try{
-      var _sendP = window.paSend();
+      var _sendP;
+      if(typeof window.sendAgent === 'function' && typeof activeThread === 'function'){
+        var _t = activeThread();
+        if(typeof addMsg === 'function') addMsg('user', text);
+        if(typeof setBusy === 'function') setBusy(true);
+        if(typeof paSetState === 'function') paSetState('running');
+        if(typeof paRun === 'object' && paRun){ paRun.busy = true; paRun.threadId = _t.id; }
+        _sendP = window.sendAgent(_t, text).finally(function(){
+          if(typeof setBusy === 'function') setBusy(false);
+          if(typeof paRun === 'object' && paRun){ paRun.busy = false; paRun.threadId = null; }
+        });
+      } else {
+        oldIn.value = text;
+        _sendP = window.paSend();
+      }
       _sendP.catch(function(){});
       var _stopP = new Promise(function(res){ window.__paWinStopResolve = res; });
       var _slow = new Promise(function(res){ setTimeout(function(){ res('__timeout'); }, 30000); });
