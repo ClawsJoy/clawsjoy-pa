@@ -169,6 +169,7 @@
       + '<div class="pa-chips"><button type="button" onclick="paWinMode(\'陪\')">陪</button>'
       + '<button type="button" onclick="paWinMode(\'办\')">办</button>'
       + '<button type="button" onclick="paWinMode(\'查\')">查</button></div></div>'
+      + '<div class="pa-summon-hint" style="font-size:11px;color:var(--sub);margin-top:4px;line-height:1.4">多席：多席:PM,PD …</div>'
       + '<div class="pa-summon-foot"><span>⏎ 发 · Esc 收</span><span id="paSummonAtt">附件 0</span></div></div>';
   }
 
