@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """P3-B 恢复层（从 v9_agent_chat 654- 归位，2026-09-12）。
 
 分块（块=函数，全部在本模块）：
@@ -16,6 +15,7 @@
 3. messages 由块返回（链式传递），块内不读闭包。
 4. 依赖函数以 fn 参数传入（防循环 import）。
 """
+
 import json
 import os
 import threading as _threading
@@ -183,7 +183,7 @@ def build_tools_and_trim(
                 "table_extract",
             )
             _before_n = len(tools)
-            tools = [t for t in tools if not (t.get("function", {}).get("name") in _rs_tools)]
+            tools = [t for t in tools if t.get("function", {}).get("name") not in _rs_tools]
             if len(tools) != _before_n:
                 print("[PHASE_GATE] verifying 阶段隐藏研究工具")
     except Exception:
@@ -285,7 +285,9 @@ def build_tools_and_trim(
                 "short_circuit": {
                     "success": True,
                     "data": {
-                        "choices": [{"message": {"content": f"✅ 已恢复: {', '.join(restored) if restored else '无备份文件'}"}}]
+                        "choices": [
+                            {"message": {"content": f"✅ 已恢复: {', '.join(restored) if restored else '无备份文件'}"}}
+                        ]
                     },
                 },
                 "messages": messages,
@@ -422,16 +424,25 @@ def inject_context_and_flags(
                     _fb_src = _fb_src2 or "none"
                 if _fallback_task:
                     messages.append(
-                        {"role": "system", "content": f"[上下文恢复(降级)] 上次任务摘要（来源：{_fb_src}）：\n{_fallback_task}"}
+                        {
+                            "role": "system",
+                            "content": f"[上下文恢复(降级)] 上次任务摘要（来源：{_fb_src}）：\n{_fallback_task}",
+                        }
                     )
                     print(f"[RESUME_CTX] 「继续」恢复上下文 来源={_fb_src} len={len(_fallback_task)}")
                 else:
                     return {
-                        "short_circuit": {"reply": "上下文丢失，请重新下达指令。（可直接把任务原文再发一次，我会接着做）", "error": "no_context"},
+                        "short_circuit": {
+                            "reply": "上下文丢失，请重新下达指令。（可直接把任务原文再发一次，我会接着做）",
+                            "error": "no_context",
+                        },
                         "messages": messages,
                     }
         except Exception:
-            return {"short_circuit": {"reply": "状态文件损坏，请重新下达指令。", "error": "corrupted"}, "messages": messages}
+            return {
+                "short_circuit": {"reply": "状态文件损坏，请重新下达指令。", "error": "corrupted"},
+                "messages": messages,
+            }
     # (c)2026-09-05 新任务上下文隔离: 长新任务文本(POC 等含「继续/下一步」词但长度>12
     # 且非 继续/恢复 开头)不视为旧任务确认 → 跳过旧任务/计划注入, 防上下文串扰
     _ut_v9 = _last_usr_confirm.strip()
@@ -447,7 +458,12 @@ def inject_context_and_flags(
                     _last_plan = _c.replace("<!-- CLAWSJOY_PLAN -->", "")[-2000:]
                     break
         if _last_plan:
-            messages.append({"role": "system", "content": f"[系统] 用户确认执行以下计划（✅ 表示已完成），请严格按照计划步骤执行，不要偏离：\n{_last_plan}"})
+            messages.append(
+                {
+                    "role": "system",
+                    "content": f"[系统] 用户确认执行以下计划（✅ 表示已完成），请严格按照计划步骤执行，不要偏离：\n{_last_plan}",
+                }
+            )
         else:
             # 无计划标记时，恢复最近一次用户任务
             _st_file = Path(f"data/projects/{user_id}/{session_id}/clawsjoy_dev/.agent_state.json")
@@ -614,7 +630,7 @@ def preload_code_and_history(*, data, messages, user_id, session_id):
 
             # 首次使用：同步初始化索引（空项目直接跳过）
             if not index_file.exists():
-                print(f"[V9] First use, initializing code index...")
+                print("[V9] First use, initializing code index...")
                 indexer.auto_init()
                 indexer._save()
                 # 不返回 initializing，空项目直接进入任务
@@ -626,14 +642,12 @@ def preload_code_and_history(*, data, messages, user_id, session_id):
 
             kw_status = indexer._ensure_chinese_keywords()
             if kw_status.get("status") == "initializing":
-                return jsonify(
-                    {
-                        "success": True,
-                        "status": "initializing",
-                        "message": "正在生成代码中文索引，请稍候...预计 3-5 秒",
-                        "data": {"choices": [{"message": {"content": "🔧 正在生成代码中文索引，请稍候..."}}]},
-                    }
-                )
+                return {
+                    "success": True,
+                    "status": "initializing",
+                    "message": "正在生成代码中文索引，请稍候...预计 3-5 秒",
+                    "data": {"choices": [{"message": {"content": "🔧 正在生成代码中文索引，请稍候..."}}]},
+                }
 
             task = messages[-1]["content"]
             matched_files = indexer.search_files(task, limit=5)
@@ -672,19 +686,23 @@ def build_prompt(
     契约：返回 {short_circuit, messages, api_key, state_file, task_id}。
       short_circuit 非 None → 路由 jsonify 后 return（后续键可能未产生，调用方须先判短路再解包）。
     R6：allowed_commands / deepseek_key_loaded 为模块只读常量，以参数传入（已查证无写入）。
+    B1（本地 provider 不依赖 DeepSeek key）：**仅 deepseek* 模型**要求 DEEPSEEK_API_KEY；
+      本地 model 返回 api_key='' 且**不短路**（后续由 entry 走 Ollama/本地 adapter）。
     注1：filled_prompt / sandbox_root 在本块内产出并同块内耗尽，不是对外产出。
     注2：**kw 不是产出** —— 它只是 B 内推导式的循环变量(Store)，词边界搜索会误收；
          上一版把它放进返回 dict 导致 return 时 NameError（本轮真实故障根因，已剔除）。
     """
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
-    if not api_key:
+    _model_name = str(model or "").strip()
+    _needs_deepseek_key = _model_name.lower().startswith("deepseek")
+    api_key = os.getenv("DEEPSEEK_API_KEY", "") if _needs_deepseek_key else ""
+    if _needs_deepseek_key and not api_key:
         return {
             "short_circuit": {
                 "success": False,
                 "error": f"Key丢失! 启动时={'已加载' if deepseek_key_loaded.startswith('sk-') else '未加载'}，请求时为空",
-                "loaded_at_startup": deepseek_key_loaded[:15] + "..."
-                if deepseek_key_loaded.startswith("sk-")
-                else deepseek_key_loaded,
+                "loaded_at_startup": (
+                    deepseek_key_loaded[:15] + "..." if deepseek_key_loaded.startswith("sk-") else deepseek_key_loaded
+                ),
             },
             "messages": messages,
         }
@@ -719,7 +737,9 @@ def build_prompt(
         # 匹配文件路径模式（agents/xxx/xxx.py 或 tools/xxx.py）
         file_count = len(_re.findall(r"(?:agents|tools)/[\w/]+\.py", user_msg))
         # 修改意图关键词
-        modify_intents = sum(1 for kw in ["修改", "改", "重构", "提取", "统一", "合并", "拆分", "迁移"] if kw in user_msg)
+        modify_intents = sum(
+            1 for kw in ["修改", "改", "重构", "提取", "统一", "合并", "拆分", "迁移"] if kw in user_msg
+        )
         # 用户显式要求直接执行(给完成边界/命令式) → 不注入确认; 用户自己要确认 → 保留确认
         _user_wants_direct = any(
             k in user_msg
@@ -738,15 +758,19 @@ def build_prompt(
             ]
         )
         _user_wants_confirm = any(
-            k in user_msg for k in ["请您确认", "请确认", "等确认", "确认后执行", "确认后再执行", "先列计划", "请你先列", "请先列"]
+            k in user_msg
+            for k in ["请您确认", "请确认", "等确认", "确认后执行", "确认后再执行", "先列计划", "请你先列", "请先列"]
         )
         _complex_code = agent_count >= 2 or file_count >= 2 or modify_intents >= 3
         if _complex_code and not _user_wants_direct:
             if _user_wants_confirm or file_count >= 2 or agent_count >= 2:
-                messages[-1]["content"] = user_msg + "\n\n[系统指令] 此任务涉及多个文件或步骤，请先列出修改计划，询问用户确认后再执行。"
+                messages[-1]["content"] = (
+                    user_msg + "\n\n[系统指令] 此任务涉及多个文件或步骤，请先列出修改计划，询问用户确认后再执行。"
+                )
             else:
                 messages[-1]["content"] = (
-                    user_msg + "\n\n[系统指令] 此任务修改点较多，请先用几行列出执行要点(目标文件+改动点)，然后立即执行完成落盘并回读验证；不要停在计划阶段等待确认——任务完成以实际写入为准。"
+                    user_msg
+                    + "\n\n[系统指令] 此任务修改点较多，请先用几行列出执行要点(目标文件+改动点)，然后立即执行完成落盘并回读验证；不要停在计划阶段等待确认——任务完成以实际写入为准。"
                 )
 
     # 加载 Prompt 模板
@@ -845,13 +869,30 @@ def build_prompt(
                         if _found2.suffix == ".py":
                             _ast_pre2.parse(_fc)
                         # 前置检测防误判：计划文本不作为"文件已包含功能"依据
-                        _plan_prefixes2 = ("执行计划", "修改计划", "任务计划", "实施计划", "开发路线", "步骤列表", "实施步骤")
+                        _plan_prefixes2 = (
+                            "执行计划",
+                            "修改计划",
+                            "任务计划",
+                            "实施计划",
+                            "开发路线",
+                            "步骤列表",
+                            "实施步骤",
+                        )
                         _is_plan_text2 = _last_usr.strip().startswith(_plan_prefixes2) or any(
                             _pp2 in _last_usr[:40] for _pp2 in _plan_prefixes2
                         )
                         _kw_raw2 = _re_pre2.sub(r"[^一-鿿a-zA-Z0-9]", " ", _last_usr if not _is_plan_text2 else "")
                         _kw2 = _re_pre2.findall(r"[一-鿿]{2,}|[a-zA-Z_]{3,}", _kw_raw2)
-                        _noise2 = {"resume", "optimizer", "analysis_page", "py", "markdown", "文件", "点击后将", "分析结果导出为"}
+                        _noise2 = {
+                            "resume",
+                            "optimizer",
+                            "analysis_page",
+                            "py",
+                            "markdown",
+                            "文件",
+                            "点击后将",
+                            "分析结果导出为",
+                        }
                         _action_pre2 = {
                             "添加",
                             "创建",
@@ -875,7 +916,9 @@ def build_prompt(
                         ]
                         _matched2 = sum(1 for k in _kw2 if k.lower() in _fc.lower())
                         if _kw2 and _matched2 >= max(2, len(_kw2) * 0.5):
-                            print(f"[v9_agent_chat] 前置检测命中但继续执行真实任务：目标文件已包含功能（{', '.join(_kw2[:5])}）")
+                            print(
+                                f"[v9_agent_chat] 前置检测命中但继续执行真实任务：目标文件已包含功能（{', '.join(_kw2[:5])}）"
+                            )
 
                     except (SyntaxError, UnicodeDecodeError):
                         pass
@@ -1005,7 +1048,10 @@ def orchestrate_goal(
                     and len(_cur_ut) > 40
                     and _gobj[:60] not in _cur_ut
                 ):
-                    _mismatch_note = "。注意: 你当前收到的任务文本与目标原文不一致——若这是新任务请立即停下向老板确认，" "不要自行搜索猜测目标内容"
+                    _mismatch_note = (
+                        "。注意: 你当前收到的任务文本与目标原文不一致——若这是新任务请立即停下向老板确认，"
+                        "不要自行搜索猜测目标内容"
+                    )
             except Exception:
                 pass
             add_steer(
