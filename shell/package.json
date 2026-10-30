@@ -1,7 +1,7 @@
 {
   "name": "clawsjoy-pa-shell",
   "productName": "ClawsJoyPA",
-  "version": "9.0.66",
+  "version": "9.0.67",
   "description": "ClawsJoy PA 桌面壳（Electron）—— 「壳层」：窗 ／ 托盘 ／ 启停 ／ 双层更新之交界",
   "main": "main.js",
   "author": "ClawsJoy",
@@ -29,7 +29,7 @@
     ],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "icon": "icon.png"
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
