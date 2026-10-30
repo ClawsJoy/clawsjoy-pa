@@ -25,3 +25,4 @@
 4. 详细证据链放 reports，不在这里堆。
 
 （完 —— 本件末行 · LF 终 · 悬）
+- [19_CI门禁与Docker维护_v1.md](19_CI门禁与Docker维护_v1.md) — P0/P1/P2 维护、CI 门禁、legacy 基线、Docker 3.12
