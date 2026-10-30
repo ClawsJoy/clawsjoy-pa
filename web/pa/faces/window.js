@@ -923,7 +923,15 @@
       var _sendP = window.paSend();
       _sendP.catch(function(){});
       var _stopP = new Promise(function(res){ window.__paWinStopResolve = res; });
-      await Promise.race([_sendP, _stopP]);
+      var _slow = new Promise(function(res){ setTimeout(function(){ res('__timeout'); }, 30000); });
+      var _race = await Promise.race([_sendP, _stopP, _slow]);
+      if(_race === '__timeout'){
+        window.__paWinStopResolve = null;
+        if(box) box.textContent = '30s 内未到后端（请求可能未发出）—— 请回主聊天页重发';
+        window.paWinSay('未到后端');
+        var sbT = document.getElementById('paWinStop'); if(sbT){ sbT.disabled = true; }
+        return;
+      }
       if(window.__paWinSendStopped){
         window.__paWinStopResolve = null;
         return;
@@ -968,6 +976,17 @@
 
   /* ── 停（≤1s · PRD §8.8）── */
   window.paWinStop = function(){
+    /* 先解旧窗口之等待（即使 paRun 未 busy/请求未发，也必须能停）。 */
+    if(window.__paWinStopResolve){
+      window.__paWinSendStopped = true;
+      try{ window.__paWinStopResolve(); }catch(e){}
+      window.__paWinStopResolve = null;
+      var sb0 = document.getElementById('paWinStop'); if(sb0){ sb0.disabled = true; }
+      var rb0 = document.getElementById('paWinReply'); if(rb0){ rb0.hidden = false; rb0.textContent = '已停（等待/未发）'; }
+      window.paWinSay('已停（等待/未发）');
+      try{ if(typeof window.paStop === 'function') window.paStop(); }catch(e){}
+      return;
+    }
     /* 真任务：先停旧 paRun（/v9/cancel ＋ abort），再走本地演示态。 */
     try{
       if(typeof paRun !== 'undefined' && paRun.busy && typeof window.paStop === 'function'){
