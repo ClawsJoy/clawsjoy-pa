@@ -401,9 +401,29 @@ async function paRestoreLastRun(){
   }catch(e){ /* 网络未达：留 key，下次刷新再试 */ }
 }
 
+function _paRunsContextTask(t,userText){
+  /* P1-2：最近 8 条 user/assistant；排除当前 userText 重复；每条截 800 字；当前任务保留。 */
+  const cur=String(userText||'');
+  let msgs=[];
+  try{
+    msgs=((t&&t.msgs)||[]).filter(function(m){
+      return m && (m.role==='user' || m.role==='assistant');
+    }).filter(function(m){
+      return !(m.role==='user' && String(m.content||'').trim()===cur.trim());
+    }).slice(-8);
+  }catch(e){ msgs=[]; }
+  const lines=msgs.map(function(m){
+    const role=(m.role==='user')?'老板：':'PA：';
+    return role+String(m.content||'').slice(0,800);
+  }).filter(function(x){ return x.replace(/^(老板：|PA：)\s*/, '') !== ''; });
+  const tail='【当前任务】'+cur;
+  /* 本地小模型对「老板/PA」相对称谓易答成 PA ⇒ 有上下文时明示「老板即用户」；当前任务原文保留 */
+  const hint=lines.length ? '\n（对话说明：老板即用户本人）' : '';
+  return lines.length ? ('【最近对话（上下文）】\n'+lines.join('\n')+'\n'+tail+hint) : tail;
+}
 async function sendAgentViaRuns(t,userText){
   const _cid=_paRunUuid();
-  const _body={user_id:curUser(),session_id:t.id,task:(userText||''),client_request_id:_cid};
+  const _body={user_id:curUser(),session_id:t.id,task:_paRunsContextTask(t,userText),client_request_id:_cid};
   const _mdl=paModelSel(); if(_mdl) _body.model=_mdl;
   paRun.runId=null; paRun.afterSeq=0; paRunSrc='POST /v9/agent/runs';
   paSetState('running','提交执行中…');

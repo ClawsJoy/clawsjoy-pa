@@ -34,7 +34,7 @@ def test_work_dev_route_uses_runs_with_flag():
 def test_submit_contract_has_client_request_id_and_model():
     src = _send()
     assert "client_request_id" in src
-    assert "task:(userText||'')" in src
+    assert "task:_paRunsContextTask(t,userText)" in src
     assert "paModelSel()" in src
     assert "API+'/v9/agent/runs'" in src
     assert "r.status===429" in src and "queue_full" in src
@@ -145,6 +145,19 @@ def test_stopping_copy_and_terminal_states():
     for key, label in (("stopping:", "停止中"), ("stopped:", "已停止"), ("cancelled:", "已取消")):
         assert key in st and label in st
     assert "PA_TERMINAL = {idle:1, done:1, failed:1, stopped:1, cancelled:1}" in st
+
+
+def test_runs_context_recent8_exclude_current_truncate_task():
+    src = _send()
+    assert "function _paRunsContextTask(t,userText)" in src
+    assert ".slice(-8)" in src, "最近 8 条"
+    assert "String(m.content||'').trim()===cur.trim()" in src, "排除当前 userText 重复"
+    assert ".slice(0,800)" in src, "每条截断 800 字"
+    assert "【最近对话（上下文）】" in src
+    assert "'老板：'" in src and "'PA：'" in src
+    assert "【当前任务】" in src
+    assert "（对话说明：老板即用户本人）" in src, "本地模型称谓提示"
+    assert "task:_paRunsContextTask(t,userText)" in src, "runs task 必须带上下文"
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")
