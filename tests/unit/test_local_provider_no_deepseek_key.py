@@ -156,54 +156,40 @@ def _fake_ollama(monkeypatch, results):
     return calls
 
 
-def test_local_adapter_retries_tools_empty_on_any_error(monkeypatch):
-    """T141：首败后**无条件** tools=[] 重试（错误串不命中旧判据也重试）。"""
+def test_local_adapter_forces_tools_empty(monkeypatch):
+    """P0：本地只纯聊天，即便调用方给 tools 也不下发。"""
     calls = _fake_ollama(
         monkeypatch,
-        [
-            {"success": False, "error": "400 tool-call JSON 不闭合"},
-            {"success": True, "data": {"choices": [{"message": {"content": "收到"}}]}, "tokens": 1},
-        ],
+        [{"success": True, "data": {"choices": [{"message": {"content": "收到"}}]}, "tokens": 1}],
     )
     a = entry._LocalOllamaAdapter("ollama")
     out = a.execute_with_tools(messages=[{"role": "user", "content": "hi"}], tools=_tool_defs(), max_tokens=32)
     assert out.get("success") is True, out
-    assert len(calls) == 2, calls
-    assert calls[0]["tools"] == _tool_defs()
-    assert calls[1]["tools"] == [], "重试必须 tools=[]"
+    assert len(calls) == 1, calls
+    assert calls[0]["tools"] == [], "本地必须 tools=[]"
 
 
-def test_local_adapter_retries_even_when_tools_empty(monkeypatch):
-    """无条件：即便首呼 tools=[] 失败亦重试一次（不要求 tools truthy）。"""
+def test_local_adapter_tools_empty_ok(monkeypatch):
+    """调用方传空 tools 也照常纯聊天。"""
     calls = _fake_ollama(
         monkeypatch,
-        [
-            {"success": False, "error": "transient"},
-            {"success": True, "data": {"choices": [{"message": {"content": "ok"}}]}},
-        ],
+        [{"success": True, "data": {"choices": [{"message": {"content": "ok"}}]}}],
     )
     a = entry._LocalOllamaAdapter("ollama")
     out = a.execute_with_tools(messages=[{"role": "user", "content": "hi"}], tools=[])
     assert out.get("success") is True
-    assert len(calls) == 2
+    assert len(calls) == 1
 
 
-def test_local_adapter_retry_also_fails_explicit_error(monkeypatch):
-    """带 tools 与 tools=[] 均败 ⇒ success=false ＋ 明确人话（含两因）。"""
-    calls = _fake_ollama(
-        monkeypatch,
-        [
-            {"success": False, "error": "400 tool-call JSON 不闭合"},
-            {"success": False, "error": "Ollama 连接被拒"},
-        ],
-    )
+def test_local_adapter_failure_explicit_error(monkeypatch):
+    """纯聊天失败 ⇒ success=false ＋ 明确人话。"""
+    calls = _fake_ollama(monkeypatch, [{"success": False, "error": "Ollama 连接被拒"}])
     a = entry._LocalOllamaAdapter("ollama")
     out = a.execute_with_tools(messages=[{"role": "user", "content": "hi"}], tools=_tool_defs())
     assert out.get("success") is False, out
-    assert len(calls) == 2
-    assert "本地 Ollama 调用失败" in out["error"], out
-    assert "首次=" in out["error"] and "重试=" in out["error"], out
-    assert "400 tool-call JSON" in out["error"] and "连接被拒" in out["error"], out
+    assert len(calls) == 1
+    assert "本地 Ollama 纯聊天失败" in out["error"], out
+    assert "连接被拒" in out["error"], out
 
 
 def test_local_adapter_success_first_no_retry(monkeypatch):

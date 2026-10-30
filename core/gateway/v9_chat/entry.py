@@ -57,24 +57,16 @@ class _LocalOllamaAdapter:
     def execute_with_tools(self, messages, tools, user_id=None, temperature=0.7, max_tokens=2000, thinking=False):
         from core.gateway.execute_agent_task import _ollama_execute_with_tools
 
+        # P0：本地 7B 的 tool-call JSON 不稳定（Ollama 400），本地路径**只纯聊天、不下发 tools**；
+        # 需要工具/长任务时走 DSH worker 或显式云模型，⛔ 在本地小模型上硬扛 tools。
         _out = _ollama_execute_with_tools(
-            messages=messages, tools=tools, model=self.model, temperature=temperature, max_tokens=max_tokens
+            messages=messages, tools=[], model=self.model, temperature=temperature, max_tokens=max_tokens
         )
         if not (_out or {}).get("success"):
-            # T141：首次（带 tools）失败后**无条件** tools=[] 重试 —— ⛔ 再要求 tools truthy /
-            # ⛔ 以特定错误串（小模型 tool-call JSON 偶发不闭合之 400）为门；仍失败给明确人话错误。
-            _first_err = str((_out or {}).get("error") or "")[:240]
-            _out = _ollama_execute_with_tools(
-                messages=messages, tools=[], model=self.model, temperature=temperature, max_tokens=max_tokens
-            )
-            if not (_out or {}).get("success"):
-                _retry_err = str((_out or {}).get("error") or "")[:240]
-                _failed = dict(_out or {})
-                _failed["success"] = False
-                _failed["error"] = "本地 Ollama 调用失败（带 tools 与 tools=[] 均败）：首次={}；重试={}".format(
-                    _first_err or "未知", _retry_err or "未知"
-                )
-                return _failed
+            _failed = dict(_out or {})
+            _failed["success"] = False
+            _failed["error"] = "本地 Ollama 纯聊天失败：{}".format(str((_out or {}).get("error") or "未知")[:300])
+            return _failed
         return _out
 
 
