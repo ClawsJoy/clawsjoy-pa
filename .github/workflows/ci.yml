@@ -56,9 +56,10 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: PA gate tests
+      - name: PA gate tests (environment-independent)
         run: |
-          python -m pytest -q \
+          # test_real_* require a live local gateway/vault; keep them in local/manual integration.
+          python -m pytest -q -k "not real" \
             tests/unit/test_pa_relations_status.py \
             tests/unit/test_pa_verify_legacy_route.py \
             tests/unit/test_pa_legacy_verify_face.py \
