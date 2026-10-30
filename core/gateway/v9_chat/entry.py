@@ -63,13 +63,16 @@ class _LocalOllamaAdapter:
 
 
 def _make_model_adapter(model, api_key):
-    """B2：deepseek* ⇒ DeepSeekAdapter；其余（本地）⇒ _LocalOllamaAdapter。"""
-    _m = str(model or "").strip().lower()
-    if not _m.startswith("deepseek"):
-        return _LocalOllamaAdapter(model)
+    """B2（provider-aware）：按注册表 route 决定本地/远端，⛔ 以名字猜。"""
+    from core.gateway.v9_chat.provider_route import route_for_model as _route_for_model
+    from core.pa import providers as _prov
+
+    _route, _note = _route_for_model(str(model or "").strip())
+    if _prov.route_kind(_route) == "local":
+        return _LocalOllamaAdapter(_route.get("model") or model)
     from core.lib.v8.adapters.deepseek_adapter import DeepSeekAdapter
 
-    return DeepSeekAdapter(api_key=api_key, model=model)
+    return DeepSeekAdapter(api_key=api_key, model=_route.get("model") or model)
 
 
 def run_chat_entry(*, data, deps):

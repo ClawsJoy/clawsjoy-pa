@@ -693,7 +693,13 @@ def build_prompt(
          上一版把它放进返回 dict 导致 return 时 NameError（本轮真实故障根因，已剔除）。
     """
     _model_name = str(model or "").strip()
-    _needs_deepseek_key = _model_name.lower().startswith("deepseek")
+    # B1（provider-aware）：路由由注册表/用户选中 provider 决定，⛔ 以模型名字符串猜。
+    from core.gateway.v9_chat.provider_route import route_for_model as _route_for_model
+    from core.pa import providers as _prov
+
+    _route, _route_note = _route_for_model(_model_name)
+    _is_local_route = _prov.route_kind(_route) == "local"
+    _needs_deepseek_key = not _is_local_route
     api_key = os.getenv("DEEPSEEK_API_KEY", "") if _needs_deepseek_key else ""
     if _needs_deepseek_key and not api_key:
         return {
