@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """会话控制路由（P1 拆出，Blueprint）—— 薄包装 → core.gateway.{replay,shared_state,subtask_executor,goal_state,session_log}"""
 
 import json
@@ -17,8 +16,12 @@ def _missing(_key):
     """
     _rule = request.url_rule
     _rt = (_rule.rule if _rule is not None else "?").lstrip("/")
-    return jsonify({"success": False, "error": "%s: 缺 %s" % (_rt, _key),
-                    "missing": [_key], "kind": "missing_param", "route": _rt}), 400
+    return (
+        jsonify(
+            {"success": False, "error": f"{_rt}: 缺 {_key}", "missing": [_key], "kind": "missing_param", "route": _rt}
+        ),
+        400,
+    )
 
 
 @bp.route("/v9/replay/<path:session_id>", methods=["GET"])
@@ -51,8 +54,16 @@ def v9_cancel_session(session_id):
         from core.gateway.shared_state import request_cancel
 
         request_cancel(session_id)
-        print(f"[CANCEL] POST /v9/cancel/{session_id}")
-        return jsonify({"success": True, "cancelled": True, "session_id": session_id})
+        # 同步关 turn_registry：否则 active 守卫仍见 RUNNING、心跳还会续，停按钮等于没停。
+        from core.gateway import turn_registry as _tr
+
+        _closed = []
+        for _t in _tr.list_turns(session_id=session_id, limit=50):
+            if _t.get("status") in ("CREATED", "RUNNING", "DETACHED"):
+                _tr.finish_turn(_t["turn_key"], "CANCELLED", "用户停止")
+                _closed.append(_t["turn_key"])
+        print(f"[CANCEL] POST /v9/cancel/{session_id} closed={_closed}")
+        return jsonify({"success": True, "cancelled": True, "session_id": session_id, "closed": _closed})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)[:200]}), 500
 
@@ -115,7 +126,13 @@ def v9_subtask_create():
             }
         )
     return jsonify(
-        {"success": True, "task_id": _stc_tid, "status": "queued", "depth": _stc_depth, "message": "子任务已提交，有界并发池执行"}
+        {
+            "success": True,
+            "task_id": _stc_tid,
+            "status": "queued",
+            "depth": _stc_depth,
+            "message": "子任务已提交，有界并发池执行",
+        }
     )
 
 
@@ -148,8 +165,14 @@ def v9_subtask_stop():
         return _missing("task_id")
     from core.gateway.subtask_executor import stop
 
-    r = stop(_sp.get("user_id"), _sp.get("session_id"), _sp.get("task_id"),
-             mode=_sp.get("mode") or "cancel", by=_sp.get("by") or "", reason=_sp.get("reason") or "")
+    r = stop(
+        _sp.get("user_id"),
+        _sp.get("session_id"),
+        _sp.get("task_id"),
+        mode=_sp.get("mode") or "cancel",
+        by=_sp.get("by") or "",
+        reason=_sp.get("reason") or "",
+    )
     return jsonify(r) if r.get("ok") else (jsonify(r), 400)
 
 
@@ -163,8 +186,14 @@ def v9_subtask_resume():
         return _missing("session_id")
     from core.gateway.subtask_executor import resume
 
-    return jsonify(resume(_rp.get("user_id"), _rp.get("session_id"),
-                          task_id=_rp.get("task_id"), model=_rp.get("model") or "deepseek-v4-flash"))
+    return jsonify(
+        resume(
+            _rp.get("user_id"),
+            _rp.get("session_id"),
+            task_id=_rp.get("task_id"),
+            model=_rp.get("model") or "deepseek-v4-flash",
+        )
+    )
 
 
 @bp.route("/v9/goal/history", methods=["GET"])
