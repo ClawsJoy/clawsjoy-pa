@@ -93,6 +93,7 @@ def _dsh_run(task, timeout):
     return subprocess.run(
         [exe, "--profile", "headless", str(task)],
         timeout=timeout,
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         encoding="utf-8",
