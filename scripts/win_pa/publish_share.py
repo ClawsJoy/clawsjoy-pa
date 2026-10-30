@@ -228,10 +228,11 @@ def self_test():
     files = [{u"path": rel, u"mode": u"add", u"size": len(b),
               u"sha256": hashlib.sha256(b).hexdigest()} for rel, b in body.items()]
     files.append({u"path": u"old/gone.txt", u"mode": u"del", u"size": 0, u"sha256": u""})
-    man = {u"version": u"9.0.11", u"base_version": u"9.0.10", u"channel": u"internal",
+    # 样例之版号任意：⛔ 挂产品版族（与 `core.lib.version.__version__` 无涉 ⇒ 免升号漂；自证唯校「形」）
+    man = {u"version": u"1.2.0", u"base_version": u"1.1.0", u"channel": u"internal",
            u"built_at": u"2026-10-08T20:00:00+0800", u"files": files}
     _mk(_join(src, MAN), json.dumps(man, ensure_ascii=False).encode(u"utf-8"))
-    _mk(_join(src, u"version.json"), b'{"version":"9.0.11"}')
+    _mk(_join(src, u"version.json"), b'{"version":"1.2.0"}')  # 同上：样例版号（⛔ 产品版族）
     _mk(_join(src, u"ClawsJoyPA-Update.record.json"), b'{"digest":"x"}')
     _mk(_join(dst, u"old/gone.txt"), b"stale")
     _mk(_join(dst, u"web/pa/faces/config.js"), b"cfg-worktree-DIRTY\n")

@@ -29,6 +29,7 @@ from flask import Flask
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.pa import gateway_routes as GR  # noqa: E402
 
@@ -166,7 +167,7 @@ def test_helper_takes_no_model_wording():
 
 def test_single_definition():
     u"""⒟：定义唯一（一处定形）。"""
-    src = io.open(GR.__file__, encoding="utf-8").read()
+    src = gr_src()
     assert len(re.findall(r"def pa_gate_view\(", src)) == 1, u"判据之定义须唯一"
 
 

@@ -39,11 +39,14 @@ u"""pm_1803 之齿 —— PA 页两态「陪伴 ／ 办事」之**一眼可辨 �
 """
 from __future__ import annotations
 
+import sys
 import io
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src_file  # noqa: E402
 HTML = ROOT / "web" / "pa.html"
 CHAT = ROOT / "web" / "pa" / "faces" / "chat.js"
 SELF = ROOT / "web" / "pa" / "faces" / "selfdesc.js"
@@ -210,7 +213,7 @@ def _pa_mode_name():
 
     ⚠ 此为「一处定形」之取法：真源 ＝ 后端之函 ⇒ 齿 ⛔ 复写一张映射表（复写必漂）。
     """
-    src = _read(GW)
+    src = gr_src_file(u"def pa_mode_name(")
     i = src.index(u"def pa_mode_name(")
     j = src.index(u"\ndef ", i + 1)
     ns = {}

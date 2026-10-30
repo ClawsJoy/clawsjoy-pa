@@ -22,10 +22,11 @@ r"""preflight_start.py -- PA 网关「启动前自检」（P4 稿 · 2026-10-05 
      ⚠ 本器**⛔ 用 `SO_REUSEADDR`**（Windows 下它允许**双绑** ⇒ 会**假 PASS** · 我一手逮）
      ⭐ T1.2（承 PM 073 §三）：判据**成对** —— 先 **TCP 实连** ∧ 再**两面皆试绑**（`0.0.0.0` ∧ `127.0.0.1`）；
        由：实例绑 `0.0.0.0` 时只绑 `127.0.0.1` **仍 OK** ⇒ 单面之绑**假绿**（我一手实证 · 本机 socket 语义）
-  3. `data\` **可写**（试写 ＋ `fsync` ＋ 删）
+  3. **可写三根**（⭐ 9.0.13 P0）：PA_DATA_DIR ／ PA_LOG_DIR ／ PA_VEC_DIR 皆可写
+     （试写 ＋ fsync ＋ 删；缺省 %LOCALAPPDATA%\ClawsJoyPA\{data,logs,vec} · 装根只读 ⇒ ⛔ 落装根）；三根分栏报因并点名 env
   4. **向量库可写**（真源 `<data_root>/vector_kb` ⇒ ⛔ 字面猜径）｜两段：库目录可写 ⇒ 建得 journal/WAL；`PRAGMA user_version` 同值写 ⇒ 真触盘｜⭐ 「未见」⟷「不可写」**分栏**（且**点名真径**）
   5. `ollama` 服务 `127.0.0.1:11434`（TCP ＋ `/api/tags`）
-  6. `logs\` **可写**（console 追加面）
+  6. **装根隔离**（⭐ 9.0.13 P0）：运行根皆须在装根**外**（装 Program Files 只读 ⇒ 落装根内必 WinError 5）
   7. **依赖（必需）自检**（承 pm_1386 §二.3 · 2026-10-06）：`REQUIRED_DEPS` 逐包 `find_spec` ⇒ 在 ∨ 缺；
      缺 ⇒ **人话之因 ＋ 修之门**（`pip install -r requirements.txt`）· ⛔ 静默（⛔ 装成可用）。
      ⚠ 单列一栏（⛔ 并一栏）：缺依赖 ⟷ 端口占用 ⟷ 向量库不可写 ＝ **三族**｜真源 ＝ `requirements.txt`
@@ -46,6 +47,12 @@ import urllib.request
 
 if sys.stdout is not None:
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
+#: ⭐ 9.0.13 P0：可写根之唯一出处（PA_DATA_DIR ／ PA_LOG_DIR ／ PA_VEC_DIR）
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+import pa_paths  # noqa: E402
 
 HOST = '127.0.0.1'
 OLLAMA_PORT = 11434
@@ -203,34 +210,38 @@ def probe_port(port):
     return True, u'可绑', u''
 
 
-def probe_writable(d):
-    try:
-        os.makedirs(d, exist_ok=True)
-        p = os.path.join(d, '.preflight_probe_%d' % os.getpid())
-        with open(p, 'wb') as f:
-            f.write(b'probe')
-            f.flush()
-            os.fsync(f.fileno())
-        os.remove(p)
-        return True, u'可写', u''
-    except Exception as e:
-        return False, u'不可写（%s: %s）' % (type(e).__name__, e), u''
+def probe_writable(d, env_name=u'', source=u''):
+    u'''可写之判（试写 ＋ fsync ＋ 删）⇒ `(ok, reason, note)`。
+
+    ⭐ 9.0.13 P0：委 `pa_paths.probe_writable`（**一处定形**）—— 失败之因必含
+    「径 ＋ 谁定之（env/缺省）＋ 迁之门」；供 `install_win_pa.preflight_gates` 之旧调用形（无 env 语境）亦 ⛔ 崩。
+    '''
+    return pa_paths.probe_writable(d, env_name=env_name, source=source)
 
 
 def resolve_vector_kb(root):
-    """⭐ 向量库径 = **真源**（⛔ 字面猜径）：`core.lib.config_helper.get_data_root()` + `vector_kb`
-    （真源见 `core/lib/vector_knowledge_center.py:47` · `_init` 之默认库）。
-    归 (kb_dir, src): kb_dir 为绝对径（data_root 若相对则按 root 拼）。"""
+    """⭐ 向量库径 = **真源**（⛔ 字面猜径）：`core.lib.config_helper.get_vector_root()`
+    （⭐ 9.0.13 P0：env `PA_VEC_DIR` 优先；缺 ⇒ 旧形 `<data_root>/vector_kb`）。
+    归 (kb_dir, src): kb_dir 为绝对径（真源若相对则按 root 拼）。"""
     try:
         sys.path.insert(0, root)
-        from core.lib.config_helper import get_data_root
-        dr = get_data_root()
-        src = u'真源 core.lib.config_helper.get_data_root() ⇒ %s' % dr
-    except Exception as e:
-        dr = 'data'
-        src = u'⚠ 回落字面 data（真源不可读：%s: %s）' % (type(e).__name__, e)
-    base = dr if os.path.isabs(str(dr)) else os.path.join(root, str(dr))
-    return os.path.join(base, VECTOR_KB_SUBDIR), src
+        from core.lib.config_helper import get_vector_root
+        v = str(get_vector_root())
+        if not os.path.isabs(v):
+            v = os.path.join(root, v)
+        return os.path.abspath(v), (u'真源 core.lib.config_helper.get_vector_root()（env PA_VEC_DIR 优先）⇒ %s' % v)
+    except Exception as e1:
+        try:
+            from core.lib.config_helper import get_data_root
+            dr = get_data_root()
+            base = dr if os.path.isabs(str(dr)) else os.path.join(root, str(dr))
+            return os.path.join(base, VECTOR_KB_SUBDIR), (
+                u'真源 core.lib.config_helper.get_data_root() ⇒ %s（旧形 <data_root>/vector_kb；'
+                u'get_vector_root 不可读：%s: %s）' % (dr, type(e1).__name__, e1))
+        except Exception as e2:
+            return pa_paths.vector_kb(), (
+                u'⚠ 回落 pa_paths.vector_kb()（真源不可读：%s: %s ／ %s: %s）'
+                % (type(e1).__name__, e1, type(e2).__name__, e2))
 
 
 def probe_vector_db(kb_dir, src=u''):
@@ -324,18 +335,41 @@ def probe_ollama():
         return classify_ollama(True, None, type(e).__name__)
 
 
+def probe_install_root(root, roots_info=None):
+    u'''⭐ 装根只读之判（9.0.13 P0 · **报而阻起** 者唯「运行根落装根内」）：
+      ① 三根皆在装根外 ⇒ PASS（装根 0 写 —— 本批之的；缺省恒如此）；
+      ② 任一在装根内 ⇒ **FAIL**（装 Program Files 时必 WinError 5 —— 9.0.12 之病）。
+    ⚠ 何以「装根可写（开发树）」亦判红（不从 os.access 之虚绿 —— 一手：deny (AD,WD) 后
+      os.access(root, W_OK) 仍报 True）：装根之可写性**非**本批之契约；契约是运行根**不在**装根内。
+    '''
+    r = roots_info or pa_paths.roots()
+    inside = [n for n, i in r.items() if pa_paths.is_inside(i[u'path'], root)]
+    if not inside:
+        return True, u'运行根皆在装根外（装根 ⛔ 需可写 · 0 写）', u'装根＝%s' % root
+    _names = u' · '.join(u'%s(%s)' % (n, r[n][u'path']) for n in inside)
+    return False, (u'运行根落在**只读装根**内（装 Program Files 必 WinError 5）：%s ｜ '
+                   u'修之门：设 env PA_DATA_DIR / PA_LOG_DIR / PA_VEC_DIR 至用户可写处'
+                   u'（缺省 %%LOCALAPPDATA%%\\ClawsJoyPA\\{data,logs,vec}）' % _names), u''
+
+
 def collect(root):
+    u'''逐项自检 ⇒ (port, 端口真源, items)；⭐ 9.0.13 P0：三根（data/logs/vec）**分栏**可写。'''
     port, src = resolve_port(root)
+    r = pa_paths.roots()
     items = [(u'Python 版（须 %d.%d · %d 位）'
               % (PY_REQUIRED[0], PY_REQUIRED[1], PY_REQUIRED_BITS), probe_python()),
              (u'依赖（必需 %d 包）' % len(REQUIRED_DEPS), probe_deps())]
     items.append((u'services.gateway.port 可读', probe_config_port(root)))
     items.append((u'端口 %d 可绑' % port, probe_port(port)))
-    items.append((u'data\\ 可写', probe_writable(os.path.join(root, 'data'))))
+    items.append((u'安装根只读（运行根隔离）', probe_install_root(root, r)))
+    for _n, _label in ((u'data', u'data 根可写（PA_DATA_DIR）'),
+                       (u'logs', u'logs 根可写（PA_LOG_DIR）'),
+                       (u'vec', u'vec 根可写（PA_VEC_DIR）')):
+        _info = r[_n]
+        items.append((_label, probe_writable(_info[u'path'], _info[u'env'], _info[u'source'])))
     kb_dir, kb_src = resolve_vector_kb(root)
     items.append((u'向量库可写', probe_vector_db(kb_dir, kb_src)))
     items.append((u'ollama %s:%d' % (HOST, OLLAMA_PORT), probe_ollama()))
-    items.append((u'logs\\ 可写', probe_writable(os.path.join(root, 'logs'))))
     return port, src, items
 
 
@@ -494,6 +528,48 @@ def selftest():
     _pb = classify_python(u'cpython', (3, 12, 10), 32)
     say(_pb[0] is False and (u'64' in _pb[2]),
         u'反例：CPython 3.12 · **32 位** ⇒ 判红 ＋ 点名须 64 位')
+    # ⭐ 9.0.13 P0：可写根之齿（缺省 ／ env 覆 ／ 不可写 ／ 装根隔离 ／ 禁 .pyc）
+    _la = os.path.join(tempfile.gettempdir(), u'p4_localappdata_selftest')
+    _fake = {u'LOCALAPPDATA': _la}
+    _dft = pa_paths.resolve(u'logs', _fake)
+    say(_dft[u'path'] == os.path.join(_la, u'ClawsJoyPA', u'logs') and _dft[u'default'],
+        u'正控：PA_LOG_DIR 缺省 ⇒ %LOCALAPPDATA%\\ClawsJoyPA\\logs（⛔ 装根）')
+    _ov = dict(_fake)
+    _ov[u'PA_LOG_DIR'] = os.path.join(tempfile.gettempdir(), u'p4_override_logs')
+    _res = pa_paths.resolve(u'logs', _ov)
+    say(_res[u'path'] == os.path.abspath(_ov[u'PA_LOG_DIR']) and not _res[u'default'],
+        u'正控：env PA_LOG_DIR ⇒ 覆缺省（一处定形 · ⛔ 二源）')
+    _ce = pa_paths.child_env(dict(_fake))
+    say(bool(_ce.get(u'PA_DATA_DIR')) and bool(_ce.get(u'PA_LOG_DIR')) and bool(_ce.get(u'PA_VEC_DIR'))
+        and _ce.get(u'CLAWSJOY_DATA_DIR') == _ce.get(u'PA_DATA_DIR')
+        and _ce.get(u'PYTHONDONTWRITEBYTECODE') == u'1',
+        u'正控：子进程 env 注入三根 ＋ CLAWSJOY_DATA_DIR ＋ 禁 .pyc')
+    _venv = dict(_fake)
+    _venv[u'PA_VEC_DIR'] = os.path.join(tempfile.gettempdir(), u'p4_override_vec')
+    say(pa_paths.vector_kb(_venv) == os.path.abspath(_venv[u'PA_VEC_DIR']),
+        u'正控：PA_VEC_DIR 即向量库目录（env 可覆）')
+    _t2 = tempfile.mkdtemp(prefix=u'p4_roots_')
+    try:
+        _blk = os.path.join(_t2, u'blocker')
+        with open(_blk, u'wb') as _fh:
+            _fh.write(b'x')
+        _bad = pa_paths.probe_writable(os.path.join(_blk, u'x'), env_name=u'PA_LOG_DIR', source=u'selftest')
+        say(_bad[0] is False and (u'不可写' in _bad[1]) and (u'PA_LOG_DIR' in _bad[1]) and (u'修之门' in _bad[1]),
+            u'反例：根不可写 ⇒ 判红 ＋ 点名径/env ＋ 修之门（⛔ 静默）')
+        _good = pa_paths.probe_writable(os.path.join(_t2, u'ok'), env_name=u'PA_DATA_DIR', source=u'selftest')
+        say(_good[0] is True and (u'可写' in _good[1]), u'正控：可写目录 ⇒ 绿')
+        _fake_root = os.path.join(tempfile.gettempdir(), u'p4_install_nope')
+        _out_env = dict(_fake)
+        _out_env[u'PA_DATA_DIR'] = os.path.join(_fake_root, u'data')
+        _out_env[u'PA_LOG_DIR'] = os.path.join(_fake_root, u'logs')
+        _out_env[u'PA_VEC_DIR'] = os.path.join(_fake_root, u'vec')
+        _out = probe_install_root(_fake_root, pa_paths.roots(_out_env))
+        say(_out[0] is False and (u'只读装根' in _out[1]) and (u'修之门' in _out[1]),
+            u'反例：运行根落只读装根内 ⇒ 判红 ＋ 修之门（9.0.12 之病）')
+        _out2 = probe_install_root(os.path.join(tempfile.gettempdir(), u'p4_install_nope'), pa_paths.roots())
+        say(_out2[0] is True and (u'装根外' in _out2[1]), u'正控：缺省三根皆在装根外 ⇒ 绿（装根 0 写）')
+    finally:
+        shutil.rmtree(_t2, ignore_errors=True)
     n, t = sum(1 for c in hits if c), len(hits)
     print(u'=== 自检器自测 %d/%d 通过（%s）===' % (n, t, u'rc=0' if n == t else u'rc=2'))
     return 0 if n == t else 2
@@ -520,6 +596,8 @@ def main():
         print(u'[自检器异常] %s: %s（rc=1 ⇒ 视同未审 · ⛔ 起）' % (type(e).__name__, e))
         return 1
     print(u'[自检] PA 网关启动前 · root=%s\n[端口真源] %s' % (root, src))
+    print(u'[可写根]（⭐ 9.0.13 P0：装根只读 ⇒ 运行态 ⛔ 落装根 · env 可覆）')
+    print(pa_paths.describe())
     _deg = degraded(items, a.strict)
     for name, (ok, reason, note) in items:
         _warn = (not ok) and is_advisory(name, reason) and (not a.strict)

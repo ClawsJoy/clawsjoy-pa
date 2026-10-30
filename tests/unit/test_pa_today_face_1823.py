@@ -137,6 +137,8 @@ def test_P6_go_one_place_and_all_buttons_wired():
         assert u"onclick=" in bt, u"去处之钮须**真可点**（⛔ 空钮）：" + bt
     n = 0
     for p in (ROOT / "web").rglob("*.js"):
+        if ".before_" in p.name:
+            continue
         n += _read(p).count(u"function paTodayGo(")
     assert n == 1, u"`paTodayGo` 须**一处定形**（今之数 ＝ %d）" % n
     g = _fn(_read(TODAY), u"function paTodayGo(kind){")

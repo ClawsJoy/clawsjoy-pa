@@ -1,0 +1,16 @@
+# D-11 legacy excerpt: /v9/pa/verify route (read-only copy)
+# source: /home/flybo/clawsjoy_v5/core/pa/gateway_routes.py
+# source_sha16 (full file, T77): ad29de68fe5d4a99
+# lines: 952-961 inclusive (10 lines)
+# copied: 2026-10-30T14:39+08:00 by pd-dev (D-11 minimal copy; source unchanged)
+
+    @bp.route("/v9/pa/verify", methods=["GET", "POST"])
+    def pa_verify():
+        """确定性产物核验（core/pa/verify.py）。?skip_scan=1 跳过全扫（快）。"""
+        from core.pa.verify import run_checks
+
+        skip = str(request.args.get("skip_scan", "")).lower() in ("1", "true", "yes")
+        try:
+            return jsonify(run_checks(skip_scan=skip, live_http=False))
+        except Exception as _e:
+            return jsonify({"ok": False, "error": str(_e)}), 500

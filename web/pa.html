@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ClawsJoy PA · v3 工作台（3 主面 · 同源真页）</title>
 <link rel="stylesheet" href="pa/pa.css">
-<link rel="stylesheet" href="pa/pa_v3.css">
+<link rel="stylesheet" href="pa/pa_v3.css?v=20261027c">
 </head>
 <body>
 <!-- ⭐ 首屏之「准备中 ／ 不可用」之面（CW b2a5182 · pm_1617 五令 · 令一 ／ 令二 ／ 令四）：
@@ -356,21 +356,33 @@
   </div>
 </div>
 
+<!-- ⭐ PA 窗 v1 · 1a（静态壳 · 开关 PA_WIN_V1 · CW b2a5182 · 2026-10-27）
+     空根：由 `pa/faces/window.js` 之 `paWinMount()` 建壳（`__built` 幂等）。
+     `hidden` ＋ `aria-hidden` 为默认态 ⇒ 开关关时旧三面**一字不变**。
+     ⛔ 旧 DOM 一字未删：下面 `.main` ／ `#faces` ／ 各面全在「更多 · 旧面」与 flag 关态照旧。 -->
+<div class="pa-win" id="paWin" hidden aria-hidden="true"></div>
+
 <div class="main">
   <div class="left">
     <!-- pm_1853 §一.6：私人 PA ——「客户」二字不类 ⇒「位」 -->
     <h4>本机画像 · 1 位</h4>
     <!-- 承 pm_997 §四.2：⛔ 平铺 7 行 ⇒ 收 1 行摘要，展开才见逐面 -->
-    <div class="srcsum" id="paSrcSummary" onclick="paSrcToggle()" title="本机全上下文＝素材库（只索引）；点开看逐面读数"><b id="paSrcSum">⚠ 无 JS：无读数（须运行期）</b> <span class="caret" id="paSrcCaret">▾</span></div>
+    <div class="srcsum" id="paSrcSummary" onclick="paSrcToggle()" title="本机全上下文＝素材库（只索引）；点开看逐面读数"><b id="paSrcSum">读中…</b> <span class="caret" id="paSrcCaret">▾</span></div>
+    <!-- ⭐ CW b2a5182 · 承 pm 2919 §一.4：「无 JS」之辞 ⇒ 唯此一处（唯 scripting 关时现）。
+         JS 在 ⇒ 首屏占位为「读中…」（运行期由 today.js 之 paSrcWrite 认领覆盖）⇒ **二境分形**（⛔ 一字面兼二义）。 -->
+    <noscript>
+      <div class="nojs-note">⚠ 无 JS：本页读数须运行期取 ⇒ 上方之「读中…」不会变为真数 —— 请开启 JavaScript。</div>
+    </noscript>
+
     <div class="srclist" id="paSrcList" hidden>
-      <div class="it">💬 会话<span class="n" id="srcChat">⚠ 无 JS：无读数（须运行期）</span></div>
+      <div class="it">💬 会话<span class="n" id="srcChat">读中…</span></div>
       <div class="it">📄 文件<span class="n na">暂时读不到</span></div>
       <div class="it">🧾 台账<span class="n na">暂时读不到</span></div>
       <div class="it">🌐 平台<span class="n na">不会代你操作（这是红线）</span></div>
-      <div class="it" id="srcRowDispatch">🧰 待办作业<span class="n">⚠ 无 JS：无读数（须运行期）</span></div>
-      <div class="it" id="srcRowRuns">🧰 在办作业<span class="n" id="srcRuns">⚠ 无 JS：无读数（须运行期）</span></div>
+      <div class="it" id="srcRowDispatch">🧰 待办作业<span class="n">读中…</span></div>
+      <div class="it" id="srcRowRuns">🧰 在办作业<span class="n" id="srcRuns">读中…</span></div>
       <div class="it">🎨 出图<span class="n na">暂时读不到</span></div>
-      <div class="it">🧠 记忆<span class="n" id="srcCtx">⚠ 无 JS：无读数（须运行期）</span></div>
+      <div class="it">🧠 记忆<span class="n" id="srcCtx">读中…</span></div>
       <div class="foot">素材只索引；画像只存摘要条，每条可回指素材。不编数。</div>
     </div>
   </div>
@@ -503,7 +515,7 @@
 <script src="pa/faces/config.js"></script>
 <script src="pa/faces/collect.js"></script>
 <script src="pa/faces/drawer.js"></script>
-<script src="pa/faces/today.js"></script>
+<script src="pa/faces/today.js?v=20261027a"></script>
 <script src="pa/faces/tasks.js"></script>
 <script src="pa/faces/more.js"></script>
 <script src="pa/faces/selfdesc.js"></script>
@@ -699,6 +711,11 @@
 })();
 </script>
 
+<script src="pa/faces/taskcard.js?v=20261027a"></script>
+<script src="pa/faces/now.js?v=20261027a"></script>
+<script src="pa/faces/summon.js"></script>
+<script src="pa/faces/live.js?v=20261027a"></script>
+<script src="pa/faces/window.js?v=20261027a"></script>
 <script src="pa/boot.js"></script>
 </body>
 </html>

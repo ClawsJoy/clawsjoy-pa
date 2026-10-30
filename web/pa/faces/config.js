@@ -86,6 +86,17 @@ function paModelRender(sel, st, d, at, err, prev){
   /* 择值之序：**回填之请**（先归一 · 在表）⇒ 后端之 `default.model` ⇒ 首行（⛔ 前端自拟默认）。 */
   const want = String(prev || '').trim(), dft = String(((d || {}).default || {}).model || '');
   const amap = paModelAliasMap(rows, d), hit = paModelResolve(rows, amap, want);
+  /* ⭐ 默认通道与模型须同源：旧存底可能是本机 qwen，而今默认通道已 remote:deepseek
+     ⇒ 存底之模型若属**另一 provider** ⇒ 不采用（否则 qwen 名被发给 DeepSeek API ⇒ 400）。 */
+  const dftProv = String(((d || {}).default || {}).provider || '');
+  let provMismatch = false;
+  if(hit.id && dftProv){
+    const hrow = rows.filter(function(m){ return String((m || {}).id) === hit.id; })[0] || {};
+    if(hrow.provider_id && String(hrow.provider_id) !== dftProv){
+      hit.id = ''; hit.via = ''; provMismatch = true;
+      paModelNote(sel, '原选「' + want + '」属 ' + hrow.provider_id + '，与默认通道 ' + dftProv + ' 不一 ⇒ 已按默认通道选模');
+    }
+  }
   let hasD = false;
   rows.forEach(function(m){ if(String((m || {}).id) === dft) hasD = true; });
   const pick = hit.id || (hasD ? dft : String((rows[0] || {}).id || ''));
@@ -96,6 +107,8 @@ function paModelRender(sel, st, d, at, err, prev){
     paModelPersist(pick);
   } else if(hit.via === 'id'){
     paModelNote(sel, '');
+  } else if(provMismatch){
+    paModelNote(sel, '默认通道已切 ⇒ 已按默认通道选模「' + pick + '」；原存底「' + (want || '—') + '」不在本通道');
   } else {
     paModelNote(sel, '后端之表 ⛔ 含此名「' + want + '」⇒ 已按下之默认「' + pick + '」（⛔ 静默）');
   }

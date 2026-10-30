@@ -29,6 +29,7 @@ import argparse
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -594,6 +595,17 @@ def probe_health(root, port=None, wait_s=HEALTH_WAIT_S):
     return False, rows
 
 
+def _ver_key(v):
+    u"""版号比较键：数字段元组；不可解 ⇒ ()。"""
+    parts = re.findall(r"\d+", str(v or ""))
+    return tuple(int(x) for x in parts) if parts else ()
+
+
+def _is_downgrade(cur, latest):
+    ck, lk = _ver_key(cur), _ver_key(latest)
+    return bool(ck and lk and lk < ck)
+
+
 def run(a):
     from core.lib import update_manifest as UM
     root = os.path.abspath(a.root)
@@ -607,6 +619,11 @@ def run(a):
     t = UM.totals(man)
     cur, cnote = cur_version(root)
     stamp, _snote = cur_stamp(root)
+    if _is_downgrade(cur, man.get(u"version")):
+        print(u"[FAIL] 源端 %s 旧于本机 %s ⇒ 不降级（⛔ 以旧册充更新）"
+              % (man.get(u"version"), cur))
+        print(u"       ⇒ 去处：等真正新版清单（当前源：%s）" % src.get(u"url"))
+        return 2
     _DIAG[u"from"] = cur
     _DIAG[u"to"] = man[u"version"]
     _log_open(root, man[u"version"])

@@ -7,9 +7,11 @@ import pytest
 def test_get_client_exists_and_returns_client(monkeypatch, tmp_path):
     """get_client 存在且返回 ChromaDB client(#22 修复: 原死代码块移入 _init)"""
     import core.lib.vector_knowledge_center as vkc_mod
+    from core.lib.config_helper import VECTOR_ROOT_ENV
     # 隔离单例, 用 tmp_path 避免污染真实 vector_kb
+    # ⭐ 9.0.13 P0：默认真源改 get_vector_root()（env PA_VEC_DIR 优先）⇒ 以 env 隔离（⛔ patch get_data_root）
     monkeypatch.setattr(vkc_mod.VectorKnowledgeCenter, "_instances", {})
-    monkeypatch.setattr(vkc_mod, "get_data_root", lambda: str(tmp_path))
+    monkeypatch.setenv(VECTOR_ROOT_ENV, str(tmp_path / "vector_kb"))
     vkc = vkc_mod.VectorKnowledgeCenter("test_sess_22")
     # get_client 存在且可用
     assert hasattr(vkc, "get_client"), "VectorKnowledgeCenter 应有 get_client"
@@ -23,8 +25,9 @@ def test_get_client_exists_and_returns_client(monkeypatch, tmp_path):
 def test_code_indexer_reuses_get_client(monkeypatch, tmp_path):
     """code_indexer 经 get_client 复用 ChromaDB 客户端, 不再抛 AttributeError"""
     import core.lib.vector_knowledge_center as vkc_mod
+    from core.lib.config_helper import VECTOR_ROOT_ENV
     monkeypatch.setattr(vkc_mod.VectorKnowledgeCenter, "_instances", {})
-    monkeypatch.setattr(vkc_mod, "get_data_root", lambda: str(tmp_path))
+    monkeypatch.setenv(VECTOR_ROOT_ENV, str(tmp_path / "vector_kb"))
     from core.lib import code_indexer
     # code_indexer.__init__ 内部 import vector_knowledge_center, monkeypatch 模块级单例即可
     fake = vkc_mod.VectorKnowledgeCenter("test_sess_22b")

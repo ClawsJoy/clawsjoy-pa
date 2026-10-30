@@ -29,6 +29,7 @@ from flask import Flask
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.pa import gateway_routes as GR  # noqa: E402
 
@@ -88,7 +89,7 @@ def test_brief_covers_sys_faces_added_in_906():
 
 def test_no_handwritten_capability_table():
     u"""⒠：清单**唯**由生成器出（源内 ⛔ 手写接口表 · 唯一赋值处 ＝ 空占位）。"""
-    src = io.open(GR.__file__, encoding="utf-8").read()
+    src = gr_src()
     assert len(re.findall(r"(?m)^PA_CAPABILITY_BRIEF = ", src)) == 1, u"赋值处须唯一"
     assert re.search(r'(?m)^PA_CAPABILITY_BRIEF = u""$', src), u"占位须为空（⛔ 手写表）"
     assert "def build_capability_brief" in src
@@ -122,7 +123,7 @@ def test_banned_wording_table_in_runtime_prompt_not_in_source():
     words = [u"已受理", u"已安排", u"已转办", u"正在处理"]
     for w in words:
         assert w in prompt, w
-    src = io.open(GR.__file__, encoding="utf-8").read()
+    src = gr_src()
     for w in words:
         assert w not in src, u"字面须转义写（源内 ⛔ 现）：%s" % w
 

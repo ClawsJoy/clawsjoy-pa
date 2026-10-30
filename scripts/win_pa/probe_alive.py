@@ -39,6 +39,12 @@ import urllib.request
 if sys.stdout is not None:
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
+#: ⭐ 9.0.13 P0：运行态（pid/console/life）今落 PA_LOG_DIR（装根只读）—— 径唯自 pa_paths 出。
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+import pa_paths  # noqa: E402
+
 HOST = '127.0.0.1'
 TAIL_BYTES = 2 * 1024 * 1024
 SESS_RE = re.compile(r'^=== nowindow start (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ===$')
@@ -53,6 +59,20 @@ STATES_CN = {'alive': u'活', 'dead': u'死', 'stale_pid': u'陈旧 pid（疑他
 
 def resolve_root():
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _log_file(root, name):
+    r"""运行态之件之读径：新径（PA_LOG_DIR）⇒ 无而旧径（<root>\logs）有 ⇒ 读旧（过渡 · ⛔ 写旧径）。
+
+    ⭐ 9.0.13 P0：装 Program Files 只读 ⇒ 旧径（装根）必无件；新径由 pa_nowindow 写。
+    """
+    new = pa_paths.log_path(name)
+    if os.path.exists(new):
+        return new
+    legacy = os.path.join(root, 'logs', name)
+    if os.path.exists(legacy):
+        return legacy
+    return new
 
 
 def now_iso():
@@ -189,7 +209,7 @@ def judge(pidfile_pid, pid_ok, port_open, health_ok, pending):
 
 
 def collect(root, port_default=5102):
-    pidfile = os.path.join(root, 'logs', 'win_pa.pid')
+    pidfile = _log_file(root, pa_paths.PID_NAME)
     try:
         sys.path.insert(0, root)
         from core.lib.port_config import gateway_port
@@ -197,7 +217,7 @@ def collect(root, port_default=5102):
     except Exception:
         port = port_default
     # ⭐ pm_1453 §三.4：名随端口（旧码硬编 5102 ⇒ 端口改后名实不符）
-    console = os.path.join(root, 'logs', 'gateway_%d_console.log' % port)
+    console = _log_file(root, 'gateway_%d_console.log' % port)
     pidfile_pid = read_pid(pidfile)
     pid_ok = pid_alive(pidfile_pid)
     open_ = tcp_open(port)
@@ -212,11 +232,22 @@ def collect(root, port_default=5102):
 
 
 def life_path(root):
-    return os.path.join(root, 'logs', 'win_pa_life.jsonl')
+    u"""留痕之件（**写**径）⇒ PA_LOG_DIR/win_pa_life.jsonl（⭐ 9.0.13 P0：⛔ 装根）。"""
+    return pa_paths.log_path(pa_paths.LIFE_NAME)
+
+
+def _life_read_path(root):
+    u"""留痕之件之**读**径：新径有 ⇒ 新；否则旧径有 ⇒ 旧（过渡）。"""
+    p = life_path(root)
+    if os.path.exists(p):
+        return p
+    legacy = os.path.join(root, 'logs', 'win_pa_life.jsonl')
+    return legacy if os.path.exists(legacy) else p
 
 
 def append_life(root, rec):
     p = life_path(root)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
     if os.path.exists(p) and os.path.getsize(p) > 2 * 1024 * 1024:
         os.replace(p, p + '.1')
     with open(p, 'ab') as f:
@@ -225,7 +256,7 @@ def append_life(root, rec):
 
 
 def last_life(root):
-    p = life_path(root)
+    p = _life_read_path(root)
     if not os.path.exists(p):
         return None
     last = None
@@ -300,7 +331,7 @@ def main():
                 print(u'[用法错] --note 须并给 --by（谁）（rc=3）')
                 return 3
             rec = {'ts': now_iso(), 'event': a.note, 'by': a.by, 'why': a.why,
-                   'pidfile_pid': read_pid(os.path.join(root, 'logs', 'win_pa.pid')),
+                   'pidfile_pid': read_pid(_log_file(root, pa_paths.PID_NAME)),
                    'target_pid': (a.target_pid or None), 'caller': caller_chain()}
             p = append_life(root, rec)
             print(u'[留痕] %s ／ %s ／ pid=%s ／ 因=%s ⇒ %s'

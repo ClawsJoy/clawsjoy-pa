@@ -24,6 +24,7 @@ from flask import Flask
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src_file  # noqa: E402
 
 from core.pa import gateway_routes as G  # noqa: E402
 
@@ -142,9 +143,9 @@ def test_旧开发机字面不入面(client):
 
 
 def test_本功能源码_无旧开发机字面():
-    s = (ROOT / "core" / "pa" / "gateway_routes.py").read_text(encoding="utf-8")
+    s = gr_src_file("PA_FIRST_RUN_VERSION")
     i = s.index("PA_FIRST_RUN_VERSION")
-    seg = s[i:s.index("def _ask_scope", i)]
+    seg = s[i:]                                    # 该定义所在之单件之尾（较原切段更严）
     assert seg, u"取段空 ＝ 判据无齿"
     for lit in LEGACY_LIT:
         assert lit not in seg, lit

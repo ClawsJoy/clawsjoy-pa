@@ -1,0 +1,9 @@
+task,seat,item,status,evidence
+R9a,PD,卫生-纯新增,未动,3,824 .before_* / 151.2MB; pytest WinError 5
+R9b,PD+CEO,卫生-删除,阻塞-六拍,删除类须六拍
+R10,PD,路由分层,未开工,88 routes / 45 writes / 4,828 lines
+R11,CW+PD,授权面,未开工,41/45 write routes unguarded
+R12,PM+PD,决策索引,pilot,96 ids / 68 resolved / 28 missing
+C30-PD,f202f89,版本更新,未完成,publisherName missing; 9.0.12 in flight
+C30-CW,b2a5182,修PA功能,未完成,A2 no route / no consumer
+C30-PM,b136893,用户角度,进行中,R1-R8 v3: 0 green / 1 half / 2 yellow / 5 red

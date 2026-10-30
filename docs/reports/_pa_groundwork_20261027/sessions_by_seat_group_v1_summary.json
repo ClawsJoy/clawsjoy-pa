@@ -1,0 +1,65 @@
+{
+ "total": 368,
+ "byGroup": [
+  {
+   "group": "--D-paseo-workspace--",
+   "cwd": "D:\\paseo-workspace",
+   "seats": "发布与回执席(5c01a0f) / 内容制作席(67eb10c) / GEO研究席(502535f) / 项目经理(b136893)",
+   "seat_count": 4,
+   "sessions": 155,
+   "empty": 67,
+   "empty_old": 63,
+   "medium": 86,
+   "large": 2,
+   "bytes": 80985085
+  },
+  {
+   "group": "--C-Users-flybo--",
+   "cwd": "C:\\Users\\flybo",
+   "seats": "—（非席位：cli:dsh/desktop）",
+   "seat_count": 0,
+   "sessions": 65,
+   "empty": 65,
+   "empty_old": 61,
+   "medium": 0,
+   "large": 0,
+   "bytes": 19949
+  },
+  {
+   "group": "--D-Obsidian-ClawsJoy-ClawsJoy-~5185~5BB9~5DE5~574A--",
+   "cwd": "D:\\Obsidian\\ClawsJoy\\ClawsJoy\\内容工坊",
+   "seats": "工作流实验室(e621c26) / 导演(1c89172) / 技术总监(f202f89) / 笔杆子(d22ea88)",
+   "seat_count": 4,
+   "sessions": 52,
+   "empty": 52,
+   "empty_old": 48,
+   "medium": 0,
+   "large": 0,
+   "bytes": 17787
+  },
+  {
+   "group": "--D-Obsidian-ClawsJoy-ClawsJoy-~5199~5C0F~8BF4~4E13~680F--",
+   "cwd": "D:\\Obsidian\\ClawsJoy\\ClawsJoy\\写小说专栏",
+   "seats": "法律初审(c94521a) / 客服(712c54b) / 秘书(91d7669) / 总经理CEO(440488b)",
+   "seat_count": 4,
+   "sessions": 49,
+   "empty": 49,
+   "empty_old": 47,
+   "medium": 0,
+   "large": 0,
+   "bytes": 16943
+  },
+  {
+   "group": "--D-clawsjoy_v9--",
+   "cwd": "D:\\clawsjoy_v9",
+   "seats": "V9工程师·全史席(01a0ae94…(b2a5182) / 【②层自唤醒 · 席务首件（源＝席务…(f4f4371) / V9审计师(20a688e)",
+   "seat_count": 3,
+   "sessions": 47,
+   "empty": 44,
+   "empty_old": 43,
+   "medium": 2,
+   "large": 1,
+   "bytes": 38481292
+  }
+ ]
+}

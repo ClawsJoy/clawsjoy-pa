@@ -34,6 +34,7 @@ from flask import Flask
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.lib import update_run as UR          # noqa: E402
 from core.lib import update_source as US       # noqa: E402
@@ -192,6 +193,6 @@ def test_E9_real_http_round_trip(env):
 
 def test_E10_argv_one_source():
     u"""一处定形：唯端出「调器」之 argv（源扫本档 —— ⛔ 手列）。"""
-    src = (ROOT / "core" / "pa" / "gateway_routes.py").read_text(encoding="utf-8")
+    src = gr_src()
     assert src.count('u"scripts", u"win_pa", u"pa_update.py"') == 1, u"调器之径唯 1 处"
     assert src.count('u"--go", u"--json"') == 1, u"器参唯 1 处"

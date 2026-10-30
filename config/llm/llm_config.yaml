@@ -26,7 +26,7 @@ providers:
 routing:
   code: deepseek-coder:6.7b
   math: qwen2.5:7b-instruct-q4_0-gpu
-  creative: deepseek:deepseek-flash    # ← 改为 DeepSeek
+  creative: qwen2.5:7b-instruct-q4_0-gpu
   simple: qwen2.5:7b-instruct-q4_0-gpu
   english: llama3.2:3b
   embedding: nomic-embed-text

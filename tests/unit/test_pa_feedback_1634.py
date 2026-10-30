@@ -30,6 +30,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src_file  # noqa: E402
 
 from core.lib import feedback_target as FT      # noqa: E402
 from core.pa import diagnostics as DG           # noqa: E402
@@ -133,9 +134,8 @@ def test_no_network_in_modules():
     for mod in (FS, FT, DG):
         ok, hits = mod.source_scan()
         assert ok, (mod.__name__, hits)
-    p = ROOT / u"core" / u"pa" / u"gateway_routes.py"
-    txt = io.open(str(p), encoding=u"utf-8").read()
-    blk = txt.split(u"丙-P0：留言板", 1)[1].split(u"    app.register_blueprint(bp)", 1)[0]
+    txt = gr_src_file(u"def pa_feedback_target(")   # 丙-P0 区之新家（拆件后）
+    blk = txt                                       # 扫整簇件（较原切段更严 · ⛔ 弱化）
     for bad in (u"urllib", u"requests", u"socket", u"httpx", u"http.client"):
         assert bad not in blk, u"丙-P0 之端 ⛔ 得引 %s" % bad
 

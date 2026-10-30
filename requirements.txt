@@ -38,6 +38,7 @@ tiktoken>=0.14.0         # 兜底：core/gateway/message_assembler.py:663,:809,:
 #   `vector_knowledge_center = VectorKnowledgeCenter()` ＝ **顶层实例化**
 #   ⇒ 凡 `import core.*` 即触 ⇒ 净机缺之 ⇒ 首屏 ⛔ 开。旧标「可选（AI/ML）」＝ 声明与实径 ⛔ 一。
 chromadb>=1.5.9
+faster-whisper>=1.2.1   # 本地语音转写（只读/本地）
 
 # ===== 可选依赖（AI/ML，按需安装） =====
 

@@ -38,21 +38,55 @@ def _now() -> str:
     return _dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
 
+class GrantsError(Exception):
+    """授权档不可信 —— 一律**拒**（fail-closed）。⛔ 以「零授权」冒充坏件。"""
+
+
+class GrantsCorrupt(GrantsError):
+    """`grants.yaml` 坏件（不可读 ／ 形不合 ／ 条目非映射）。"""
+
+
+def _empty() -> Dict[str, Any]:
+    return {"version": 1, "updated": _now(), "grants": []}
+
+
 def _load() -> Dict[str, Any]:
+    """读授权档。
+
+    ⭐ **fail-closed**（PM 3407 §一.2 ／ A2-N3）：坏件 ⇒ `GrantsCorrupt`（⛔ 回落空表）。
+    由：本档是**授权面** —— 把「损坏」读成「没有任何长期授权」＝ 损坏即放宽（与
+    `permission.py` 已修之「损坏即放宽」同族）。
+
+    ⚠ 件**不在** ⇒ 空档（合法初态：老板尚未点过「一直允许」）—— 但**须与坏件可分**
+    （`load_state()` 之 `state = missing`），⛔ 以「空表」吞掉两种情形。
+    """
     p = grants_path()
     if not p.exists():
-        return {"version": 1, "updated": _now(), "grants": []}
+        return _empty()
     try:
         import yaml  # type: ignore
 
-        d = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-        if not isinstance(d, dict):
-            return {"version": 1, "updated": _now(), "grants": []}
-        d.setdefault("grants", [])
-        return d
+        d = yaml.safe_load(p.read_text(encoding="utf-8"))
     except Exception as e:
         print("[GRANT_FAIL] 读取 grants.yaml 失败: %s" % e)
-        return {"version": 1, "updated": _now(), "grants": []}
+        raise GrantsCorrupt("grants.yaml 不可读（%s）：%s" % (p, e)) from e
+    if d is None:                       # 空件 ＝ 零授权（合法）
+        return _empty()
+    if not isinstance(d, dict):
+        print("[GRANT_FAIL] grants.yaml 形不合（非映射）")
+        raise GrantsCorrupt("grants.yaml 形不合（须映射，实为 %s）" % type(d).__name__)
+    _items = d.get("grants")
+    if _items is None:
+        _items = []
+    if not isinstance(_items, list):
+        print("[GRANT_FAIL] grants.yaml 之 grants 非列表")
+        raise GrantsCorrupt("grants.yaml 之 grants 须列表（实为 %s）" % type(_items).__name__)
+    for _g in _items:
+        if not isinstance(_g, dict):
+            print("[GRANT_FAIL] grants.yaml 有非映射条目")
+            raise GrantsCorrupt("grants.yaml 含非映射条目（%s）" % type(_g).__name__)
+    d["grants"] = _items
+    return d
 
 
 def _save(d: Dict[str, Any]) -> bool:
@@ -242,4 +276,38 @@ def log_grant_use(scene: str, tool: str = "", args: Optional[Dict[str, Any]] = N
 
 
 def list_grants() -> List[Dict[str, Any]]:
+    """全部长期授权（只读）。
+
+    ⚠ **fail-closed**：坏件 ⇒ `GrantsCorrupt` 上抛（⛔ 回空表 —— 那正是 A2-N3 之红）。
+    """
     return list(_load().get("grants") or [])
+
+
+# ---- 只读面之四态（A2 · PM 3407）：active ／ none ／ missing ／ corrupt ----
+STATE_ACTIVE = "active"
+STATE_NONE = "none"
+STATE_MISSING = "missing"
+STATE_CORRUPT = "corrupt"
+
+
+def load_state() -> Dict[str, Any]:
+    """授权档之**态**（供只读路由直用）：⛔ 抛，但**⛔ 混态**。
+
+    - `missing` —— 件不在（老板未启用授权记忆）；
+    - `none`    —— 件在而**空**（明确零条）；
+    - `active`  —— 件在且有条目；
+    - `corrupt` —— 坏件（`error` 载因）⇒ 路由须 **409**，⛔ 200 空表。
+    """
+    p = grants_path()
+    _src = str(p)
+    if not p.exists():
+        return {"state": STATE_MISSING, "grants": [], "source": _src,
+                "error": "", "captured_at": _now()}
+    try:
+        d = _load()
+    except GrantsCorrupt as e:
+        return {"state": STATE_CORRUPT, "grants": [], "source": _src,
+                "error": str(e)[:300], "captured_at": _now()}
+    _items = list(d.get("grants") or [])
+    return {"state": STATE_ACTIVE if _items else STATE_NONE, "grants": _items,
+            "source": _src, "error": "", "captured_at": _now()}

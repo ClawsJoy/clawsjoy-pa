@@ -46,7 +46,7 @@
 /* —— 主面环（3 主面）—— */
 .mtabs{display:flex;gap:3px;padding:7px 16px 0;flex-shrink:0;overflow-x:auto;border-bottom:1px solid var(--border)}
 .mtabs button{background:transparent;border:1px solid var(--border);border-bottom:0;color:var(--sub);
-  font-size:11.5px;padding:4px 14px;cursor:pointer;border-radius:7px 7px 0 0;white-space:nowrap}
+  font-size:12px;padding:4px 14px;cursor:pointer;border-radius:7px 7px 0 0;white-space:nowrap}
 .mtabs button[aria-pressed="true"]{background:rgba(88,166,255,.12);color:var(--text);border-color:var(--blue)}
 
 /* —— 主面容器 —— */
@@ -63,12 +63,12 @@
 .today .mline .k{flex:0 0 74px;color:var(--sub)}
 .today .mline .v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .today .mline .x{margin-left:6px;background:none;border:1px solid var(--border);color:var(--sub);border-radius:6px;
-  font-size:10px;line-height:1;padding:2px 6px;cursor:pointer;flex:0 0 auto}
+  font-size:12px;line-height:1;padding:2px 6px;cursor:pointer;flex:0 0 auto}
 .today .mline .x[aria-expanded="true"]{color:var(--text);border-color:var(--blue)}
 .today .xbody{margin:6px 0 0 98px}
 /* ⭐ pm_1823 §二 ／ §三：四行之「数（`.v`）／ 源（`.w`）／ 去处（`.go`）」与「画像」之降位（`.sub`）。 */
 .today .mline .w{flex:0 0 auto;font-size:10.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38%}
-.today .mline .go{margin-left:6px;background:none;border:1px solid var(--blue);color:var(--blue);border-radius:6px;padding:1px 8px;font-size:11px;cursor:pointer;white-space:nowrap}
+.today .mline .go{margin-left:6px;background:none;border:1px solid var(--blue);color:var(--blue);border-radius:6px;padding:1px 8px;font-size:12px;cursor:pointer;white-space:nowrap}
 .today .mline .go:hover{background:rgba(88,166,255,.14)}
 .today .xbody .go{margin-top:6px;display:block}
 .today .mline.sub{margin-top:14px;padding-top:10px;border-top:1px dashed var(--border)}
@@ -103,7 +103,7 @@
 .gates .g b{color:var(--text)}
 .gates .gr{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
 .gates button{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:6px;
-  font-size:11px;padding:3px 9px;cursor:pointer}
+  font-size:12px;padding:3px 9px;cursor:pointer}
 .gates button:disabled{opacity:.45;cursor:not-allowed}
 .seats .r{display:flex;gap:8px;align-items:baseline;padding:3px 0;font-size:11.5px;border-bottom:1px dashed rgba(48,54,61,.55)}
 .seats .r .k{flex:0 0 66px;color:var(--sub)}
@@ -111,16 +111,18 @@
 .seats .r .v.na{color:var(--sub);opacity:.85}
 .subform{display:flex;gap:6px;margin:2px 0 4px}
 .subform input{flex:1;min-width:0;background:var(--card2);border:1px solid var(--border);color:var(--text);
-  border-radius:7px;font-size:11.5px;padding:5px 8px}
+  border-radius:7px;font-size:12px;padding:5px 8px}
 .subform button{background:rgba(88,166,255,.12);border:1px solid var(--border);color:var(--text);border-radius:7px;
-  font-size:11.5px;padding:5px 12px;cursor:pointer}
+  font-size:12px;padding:5px 12px;cursor:pointer}
 .out{font-size:10.5px;line-height:1.7;color:var(--sub);margin-bottom:4px}
 .subs{font-size:11px;line-height:1.75;color:var(--sub);max-height:130px;overflow:auto}
 
 /* —— 左栏「来源面」：1 行摘要 ＋ 展开 —— */
-.srcsum{padding:2px 12px 8px;font-size:11px;color:var(--sub);cursor:pointer;user-select:none}
+.srcsum{padding:2px 12px 8px;font-size:12px;color:var(--sub);cursor:pointer;user-select:none}
 .srcsum b{color:var(--text)}
 .srcsum .caret{margin-left:4px}
+/* ⭐ 承 pm 2919 §一：无 JS 之辞 ⇒ 唯入 <noscript>（唯 scripting 关时现）—— ⛔ 与首屏「读中…」兼用一字面。 */
+.nojs-note{padding:2px 12px 8px;font-size:12px;line-height:1.5;color:var(--amber)}
 .srclist{padding:0 10px 8px;font-size:11px;overflow:auto;max-height:46%}
 .srclist .it{display:flex;gap:6px;align-items:baseline;padding:3px 2px;border-bottom:1px dashed rgba(48,54,61,.7)}
 .srclist .it .n{margin-left:auto;color:var(--text);font-variant-numeric:tabular-nums}
@@ -221,7 +223,7 @@ details.msub>summary::-webkit-details-marker{display:none}
 
 /* —— 工程注记折叠块（承 pm_1012 §二：用户面只说人话 · 工程注记默认隐藏 · 展开可回指）—— */
 details.eng{margin-top:6px;border-top:1px dashed var(--border);padding-top:4px}
-details.eng>summary{cursor:pointer;user-select:none;list-style:none;font-size:10.5px;color:var(--sub)}
+details.eng>summary{cursor:pointer;user-select:none;list-style:none;font-size:12px;color:var(--sub)}
 details.eng>summary::-webkit-details-marker{display:none}
 details.eng>summary::before{content:"\25B8";display:inline-block;width:12px;color:var(--sub)}
 details.eng[open]>summary::before{content:"\25BE"}
@@ -242,10 +244,10 @@ details.eng.paroute{margin:0 0 5px}
 
 /* —— 聊天面之「不出手」明书 ＋ 可点之去处（pm_1801 §一 并办）——
    ⭐ 静文（⛔ 动态猜意图）：一行小字 ＋ 一颗 chip（⇒ 与顶栏同一函数 paSysTopOpen）。 */
-.chatnohand{margin:6px 0 0;font-size:10.5px;line-height:1.9;color:var(--sub)}
+.chatnohand{margin:6px 0 0;font-size:12px;line-height:1.9;color:var(--sub)}
 .chatnohand .chip{cursor:pointer;margin-left:3px}
 /* —— 子代理面 · 独立窗口钮（承 pm_1024 §二.3 · 按现有 .x 之形）—— */
-.ch > .pachbtn{margin-left:6px;background:none;border:1px solid var(--border);color:var(--sub);border-radius:5px;font-size:10.5px;padding:0 6px;cursor:pointer;line-height:1.6}
+.ch > .pachbtn{margin-left:6px;background:none;border:1px solid var(--border);color:var(--sub);border-radius:5px;font-size:12px;padding:0 6px;cursor:pointer;line-height:1.6}
 .ch > .pachbtn:hover{color:var(--text);border-color:var(--blue)}
 
 /* == 测试痕（承 pm_1027 §二 · 显示层 · ⛔ 未动存档）================================== */
@@ -377,3 +379,314 @@ details.eng.paroute{margin:0 0 5px}
 #paKeys .ks-msg{flex:1;min-width:0;line-height:1.6;color:var(--sub)}
 #paKeys #paKeyNotice{margin:0 11px 8px;color:var(--amber);background:rgba(210,153,29,.10);
   border:1px solid rgba(210,153,29,.30);border-radius:8px;padding:6px 10px;font-size:11.5px;line-height:1.6}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PA 窗 v1 · 1a（静态壳 · mock）—— CW b2a5182 · 2026-10-27
+   承 PRD v1 §3（四形态）／§4（布局）／§9（样式）。只追加本段：
+   ⛔ 改上列旧面样式 ／ ⛔ 另立主题（配色逐字沿用 pa.css 之 :root token）。
+   开关：body.pa-win-on（window.js 加／去）⇒ 隐旧 .topbar ／ .main ／ .axisbar。
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pa-win{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;
+  background:var(--bg);color:var(--text);font-size:13px}
+.pa-win[hidden]{display:none}
+body.pa-win-on .topbar,body.pa-win-on .main,body.pa-win-on .axisbar{display:none !important}
+
+/* —— 顶栏 48 —— */
+.pa-top{flex:0 0 48px;height:48px;display:flex;align-items:center;gap:10px;
+  padding:0 14px;background:var(--card);border-bottom:1px solid var(--border)}
+.pa-who{display:flex;align-items:center;gap:7px;font-weight:700;font-size:12.5px;white-space:nowrap}
+.pa-live{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.pa-modes{display:flex;gap:3px;margin-left:4px}
+.pa-modes button{background:transparent;border:1px solid transparent;color:var(--sub);
+  font:600 12px inherit;padding:4px 10px;border-radius:999px;cursor:pointer}
+.pa-modes button.on{color:var(--text);background:rgba(88,166,255,.13);border-color:rgba(88,166,255,.32)}
+.pa-egress{margin-left:auto;font-size:11.5px;color:var(--sub);padding:3px 9px;
+  border:1px solid var(--border);border-radius:999px;white-space:nowrap}
+.pa-egress.warn{color:var(--amber);border-color:rgba(210,153,29,.45);background:rgba(210,153,29,.10)}
+
+/* —— 身：左轨 ／ 舞台 ／ 右栏 —— */
+.pa-body{flex:1;display:flex;min-height:0}
+.pa-rail{flex:0 0 64px;width:64px;display:flex;flex-direction:column;gap:4px;
+  padding:8px 0;background:var(--card);border-right:1px solid var(--border)}
+.pa-rail-b{position:relative;width:100%;height:50px;flex:0 0 50px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:transparent;border:0;color:var(--sub);cursor:pointer;font:inherit}
+.pa-rail-b .ic{font-size:15px;line-height:1}
+.pa-rail-b .lb{font-size:10.5px;line-height:1}
+.pa-rail-b:hover{color:var(--text);background:rgba(255,255,255,.045)}
+.pa-rail-b.on{color:var(--text);background:rgba(88,166,255,.10)}
+.pa-rail-b.on::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:2px;
+  border-radius:0 2px 2px 0;background:var(--blue)}
+.pa-stage{flex:1;min-width:0;padding:18px 22px 26px;overflow:auto}
+.pa-now{flex:0 0 320px;width:320px;border-left:1px solid var(--border);
+  background:var(--card);padding:14px;overflow:auto}
+body.pa-now-off .pa-now{display:none}
+
+/* —— 标题 ／ 四卡 —— */
+.pa-h1{font-size:19px;font-weight:700;letter-spacing:.2px;margin:0 0 12px}
+.pa-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pa-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px 14px;min-height:132px;display:flex;flex-direction:column;min-width:0}
+.pa-card-h{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.6px;margin:0}
+.pa-card-n{font-size:24px;font-weight:800;line-height:1.1;margin:2px 0 7px;
+  font-variant-numeric:tabular-nums}
+.pa-card-list{list-style:none;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.pa-card-row{display:flex;gap:8px;justify-content:space-between;align-items:baseline;
+  font-size:13px;line-height:1.45;min-width:0}
+.pa-card-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pa-card-s{color:var(--sub);font-size:11.5px;white-space:nowrap;flex:0 0 auto}
+.pa-card-more{font-size:11.5px;color:var(--sub);margin-top:5px}
+.pa-card-empty{flex:1;display:flex;flex-direction:column;justify-content:center;
+  align-items:flex-start;gap:1px}
+.pa-card-dash{font-size:22px;line-height:1;color:var(--sub)}
+.pa-card-say{font-size:12px;color:var(--sub);line-height:1.45}
+
+/* —— 命令带 —— */
+.pa-cmd{display:flex;gap:8px;margin-top:14px;max-width:720px}
+.pa-cmd input{flex:1;min-width:0;background:var(--card2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 13px;color:var(--text);font:13px inherit;outline:none}
+.pa-cmd input:focus{border-color:var(--blue)}
+.pa-cmd input::placeholder{color:var(--sub)}
+.pa-hint{font-size:11.5px;color:var(--sub);margin-top:7px;line-height:1.5}
+
+/* —— 按钮族 —— */
+.pa-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--card2);border:1px solid var(--border);color:var(--text);
+  font:600 12.5px inherit;padding:7px 14px;border-radius:var(--radius);
+  cursor:pointer;white-space:nowrap}
+.pa-btn:hover{border-color:#4a525d}
+.pa-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.pa-rail-b:focus,.pa-rail-b:focus-visible,.pa-modes button:focus,.pa-modes button:focus-visible,.pa-summon input:focus,.pa-summon input:focus-visible,.pa-summon button:focus,.pa-summon button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.pa-btn[disabled]{opacity:.45;cursor:not-allowed}
+.pa-btn-main{background:rgba(88,166,255,.16);border-color:rgba(88,166,255,.42)}
+.pa-btn-ghost{background:transparent}
+.pa-btn-stop{background:rgba(248,81,73,.13);border-color:rgba(248,81,73,.38)}
+.pa-btn-stop.live{box-shadow:0 0 0 1px rgba(248,81,73,.16)}
+.pa-btn-mini{padding:3px 9px;font-size:11.5px;border-radius:8px}
+
+/* —— 进度 ／ 花费 —— */
+.pa-bar{height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+.pa-bar.sm{height:4px}
+.pa-bar i{display:block;height:100%;background:var(--blue);border-radius:999px;transition:width .3s}
+.pa-pct{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pa-cost{font-size:11.5px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pa-sub{color:var(--sub);font-size:11.5px}
+.pa-empty{color:var(--sub);font-size:12px;padding:10px 2px;line-height:1.5}
+
+/* —— 任务卡（Focus）—— */
+.pa-tc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px;width:720px;max-width:100%}
+.pa-tc-h h2{font-size:16px;font-weight:700;margin:0 0 3px}
+.pa-tc-sub{font-size:11.5px;color:var(--sub)}
+.pa-tc-prog{display:flex;align-items:center;gap:10px;margin:14px 0 10px}
+.pa-tc-prog .pa-bar{flex:1}
+.pa-steps{list-style:none;display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+.pa-step{display:flex;align-items:baseline;gap:8px;font-size:12.5px;line-height:1.5}
+.pa-step-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pa-step-e{color:var(--sub);font-size:11.5px;white-space:nowrap;flex:0 0 auto}
+.pa-tc-foot{border-top:1px solid var(--border);padding-top:10px}
+.pa-dot-s{width:8px;height:8px;border-radius:50%;flex:0 0 8px;display:inline-block;
+  background:var(--sub);margin-top:3px}
+.pa-s-done{background:var(--green)}
+.pa-s-doing{background:var(--blue);box-shadow:0 0 0 3px rgba(88,166,255,.16)}
+.pa-s-todo{background:#4a525d}
+.pa-s-fail{background:var(--red)}
+
+/* —— 回执（七问）—— */
+.pa-receipt,.pa-rc-open{background:var(--card2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 14px;margin-top:10px}
+.pa-rc-h{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;margin-bottom:8px}
+.pa-rc-h .pa-btn{margin-left:auto}
+.pa-hash{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--sub);
+  background:rgba(255,255,255,.05);border-radius:5px;padding:1px 6px;letter-spacing:.4px}
+.pa-rqs{list-style:none;display:flex;flex-direction:column;gap:5px}
+.pa-rq{display:flex;gap:10px;font-size:12.5px;line-height:1.5}
+.pa-rq-k{flex:0 0 78px;color:var(--sub);font-size:11.5px}
+.pa-rq-v{flex:1;min-width:0;word-break:break-word}
+.pa-rc-f{border-top:1px solid var(--border);margin-top:9px;padding-top:8px;
+  font-size:11.5px;color:var(--sub);display:flex;gap:6px;align-items:center}
+
+/* —— 右栏 Now —— */
+.pa-now-sec{margin-bottom:16px}
+.pa-now-sec h3{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.6px;
+  margin:0 0 8px;text-transform:none}
+.pa-run{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:9px 11px;margin-bottom:7px}
+.pa-run.on-stop{opacity:.72}
+.pa-run-t{font-size:12.5px;font-weight:600;margin-bottom:7px}
+.pa-run-b{display:flex;align-items:center;gap:8px}
+.pa-run-b .pa-bar{flex:1}
+.pa-appr{background:var(--card2);border:1px solid var(--border);border-left:2px solid var(--amber);
+  border-radius:var(--radius);padding:9px 11px;margin-bottom:7px}
+.pa-appr.lv-l4{border-left-color:var(--red)}
+.pa-appr.lv-l2{border-left-color:var(--blue)}
+.pa-appr-h{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.pa-risk{font-size:11.5px;font-weight:700;color:var(--amber)}
+.pa-lv{font-size:10.5px;color:var(--sub);border:1px solid var(--border);
+  border-radius:5px;padding:0 5px}
+.pa-appr-w{font-size:12.5px;line-height:1.45;margin-bottom:3px}
+.pa-appr-p{font-size:11.5px;color:var(--sub);line-height:1.5}
+.pa-appr-e{font-size:11.5px;color:var(--amber);line-height:1.5;margin-top:2px}
+.pa-appr-a{display:flex;gap:7px;margin-top:8px}
+.pa-code{display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap}
+.pa-code label{font-size:11.5px;color:var(--sub)}
+.pa-code input{width:96px;background:var(--bg);border:1px solid var(--border);
+  border-radius:7px;padding:4px 8px;color:var(--text);
+  font:13px ui-monospace,Consolas,monospace;letter-spacing:2px;outline:none}
+.pa-code input:focus{border-color:var(--blue)}
+.pa-code-note{font-size:11px;color:var(--sub);flex:1 1 100%}
+.pa-eg{display:flex;align-items:center;gap:7px;font-size:12px;
+  border-bottom:1px solid var(--border);padding:6px 0}
+.pa-eg-lv{font-size:10.5px;color:var(--amber)}
+.pa-eg-to{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pa-eg-ttl{font-size:11px;color:var(--sub);white-space:nowrap}
+
+/* —— 账 —— */
+.pa-lg-hd,.pa-lg{display:grid;grid-template-columns:56px 1fr 74px 84px;gap:10px;
+  align-items:center;padding:0 10px}
+.pa-lg-hd{height:28px;font-size:11px;color:var(--sub);border-bottom:1px solid var(--border)}
+.pa-lg{height:44px;font-size:12.5px;border-bottom:1px solid rgba(48,54,61,.5);
+  cursor:pointer;border-radius:6px}
+.pa-lg:hover{background:rgba(255,255,255,.035)}
+.pa-lg:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.pa-lg-t{color:var(--sub);font-variant-numeric:tabular-nums}
+.pa-lg-a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pa-lg-c{color:var(--sub);text-align:right;font-variant-numeric:tabular-nums}
+.pa-lg-h{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--sub);
+  text-align:right}
+
+/* —— 席 ／ 库 ／ 门（只读投影）—— */
+.pa-ag,.pa-vt,.pa-dr{display:grid;grid-template-columns:1.2fr .6fr .7fr .7fr .6fr;gap:10px;
+  align-items:center;height:40px;padding:0 10px;font-size:12.5px;
+  border-bottom:1px solid rgba(48,54,61,.5)}
+.pa-vt{grid-template-columns:1.6fr .8fr .8fr}
+.pa-dr{grid-template-columns:2fr .5fr .8fr .8fr}
+.pa-ag.off,.pa-vt.off{opacity:.55}
+.pa-ag b{font-weight:600}
+
+/* —— Summon（浮层 · 520×84 · 顶 18vh）—— */
+.pa-summon{position:fixed;left:50%;top:18vh;transform:translateX(-50%);
+  width:520px;max-width:calc(100vw - 40px);min-height:84px;z-index:95;
+  background:var(--card);border:1px solid #3d444d;border-radius:14px;
+  box-shadow:0 20px 60px rgba(0,0,0,.55);padding:12px 14px}
+.pa-summon[hidden]{display:none}
+.pa-summon-row{display:flex;align-items:center;gap:10px}
+.pa-summon-row input{flex:1;min-width:0;background:transparent;border:0;outline:none;
+  color:var(--text);font:14px inherit;padding:6px 0}
+.pa-summon-row input::placeholder{color:var(--sub)}
+.pa-chips{display:flex;gap:4px;flex:0 0 auto}
+.pa-chips button{background:var(--card2);border:1px solid var(--border);color:var(--sub);
+  font:600 11.5px inherit;padding:3px 9px;border-radius:999px;cursor:pointer}
+.pa-chips button:hover{color:var(--text);border-color:var(--blue)}
+.pa-summon-foot{display:flex;justify-content:space-between;font-size:11px;
+  color:var(--sub);margin-top:8px;padding-top:7px;border-top:1px solid var(--border)}
+
+/* —— 一句话（轻提示）—— */
+.pa-say{position:fixed;left:50%;bottom:28px;transform:translate(-50%,10px);
+  background:var(--card2);border:1px solid var(--border);border-radius:999px;
+  padding:7px 16px;font-size:12px;color:var(--text);opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .18s;z-index:99;white-space:nowrap}
+.pa-say.on{opacity:1;transform:translate(-50%,0)}
+
+/* —— 命令面板（Ctrl+K）—— */
+.pa-palette{position:fixed;left:50%;top:22vh;transform:translateX(-50%);
+  width:420px;max-width:calc(100vw - 40px);z-index:97;background:var(--card);
+  border:1px solid #3d444d;border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);
+  padding:10px 12px}
+.pa-palette[hidden]{display:none}
+.pa-palette input{width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;padding:8px 11px;color:var(--text);font:13px inherit;outline:none}
+.pa-palette input:focus{border-color:var(--blue)}
+.pa-palette-h{font-size:11px;color:var(--sub);margin-top:7px}
+
+/* —— Focus 态：舞台居中，一件一件事 —— */
+body.pa-focus .pa-stage{display:flex;justify-content:center;align-items:flex-start;
+  padding-top:26px}
+body.pa-focus .pa-now{flex:0 0 300px;width:300px}
+
+/* —— 窄屏（PRD §8.15：1024 单列）—— */
+@media (max-width:1024px){
+  .pa-cards{grid-template-columns:minmax(0,1fr)}
+  .pa-now{flex:0 0 264px;width:264px;padding:12px}
+  .pa-stage{padding:16px 16px 24px}
+  .pa-lg-hd,.pa-lg{grid-template-columns:48px 1fr 66px 78px;gap:8px}
+}
+@media (max-width:820px){
+  .pa-now{display:none}
+  .pa-tc{width:100%}
+}
+
+/* —— 动效克制（PRD §9：不炫技）—— */
+@media (prefers-reduced-motion:reduce){
+  .pa-bar i,.pa-say{transition:none}
+}
+/* —— 补：焦点可见（PRD §8.16）＋ 「在跑」可点开 Focus —— */
+.pa-run-t[role="button"]{cursor:pointer;border-radius:5px}
+.pa-run-t[role="button"]:hover{color:var(--blue)}
+.pa-run-t[role="button"]:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.pa-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+/* 补：壳内卡片沿用旧面同名类 .pa-cards（旧面 46vh 夹高）⇒ 在壳内解夹，免窄屏裁掉第 3／4 张卡 */
+.pa-win .pa-cards{max-height:none;overflow:visible;padding:0}
+/* —— 补：卡底（说明 ＋ 做完了 · 出回执）—— */
+.pa-tc-foot{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.pa-tc-foot .pa-sub{flex:1;min-width:0}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1b-1 真数 · polish（CW b2a5182 · 2026-10-27 · 承令 3444）
+   图标 inline SVG（icon 20 ＋ label 10 · 64px 内不裁）／三态（载·空·错·降级）／真数标签
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pa-rail-b .ic{height:18px;display:flex;align-items:center;justify-content:center;line-height:0}
+.pa-rail-b .ic svg{width:18px;height:18px;display:block;overflow:visible}
+.pa-rail-b .lb{display:block;width:100%;font-size:12px;font-weight:500;line-height:1.2;-webkit-font-smoothing:antialiased;letter-spacing:0;white-space:nowrap;word-break:keep-all;writing-mode:horizontal-tb;text-align:center;overflow:visible}
+.pa-btn[hidden]{display:none !important}
+
+.pa-skel{display:flex;flex-direction:column;gap:7px;margin-top:2px}
+.pa-skel i{display:block;height:8px;border-radius:4px;
+  background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.12),rgba(255,255,255,.05));
+  background-size:200% 100%;animation:paSkel 1.4s linear infinite}
+.pa-skel.sm i{height:7px}
+@keyframes paSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.pa-skel i{animation:none}}
+
+.pa-card-note{font-size:11px;color:var(--sub);margin-top:6px;line-height:1.45}
+/* 要拍卡：历史待授权（只读）另列 —— ⛔ 与可拍混 */
+.pa-card-hist{margin-top:10px;padding-top:8px;border-top:1px dashed var(--border)}
+.pa-card-hist-h{font-size:11px;color:var(--sub);margin-bottom:4px;letter-spacing:.2px}
+.pa-card[data-state="error"]{border-color:rgba(248,81,73,.42)}
+.pa-card-row-go{cursor:pointer;border-radius:4px}
+.pa-card-row-go:hover{background:rgba(255,255,255,.05)}
+.pa-card-row-go:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.pa-btn.pa-retry{margin-top:6px;padding:3px 9px;font-size:11.5px;border-radius:8px}
+.pa-empty.warn{color:var(--amber)}
+.pa-empty .pa-retry{margin-left:8px}
+
+.pa-sum{font-size:12px;color:var(--sub);margin:-4px 0 10px;font-variant-numeric:tabular-nums}
+.pa-h2{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.4px;margin:16px 0 6px;
+  display:flex;align-items:center;gap:8px}
+.pa-tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.3px;color:var(--amber);
+  border:1px solid rgba(210,153,29,.45);background:rgba(210,153,29,.10);
+  border-radius:999px;padding:1px 7px;vertical-align:middle}
+.pa-lg.local .pa-lg-h{color:var(--blue)}
+
+.pa-ag{grid-template-columns:1.5fr .5fr .55fr 1.5fr}
+.pa-kinds{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.pa-kind{font-size:11.5px;color:var(--sub);border:1px solid var(--border);border-radius:999px;
+  padding:3px 10px;background:var(--card)}
+.pa-kind b{color:var(--text);font-size:13px;margin-right:3px;font-variant-numeric:tabular-nums}
+.pa-kind.off{opacity:.6}
+
+.pa-now-sub{font-size:10.5px;color:var(--sub);letter-spacing:.4px;margin:10px 0 5px}
+.pa-appr.real{border-left-color:var(--sub)}
+.pa-appr-note{font-size:10.5px;color:var(--sub);line-height:1.45;margin-top:5px}
+
+/* P0 第二大脑 */
+.pa-brain-list{display:flex;flex-direction:column;gap:8px}
+.pa-brain-item{padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer}
+.pa-brain-item:hover{border-color:rgba(88,166,255,.45);background:rgba(88,166,255,.06)}
+.pa-chip{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:999px;background:rgba(88,166,255,.12);color:var(--sub);font-size:10.5px}
+#paBrainForm[hidden],#paBrainDel[hidden]{display:none !important}
+
+.pa-screen-card{cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--bg)}
+.pa-screen-card:hover{border-color:rgba(88,166,255,.5)}
+.pa-screen-card img{width:100%;height:110px;object-fit:cover;border-radius:5px;display:block}

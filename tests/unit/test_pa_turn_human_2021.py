@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.pa.gateway_routes import PA_TURN_HUMAN, pa_turn_human  # noqa: E402
 
@@ -70,7 +71,7 @@ def test_人话之律_正负控():
 
 
 def test_接线_字段真出且原字未丢():
-    src = GR.read_text(encoding="utf-8")
+    src = gr_src()
     assert u"def pa_turn_human(" in src
     assert u'"human": pa_turn_human(_recorded, _readable)' in src       # ⛔ 前端自拟
     for k in (u'"session_lines_before"', u'"events_lines_before"',

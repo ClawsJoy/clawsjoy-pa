@@ -1,0 +1,90 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0
+cachedir: _tmp\.pytest_cache
+rootdir: D:\clawsjoy_v9
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.14.2, locust-2.46.5, asyncio-1.4.0, cov-7.1.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 638 items
+
+tests\unit\test_attach_1852.py ..........                                [  1%]
+tests\unit\test_audit.py ..............                                  [  3%]
+tests\unit\test_browser_local_p4.py ......F..                            [  5%]
+tests\unit\test_caliber.py ........                                      [  6%]
+tests\unit\test_endpoint_guard.py ..............................         [ 11%]
+tests\unit\test_identity_1858.py ..............                          [ 13%]
+tests\unit\test_p9_bug1_receipt_wording.py ......                        [ 14%]
+tests\unit\test_p9_jsonl_readable_gate.py .............                  [ 16%]
+tests\unit\test_pa_agent_chat_1859.py .............                      [ 18%]
+tests\unit\test_pa_archive_only_1571.py ..                               [ 18%]
+tests\unit\test_pa_archive_routes.py ..................                  [ 21%]
+tests\unit\test_pa_ask_cache_fresh_1549.py ......                        [ 22%]
+tests\unit\test_pa_axis_1803.py ........                                 [ 23%]
+tests\unit\test_pa_b1_perm_panel.py ...................                  [ 26%]
+tests\unit\test_pa_brain_model.py ....                                   [ 27%]
+tests\unit\test_pa_cache_evict_1569.py ....                              [ 27%]
+tests\unit\test_pa_capability_brief_1802.py ..........                   [ 29%]
+tests\unit\test_pa_dispatch_jsonl.py .....                               [ 30%]
+tests\unit\test_pa_faces_lazy.py .......                                 [ 31%]
+tests\unit\test_pa_feedback_1634.py ............                         [ 33%]
+tests\unit\test_pa_first_run.py ...........                              [ 34%]
+tests\unit\test_pa_first_run_vault_src.py ..................             [ 37%]
+tests\unit\test_pa_gate_view.py ...............                          [ 40%]
+tests\unit\test_pa_grants_3407.py ..............                         [ 42%]
+tests\unit\test_pa_human_receipt_2025.py .....                           [ 43%]
+tests\unit\test_pa_kb_unset_no_cwd_scan.py .....                         [ 43%]
+tests\unit\test_pa_keys_1652.py ............                             [ 45%]
+tests\unit\test_pa_local_env_files.py ........                           [ 47%]
+tests\unit\test_pa_model_label_1613.py .....                             [ 47%]
+tests\unit\test_pa_provider_keys_1613.py ..........                      [ 49%]
+tests\unit\test_pa_receipt_fallback_2048.py .........                    [ 50%]
+tests\unit\test_pa_receipt_kind.py ........                              [ 52%]
+tests\unit\test_pa_receipt_read_at.py ....                               [ 52%]
+tests\unit\test_pa_routes.py ...............                             [ 55%]
+tests\unit\test_pa_scan_face_skip_1569.py .......                        [ 56%]
+tests\unit\test_pa_screen_secrets_zero_disk.py ...                       [ 56%]
+tests\unit\test_pa_session_model.py ......                               [ 57%]
+tests\unit\test_pa_sys_1751.py ....................                      [ 60%]
+tests\unit\test_pa_thread_state_corrupt.py .........                     [ 62%]
+tests\unit\test_pa_today_1824.py ........                                [ 63%]
+tests\unit\test_pa_turn_human_2021.py ....                               [ 63%]
+tests\unit\test_pa_ui_faces.py .......                                   [ 65%]
+tests\unit\test_pa_update_face_1691.py ..................                [ 67%]
+tests\unit\test_pa_vault_set_endpoint.py .........                       [ 69%]
+tests\unit\test_pa_x16_wiring_batch.py ...........                       [ 71%]
+tests\unit\test_permission.py .......                                    [ 72%]
+tests\unit\test_pm011_caliber_check_shape.py ..........................  [ 76%]
+tests\unit\test_pm011_caliber_panel.py ...................               [ 79%]
+tests\unit\test_pm011_change_locator.py ......                           [ 80%]
+tests\unit\test_pm011_n2b_strerr.py ...............                      [ 82%]
+tests\unit\test_pm011_n2c_audit_preflight.py ................            [ 84%]
+tests\unit\test_pm011_pa_build_stamp.py ......                           [ 85%]
+tests\unit\test_pm011_permission_badge.py ............                   [ 87%]
+tests\unit\test_roster.py ......                                         [ 88%]
+tests\unit\test_sys_act_1852.py .................                        [ 91%]
+tests\unit\test_today_boot_1852.py ....                                  [ 92%]
+tests\unit\test_v9_pa_update_1684.py ..........                          [ 93%]
+tests\unit\test_win_pa_update_1645.py .......................            [ 97%]
+tests\unit\test_win_pa_version_1628.py .........                         [ 98%]
+tests\test_route_guard.py .........                                      [100%]
+
+================================== FAILURES ===================================
+_____________________________ test_gateway_routes _____________________________
+tests\unit\test_browser_local_p4.py:168: in test_gateway_routes
+    assert "approve_reply(user_id, _rp_approve" in gw
+E   assert 'approve_reply(user_id, _rp_approve' in '# -*- coding: utf-8 -*-\n"""P3-A 辅助函数归位：写/计划审批处理（从 agent_gateway_enhanced.py 迁入，2026-09-12）。"""\nimport json\nimport ..."),\n        )\n        return _rp_res if isinstance(_rp_res, dict) else _approval_payload(_rp_res)\n    return None\n'
+============================== warnings summary ===============================
+tests/test_route_guard.py::test_owner_ok_remote_valid_jwt_true
+tests/test_route_guard.py::test_45_write_routes_positive_remote_jwt
+  D:\clawsjoy_v9\core\lib\auth_middleware.py:27: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "exp": datetime.utcnow() + timedelta(hours=self.token_expire_hours),
+
+tests/test_route_guard.py::test_owner_ok_remote_valid_jwt_true
+tests/test_route_guard.py::test_45_write_routes_positive_remote_jwt
+  D:\clawsjoy_v9\core\lib\auth_middleware.py:28: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "iat": datetime.utcnow(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/unit/test_browser_local_p4.py::test_gateway_routes - assert 'app...
+============ 1 failed, 637 passed, 4 warnings in 108.03s (0:01:48) ============

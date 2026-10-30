@@ -21,6 +21,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 #: env 之覆（供齿 ／ 沙箱 ／ 试）—— 名与 core/lib/platform_client.py:15 **同源**（一举一义）。
 DATA_ROOT_ENV = "CLAWSJOY_DATA_DIR"
 
+#: ⭐ 9.0.13 P0：向量库根之 env（与 scripts/win_pa/pa_paths.py:ENV_VEC **同源** · 一处定形）。
+#:   装 Program Files 只读 ⇒ chroma 库 ⛔ 落装根；PA_VEC_DIR ＝ 库目录本身
+#:   （缺省 %LOCALAPPDATA%\ClawsJoyPA\vec —— 由 scripts/win_pa/pa_paths.py 注入）。
+VECTOR_ROOT_ENV = "PA_VEC_DIR"
+
 
 def get_data_root() -> str:
     """获取数据根目录（**绝对径** · 与「根」绑定 · 不按 CWD —— 承规七 · pm_1698 三.1a）。
@@ -35,6 +40,20 @@ def get_data_root() -> str:
         raw = "data"
     p = Path(str(raw))
     return str(p if p.is_absolute() else (REPO_ROOT / p))
+
+
+def get_vector_root() -> str:
+    """向量库根目录（**绝对径** · ⭐ 9.0.13 P0：装根只读 ⇒ 库 ⛔ 落装根）。
+
+    之序：① env PA_VEC_DIR（＝ 库目录本身；缺省 %LOCALAPPDATA%\\ClawsJoyPA\\vec）
+    ⇒ ② 旧形 <get_data_root()>/vector_kb（向后兼容；缺 env 之开发树沿用）。
+    **相对值** ⇒ 按**仓根**拼（与 get_data_root 同律 —— ⛔ 按 CWD）。
+    """
+    raw = (os.environ.get(VECTOR_ROOT_ENV) or "").strip()
+    if raw:
+        p = Path(str(raw))
+        return str(p if p.is_absolute() else (REPO_ROOT / p))
+    return str(Path(get_data_root()) / "vector_kb")
 
 
 def get_llm_endpoint() -> str:

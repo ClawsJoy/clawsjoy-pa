@@ -34,6 +34,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import threading
 import time
 
@@ -132,11 +133,28 @@ def face(root=None, env=None):
         if d.get(k):
             out[k] = d[k]
     out[u"available"] = bool(out.get(u"available"))
+    if out[u"available"] and _is_downgrade(out.get(u"current_version"), out.get(u"latest_version")):
+        out[u"available"] = False
+        out[u"note"] = u"已是最新"
+        out[u"note_why"] = (u"source-old: 源端 %s 旧于本机 %s ⇒ 不降级"
+                             % (out.get(u"latest_version"), out.get(u"current_version")))
     out[u"note"] = out.get(u"note") or u""
     out[u"note_why"] = out.get(u"note_why") or u""
     out[u"size_bytes"] = out.get(u"size_bytes") if isinstance(out.get(u"size_bytes"), int) else 0
     out[u"files"] = out.get(u"files") if isinstance(out.get(u"files"), int) else 0
     return out
+
+
+def _version_key(v):
+    u"""版号之比较键：数字段元组（`<major>.<minor>.<patch>` ⇒ `(major, minor, patch)`）；不可解 ⇒ `()`。"""
+    parts = re.findall(r"\d+", str(v or ""))
+    return tuple(int(x) for x in parts) if parts else ()
+
+
+def _is_downgrade(current, latest):
+    u"""`latest` 旧于 `current` ⇒ True（⛔ 以旧册充「更新」）。"""
+    ck, lk = _version_key(current), _version_key(latest)
+    return bool(ck and lk and lk < ck)
 
 
 def refresh(root=None, env=None, timeout=None, now=None):
@@ -177,6 +195,11 @@ def refresh(root=None, env=None, timeout=None, now=None):
                 d["available"] = True
                 d["note"] = (u"有同版号之新册（重发）：%s ｜ 戳 %s ⇒ %s"
                              % (cur, cur_stamp or u"⛔ 读", doc_stamp or u"⛔ 读"))
+        elif _is_downgrade(cur, doc.get(u"version")):
+            d["available"] = False
+            d["note"] = u"已是最新"
+            d["note_why"] = (u"source-old: 源端 %s 旧于本机 %s ⇒ 不降级"
+                              % (doc.get(u"version"), cur))
         else:
             d["available"] = True
             d["note"] = u"" if cur else u"有新版（本机之版号 ⛔ 读 ⇒ 照实）"

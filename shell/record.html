@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>录屏</title>
+<style>
+html,body{margin:0;background:transparent;font-family:system-ui,"Segoe UI",sans-serif}
+.bar{display:flex;align-items:center;gap:9px;height:52px;padding:0 12px;box-sizing:border-box;
+  background:rgba(30,8,8,.96);border:1px solid #a33;border-radius:12px;color:#fff;font-size:12.5px;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);-webkit-app-region:drag}
+.dot{color:#ff5b5b;font-size:15px}
+.t{font-variant-numeric:tabular-nums;min-width:40px}
+button{-webkit-app-region:no-drag;margin-left:auto;border:0;border-radius:999px;padding:6px 12px;
+  background:#b03030;color:#fff;font:600 12px inherit;cursor:pointer}
+button:hover{background:#d23a3a}
+#mic{background:rgba(255,255,255,.10);color:#ddd;margin-left:auto;margin-right:4px}
+#mic.off{background:#333;color:#999}
+.bar{gap:7px}
+</style></head><body>
+<div class="bar"><span class="dot">●</span><span>录屏</span><span class="t" id="t">00:00</span>
+<button type="button" id="mic" onclick="mic()">🎤 开</button><button type="button" onclick="stop()">停止</button></div>
+<script>
+var t0=Date.now();
+function paint(){var s=Math.floor((Date.now()-t0)/1000);var m=('0'+Math.floor(s/60)).slice(-2);var x=('0'+(s%60)).slice(-2);document.getElementById('t').textContent=m+':'+x;}
+setInterval(paint,1000);paint();
+function mic(){try{if(window.paShell&&window.paShell.recMicToggle){window.paShell.recMicToggle().then(function(d){var b=document.getElementById('mic');if(!b)return;if(d&&d.ok){b.textContent=d.enabled?'🎤 开':'🎤 关';b.classList.toggle('off',!d.enabled);}});}}catch(e){}}
+function stop(){try{if(window.paShell&&window.paShell.recStop)window.paShell.recStop();}catch(e){}}
+</script></body></html>

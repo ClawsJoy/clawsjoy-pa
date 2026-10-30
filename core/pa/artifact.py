@@ -62,10 +62,12 @@ def verify_artifact(path, base_dir=None, min_bytes=None, allow_stub=False, expec
     applicable=False 表示「体积启发式对该类型不适用」（NOT_APPLICABLE），只做了存在性 + stub 精确匹配。
     阈值优先级：expected_min_bytes（任务级） > min_bytes（显式） > TYPE_MIN_BYTES[扩展名] > None(不适用)。
 
-    判据（R6）：
+    判据（R6 ＋ R1/C18 · T59）：
       1. 路径非空、非绝对系统路径（/tmp、/etc、/home 视为越界）；
       2. 真实存在且是文件；
-      3. 体积 >= min_bytes，且不落在 STUB_BYTES 里（allow_stub=True 可豁免，仅供测试与过渡）。
+      3. 体积 >= min_bytes，且不落在 STUB_BYTES 里（allow_stub=True 可豁免，仅供测试与过渡）；
+      4. 空件（size == 0）一律拒 —— 与扩展名／类型阈值／allow_stub 无关（R1/C18：
+         「在场 ≠ 生效」；.py／.log 免体积闸与 .json 小阈曾使 0 B 落 ok=True）。
     """
     p = str(path or "").strip()
     if not p:
@@ -92,6 +94,19 @@ def verify_artifact(path, base_dir=None, min_bytes=None, allow_stub=False, expec
         size = fp.stat().st_size
     except Exception as e:
         return {"ok": False, "path": p, "size": 0, "applicable": False, "reason": "产物不可读：%s（%s）" % (p, str(e)[:80])}
+    # ⭐ R1／C18（T59）：空件 ≠ 产物 —— size == 0 一律红，与扩展名／类型阈值／allow_stub 无关。
+    # 由（T48 R1 缺口 · 06_pm §三）：.py ／ .log 之 TYPE_MIN_BYTES 为 None（免体积闸）⇒ 0 B 曾返
+    #   ok=True；.json 之 _mb=2 与空内容之 _looks_like_stub 之组合亦属「在场 ≠ 生效」之假绿缝隙。
+    # ⛔ 本批只加此一条零字节判据：TYPE_MIN_BYTES ／ STUB_BYTES ／ MIN_ARTIFACT_BYTES ／
+    #   _looks_like_stub 一字不动（⛔ 改其他阈值 —— 承 T59 界）。
+    if size == 0:
+        return {
+            "ok": False,
+            "path": p,
+            "size": 0,
+            "applicable": False,
+            "reason": "空产物（0 字节）：%s" % p,
+        }
     # allow_stub=True 是「占位判定整体豁免」（过渡/测试用）：两条占位判据一起跳过。
     # 注意仍要求「存在且是文件」—— 豁免的是体积启发式，不是存在性。
     import os as _os_a

@@ -1,7 +1,7 @@
 {
   "name": "clawsjoy-pa-shell",
   "productName": "ClawsJoyPA",
-  "version": "9.0.11",
+  "version": "9.0.51",
   "description": "ClawsJoy PA 桌面壳（Electron）—— 「壳层」：窗 ／ 托盘 ／ 启停 ／ 双层更新之交界",
   "main": "main.js",
   "author": "ClawsJoy",
@@ -23,7 +23,7 @@
     "appId": "com.clawsjoy.pa",
     "productName": "ClawsJoyPA",
     "directories": { "output": "../dist/pa_shell/setup" },
-    "files": ["main.js", "identity.js", "update.js", "shell_update.js", "preload.js", "package.json", "icon.png"],
+    "files": ["main.js", "identity.js", "update.js", "shell_update.js", "preload.js", "summon.html", "record.html", "package.json", "icon.png"],
     "extraResources": [
       { "from": "../dist/pa_shell/payload", "to": "payload" }
     ],

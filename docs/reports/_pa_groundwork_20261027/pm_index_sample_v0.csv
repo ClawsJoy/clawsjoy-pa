@@ -1,0 +1,13 @@
+pm_id,root,rel_path,bytes,sha16,captured_at,domain,owner_seat,status,ref_count,ref_sample,note
+1802,_pm,_令_TD_1802.md,3986,9feb86423c2db0d2,2026-10-27T06:52+08:00,绑定/安全,PM,在册,3,"core/gateway/boot.py; core/pa/gateway_routes.py; core/pa/untrue_wording.py",网关绑形默认环回；跨机须显式 CJ_PA_BIND
+1858,_pm,_令_TD_1858.md,6746,9d5e16ac313e4f2d,2026-10-27T06:52+08:00,身份,PM,在册,2,"core/pa/identity.py; core/pa/gateway_routes.py",身份由装根铸一次；浏览器值只是 hint；远端不可定身份
+1613,_pm,_令_TD_1613_令四后端半与四组之报.md,7306,c906451a698bca07,2026-10-27T06:52+08:00,鉴权/端,PM,在册,3,"core/pa/gateway_routes.py; core/pa/providers.py; core/pa/provider_keys.py",端之鉴权；provider key 唯环回
+1846,_pm,_回_TD_1846.md,8365,1887092235bbd945,2026-10-27T06:52+08:00,状态/原子写,PM,在册,1,"core/pa/identity.py",器之写亦须原子
+1399,_pm,_令_TD_1399_裁五_漂移闸与三择之准与硬界.md,7571,5b3a228f5dc77090,2026-10-27T06:52+08:00,vault,PM,在册,4,"core/pa/env_face.py; core/pa/dispatch.py; core/pa/agent_invoke.py",vault 真源之序；⛔ 字面默认；旧探测须显式开关
+1387,_pm,_令_TD_1387_产品与组织之切_paseo与obsidian之依赖.md,8287,0bf7186fc4fa2b10,2026-10-27T06:52+08:00,vault,PM,在册,2,"core/pa/vault_brain.py; core/gateway/precision_inject.py",vault 真源顺序改为 env→配置→kb→旧探测
+1449,_pm,_令_TD_1449_认五件与裁七_会话字段与准回灌与净机人手起.md,8578,16a771a54857ab91,2026-10-27T06:52+08:00,会话模型,PM,在册,3,"core/pa/dispatch.py; core/pa/gateway_routes.py; core/pa/providers.py",表出决定之仓＝会话档字段；⛔ 进程级单例
+1621,_pm,_令_CW_1621_更新环节之界面.md,4542,71314dbd15cecd0b,2026-10-27T06:52+08:00,版本可见,PM,在册,0,"(前端待扫)",版本可见；真源 /health.version；前端只显示不自算
+1832,_pm,_令_CW_1832.md,7173,e86cf5b99303dcf5,2026-10-27T06:52+08:00,首屏/引导,PM,在册,0,"(前端待扫)",首屏终态须可退；收放在 paPrepRender
+2269,codex,_草_CEO裁决_致CW_2269.md,2288,80432004ca7d8c63,2026-10-27T06:52+08:00,发布/流程,CEO,非独立件,0,"(提交信息)",发布流程裁决；代码内以节号引用
+2104,_pm,_回_CW_2104_判过8a9b7d5与停手卡守卫真缺陷与丁之增补与齿之射程.md,13471,386e8d66b31a9685,2026-10-27T06:52+08:00,前端,PM,在册,0,"(前端待扫)",停手卡守卫真缺陷；真用户之路断
+3146,codex,_回_TD_3146_答PM-3108_E1阈警即轮办讫与认四裁与悉录③层_20261014.md,5291,28afed51556132f0,2026-10-27T06:52+08:00,台账/机制,CEO,在册,0,"(件)",台账与机制回件；认四裁

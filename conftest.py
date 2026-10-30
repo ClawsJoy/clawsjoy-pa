@@ -41,3 +41,11 @@ def unsafe():
     except Exception:
         pass
 """
+
+
+def pytest_configure(config):
+    """①a 卫生入口：basetemp 默认落 %TEMP%（不可写 ⇒ WinError 5）⇒ 固定落本仓 _tmp。"""
+    if not config.option.basetemp:
+        base = Path(__file__).resolve().parent / "_tmp" / "pytest-basetemp"
+        base.mkdir(parents=True, exist_ok=True)
+        config.option.basetemp = str(base)

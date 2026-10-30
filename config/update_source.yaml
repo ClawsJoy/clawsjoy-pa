@@ -5,6 +5,6 @@
 # url  ＝ 更新源之根（唯目录 ⇒ 件名由 update_manifest.json 定）
 # channel ＝ 通道（内测 ＝ internal ／ 后 beta ／ stable）；客户端**只取本通道**（⛔ 跨档）
 # provider ＝ generic（静态文件 · 内测 ／ 静态桶）｜github（Releases）｜oss（后扩）
-url: http://192.168.3.11:8800/
+url: http://127.0.0.1:8800/
 channel: internal
 provider: generic

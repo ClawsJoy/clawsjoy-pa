@@ -1,0 +1,83 @@
+pm_id,ref_count,top_files,first_context,category,suggestion
+034,5,core/pa/providers.py(3) | core/pa/gateway_routes.py(2),"# ⭐ PM 034 §三.⒝ ／ 037 §A.2：走径标取自**后端实况**（⛔ 前端自说）；",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+035,2,core/pa/agent_scan.py(1) | core/pa/gateway_routes.py(1),"""""""本机执行层 agent 扫描器 v2（PM 035 Q0 + 036 修正 + 037 §B.4 · 2026-10-05。",unknown,候 PM 判
+036,2,core/pa/agent_scan.py(2),"果 ⇒ 灌**既有** roster（core/pa/roster.py）之卡形（PM 036：复用 /v9/pa/roster · ⛔ 新造接口）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+037,6,core/pa/agent_scan.py(4) | core/pa/providers.py(2),"我一手之证二（PM 037 §B.4 · 阱）：`roster.upsert` 之局部并为 `{k: v for k, v in card.items() if v is not None}`",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+038,1,core/pa/gateway_routes.py(1),"# ⭐ PM 038 §一.1（老板令 2026-10-05）：聊天 ＝ **陪伴** ⇒ ⛔ 以聊天为采集器。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+042,1,core/pa/providers.py(1),"DEFAULT_MAX_TOKENS = 1600   # ★ §二.4：临时经验值（无据）⇒ 待以读数定（PM 042）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+043,4,core/pa/gateway_routes.py(4),"# ⭐ PM 043 §二.1（裁）：**档** ＝ 显式拨杆（前端）之**单源**；⛔ 推断（`ask_domain` 仅佐证 · ⛔ 作主）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+070,4,core/pa/mailer.py(2) | web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1),"由：今晨 `PortUnconfigured` 即「按 CWD 取件」之实证（承 PM 070 §五 及格一）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+072,8,core/pa/mailer.py(3) | web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3),"⒡ **入参 `stop_to`**（T1.1 · 承 PM 072 §六）：**可选**（⛔ 必填）—— 缺省 ⇒ 自解「本人」（＝现网行为 · ⛔ 破现网）；",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+075,2,core/pa/mailer.py(1) | web/pa/faces/products.js(1),"# ⭐ 重放之轴（承 PM 075 §三）：`policy` 取**本次请求**（⛔ 生效）；生效者 ＝ 存底 `receipt`",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+077,3,web/pa/faces/products.js(2) | web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1),"/* ⭐ pm_077 §一（正法 · 已撤 pm_076 §二 之绕法）：探针（`store === false`）之轮 ⛔ 计",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+078,1,web/pa/faces/products.js(1),"/* pm_078 §二：探针行（`store === false`）须带【自测】之标轴 ⇒ 读者可辨",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+085,2,core/pa/gateway_routes.py(2),"u""""""成本读面（PM 085 §三 之令）：**逐轴聚合** —— 轮数 ／ `wall_s` ／ `tokens` ／ `money` ／ 刻窗。",unknown,候 PM 判
+088,2,core/pa/gateway_routes.py(2),"nbytes=_cost[""bytes""])        # ⭐ PM 088 §三（令）：体量轴入账（唯加 `bytes` 键）",unknown,候 PM 判
+089,12,core/pa/gateway_routes.py(7) | core/pa/mailer.py(2),"u""""""⭐ PM 089 §二（令）：**器之身份** —— 本路由之码之 `sha16`（**印须载器** · 承 `1018 §一`）。",unknown,候 PM 判
+090,1,core/pa/agent_scan.py(1),"""裁决复核"": True, ""据"": ""PM 090 §三「起停（我办）」＋ 诸令「落归我」＋ 诸裁""},",unknown,候 PM 判
+097,1,core/pa/roster.py(1),"#: 四种权（承 PM 097 §二「域须明何权」）：写码 ／ 起停 ／ 部署 ／ 裁决复核",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+099,1,core/pa/agent_scan.py(1),"（承 PM 099 §二「面须钉 · ⛔ 宽面」）⇒ 本函即其「钉」。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+845,2,core/pa/gateway_routes.py(2),"# ⭐ 面册 ＋ 角色 ＋ 阈 之版本（改此三物 ⇒ 必 +1 · 承 PM 845 §二.1 · L152）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+846,7,core/pa/gateway_routes.py(7),"#   ⇒ `role: archive`（**我们之报述** 之族 ⇒ ⛔ 作据 · 仍可检索回指 · 承 PM 846 §二）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+973,1,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(1),"E.push('界面引用三档（口径 · 前端常量 · 承 pm_973 §五）：档 A 直引其形（照引 ／ 自写）｜档 B 引接口 ＋ 自写｜档 C ⛔ 引（品牌 ／ 遥测 ／ 云默认）；上游包数 41 为「口径 · 前端常量」（⛔ 前端真源）。');",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+984,3,web/pa/faces/.before_53c72c537ef7612d.tasks.js(2) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(2),"行为闸（pm_984 §二）：受理门永不关（⛔ 置灰输入 ／ ⛔ 拒件）· 可打断 · 可闲聊 · 生效时点照实写。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+990,3,web/pa/boot.js(1) | web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1),"_boot(""paLoadUiState"", PA_FACES.guard(""status"", paLoadUiState));   /* 裁② · pm_990 §三：界面态快照只读上屏 */",unknown,候 PM 判
+993,1,,"",unknown,候 PM 判
+994,1,web/pa/faces/.before_24a5b3a8013b595a.today.js(1) | web/pa/faces/.before_7b90cfb8111bbc2e.today.js(1),"/* ClawsJoy PA v3 · 主面环（≤5）＋ 今日上下文（CW b2a5182 · 承 pm_994 P1 ／ pm_996 ／ pm_997 精简 ／ pm_裁_主面环≤5 · 2026-10-05）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+995,4,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(3),"E.push('私面为客户端闸（非 JS 取件仍见骨架）⇒ ⛔ 入开源仓（承 pm_995 §四）。\n私面 id：' + f.priv.map(function(x){ return x.id; }).join(' ／ '));",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+996,2,web/pa/faces/.before_53c72c537ef7612d.tasks.js(1) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(1),"/* ClawsJoy PA v3 · 主面 ③ 任务（含派活栏）（CW b2a5182 · 承 pm_996 §三 ／ pm_997 §二 ／ pm_984 行为闸 · 2026-10-04）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+997,9,web/pa/faces/.before_24a5b3a8013b595a.today.js(4) | web/pa/faces/.before_7b90cfb8111bbc2e.today.js(4),"E.push('未接清单源：#paSrcList（与左栏「来源面」同源）｜接线余项 M1（记债 · 承 pm_997 §四）。');",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+998,4,web/pa/faces/more.js(2),"/* —— 模式条（MODES 8 项）：分两行 × ≤ 4（承 pm_998 §二格① 末句 · F6⑦）——",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+999,2,web/pa/faces/more.js(2),"/* —— 产出 · 计划资产（源 GET /v9/plans/list · 真数据）＋ 长列表「能找」（承 pm_999 §二.2）——",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1000,4,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(4) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(4),"/* ClawsJoy PA v3 · 自述面 ＋ 权限四层（CW b2a5182 · 承 pm_1000 ／ pm_1001 ／ pm_1012 · 2026-10-04）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1002,4,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(4) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(4),"⚠ 件体（承 pm_1002 §三 补① · 取 (b)）：本件**⛔ 不是面体** —— 本件为**回答层件**：在 paSend 最外层拦",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1005,7,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(5) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(5),"其由 ＝ 承 pm_1005 §二（「据」与「答」分面而标 ⇒ ⛔ 让用户以为「模型说」＝「本机有据」）。 */",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1006,6,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(3),"let paSelfUiCache = null;   /* 最近所读之快照（承 pm_1006 §三：供「权限」面同步取用 · ⛔ 二次拉） */",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1007,6,web/pa/faces/more.js(4) | web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1),"/* ⭐ 承 pm_1007 §一 ＋ L83（判据单源）：⛔ 本处重判（旧法 ＝ free/total < 10% 之圆整百分数）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1024,6,web/pa/faces/.before_53c72c537ef7612d.tasks.js(2) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(2),"E.push('⭐ **自纠**（承 pm_1024 §二 · 先查真源）：前版云「席位无前端真源」（所查三径 /v9/agents ⇒ 404 ／ /v9/pa/seats ⇒ 404 ／ /v8/roster/list ⇒ 200 空）—— ⚠ **非真源** ⇒ 此读**误",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1026,3,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(3),"/* ⭐ 内部计数之形（`×N`）之判与清（承 pm_1026 §一 令① ／ pm_1028 §一.1）：",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1028,3,,"",unknown,候 PM 判
+1029,2,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(1),"/* ================= 六 · 6 · 占位答复（桩体）之净化（承 pm_1029 §二.② ／ pm_1030 §四）=================",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1033,5,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(3),"/* ⭐ pm_1033 §一 ⓞ（留痕读数）：把「检索命中 ／ 未命中 ／ 回落」做成**可见读数**（自述面 · 关于 PA）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1034,2,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(2) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(2),"/* ⭐ pm_1034 §四②（精确计算之前端可办之部）：**答体自洽复核**（⛔ 不算答案 · 只核答体自己写出的式）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1035,3,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(3),"/* ⭐ pm_1035 §三（必补一格）：**同一答体内「同量多值」** —— ⛔ 猜哪个对 · 只作「标」。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1036,4,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(4) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(4),"/* ⭐ pm_1036 §一／§二（**算径已通** · 工具 ＝ 判据**主源**）：把答体所写之式交**工具**算",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1044,3,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(1),"/* ⭐ pm_1044 §四（承 L85 ／ L76）：无源态须说人话 —— ⛔ 裸「—」。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1045,7,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(3),"U.push('· 远端因 ' + paRemWhy(ui) + '（源：快照「远端因」· ⛔ 前端编 · pm_1045 §三）');",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1046,3,web/pa/faces/.before_53c72c537ef7612d.tasks.js(3) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(3),"/* ⭐ pm_1046 §二.2（承 L85）：**首帧即改** —— ⛔ 让老板先见裸「—」再跳人话。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1047,3,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(2) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(2),"⚠ 更新（pm_1047 §二.4）：原注释写死「只搜知识库＋收件箱」⇒ 误导读码者（PM 今晚几乎据此误判）；",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1050,2,web/pa/faces/.before_53c72c537ef7612d.tasks.js(2) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(2),"/* —— 派活 · 护（承 `pm_1050 §二`）：按「派活」会真起执行循环（后端真跑工具 ／ 写沙箱）且本卡无「停止」钮",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1052,7,web/pa/faces/.before_24a5b3a8013b595a.today.js(4) | web/pa/faces/.before_7b90cfb8111bbc2e.today.js(4),"⛔ 动 pa.html（内容件 · 承 pm_1052／pm_1067）⇒ 环外之钮由 tasks.js 注入 #paMoreBody。 */",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1053,1,web/pa/faces/more.js(1),"var fShow = (fN < 0) ? '未知' : String(fN);   /* ⭐ pm_1053 §三 ＋ pm_1064 §三：该位惟表**数值**（同行「已载 0」同制）⇒ ⛔ 裸 `—`；`fN < 0` 已另支「未知」⇒ 无三义之歧（承 L132）。⭐ `",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1059,2,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(1),"/* ⭐ pm_1059 §二.①（承 L76「源须随值」）：共用件 status.js:52 之 `if(src) paRunSrc=…` **只覆盖 ／ 不落空**",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1060,1,web/pa/faces/.before_53c72c537ef7612d.tasks.js(1) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(1),"/* ⭐ pm_1060 §三：失败之因上屏（承 L76 刻须随值 ／ L103 形与义分 ／ ⛔ 丢 ／ ⛔ 编）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1061,5,web/pa/faces/.before_53c72c537ef7612d.tasks.js(4) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(4),"/* ⭐ pm_1061 §五：上屏「实到 `num_ctx`」（真源 ＝ **本函数同一** `GET /v9/pa/context` 之新键 `num_ctx` ⇒ 单源 · ⛔ 另取 ／ ⛔ 硬编 · 承 `L83` ／ `L102`）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1062,2,web/pa/faces/.before_53c72c537ef7612d.tasks.js(2) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(2),"⭐ pm_1062 §三：扩至新态 ⭐ `pending`（待审）⇒ 同上族显因（标签「待审因」 · ⛔ 以「失败」称非失败之项 · 承 L103）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1063,1,web/pa/faces/.before_53c72c537ef7612d.tasks.js(1) | web/pa/faces/.before_9d8af7b22e11b6e8.tasks.js(1),"⭐ pm_1063 §三：第二落点之**键名**对齐 —— 窗内原读 `task_spec`（⛔ 真键）⇒ 改 `spec` ＋ 「（无 spec）」＋ 40 字 ／ `title` 全文 ⇒ 与池逐条 **逐字同**。 */",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1064,2,web/pa/faces/more.js(1),"var fName = fArr ? (fN ? fArr.join(' / ') : '无') : '未知';   /* ⭐ pm_1064 §三（承 L132）：`Forever 0 项` ⇒ 与 `:143` 同义同词「无」（⛔ 裸 `—`） */",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1066,2,,"",unknown,候 PM 判
+1067,21,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(14) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(14),"⭐ 两轴之分（pm_1067 §四 · 承 L83 ／ L151）：**前端** `paAskDomain`（`self ／ local ／ world ／ other`）",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1069,2,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(2) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(2),"/* ⭐ pm_1069 §四（承 L83 单源 ／ L102 ／ L123 ／ L159）：自测痕之判 **⛔ 前端自持词表**",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1070,3,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(3),"/* ⭐ pm_1070 §三：词表缺 ⇒ 整轮「不可判」（⛔ 引 · ⛔ 静默放行）—— 后端 `_last_user_before` 已真排自测痕（前端 ⛔ 最后防线 · 承 L83）。 */",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1071,2,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(2) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(2),"⚠ 只改**显示**：本函数唯造 html ⇒ 存底（`th.msgs` ⁄ `localStorage` ⁄ `details.eng` 之原文）**一字不动**（承 pm_1071 之同族）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1078,1,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(1),"⚠ 判据（承 pm_1078 §三：**换判据** · ⛔ 一刀切 · ⛔ 扩到字母之全量）—— 二支**并**：",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1088,1,web/pa/faces/more.js(1),"面 B · 执行层 agent 名册（pm_1088 §二 Q0 ／ pm_1089 修正：读**既有** `/v9/pa/roster`）＝「谁干活」",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1089,2,web/pa/faces/more.js(1),"⭐ pm_1089 修正：数据源 ＝ **既有** `GET /v9/pa/roster`（＋`?full=1`）⇒ ⛔ 自造 `/v9/pa/agents`（该名已撤）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1091,1,core/pa/gateway_routes.py(1),"#   `collected` 键保留（空）＝ 回执形不变（前端半另件 pm_1091）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1092,1,,"",unknown,候 PM 判
+1099,1,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(1),"/* ⭐ 画像面板「状态 ＋ 来源指印」（承 pm_1099 §三.3 · P12/P13 之我面 · 承 pm_1092 §五.1）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1105,3,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(2) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(2),"/* ⭐ pm_1105 §一.1：起窗卡**优先** —— 本路（`GET /v9/pa/profile`）⛔ 覆盖之。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1106,1,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(1),"**实证**（`pm_1106 §四.3` · `Debugger` 断点取栈）：`go → mount → paint → paChatMode → eff → threadMode → AT`",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1107,3,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(3) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(3),"/* ⭐ pm_1107 §一裁2（准修 · 一行）：⚠ `activeThread()` **带副作用** —— `session.js:381`",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1125,1,web/pa/faces/chat.js(1),"// pm_1125 §一.2：ds_chat 之显名去平台色彩（原带他方平台身份词）；内部键留（⛔ 改名以免断映射）· ⛔ 本名不得入「可代操作」文案",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1132,1,web/pa/faces/products.js(1),"`chat.js:52`）同桶（⇒ 存量照旧折上真项 · 承 pm_1132 §三.3 之界）。分桶判据唯此一处。 */",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1178,1,core/pa/gateway_routes.py(1),"#   载荷 ／ 回执之字段名与形 ＝ 本 docstring（CW 候此 · 承 PM 1178 §四）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1179,1,web/pa/faces/.before_073f1b0f05171914.selfdesc.js(1) | web/pa/faces/.before_131c027a2a1b0135.selfdesc.js(1),"`archive_hits`（档案面之命中 ⇒ ⛔ 作据 · 承 L154）与 `answer_source`（答源 · **后端九值** —— `decision` ／ `decision_none` ／ `decision_store_unreadable` ／ `conte",sec,疑节号，非件
+1359,1,web/pa/.before_ad21a0e4496ccadc.core.js(1) | web/pa/core.js(1),"/* ⭐⭐ 刻之显形之**公共之器**（承 pm 1359 §二 · 「一处定形」）：诸面之「刻」**皆由此出**",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1562,5,web/pa/faces/selfdesc.js(4),"/* ⭐ pm_1562 §二.3（一处定形 · 承 pm_1557 §二.2）：复用之判 —— **唯此处**取 `from_cache`",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1629,1,web/pa/faces/update.js(1),"/* ⭐⭐ **⛔ 以 `available === false` 充「已是最新」**（承「未知 ⛔ 充知」· pm_1629 之守）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1631,1,core/gateway/boot.py(1),"#   「总长不可量（后端未给）」（旧病 ＝「两半皆悬」：既无人设 env ⇒ 亦无明书 · pm_1631/CW）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1751,3,core/pa/sys_face.py(1),"# ---- 有界（一处定形 · pm_1751 §四.4） ------------------------------------",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1796,1,web/pa/faces/update.js(1),"而**净机**之此路曾 `rc=2` **回滚**（承 pm_1796 ／ pm_1799）⇒ ⛔ 恒言。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）
+1831,3,,"",unknown,候 PM 判
+1889,2,shell/main.js(1) | shell/shell_update.js(1),"*   * ⛔ 动 `app-update.yml` 之四栏（pm_1889 §一：不签名之正解在「本来未声明校验」）。",pm,真 pm 号，文档缺 ⇒ PM 补件或标废（⛔ 当节号）

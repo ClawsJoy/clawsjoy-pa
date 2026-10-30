@@ -1,0 +1,52 @@
+{
+ "generated_at": "2026-10-30T07:16:31+08:00",
+ "generated_from": "docs\\decisions\\pm_index_v0.csv",
+ "index_bytes": 7934,
+ "index_lf": 97,
+ "index_data_rows": 96,
+ "category_counts": {
+  "缺": 1,
+  "补": 25,
+  "留": 62,
+  "移-域": 5,
+  "移-归属": 2,
+  "废": 1,
+  "补行": 3
+ },
+ "v0_sum_check": 96,
+ "code_ids_core_pa": 91,
+ "code_ids_wide": 450,
+ "wide_ids_not_in_v0": 355,
+ "wide_ids_not_in_v0_with_pm_doc": 343,
+ "date_false_ids": [
+  "2026"
+ ],
+ "docs_roots": [
+  [
+   "_pm",
+   "D:/paseo-workspace/_pm"
+  ],
+  [
+   "_auto",
+   "D:/paseo-workspace/_auto"
+  ],
+  [
+   "codex",
+   "D:/Obsidian/ClawsJoy/ClawsJoy/codex"
+  ],
+  [
+   "信通",
+   "D:/Obsidian/ClawsJoy/ClawsJoy/内容工坊/02_协作/信通"
+  ],
+  [
+   "paseo-pm",
+   "D:/Obsidian/ClawsJoy/ClawsJoy/paseo-pm"
+  ]
+ ],
+ "pointer_verify": {
+  "repo_ok": 0,
+  "ext_ok": 68,
+  "xt_same_rows": 28,
+  "ref_drift_rows": 40
+ }
+}

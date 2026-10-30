@@ -9,10 +9,11 @@
               授权须**点名 path**（⛔ 前端不代填授权对象）；
      ③ 不复述：破坏性端点清单 ⛔ 前端硬编码，只显示后端 `paths` 原文。
    ⛔ 本步只接线：⛔ 不改后端语义、⛔ 不碰生效判定（谁放行仍由 `endpoint_guard.check()` 判）。 */
-const PA_PERM_API = { gate:'/v9/pa/proxy/gate', approve:'/v9/pa/proxy/approve', perm:'/v9/pa/permission' };
+const PA_PERM_API = { gate:'/v9/pa/proxy/gate', approve:'/v9/pa/proxy/approve', perm:'/v9/pa/permission', grants:'/v9/pa/grants' };
 const PA_PERM_LEVELS = ['只读','标准','高(需确认)'];
 let paPermLoaded = false;
 let paPermGate = null;   /* null = 还没取 ／ {__error} = 读不到 ／ {approved,expires_in,paths} = 后端原文 */
+let paPermGrants = null; /* 长期授权（grants）之态：null = 还没取 ／ {__error} ／ {state,count,grants,source} —— state 四态 active ／ none ／ missing ／ corrupt（PM 3413） */
 function paPermEl(id){ try{ return document.getElementById(id); }catch(e){ return null; } }
 function paPermUnavailable(what, err){
   return '<div class="cb-degraded">⚠ '+esc(what)+'读数不可得：'+esc(String(err))
@@ -42,6 +43,26 @@ function paPermGateHtml(){
   return '<div class="cbmeta"><span class="cb-confirmed"><b>✅ 已授权</b></span> · 剩余 <b>'+esc(String(g.expires_in))
     +'</b> s（本机读数 · 不自行倒计时，要新值请点刷新）· 授权范围：'+paPermPathsHtml(g.paths)+'</div>';
 }
+function paPermGrantsHtml(){
+  /* 长期授权（`grants`）之只读面：⭐ 三态必分（PM 3413 §一.2）——
+     `missing`（件不在）／ 空表 ⇒ **「未配置（默认拒绝）」**；`corrupt` ⇒ 坏件（⛔ 当空）。
+     ⛔ 本面板 ⛔ 以「没有授权」之说法顶替「未配置」（那会把「未配置」与「零条」混成一态）。 */
+  if(paPermGrants===null || paPermGrants===undefined) return '<div class="cbmeta">⏳ 尚未取（展开时按只读接口拉取）</div>';
+  if(paPermGrants.__error) return paPermUnavailable('长期授权', paPermGrants.__error);
+  const st=String(paPermGrants.state||'');
+  if(st==='corrupt') return '<div class="cb-degraded">⚠ 授权档坏件（fail-closed）：⛔ 当「未配置」之外一律不认 —— 详情见后端 error</div>';
+  if(st==='missing' || st==='none' || !Number(paPermGrants.count||0)){
+    return '<div class="cbmeta" title="来源 '+esc(String(paPermGrants.source||''))+'">未配置（默认拒绝）'
+      +'—— 本机无长期授权 ⇒ 每次写入须老板在审批卡确认</div>';
+  }
+  const rows=(paPermGrants.grants||[]).map(function(g){
+    const u=Number(g&&g.uses||0);
+    const when=(g&&g.last_used_at)?String(g.last_used_at):'从未使用';
+    return '<div class="cbmeta"><code>'+esc(String(g&&g.scene||''))+'</code> · 用 '
+      +esc(String(u))+' 次 · 末用 '+esc(when)+'</div>';
+  }).join('');
+  return '<div class="cbmeta">✅ 已配置 '+esc(String(paPermGrants.count))+' 条（来源 '+esc(String(paPermGrants.source||''))+'）</div>'+rows;
+}
 function paPermSummaryText(){
   if(paGrantErr) return '权限档 ⚠ 面不可读 · 在场授权 '+(paPermGate&&paPermGate.approved?'有效 '+paPermGate.expires_in+'s':'无');
   const lv=(paGrantLevel===undefined||paGrantLevel===null)?'—':String(paGrantLevel);
@@ -62,6 +83,7 @@ function paPermPanelHtml(doc, opts){
     +'</select><button class="cbsubmit" onclick="paPermSetLevel()">写入并回读校验</button></div>'
     +'<div id="ppLevelMsg" class="cbout"></div></div>';
   h+='<div class="cbform"><b>在场授权（会话级 · 破坏性端点）</b>'+paPermGateHtml()+'</div>';
+  h+='<div class="cbform"><b>长期授权（本机档 · 默认拒绝）</b>'+paPermGrantsHtml()+'</div>';
   h+='<div class="cbform"><input id="ppPath" placeholder="path（点名要授权的端点，如 /kv/clear）">'
     +'<div class="cbrow"><input id="ppTtl" placeholder="ttl_s（留空 ⇒ 后端默认 1800）">'
     +'<input id="ppNote" placeholder="note（授权理由，可留空）">'
@@ -88,6 +110,12 @@ async function paPermLoad(force){
     if(r.status!==200 || !d || d.ok===false) paPermGate={__error:((d&&(d.message||d.error))||('HTTP '+r.status))};
     else paPermGate={approved:d.approved===true, expires_in:d.expires_in, paths:d.paths};
   }catch(e){ paPermGate={__error:''+((e&&e.message)||e)}; }
+  try{                                   /* 长期授权：⛔ 与「在场授权」混 —— 二源二义 */
+    const rg=await fetch(API+PA_PERM_API.grants,{cache:'no-store'});
+    let dg=null; try{ dg=await rg.json(); }catch(e){ dg=null; }
+    if(dg && dg.state) paPermGrants={state:dg.state, count:dg.count, grants:(dg.grants||[]), source:dg.source};
+    else paPermGrants={__error:((dg&&(dg.message||dg.error))||('HTTP '+rg.status))};
+  }catch(e){ paPermGrants={__error:''+((e&&e.message)||e)}; }
   paPermLoaded=true; renderPermPanel(); return paPermGate;
 }
 function paPermReadForm(){

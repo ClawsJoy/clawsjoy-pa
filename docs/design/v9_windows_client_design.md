@@ -1,0 +1,233 @@
+# V9 Windows 客户端设计与调整（v0 · 未复核）
+
+- 日期：2026-10-27
+- 状态：**草稿 · 未经复核 · 未投递**（待 PM 初验 / PD 技术核实）
+- 范围：`shell/`（Electron 壳）· `web/pa/`（27 面）· 载荷与更新 · 引擎与模型接入
+- 上位：`C-30`（PA 三分工）· `C-29`（对外卖点之判）· `shell/README.md`（一层一物）· R1–R8
+- 外部参照：STRATA（MIT · 本地推理应用）
+
+---
+
+## 一 现状（代码事实）
+
+| 层 | 现状 | 位置 |
+|---|---|---|
+| 壳 | **Electron 44** ＋ electron-builder 26；NSIS 每用户安装；产品名 `ClawsJoyPA`，壳版 9.0.11 | `shell/package.json` |
+| 装根 | `process.resourcesPath/payload`（载荷之根，⛔ 依外之仓根） | `shell/main.js` |
+| 窗 | 加载 `http://127.0.0.1:<port>`；端口由 `port_lite.py` 读真源 | `main.js` |
+| 版 | 真源＝载荷内 `core/lib/version.py:__version__`（⛔ 壳 `package.json` 之版） | `shell/README.md` |
+| 桥 | `preload.js` 仅 **4 个 IPC**：开落点目录 · 壳更新态 · 壳更新装 · 壳更新唤面 | `shell/preload.js` |
+| 更新 | **双层**：壳层 `electron-updater`（generic／LAN `192.168.3.11:8800`／channel internal）＋ 载荷层 `pa_update.py`（读 `/health.update`） | `update.js` `shell_update.js` |
+| 签名 | `app-update.yml` **无 `publisherName`** ⇒ 校验路本不启（其自注） | `shell_update.js` |
+| 前端 | `web/pa/` **27 面**（24 实装 ＋ 3 个 `file: null` 占位）；主面 today／tasks／more | `web/pa/faces.json` |
+| 安装包 | 约 **318 MB**（PM 记录：`333,778,095 B`） | `_share/` 安装器 |
+
+**现状判断**：V9 客户端是「**本地 Web 应用 ＋ 托盘壳 ＋ 双层更新**」——壳很薄，价值几乎全在载荷与面。这既是优点（改面即改产品），也是问题（壳只做窗口，没做"客户端该做的事"）。
+
+---
+
+## 二 外部参照：STRATA 是什么（只取事实）
+
+| 项 | 事实 | 来源 |
+|---|---|---|
+| 仓库 | `Niko1221/Strata`，非 fork，**C++** 为主 | GitHub API |
+| 许可 | **MIT**（`spdx_id: MIT`，LICENSE 1,093 B） | GitHub License API |
+| 热度 | 33,684 star ／ 3,604 fork ／ 960 open issues；创建 **2026-09-24** | GitHub API |
+| 形态 | 桌面应用（Win/Linux/macOS）＋ 终端 `strata launch` ＋ localhost OpenAI/Anthropic API ＋ MCP server | README |
+| 架构 | C++ 引擎（`src/` `serve/`）＋ Python 控制面（`strata_control/`：fit／autotune／calibration／doctor）＋ **Tauri 桌面壳**（`apps/desktop/src-tauri`）＋ **Vite/TS 前端**（`apps/host/`）＋ CLI | 仓库目录 |
+| 本地性 | **完全本地**：无账号、模型落盘、API 只在 localhost；首次下载需联网 | README |
+| 模型 | Qwen3.8-Flash-Next 125B ／ Qwen3.6-35B-A3B ／ DeepSeek-V4.1-Flash-1017（239–274 GB 独立下载） | README |
+| 体验 | 首启下载引擎；桌面「聊天＋文件＋实时预览」同窗；硬件体检／fit／`--plan`（先出方案不下载） | README `docs/MODELS.md` |
+
+**"完全开源"要加限定**：**软件 MIT**；模型权重与部分引擎组件是**独立分发**，各依其许可。准确说法是「软件开源 ＋ 模型另计 ＋ 完全本地运行」。
+
+---
+
+## 三 判断：V9 客户端不是「又一个推理器」
+
+V9 的卖点已由 `C-29` 钉死：**「一个席，十年记忆」可出；「看得见」「管得住」须 A2／D2 闭后；「带得走」不作卖点。** 所以：
+
+1. **不把 STRATA 打进安装包**：模型 239–274 GB、引擎独立更新、权重许可另计；打进去会把 318 MB 的安装包做成灾难。
+2. **要抄的是分层与首启**：引擎可替换、先出 plan、硬件体检、单窗口。
+3. **V9 的差异化在「面」**：任务／授权／口径／证据，这些 STRATA 没有。
+
+一句话：**V9 客户端 = 主权 agent 的工作台 ＋ 可替换的本地引擎插头。**
+
+---
+
+## 四 目标架构（四层）
+
+```
+┌─ Shell ─────────────────────────────────────────────┐
+│ 托盘 / 单实例 / 窗态 / 起服 / 签名 / 更新编排        │
+├─ Host ──────────────────────────────────────────────┤
+│ 本地 Flask（已有 · 127.0.0.1:<port>）                │
+├─ Face ──────────────────────────────────────────────┤
+│ web/pa 27 面 → 3 主面 ＋ 更多                        │
+├─ Engine Adapters（新）──────────────────────────────┤
+│ Strata(localhost) · Ollama · llama.cpp · Cloud       │
+└─ Model Manager（新）────────────────────────────────┘
+     体检 · fit · plan · 下载/校验/续传 · 磁盘配额 · 回滚
+```
+
+| 层 | 职责 | 现有／新增 |
+|---|---|---|
+| Shell | 窗口、托盘、起停、更新、签名 | 现有（薄） |
+| Host | API、会话、PA 业务 | 现有 |
+| Face | 交互与呈现 | 现有（需收敛） |
+| Engine Adapters | 模型推理入口（统一契约） | **新增** |
+| Model Manager | 模型与引擎组件生命周期 | **新增** |
+
+---
+
+## 五 引擎适配器契约（新增 · 一处定形）
+
+```ts
+interface EngineAdapter {
+  id: string;                    // "strata" | "ollama" | "llamacpp" | "cloud"
+  kind: "local" | "cloud";
+  health(): Promise<{ ok: boolean; version?: string; error?: Code }>;
+  models(): Promise<ModelCard[]>;            // 已装 + 可装
+  fit(modelId: string): Promise<FitPlan>;    // 不下载，先算
+  plan(modelId: string): Promise<FitPlan>;   // 同上，含下载体积/磁盘
+  chat(req: ChatRequest): AsyncIterable<ChatChunk>;  // SSE
+  cancel(id: string): Promise<void>;
+}
+
+type Code =
+  | "engine_offline" | "model_missing" | "oom" | "disk_full"
+  | "unsupported" | "timeout" | "bad_request";
+```
+
+**硬约束**：
+
+1. **⛔ 静默回落**：引擎不可达 ⇒ 显 `engine_offline`，⛔ 偷换云端；
+2. **⛔ 自算能力**：模型能否跑，只认 `fit()/plan()` 的返回，⛔ 前端猜；
+3. **云外发须同意**：`kind=cloud` 的每次调用前，界面明示「本次内容将发往 X」；
+4. **接口只走 localhost**：本地引擎一律 `127.0.0.1`，⛔ 0.0.0.0。
+
+---
+
+## 六 首启向导（状态机 · 照 STRATA 的 `--plan`）
+
+```
+probe → recommend → plan → consent → download → verify → launch → ready
+  │         │          │        │          │         │         │
+  └─ fail ──┴── fail ──┴─ back ─┴─ cancel ─┴─ retry ─┴─ retry ─┘
+```
+
+| 步 | 做什么 | 判据（⛔ 只报"成功"） |
+|---|---|---|
+| probe | GPU／内存／磁盘／已装引擎 | 读到实数；缺项显「未知」⛔ 猜 |
+| recommend | 按内存分档给 1–3 个模型 | 每档给「能跑／勉强／不能」＋ 依据 |
+| plan | **先出方案，不下载** | 显 内存／显存／磁盘／下载量／预计速度 |
+| consent | 用户点「开始下载」 | ⛔ 自动下载；⛔ 默认勾选 |
+| download | 断点续传 ＋ 进度 ＋ 速率 | 失败可续；⛔ 转圈 |
+| verify | sha256 ＋ 大小 ＋ 件数 | 不符 ⇒ 红；⛔ 装成可用 |
+| launch | 起引擎 ＋ 等 health | 超时显因 ＋ 去处 |
+| ready | 进主界面 | 三读数：模型／引擎／端口 |
+
+**反例门**：把模型文件截断 1 字节 ⇒ verify 必红；把磁盘填满 ⇒ download 必报 `disk_full`，⛔ 静默失败。
+
+---
+
+## 七 单窗口信息架构（27 面 → 3 主面 ＋ 更多）
+
+| 主面 | 收哪些面 | 用户问题 |
+|---|---|---|
+| **今日** | today · chat · send · input · cards · status · startup · shell | 「它现在在替我做什么？」 |
+| **任务** | tasks · products · archive · files · delivery(占位) | 「活干到哪、产物在哪？」 |
+| **上下文** | profile · authz · caliber · sys · keys | 「我是谁、允许什么、依据什么？」 |
+| **更多** | config · collect · drawer · more · update · feedback · admin/registry(占位) | 「设置与低频操作」 |
+
+**布局**：左（任务/文件）· 中（对话/时间轴）· 右（上下文/授权）；窄屏收抽屉。与 STRATA 的「聊天＋文件＋预览」同构，但右栏换成 V9 独有的「授权/口径/证据」。
+
+---
+
+## 八 更新分三层（现有两层 → 三层）
+
+| 层 | 内容 | 体积 | 更新器 | 门 |
+|---|---|---|---|---|
+| 壳 | Electron 主进程／托盘 | 百 MB 级 | electron-updater | 签名必过；用户点装 |
+| 载荷 | `core/` `web/` `scripts/` | 百 KB–MB 级 | `pa_update.py` | 清单自载荷根生 ＋ 逐件回校 |
+| 引擎/模型 | 引擎组件 ＋ 权重 | GB–百 GB 级 | Model Manager | 磁盘余量 ＋ sha256 ＋ 可回滚 |
+
+**必须先修的既有缺陷**（来自 PM 记录 T3）：清单与载荷**不同源**（件落 08:38／单生 09:58／三源三形）⇒ 更新器 `exit=2` 且未动盘。修法：**清单只从「所服之载荷根」生成，生成后逐件回校**；⛔ 另写一份。
+
+**签名**：`app-update.yml` 补 `publisherName`；否则应用内更新的校验路恒不启（其自注已承认）。
+
+---
+
+## 九 安全（客户端侧）
+
+1. **签名**：安装器与更新包均签名；无签名构建必须**构建失败**（⛔ 发布后才发现）；
+2. **Electron 硬关**：`contextIsolation: true` · `nodeIntegration: false` · `sandbox: true`；
+3. **IPC 白名单**：preload 只暴露必要方法（现 4 个），新增须评审；
+4. **本地 token**：Host 对壳下发一次性 token，⛔ 仅靠 127.0.0.1 判身份；
+5. **外发同意**：云端调用前显式确认；⛔ 默认外发；
+6. **零遥测**：默认不采集；要采集须显式开关 ＋ 可见。
+
+---
+
+## 十 迁移顺序
+
+### 9.x（不动壳，先补客户端该有的）
+
+| 步 | 内容 | 判据 |
+|---|---|---|
+| P0-1 | 补 `publisherName` ＋ 签名链 | 未签名构建必失败 |
+| P0-2 | 更新清单单一真源 ＋ 逐件回校 | 改一文件 ⇒ 清单必红；回滚 ⇒ 绿 |
+| P0-3 | Engine Adapter ＋ Model Manager（Strata 作为首个适配器） | 本地引擎可切；坏引擎显 `engine_offline` |
+| P1-1 | 首启向导（六步） | 净机零手工；plan 不下载 |
+| P1-2 | 单窗口三栏收敛 | 3 主面 ＋ 更多可达全部 27 面 |
+| P1-3 | 三层更新 | 三层各自可回滚 |
+| P2-1 | `clawscj launch` 终端平价 | 一条命令起服＋开窗 |
+| P2-2 | Tauri 评估（10.x） | 体积／启动／迁移成本三数 |
+
+### 10.x 才做
+
+- Tauri 重写（仅当 9.x 的体积/启动被用户实际抱怨，且迁移成本可接受）；
+- 多引擎并行／模型热切换；
+- 移动端／远程访问（另立件，⛔ 混入）。
+
+---
+
+## 十一 验收判据（机器可判）
+
+| # | 判据 | 目标 |
+|---|---|---|
+| 1 | 净机安装 → 首启 → 可对话，手工步数 | ≤ 2（选模型 ＋ 点下载） |
+| 2 | 安装包体积（不含模型） | ≤ 350 MB |
+| 3 | 无签名构建 | **必须失败** |
+| 4 | 更新失败可见率 | 100%（code ＋ 人话 ＋ 去处） |
+| 5 | 引擎不可达 | 显 `engine_offline`，⛔ 静默换云 |
+| 6 | 模型截断 1 字节 | verify 必红 |
+| 7 | 三层回滚 | 各层可回上一版 |
+| 8 | 27 面可达 | 3 主面内 ≤ 2 跳 |
+
+---
+
+## 十二 风险与不做
+
+| 风险 | 缓解 |
+|---|---|
+| STRATA 太年轻（1 个月 · 960 issues） | 只做适配器，⛔ 深度绑定；保留 Ollama／llama.cpp 退路 |
+| 模型体积／磁盘 | 只做管理器，⛔ 打包；下载前查余量 |
+| 签名成本 | 先内测签名，再对外；⛔ 无签名发布 |
+| Tauri 迁移冲动 | 9.x 不动；10.x 用三数决策 |
+| 与 A2/D2 撞车 | 客户端只显示授权，⛔ 自建授权模型 |
+
+**不做**：⛔ 自研推理引擎 ／ ⛔ 打包模型 ／ ⛔ 云端默认 ／ ⛔ 遥测默认开 ／ ⛔ 以 tok/s 当卖点。
+
+---
+
+## 附录 A：STRATA 引用
+
+- 仓库：https://github.com/Niko1221/Strata
+- 许可证（MIT）：https://github.com/Niko1221/Strata/blob/main/LICENSE
+- 中文 README：https://github.com/Niko1221/Strata/blob/main/README.zh-CN.md
+- 第三方评测：https://www.appinn.com/strata/ ／ https://gigazine.net/news/20261005-strata-local-ai/
+
+> 外部资料仅作对照，不构成本件之判据；版本与许可以仓库当日为准（取刻 2026-10-27）。
+
+（完 —— 本件末行 · LF 终 · 悬）

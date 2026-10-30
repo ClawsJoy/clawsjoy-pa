@@ -1,0 +1,14 @@
+line,item,seat,status,due,evidence
+L1,R9a,PD,closed,2026-10-28,7 passed
+L1,R9b,PD->CEO->Boss,gated,after R10/R11,six-beat
+L1,R10-v0,PD,delivered,2026-10-29,89 routes / 9+1 files
+L1,R11-A2,CW,half,2026-10-28,13 passed / 3 gaps
+L1,R11-B,PD,closed,2026-10-29,9 passed / 45-45
+L1,R12,PM+PD,pilot,2026-10-29,96 ids / 68 resolved
+L2,PD-release,f202f89,partial,9.0.12,signing missing
+L2,CW-A2,b2a5182,half,2026-10-28,3 gaps
+L2,PM-R1R8,b136893,in-progress,2026-10-29,0 green
+L3,inbox,DSH,done,2026-10-27,11 indexed
+L3,close-2faces,TD,done,2026-10-27,11 counter-examples
+L3,ref-map,TD,open,2026-10-28,false-open boss=0
+L3,provenance,Boss+DSH,open,2026-10-27,3411 drafted by DSH

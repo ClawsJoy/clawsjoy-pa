@@ -797,7 +797,15 @@ _query_empty_cache = {}  # 同一 query 连续返回空计数器
 _query_cache = {}
 _retry_cache = {}
 _session_failed = {}  # {session_id: timestamp}，5分钟自动恢复
-_RETRIEVAL_CACHE_FILE = "data/v8/retrieval_cache.json"
+
+
+#: ⭐ 9.0.13 P0：检索缓存落**可写数据根**（get_data_root() 之绝对径）；⛔ 相对 CWD
+#:   （装 Program Files 只读 ⇒ 写装根必 WinError 5）。函数式：⛔ 于 import 期求根（env/配置可能后至）。
+def retrieval_cache_file():
+    from core.lib.config_helper import get_data_root
+    return str(Path(str(get_data_root())) / "v8" / "retrieval_cache.json")
+
+
 _policy = None
 
 

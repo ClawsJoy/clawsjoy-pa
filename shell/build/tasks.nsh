@@ -39,4 +39,23 @@
   FileWrite $2 "rc=$0$\r$\n"
   FileClose $2
   DetailPrint "ClawsJoy PA: tasks rc=$0 (install continues regardless)"
+  ; --- PA 9.0.14 P0-2: writable roots as junctions ---
+  ; payload\logs/data/vec -> %LOCALAPPDATA%\ClawsJoyPA\{logs,data,vec}
+  ; why: gateway writes relative to install root; install root may be read-only.
+  ; never abort: a shell that starts with old roots is worse than a junction miss.
+  CreateDirectory "$LOCALAPPDATA\ClawsJoyPA\logs"
+  DetailPrint "ClawsJoy PA: writable roots (junction) ..."
+  nsExec::ExecToStack '"$INSTDIR\resources\payload\runtime\python.exe" -X utf8 -B "$INSTDIR\resources\payload\scripts\win_pa\ensure_roots.py" ensure --root "$INSTDIR\resources\payload" --base "$LOCALAPPDATA\ClawsJoyPA" --log-file "$LOCALAPPDATA\ClawsJoyPA\logs\ensure_roots.log"'
+  Pop $0
+  Pop $1
+  DetailPrint "ClawsJoy PA: roots rc=$0 (install continues regardless)"
+!macroend
+
+; uninstall: unlink junctions ONLY; never delete target dirs (user data lives there).
+!macro customUnInstall
+  DetailPrint "ClawsJoy PA: unlink writable roots (junction) ..."
+  nsExec::ExecToStack '"$INSTDIR\resources\payload\runtime\python.exe" -X utf8 -B "$INSTDIR\resources\payload\scripts\win_pa\ensure_roots.py" remove --root "$INSTDIR\resources\payload" --base "$LOCALAPPDATA\ClawsJoyPA" --log-file "$LOCALAPPDATA\ClawsJoyPA\logs\ensure_roots.log"'
+  Pop $0
+  Pop $1
+  DetailPrint "ClawsJoy PA: roots unlink rc=$0 (targets kept)"
 !macroend

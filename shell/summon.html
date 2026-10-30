@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>ClawsJoy PA · 召出</title>
+<!-- 浮窗之壳（PA v1.1.1 S1 · 2026-10-27）。
+     ⚠ Summon 之形照 web/pa/faces/window.js 之 summonHtml()（1a 静态壳）—— 只此六行，
+       逐字同；web 之页 ⛔ 可入此窗（否则外框非 520x84）。若 web 改其形，此处须同步（二源之险明书）。
+     式（pa.css ／ pa_v3.css ＋ 壳侧 SUMMON_OVERLAY_CSS）与行（payload 之 summon.js）皆由
+     shell/main.js 于载毕注入 —— 本页 ⛔ 自引外部件（免网 ／ 免服 ／ 免白屏）。 -->
+</head>
+<style>
+.pa-summon-acts{display:inline-flex;gap:6px;align-items:center;margin-left:6px}
+.pa-summon-acts button{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#ddd;border-radius:999px;width:30px;height:24px;line-height:1;cursor:pointer;font-size:14px}
+.pa-summon-acts button:hover{background:rgba(88,166,255,.18);border-color:rgba(88,166,255,.45)}
+</style>
+<body>
+<div class="pa-summon" id="paSummon" hidden>
+  <div class="pa-summon-row">
+    <input id="paSummonIn" type="text" placeholder="说一句话，或拖一件东西进来…" autocomplete="off" aria-label="说一句话">
+    <div class="pa-chips"><button type="button" onclick="paWinMode('陪')">陪</button><button type="button" onclick="paWinMode('办')">办</button><button type="button" onclick="paWinMode('查')">查</button></div>
+  </div>
+  <div class="pa-summon-foot"><span id="paSummonHint">⏎ 发 · Esc 收</span>
+    <span class="pa-summon-acts">
+      <button type="button" title="录音并存入第二大脑" onclick="paSummonCmd('voice')">🎤</button>
+      <button type="button" title="录屏并存入第二大脑" onclick="paSummonCmd('screen')">🎬</button>
+    </span>
+    <span id="paSummonAtt">附件 0</span></div>
+</div>
+<script>
+/* 浮窗之桥（唯壳侧出 —— ⛔ 改 web）：
+   · paWinPlan  ⇒ summon.js 之「发」之末 ⇒ 交主窗（IPC pa:summon-send）出计划卡（一处）；
+   · paWinSay   ⇒ summon.js 之提示（拖件 ／ 模式）⇒ 本窗就地显（主窗之提示条在另一窗，浮窗 ⛔ 见）；
+   · paWinMode ／ paWinStop ／ paWinPaletteToggle ／ paWinGo ⇒ summon.js 之键位所引，
+     浮窗无主面 ⇒ 明为 no-op（⛔ 抛 · 承「一处之形」）。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+
+  window.paWinPlan = function (t) {
+    try {
+      if (window.paShell && window.paShell.summonSend) {
+        window.paShell.summonSend(String(t == null ? '' : t));
+      }
+    } catch (e) { /* 桥 ⛔ 得 ⇒ ⛔ 阻壳（其因入壳之日志） */ }
+  };
+
+  var sayTimer = null;
+  function say(t) {
+    var el = $id('paSummonHint');
+    if (!el) { return; }
+    if (!el.__paSummonHintOrig) { el.__paSummonHintOrig = el.textContent; }
+    el.textContent = String(t == null ? '' : t);
+    if (sayTimer) { clearTimeout(sayTimer); }
+    sayTimer = setTimeout(function () { el.textContent = el.__paSummonHintOrig; sayTimer = null; }, 1600);
+  }
+  window.paWinSay = say;
+  window.paWinMode = function (m) { window.paWinSummonMode = m; say('这一句按「' + m + '」办'); };
+  window.paWinStop = function () { };
+  window.paWinPaletteToggle = function () { };
+  window.paWinGo = function () { };
+  window.paSummonCmd = function (cmd) {
+    if (window.paShell && typeof window.paShell.summonCommand === 'function') {
+      say(cmd === 'screen' ? '打开录屏…' : '打开录音…');
+      window.paShell.summonCommand(cmd).catch(function () { say('打不开，去主窗重试'); });
+    } else {
+      say('仅桌面壳可用');
+    }
+  };
+})();
+</script>
+</body>
+</html>

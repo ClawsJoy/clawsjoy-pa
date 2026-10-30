@@ -1,4 +1,4 @@
-current: llama3.2:3b
+current: qwen2.5:7b-instruct-q4_0-gpu
 models:
 - enabled: true
   endpoint: http://localhost:11434

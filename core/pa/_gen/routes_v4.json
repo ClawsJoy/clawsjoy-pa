@@ -1,0 +1,109 @@
+{
+ "roster_seats": [
+  "pa_profile",
+  "pa_profile_schema",
+  "pa_profile_write",
+  "pa_whoami",
+  "pa_roster_scan",
+  "pa_seats",
+  "pa_roster",
+  "pa_roster_find",
+  "pa_roster_card",
+  "pa_roster_upsert",
+  "pa_roster_probe",
+  "pa_projects",
+  "pa_plan",
+  "pa_first_run"
+ ],
+ "chat_engine": [
+  "pa_sessions_list",
+  "pa_turn_record",
+  "pa_ask",
+  "pa_resume",
+  "pa_agent_invoke",
+  "pa_act",
+  "pa_steer"
+ ],
+ "dispatch_flow": [
+  "pa_local_client_status",
+  "pa_local_client_start",
+  "pa_dispatch",
+  "pa_dispatch_receipt",
+  "pa_dispatch_receipt_get",
+  "pa_dispatch_chase",
+  "pa_dispatch_history",
+  "pa_deliver_mail",
+  "pa_deliver_mail_face",
+  "pa_deliver_authz",
+  "pa_deliver_stop",
+  "pa_feedback_target",
+  "pa_feedback_submit",
+  "pa_feedback_list",
+  "pa_feedback_item",
+  "pa_feedback_reply"
+ ],
+ "ledger_audit": [
+  "pa_ledger",
+  "pa_cost",
+  "pa_ledger_add",
+  "pa_ledger_done",
+  "pa_ledger_revoke",
+  "pa_audit_preflight",
+  "pa_audit_postcheck",
+  "pa_archive_post",
+  "pa_archive_get"
+ ],
+ "env_providers": [
+  "pa_update_run",
+  "pa_version",
+  "pa_providers",
+  "pa_provider_key_token",
+  "pa_provider_key",
+  "pa_env",
+  "pa_env_note",
+  "pa_env_research",
+  "pa_build_get",
+  "pa_diagnostics_build",
+  "pa_sys_snapshot",
+  "pa_sys_panel",
+  "pa_sys_act"
+ ],
+ "faces_ui": [
+  "pa_context",
+  "pa_ppt_comments_get",
+  "pa_ppt_comments_post",
+  "pa_artifact_thumbs_post",
+  "pa_source_faces",
+  "pa_ui_faces",
+  "pa_attach",
+  "pa_today"
+ ],
+ "dialog_threads": [
+  "pa_dialog",
+  "pa_dialog_history",
+  "pa_threads_get",
+  "pa_threads_post",
+  "pa_session_model",
+  "pa_lines",
+  "pa_lines_upsert"
+ ],
+ "decision_perm": [
+  "pa_proxy",
+  "pa_proxy_gate",
+  "pa_proxy_approve",
+  "pa_vault_sync",
+  "pa_decision",
+  "pa_decision_log",
+  "pa_permission_get",
+  "pa_grants_get",
+  "pa_permission_post",
+  "pa_vault_set"
+ ],
+ "content_caliber": [
+  "pa_sediment",
+  "pa_caliber",
+  "pa_caliber_change",
+  "pa_caliber_check",
+  "pa_kb_mapping"
+ ]
+}

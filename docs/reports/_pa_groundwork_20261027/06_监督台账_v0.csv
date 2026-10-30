@@ -1,0 +1,7 @@
+task,deliverable,seat,due,status,evidence
+PM分工表,六列表,PM,2026-10-28T12:00,候,3403 sent
+R9a,gitignore+pytest入口,PD,2026-10-29T18:00,候分工,
+R9b,删除清单+六拍票,PD->CEO,2026-10-29T18:00,候分工,
+R10,8-10件blueprint,PD,2026-10-29T18:00,候分工,88/45/4 baseline
+R11,A2+guard不变量,CW+PD,2026-10-29T18:00,候分工,41/45 unguarded
+R12,全量docs/decisions,PM+PD,2026-10-29T18:00,pilot 68/96,pm_index_v0.csv

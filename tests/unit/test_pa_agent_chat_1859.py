@@ -32,6 +32,7 @@ from flask import Flask
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.pa import gateway_routes as GR  # noqa: E402
 from core.pa import untrue_wording as UW  # noqa: E402
@@ -242,7 +243,7 @@ def test_gate_has_exactly_three_readers():
     _bc = io.open(Path(GR.__file__).resolve().parents[1] / "gateway" / "v9_chat" / "bridge_call.py",
                   encoding="utf-8").read()
     assert _bc.count("untrue_wording") >= 2, u"同步 ／ 流式 两路须各接一处"
-    _gr = io.open(GR.__file__, encoding="utf-8").read()
+    _gr = gr_src()
     assert "untrue_wording" in _gr, u"陪伴轴回执须同源"
 
 

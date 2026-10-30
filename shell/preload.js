@@ -26,6 +26,45 @@ contextBridge.exposeInMainWorld('paShell', {
   shellUpdateInstall: function () {
     return ipcRenderer.invoke('pa:shell-update-install');
   },
+  // 召出浮窗之「发」：文字交壳 ⇒ 壳交主窗（出计划卡 · 一处）。参：文本；返：{ok}（壳侧之果）。
+  summonSend: function (text) {
+    return ipcRenderer.invoke('pa:summon-send', String(text == null ? '' : text));
+  },
+  summonCommand: function (cmd) {
+    return ipcRenderer.invoke('pa:summon-command', String(cmd == null ? '' : cmd));
+  },
+  // 录屏悬浮控制条（独立置顶窗）
+  recShow: function () { return ipcRenderer.invoke('pa:rec-show'); },
+  recHide: function () { return ipcRenderer.invoke('pa:rec-hide'); },
+  recStop: function () { return ipcRenderer.invoke('pa:rec-stop'); },
+  recMicToggle: function () { return ipcRenderer.invoke('pa:rec-mic'); },
+  // 选择本地目录（导入 md）
+  pickDirectory: function () { return ipcRenderer.invoke('pa:pick-directory'); },
+  // 打开本机产物（仅 PA 数据目录、白名单类型）
+  openPath: function (p) { return ipcRenderer.invoke('pa:open-path', String(p || '')); },
+  // 屏幕录播来源（仅本机）
+  screenSources: function () { return ipcRenderer.invoke('pa:screen-sources'); },
+  screenSelect: function (id, audio) { return ipcRenderer.invoke('pa:screen-select', { id: String(id || ''), audio: audio === true }); },
+  // 内置浏览器 P0（只读／存 note；远程页无 Node）
+  browserShow: function (opt) { return ipcRenderer.invoke('pa:browser-show', opt || {}); },
+  browserHide: function () { return ipcRenderer.invoke('pa:browser-hide'); },
+  browserClose: function () { return ipcRenderer.invoke('pa:browser-close'); },
+  browserFullscreen: function (on) { return ipcRenderer.invoke('pa:browser-fullscreen', on); },
+  browserAsrStart: function () { return ipcRenderer.invoke('pa:browser-asr-start'); },
+  browserAsrStop: function () { return ipcRenderer.invoke('pa:browser-asr-stop'); },
+  browserAsrPoll: function () { return ipcRenderer.invoke('pa:browser-asr-poll'); },
+  browserGo: function (url) { return ipcRenderer.invoke('pa:browser-go', String(url || '')); },
+  browserRead: function () { return ipcRenderer.invoke('pa:browser-read'); },
+  browserState: function () { return ipcRenderer.invoke('pa:browser-state'); },
+  browserBack: function () { return ipcRenderer.invoke('pa:browser-back'); },
+  browserForward: function () { return ipcRenderer.invoke('pa:browser-forward'); },
+  browserReload: function () { return ipcRenderer.invoke('pa:browser-reload'); },
+  onBrowserPing: function (cb) {
+    if (typeof cb !== 'function') { return function () { }; }
+    const h = function () { try { cb(); } catch (e) { } };
+    ipcRenderer.on('pa:browser-ping', h);
+    return function () { try { ipcRenderer.removeListener('pa:browser-ping', h); } catch (e) { } };
+  },
   onShellUpdate: function (cb) {
     if (typeof cb !== 'function') { return function () { }; }
     const h = function () { try { cb(); } catch (e) { /* 面之错 ⛔ 阻壳 */ } };

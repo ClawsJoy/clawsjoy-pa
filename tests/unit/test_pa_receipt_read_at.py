@@ -23,6 +23,7 @@ from flask import Flask
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.pa import gateway_routes as GR  # noqa: E402
 
@@ -79,7 +80,7 @@ def test_ask_receipt_still_has_read_at(client):
 
 def test_read_at_single_definition():
     u"""⒟：定义唯一 ∧ 三路同源（⛔ 二处各打时戳）。"""
-    src = io.open(GR.__file__, encoding="utf-8").read()
+    src = gr_src()
     assert len(re.findall(r"def _pa_read_at\(", src)) == 1, u"取数刻之定义须唯一"
     calls = re.findall(r"(?<!def )_pa_read_at\(\)", src)
     assert len(calls) >= 3, u"三路（dialog ／ ask ／ 会话元）须同源：%d" % len(calls)

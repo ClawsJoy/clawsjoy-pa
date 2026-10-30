@@ -1,0 +1,80 @@
+{
+ "verifier": "dsh_pa_verify v2 (core/pa/verify.py)",
+ "ts": "2026-09-28T06:01:42+0800",
+ "v9": "/home/flybo/clawsjoy_v5",
+ "pass": 14,
+ "total": 14,
+ "ok": true,
+ "results": [
+  {
+   "id": "C1",
+   "pass": true,
+   "evidence": "roster.py sha16=f62d60c473a8c07d has_obsidian_brain=True"
+  },
+  {
+   "id": "C2",
+   "pass": true,
+   "evidence": "roster.json ids=['ds_chat', 'lingxi', 'lingxi_local_api', 'blender', 'local_vlm', 'v9_agent', 'codex', 'codex_cua', 'obsidian_brain'] sha16=344ae3ef5a417ef6"
+  },
+  {
+   "id": "C3",
+   "pass": true,
+   "evidence": "live count=9 obsidian_brain=True"
+  },
+  {
+   "id": "C4",
+   "pass": true,
+   "evidence": "GET /v9/pa/roster/obsidian_brain -> 200"
+  },
+  {
+   "id": "C5",
+   "pass": true,
+   "evidence": "F1 exists={'平台发布工作流': True, '番茄推广SOP': True, '视频制作SOP': True}"
+  },
+  {
+   "id": "C6",
+   "pass": true,
+   "evidence": "sops_dir=工作区/SOPs/SOPs exists=True"
+  },
+  {
+   "id": "C7",
+   "pass": true,
+   "evidence": "谓词不符={} leaked=0"
+  },
+  {
+   "id": "C10",
+   "pass": true,
+   "evidence": "遍历留痕 last_walk_errors=[]"
+  },
+  {
+   "id": "C12",
+   "pass": true,
+   "evidence": "容错恢复 codex/ md=1310（EIO 目录不再整棵丢）"
+  },
+  {
+   "id": "C13",
+   "pass": true,
+   "evidence": "Windows清单通道 non_excluded=3193 scan=3188 missing=5（与缺项册一致=True）"
+  },
+  {
+   "id": "C14",
+   "pass": true,
+   "evidence": "缺项全部 ENAMETOOLONG（文件名>255B）: True"
+  },
+  {
+   "id": "C8",
+   "pass": true,
+   "evidence": "pytest rc=0 tail========================== 6 passed, 1 warning in 0.36s ========================="
+  },
+  {
+   "id": "C9",
+   "pass": true,
+   "evidence": "health=200 pid=29153 proc_start=06:01:18 newest_src=05:39:24"
+  },
+  {
+   "id": "C11",
+   "pass": true,
+   "evidence": "GET /v9/pa/verify -> ok=True pass=9/9"
+  }
+ ]
+}

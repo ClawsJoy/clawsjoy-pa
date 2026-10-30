@@ -58,10 +58,11 @@ class InputValidator:
             message = message[: cls.MAX_MESSAGE_LENGTH]
 
         # 危险内容检查
-        sanitized = cls._sanitize_dangerous_content(message)
-        if sanitized != message:
+        # ⭐ 判「有危险内容否」⇒ 以「命中数」为判（最小集第 16 条）：
+        # 「替后 ⛔ 变」有二因 —— ⒜ 其物 ⛔ 在 ⒝ 其物在 ∧ 替值 ≡ 原值 ⇒ 二者同形 ⇒ 假否。
+        if cls._count_dangerous_content(message) > 0:
             errors.append("检测到潜在危险内容，已自动过滤")
-            message = sanitized
+            message = cls._sanitize_dangerous_content(message)
 
         return ValidationResult(len(errors) == 0, errors, message)
 
@@ -127,6 +128,14 @@ class InputValidator:
         for pattern in cls.DANGEROUS_PATTERNS:
             sanitized = re.sub(pattern, "[FILTERED]", sanitized, flags=re.IGNORECASE)
         return sanitized
+
+    @classmethod
+    def _count_dangerous_content(cls, text: str) -> int:
+        """危险内容之命中数（最小集第 16 条：以「在场」为判 · ⛔ 以「替后是否变」为判）。"""
+        n = 0
+        for pattern in cls.DANGEROUS_PATTERNS:
+            n += len(re.findall(pattern, text, flags=re.IGNORECASE))
+        return n
 
 
 # 全局验证器实例

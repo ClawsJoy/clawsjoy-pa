@@ -28,6 +28,7 @@ from flask import Flask
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.pa import gateway_routes as GR  # noqa: E402
 
@@ -107,7 +108,7 @@ def test_ask_reports_unset_state(client):
 
 def test_single_judge_source():
     import inspect
-    src = inspect.getsource(GR)
+    src = gr_src()
     assert src.count(u"def _kb_root_str(") == 1
     seg = inspect.getsource(GR.pa_kb_search)
     # ⚠ 判**调用形之序**（⛔ 判「文中提到同名」 —— 忍者注释自指 ⇒ 假红 · 承 install_win_pa 自测之训）

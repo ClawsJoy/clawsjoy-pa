@@ -435,14 +435,14 @@ class LLMClient:
             "prompt": prompt,
             "stream": stream,
             "system": system_prompt,
-            "keep_alive": os.environ.get("CLAWSJOY_KEEP_ALIVE", "5m"),
+            "keep_alive": os.environ.get("CLAWSJOY_KEEP_ALIVE", "30m"),
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
                 "top_p": 0.9,
                 # ⭐ PM 2026-10-04（承 技总 954 §四）：显式下 `num_ctx`（默认 8192 · 6 GB 单卡之安全档）
                 #   取值：env CLAWSJOY_NUM_CTX 优先；真窗（Ollama /api/show）为上限 32768 ⇒ ⛔ 满窗（KV≈1.8 GiB）
-                "num_ctx": int(os.environ.get("CLAWSJOY_NUM_CTX", "8192")),
+                "num_ctx": int(os.environ.get("CLAWSJOY_NUM_CTX", "4096")),
             },
         }
 

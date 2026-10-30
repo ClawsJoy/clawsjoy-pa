@@ -18,11 +18,14 @@
   3. 起法 = CREATE_NO_WINDOW | DETACHED_PROCESS | CREATE_BREAKAWAY_FROM_JOB
      (2026-10-05 061 §一.3 真脱离: 不受起者 job 连坐; 若 job 不许 breakaway 则降级并大声告警)
      (2026-10-05 062 §一: ⒜ breakaway 被拒 => 派已注册之计划任务 ⒝ 拉起(真脱离); ⒝ 回程以派遣标记认亲(免环))
-    ; stdout/stderr 追加 logs\\gateway_<端口>_console.log（名随端口 · pm_1453 §三.4）
+    ; stdout/stderr 追加 PA_LOG_DIR\\gateway_<端口>_console.log（名随端口 · pm_1453 §三.4）
   4. 用 python -u 起 (块缓冲会让 console 日志假零)
-  5. PID 记 logs\\\\win_pa.pid (停时不靠 netstat)
+  5. PID 记 PA_LOG_DIR\\win_pa.pid (停时不靠 netstat)
   6. 起/查前 os.chdir(ROOT) -- 配置按 CWD 解析; 从别处起 ⇒ [未配置 ⇒ 拒启] (2026-10-05 事故)
   7. 起前先跑 preflight_start.py (P4): rc != 0 => NOT starting, human reasons passed through (046 裁)
+  8. ⭐ 9.0.13 P0（装 Program Files 只读）：运行态根 ＝ PA_LOG_DIR（pid/stopped/life/task/console），
+     应用数据根 ＝ PA_DATA_DIR，向量根 ＝ PA_VEC_DIR；缺省 %LOCALAPPDATA%\\ClawsJoyPA\\{data,logs,vec}
+     （承 PM 69 号件）。装根只读 ⇒ 本器与子进程皆 ⛔ 写装根（含 .pyc）。径之唯一出处 ＝ pa_paths.py。
 '''
 import json
 import os
@@ -32,16 +35,40 @@ import sys
 import time
 import urllib.request
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PIDFILE = os.path.join(ROOT, 'logs', 'win_pa.pid')
-STOPPED = os.path.join(ROOT, 'logs', 'win_pa.stopped.json')   # ⭐ 058 §一.4：停刻之痕（起服窗以时间记）
-LIFELOG = os.path.join(ROOT, 'logs', 'win_pa_life.jsonl')
+#: ⭐ 装根只读（9.0.13 P0）⇒ 本进程亦 ⛔ 落 `.pyc`（shell 已带 `-B`；此处兜底手工起之形）。
+sys.dont_write_bytecode = True
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+import pa_paths  # noqa: E402  —— 可写根之唯一出处（三根 ＋ env 注入）
+
+ROOT = os.path.dirname(os.path.dirname(_HERE))
 PREFLIGHT = os.path.join(ROOT, 'scripts', 'win_pa', 'preflight_start.py')
 APP = 'agent_gateway_enhanced.py'
 FLAGS = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
 BREAKAWAY = getattr(subprocess, 'CREATE_BREAKAWAY_FROM_JOB', 0x01000000)   # ⭐ 061 §一.3
 START_TASK = os.environ.get('PA_START_TASK') or chr(92) + 'ClawsJoy_PA_Start_Once'   # ⭐ 062 §一(⒝)
-TASK_MARK = os.path.join(ROOT, 'logs', 'win_pa.task_dispatch.json')   # 派遣标记(⒝ 回程认亲 · 免环)
+
+
+def pidfile():
+    r"""PID 之件 ⇒ `PA_LOG_DIR\win_pa.pid`（⛔ 装根 · 停时不靠 netstat）。"""
+    return pa_paths.log_path(pa_paths.PID_NAME)
+
+
+def stopped_file():
+    r"""停刻之痕 ⇒ `PA_LOG_DIR\win_pa.stopped.json`（⭐ 058 §一.4：起服窗以时间记）。"""
+    return pa_paths.log_path(pa_paths.STOPPED_NAME)
+
+
+def lifelog_file():
+    r"""起停之痕 ⇒ `PA_LOG_DIR\win_pa_life.jsonl`（⭐ 058 §一.4 · 与 probe_alive 同册）。"""
+    return pa_paths.log_path(pa_paths.LIFE_NAME)
+
+
+def task_mark_file():
+    r"""派遣标记 ⇒ `PA_LOG_DIR\win_pa.task_dispatch.json`（⭐ 062 §一(⒝) · 免环）。"""
+    return pa_paths.log_path(pa_paths.TASK_MARK_NAME)
 
 #: ⭐ 子进程须「⛔ 写 `.pyc`」（**一处定形** · 承 pm_1679 §五.1⒜）：
 #:   载荷之根 ≡ 装根 ⇒ 头一跑若落 `__pycache__` ⇒ 载荷 ⛔ 再等「纯树」（且装根被**静默**改）。
@@ -50,10 +77,12 @@ NO_PYC_ENV = 'PYTHONDONTWRITEBYTECODE'
 
 
 def child_env(base=None):
-    u'''子进程之 env（**一处定形**）：一律置 `PYTHONDONTWRITEBYTECODE=1`。'''
-    e = dict(os.environ if base is None else base)
-    e[NO_PYC_ENV] = '1'
-    return e
+    u'''子进程之 env（**一处定形**）：三根 ＋ `CLAWSJOY_DATA_DIR` ＋ `PYTHONDONTWRITEBYTECODE=1`。
+
+    ⭐ 9.0.13 P0：三根（PA_DATA_DIR ／ PA_LOG_DIR ／ PA_VEC_DIR）**必注入**（缺省亦注入 ⇒ 孙进程
+    ⛔ 回落装根）；`CLAWSJOY_DATA_DIR` ＝ PA_DATA_DIR（core `get_data_root()` 之真口）。
+    '''
+    return pa_paths.child_env(base)
 
 
 def py_argv(script, *rest, **kw):
@@ -89,8 +118,9 @@ def port_lite():
 def console_path():
     u"""⭐ pm_1453 §三.4：console 之名**随端口** —— 旧码硬编 `gateway_5102_console.log`
     ⇒ 端口改后**名实不符**（本刻 `5103` 之日志仍旧名 · 老板照拄必惑）。
-    惰性（⛔ 于 import 期求端口：真源未配 ⇒ `fail-loud` 会炸 import）。"""
-    return os.path.join(ROOT, 'logs', 'gateway_%d_console.log' % port_lite().read_port(ROOT))
+    惰性（⛔ 于 import 期求端口：真源未配 ⇒ `fail-loud` 会炸 import）。
+    ⭐ 9.0.13 P0：落 `PA_LOG_DIR`（装根只读 ⇒ ⛔ ROOT\\logs）。"""
+    return pa_paths.log_path('gateway_%d_console.log' % port_lite().read_port(ROOT))
 
 
 def tcp_open(port, host='127.0.0.1', timeout=1.5):
@@ -103,11 +133,12 @@ def tcp_open(port, host='127.0.0.1', timeout=1.5):
 
 
 def life_append(rec):
-    """⭐ 058 §一.4：起停之痕入 logs\\win_pa_life.jsonl（与 probe_alive 同册 · 同 JSONL 形）。"""
+    """⭐ 058 §一.4：起停之痕入 PA_LOG_DIR\\win_pa_life.jsonl（与 probe_alive 同册 · 同 JSONL 形）。"""
+    _p = lifelog_file()
     try:
-        if os.path.exists(LIFELOG) and os.path.getsize(LIFELOG) > 2 * 1024 * 1024:
-            os.replace(LIFELOG, LIFELOG + '.1')
-        with open(LIFELOG, 'ab') as f:
+        if os.path.exists(_p) and os.path.getsize(_p) > 2 * 1024 * 1024:
+            os.replace(_p, _p + '.1')
+        with open(_p, 'ab') as f:
             f.write((json.dumps(rec, ensure_ascii=False) + chr(10)).encode('utf-8'))
         return True
     except Exception as e:
@@ -116,10 +147,11 @@ def life_append(rec):
 
 
 def read_pid():
-    if not os.path.exists(PIDFILE):
+    _p = pidfile()
+    if not os.path.exists(_p):
         return None
     try:
-        return int(open(PIDFILE, encoding='ascii').read().strip())
+        return int(open(_p, encoding='ascii').read().strip())
     except Exception:
         return None
 
@@ -256,11 +288,12 @@ def _task_guard():
     """⭐ 062 §一：判「本进程系由计划任务拉起」 —— ⛔ 免「派遣⇒被拒⇒再派遣」之环。
     据一：派遣标记(180 s 内为真 · 用后即删)。据二：父进程名为 svchost.exe。"""
     try:
-        if os.path.exists(TASK_MARK):
-            _rec = json.load(open(TASK_MARK, encoding='utf-8'))
+        _mark = task_mark_file()
+        if os.path.exists(_mark):
+            _rec = json.load(open(_mark, encoding='utf-8'))
             if time.time() - float(_rec.get('epoch') or 0) < 180:
                 try:
-                    os.remove(TASK_MARK)
+                    os.remove(_mark)
                 except Exception:
                     pass
                 return True
@@ -276,7 +309,7 @@ def _task_guard():
 def start_via_task():
     """⭐ 062 §一(⒝)：以已注册之计划任务起 —— 由计划服务拉 ⇒ ⛔ 属起者之 job。"""
     try:
-        with open(TASK_MARK, 'w', encoding='utf-8') as _f:
+        with open(task_mark_file(), 'w', encoding='utf-8') as _f:
             json.dump({'ts': time.strftime('%Y-%m-%dT%H:%M:%S%z'), 'epoch': time.time(),
                        'by': 'pa_nowindow.start', 'task': START_TASK}, _f, ensure_ascii=False)
     except Exception as _e:
@@ -303,12 +336,26 @@ def start_via_task():
             except Exception:
                 pass
         time.sleep(1.0)
-    print('[FAIL] 已派遣但 120 s 内 /health 未通 —— 查 logs' + chr(92) + ('gateway_%d_console.log' % _port))
+    print('[FAIL] 已派遣但 120 s 内 /health 未通 —— 查 PA_LOG_DIR' + chr(92) + ('gateway_%d_console.log' % _port))
     return 1
 
 
 def cmd_start():
     os.chdir(ROOT)
+    # ⭐ 9.0.13 P0：起服前先立/验三根（PA_DATA_DIR ／ PA_LOG_DIR ／ PA_VEC_DIR）—— 装根只读，
+    #   运行态（pid/stopped/life/task/console）⛔ 落 ROOT\logs。失败 ⇒ 人话之因 ＋ 迁之门。
+    _roots_ok, _root_rows = pa_paths.ensure_roots()
+    if not _roots_ok:
+        print('[FAIL] 可写根不可用（装根只读 · 9.0.13 P0）-- NOT starting')
+        print(pa_paths.describe())
+        for _n, _p, _ok, _why in _root_rows:
+            if not _ok:
+                print('       [FAIL] %-4s %s' % (_n, _why))
+        print('       修之门：设 env PA_DATA_DIR / PA_LOG_DIR / PA_VEC_DIR 至用户可写处'
+              '（缺省 %LOCALAPPDATA%\\ClawsJoyPA\\{data,logs,vec}）')
+        return 2
+    print('[INFO] 可写根（装根只读 ⇒ 皆在用户目录）：')
+    print(pa_paths.describe())
     _via_task = _task_guard()   # ⭐ 062 §一: 派遣之回程(用后即删 · 免环)
     rc, out = run_preflight()
     if rc != 0:
@@ -346,7 +393,7 @@ def cmd_start():
         else:
             print('       => 起者 job 不许 breakaway => 派计划任务起(062 §一 ⒝ · ⛔ detached-only 之连坐)')
             return start_via_task()
-    open(PIDFILE, 'w', encoding='ascii').write(str(p.pid))
+    open(pidfile(), 'w', encoding='ascii').write(str(p.pid))
     print('[OK] started pid=%d (no window) at %s  detach=%s'
           % (p.pid, time.strftime('%Y-%m-%d %H:%M:%S'), _detach))
     print('[OK] console log: %s' % console_path())
@@ -354,8 +401,9 @@ def cmd_start():
     # ⭐ 058 §一.4（裁）：起服成本以**时间**记 —— 「不可用窗」＝ 停刻 → 起刻（钱面 0 ／ 用户面 0）。
     _gap_s = None
     try:
-        if os.path.exists(STOPPED):
-            _st = json.load(open(STOPPED, encoding='utf-8'))
+        _stp = stopped_file()
+        if os.path.exists(_stp):
+            _st = json.load(open(_stp, encoding='utf-8'))
             _gap_s = round(time.time() - float(_st.get('epoch') or 0), 3)
             print('[INFO] unavailable window (stop -> start) = %.1f s  (stopped_at=%s)'
                   % (_gap_s, _st.get('ts')))
@@ -389,7 +437,7 @@ def cmd_start():
 def cmd_stop():
     pid = read_pid()
     if pid is None:
-        print('[STOP] no pid file %s -- nothing to stop' % PIDFILE)
+        print('[STOP] no pid file %s -- nothing to stop' % pidfile())
         return 3
     try:
         import psutil
@@ -405,13 +453,13 @@ def cmd_stop():
         print('[WARN] stop pid %d: %s' % (pid, e))
     finally:
         try:
-            os.remove(PIDFILE)
+            os.remove(pidfile())
         except Exception:
             pass
         # ⭐ 058 §一.4：停刻之痕（供 cmd_start 算「不可用窗」；⛔ 起服窗以时间记 · 钱面为 0）
         try:
             _now = time.time()
-            with open(STOPPED, 'w', encoding='utf-8') as _f:
+            with open(stopped_file(), 'w', encoding='utf-8') as _f:
                 json.dump({'ts': time.strftime('%Y-%m-%dT%H:%M:%S%z'), 'epoch': _now,
                            'pid': pid, 'by': 'cmd_stop'}, _f, ensure_ascii=False)
             life_append({'ts': time.strftime('%Y-%m-%dT%H:%M:%S%z'), 'event': 'stop',
@@ -462,7 +510,7 @@ def cmd_status():
                 print('[OK] /health %d %s' % (r.status, r.read().decode('utf-8')[:120]))
         except Exception as e:
             print('[WARN] /health: %s' % e)
-    print('[INFO] pid file = %s -> %s' % (PIDFILE, read_pid()))
+    print('[INFO] pid file = %s -> %s' % (pidfile(), read_pid()))
     return 0 if up else 1
 
 

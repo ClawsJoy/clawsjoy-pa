@@ -29,6 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.pa.gateway_routes import _jsonl_lines, _lines_delta  # noqa: E402
 
@@ -127,7 +128,7 @@ def test_lines_delta_propagates_none():
 # ---- 判据 2：接线层（判据打在设计上，不靠跑一遍碰运气） ----------------------
 
 def _gr() -> str:
-    return io.open(GR, encoding="utf-8").read()
+    return gr_src()
 
 
 def test_both_receipts_declare_events_readable():

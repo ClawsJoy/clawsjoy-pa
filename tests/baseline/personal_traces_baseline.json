@@ -63,7 +63,6 @@
         "core/gateway/ui_state.py": 3,
         "core/pa/agent_scan.py": 1,
         "core/pa/env_face.py": 8,
-        "core/pa/gateway_routes.py": 16,
         "core/pa/resume_face.py": 10,
         "core/routes/skill_routes.py": 1,
         "docs/design/v9_pa_capability_pluginization_standard.md": 2,

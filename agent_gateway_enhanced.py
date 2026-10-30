@@ -268,15 +268,29 @@ set_safe_recursion_limit()
 
 # ========== 日志 ==========
 # #80 日志文件化 + 轮转：10MB × 5 备份，保留 stdout 输出
+# ⭐ 9.0.13 P0（装 Program Files 只读）：日志落**可写根** PA_LOG_DIR（缺省
+#   %LOCALAPPDATA%\ClawsJoyPA\logs）；⛔ 相对 CWD（昔 "logs/gateway.log" ⇒ 装根只读 ⇒ WinError 5
+#   ⇒ import 期 logging 即死）。立目录失败 ⇒ 退 stdout（⛔ 因日志而 ⛔ 起）。
+def _gateway_log_dir():
+    d = (os.environ.get("PA_LOG_DIR") or "").strip()
+    if d:
+        return os.path.abspath(os.path.expandvars(os.path.expanduser(d)))
+    return os.path.join(_PROJECT_ROOT, "logs")
+
+
+_log_dir = _gateway_log_dir()
+_log_handlers = [logging.StreamHandler()]
+try:
+    os.makedirs(_log_dir, exist_ok=True)
+    _log_handlers.insert(0, logging.handlers.RotatingFileHandler(
+        os.path.join(_log_dir, "gateway.log"), maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
+    ))
+except Exception as _log_e:
+    print("[LOG] 日志目录不可用（%s）⇒ 唯 stdout：%s: %s" % (_log_dir, type(_log_e).__name__, _log_e))
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.handlers.RotatingFileHandler(
-            "logs/gateway.log", maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
-        ),
-        logging.StreamHandler(),
-    ],
+    handlers=_log_handlers,
 )
 logging.getLogger("chromadb").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -479,8 +493,9 @@ register_write_routes(app)
 
 # 状态解耦：检索/失败/读缓存/连续计数/产物 → 统一由 core.gateway.shared_state 提供（删双份，见 _load_retrieval_cache / state_persist）
 
-# ===== #192 检索缓存持久化：data/v8/retrieval_cache.json =====
-_RETRIEVAL_CACHE_FILE = "data/v8/retrieval_cache.json"
+# ===== #192 检索缓存持久化：<get_data_root()>/v8/retrieval_cache.json =====
+# ⭐ 9.0.13 P0：落**可写数据根**（函数 retrieval_cache_file() · 见 core/gateway/shared_state.py）；
+#   ⛔ 相对 CWD（装 Program Files 只读 ⇒ WinError 5）。本件不再自持常量（一处定形）。
 
 
 from routes.browser import bp as _browser_bp
@@ -1137,6 +1152,13 @@ try:
 
     _register_pa_routes(app, brain=_pa_llm_brain())
     print("[PA] /v9/pa/* 路由已挂载 (画像/账本/会话/分派 + LLM 脑)")
+    try:
+        from core.pa.warmup import start_warmup as _start_pa_warmup
+
+        if _start_pa_warmup():
+            print("[PA] 本地模型预热已在后台启动")
+    except Exception as _e_pa_warm:
+        print("[PA] 本地模型预热未启动(不影响主流程): %s" % _e_pa_warm)
 except Exception as _e_pa_wire:
     print("[PA] 路由挂载失败(不影响主流程): %s" % _e_pa_wire)
 

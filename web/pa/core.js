@@ -57,7 +57,9 @@ document.addEventListener('DOMContentLoaded', function(){ try{ PA_FACES.hide(); 
      ② PA_GAP.off(why)  ⇒ ⛔ 不接（红线）      ＝ 不会有 ⇒ ⛔ 以「未接」暗许「将来会接」＝ 软性虚诺；
      ③ PA_GAP.down(why) ⇒ 不可达              ＝ 后端此刻不在 ／ 未应答 ⇒ ⛔ ≠ 未接 · ⛔ 读成真 0。
    ⚠ 静态壳（`pa.html` · ⭐ 唯一壳 —— 承 pm 1203 §一：副本 `web/pa_v3.html` 已于 2026-10-05 删 · TD 716bc31）⛔ 调 JS ⇒ 其属此三形之静态标**逐字抄此三形**（无 JS 兜底）；
-     运行期由 `today.js` 之 `paSrcWrite` **认领覆盖**（双保险 · ⛔ 二说 · ⛔ 及 `#paDuty` 之静-only 三行（`pa.html:113`／`:114`／`:115`）—— 其无运行期写者 ⇒ 静文即唯一之说 · 承 pm 1297 §三③ · 承 pm 18:00 §一）。 */
+     运行期由 `today.js` 之 `paSrcWrite` **认领覆盖**（双保险 · ⛔ 二说 · ⛔ 及 `#paDuty` 之静-only 三行（`pa.html:113`／`:114`／`:115`）—— 其无运行期写者 ⇒ 静文即唯一之说 · 承 pm 1297 §三③ · 承 pm 18:00 §一）。
+    ⭐ 首屏占位（⛔ 属此三态）：静壳之「读中…」＝ **数未到**之刻 —— ⛔ 断言「无 JS」（名实不符 ∧ ⛔ 用户语 · 承 pm 2919 §一）；
+      「无 JS」之辞唯入 `pa.html` 之 `<noscript>`（唯 scripting 关时现）⇒ **二境分形**（⛔ 一字面兼二义）。 */
 window.PA_GAP = {
   todo: function(why){ return '⒜ 未接 · 待办（M1）' + (why ? ('｜为何未接：' + why) : ''); },
   off:  function(why, kind){ return '⛔ 不接（' + (kind || '红线') + (why ? ('：' + why) : '') + '）'; },

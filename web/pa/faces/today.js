@@ -351,14 +351,18 @@ async function paLoadSrcFaces(o){
   paSrcState = {ok:true, books: books, cD: cD, missAll: missAll};
   return paSrcState;
 }
-/* 画像之「刻」判据（承 `L76`：刻须随值 · 承 `pm_1049 §二.1`）：mtime 距今 > 24 h ⇒ 明标「已陈旧 N 天」；
+/* 画像之「刻」（承 `L76`：刻须随值 · 承 `pm_1049 §二.1` · ⭐ 承 `pm 2921 §一` 之裁 ＋ TD `2920 §二` 之据）：
+   件之 mtime 距今 ≥ 1 日 ⇒ 回「未变 N 天」之**中性读数**（⛔ ⚠ ／ ⛔ 「已陈旧」 ／ ⛔ 诱发刷新）。
+   由：其写路径皆**事件驱动**（`ProfileStore.save` ／ `add` ／ `revise` ／ `collect_fields`）∧ **无周期重生之路**
+     ⇒ 画像**无「应新之期」** ⇒ 恒红即「**狼来了**」（真警将被用户学会无视）；
+   ⭐ 故红警之族**唯施于活面之取数刻**（`PA_STALE` 已办之族 · 承 `pm 2921 §一.1`）—— 画像行退出其族。
    ⛔ 静默：判不出 ⇒ 回 `null`（调用处须显「未知」）。 */
-function paTodayAged(t){
+function paTodayUnchanged(t){
   const ms = Date.parse(String(t || '').replace(' ', 'T'));
   if(isNaN(ms)) return null;
   const d = Date.now() - ms;
-  if(d <= 24 * 3600 * 1000) return {stale: false, days: 0};
-  return {stale: true, days: Math.floor(d / 86400000)};
+  if(d <= 24 * 3600 * 1000) return null;
+  return {days: Math.floor(d / 86400000)};
 }
 /* 画像摘要 → 已定（事实）／待裁（提案）两分节（承 `pm_1049 §二.2`：⛔ 混列）。
    判据：句内 `(提案)` 之标（后端所给之「状态」轴）⇒ 待裁；余者 ⇒ 已定。 */
@@ -449,7 +453,7 @@ async function paLoadToday(){
   /* 画像件之「刻 ＋ 件」（承 `pm_1049 §二.1`）：径为前端常量 · 值（mtime／sha16／path）由后端现算（GET /v9/pa/build） */
   const pmeta = await paGetJson(API + '/v9/pa/build?file=' + encodeURIComponent('../data/v9/pa/profile.json'));
   const pstamp = (pmeta && pmeta.exists) ? String(pmeta.mtime || '') : '';
-  const paged = pstamp ? paTodayAged(pstamp) : null;
+  const punchanged = pstamp ? paTodayUnchanged(pstamp) : null;
   const psplit = paTodayBrief(brief);
   /* ⭐ pm_刀10 §一.3：**屏刻须取数刻并显陈旧度** —— 本行 ＝ 「本屏读数（前端取刻）」＋
      「画像件刻（后端现算之 mtime）」＋ 陈旧度；⛔ 以「本屏读数刻」顶「件之刻」（承 L76 ／ 刀11p §零）。 */
@@ -458,7 +462,7 @@ async function paLoadToday(){
   var _whenRaw = '画像件刻 ' + (pstamp || '未知')
     + ' ｜ 上下文窗 num_ctx ' + (nctx ? (nctx + '（本次 · 为上限 ⇒ 超此值 本机截断 · ⛔ 静默 · 源 GET /v9/pa/context）') : '未知（后端未应答 ／ 无该键 ⇒ ⛔ 编）');
   paV3Txt('paTodayWhen', '本屏读数 ' + now
-    + (paged && paged.stale ? ('（⚠ 画像已陈旧 ' + paged.days + ' 天）') : ''));
+    + (punchanged ? ('（画像 · 自 ' + pstamp.slice(0, 16) + ' 未变 ' + punchanged.days + ' 天）') : ''));
   /* ⭐ pm_刀10 §一：**`confirmed` ／ `proposed` 两态分列** ＋ 「待裁」数 ＝ `proposed`（后端 status 轴）。
      ⚠ 病（PM 实测）：旧面以「brief 非空行数 − 节头数」充「已定」⇒ 显 12，后端 status 轴实 8；
         「待裁」旧显 0，实 4。⇒ 真数取 `GET /v9/pa/profile` 之 `entries[].status`（承 L83 单源）；
@@ -504,7 +508,7 @@ async function paLoadToday(){
     + '）｜两源不等 ⇒ 显红（承 pm_刀16p §二.1）｜画像件 '
     + ((pmeta && pmeta.exists) ? (String(pmeta.path || '') + '（sha16 ' + String(pmeta.sha16 || '未知') + '）') : '未知（GET /v9/pa/build 未应答）')
     + ' ｜ 采样刻 ' + (pstamp || '未知（GET /v9/pa/build 未应答）')
-    + (paged && paged.stale ? '（⚠ 已陈旧 ' + paged.days + ' 天）' : ''));
+    + (punchanged ? '（画像 · 自 ' + pstamp.slice(0, 16) + ' 未变 ' + punchanged.days + ' 天）' : ''));
   const ptxtEl = document.getElementById('paTodayProfileText');
   if(ptxtEl){ ptxtEl.innerHTML = brief ? paTodayBriefHtml(brief, statOk ? {conf: nConf, prop: nProp, revised: nRev, entries: nEnt, pend: nPendCtx} : null) : '（后端未应答 ⇒ 无摘要可显 · ⛔ 不编）'; }
   paV3Txt('srcCtx', brief ? (nLine + ' 行（非空 · 含节头）') : PA_GAP.down('后端未应答'));
@@ -658,4 +662,171 @@ else { paInitToday(); }
   if(run() !== 2 && document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', run);
   }
+})();
+
+/* ── PA 窗 v1 · 1b-1 · 今日四卡（CW b2a5182 · 2026-10-27 · 承 PRD v1 §3.2 ／ §5 ／ §7）
+   只追加本段：⛔ 改上列旧函数（PA_V3_FACES ／ paRefreshLive ／ paCover* 一字不动）。
+   真源：/v9/pa/today（一处定形 · 行 1 要拍／行 2 该办／行 3 在等）＋ /v9/pes/runs（在跑明细）。
+   ⚠ /v9/audit/approvals 唯载已决之历史且需 session_id（本刻裸读 400）⇒ ⛔ 充「待审」；
+     「要拍」取 today 行 1（同源 context.proposed ＋ deliver/authz），并照实显其「缺」。
+   三态：载（骨架）／空（— ＋ 人话）／错（人话＋因＋再读）／降级（degradations 明书）。 */
+(function(){
+  'use strict';
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function live(){ return window.PA_WIN_LIVE || null; }
+  function errText(key){
+    if(window.paWinLiveErr) return window.paWinLiveErr(key);
+    var L = live();
+    var s = (L && L.src) ? L.src[key] : null;
+    return s ? (s.error || ('HTTP ' + s.status)) : '还没读到';
+  }
+
+  function skeleton(){
+    return '<div class="pa-skel" aria-label="正在读"><i style="width:82%"></i>'
+      + '<i style="width:64%"></i><i style="width:74%"></i></div>';
+  }
+  function errorBody(key){
+    return '<div class="pa-card-empty"><span class="pa-card-dash" aria-hidden="true">—</span>'
+      + '<span class="pa-card-say">读不到：' + esc(errText(key)) + '</span>'
+      + '<button class="pa-btn pa-btn-ghost pa-retry" type="button" onclick="paWinLiveRefresh()">再读一次</button></div>';
+  }
+  function rowsBody(items, say){
+    if(!items.length){
+      return '<div class="pa-card-empty"><span class="pa-card-dash" aria-hidden="true">—</span>'
+        + '<span class="pa-card-say">' + esc(say || '') + '</span></div>';
+    }
+    var LIMIT = 3;
+    var out = '<ul class="pa-card-list">' + items.slice(0, LIMIT).join('') + '</ul>';
+    if(items.length > LIMIT) out += '<div class="pa-card-more">还有 ' + (items.length - LIMIT) + ' 件</div>';
+    return out;
+  }
+  function card(key, title, count, body, state, note){
+    return '<section class="pa-card" data-card="' + key + '" data-state="' + (state || 'ok') + '" tabindex="0">'
+      + '<h2 class="pa-card-h">' + esc(title) + '</h2>'
+      + '<div class="pa-card-n">' + (count == null ? '—' : esc(count)) + '</div>'
+      + body
+      + (note ? '<div class="pa-card-note">' + esc(note) + '</div>' : '')
+      + '</section>';
+  }
+  function row(main, sub, opt){
+    opt = opt || {};
+    var goCls = opt.focus ? ' pa-card-row-go' : '';
+    var goAttr = opt.focus
+      ? ' role="button" tabindex="0" onclick="paWinFocus(\'' + esc(opt.focus) + '\')"'
+        + ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();paWinFocus(\'' + esc(opt.focus) + '\');}"'
+      : '';
+    return '<li class="pa-card-row' + goCls + '"' + goAttr + ' title="' + esc(opt.title || main) + '">'
+      + '<span class="pa-card-t">' + esc(main) + '</span>'
+      + (sub ? '<span class="pa-card-s">' + esc(sub) + '</span>' : '') + '</li>';
+  }
+
+  function stateOf(key){
+    var L = live();
+    if(!L || !L.at) return 'loading';
+    var s = L.src[key];
+    return (s && s.ok) ? 'ok' : 'error';
+  }
+
+  window.paWinTodayCards = function(){
+    var L = live();
+    var ready = !!(L && L.at);
+    var rowsOk = !!(L && L.src && L.src.today && L.src.today.ok);
+    var runsOk = !!(L && L.src && L.src.runs && L.src.runs.ok);
+
+    var todo = [], todoSay = '今天没有非做不可的。', todoState = 'ok', todoNote = '', todoN = 0;
+    var wait = [], waitSay = '手上没有在等的事。', waitState = 'ok', waitNote = '', waitN = 0;
+    var runRows = [], runSay = '手上没有在跑的活。', runState = 'ok', runNote = '', runN = 0;
+    var appr = [], apprSay = '没有等你点头的。', apprState = 'ok', apprNote = '', apprN = 0;
+    var apprHist = [], apprHistN = 0;   /* 历史待授权（只读）—— ⛔ 计入可拍 */
+
+    if(!ready){
+      todoState = waitState = runState = apprState = 'loading';
+    } else {
+      if(!rowsOk){
+        todoState = waitState = apprState = 'error';
+      } else {
+        var r2 = window.paWinLiveTodayRow(2), r3 = window.paWinLiveTodayRow(3), r1 = window.paWinLiveTodayRow(1);
+        if(r2){
+          todoN = Number(r2['数'] || 0);
+          todoSay = r2['空态'] || todoSay;
+          todo = (r2['件'] || []).map(function(x){
+            return row(x['题'] || x['类'] || '一件事', x['期'] || x['类'] || '', {title:x['题'] || ''});
+          });
+        }
+        if(r3){
+          waitN = Number(r3['数'] || 0);
+          waitSay = r3['空态'] || waitSay;
+          wait = (r3['件'] || []).map(function(x){
+            return row(x['题'] || x['类'] || '一件事', x['席'] || x['类'] || '', {title:x['题'] || ''});
+          });
+        }
+        if(r1){
+          /* ⭐ 要拍 = **可拍**（后端无待审队列读端）⇒ 恒 0；行 1 之件系**历史待授权**（交付已过、授权未给）
+             ⇒ 另列（只读），⛔ 混入可拍行（老板 3465 §一.2）。 */
+          apprN = 0;
+          apprSay = '无待拍';
+          appr = [];
+          apprHistN = Number(r1['数'] || (r1['件'] || []).length || 0);
+          apprHist = (r1['件'] || []).map(function(x){
+            return row(x['题'] || x['类'] || '一件事', (x['类'] || '交付待授权') + ' · 只读', {title:x['题'] || ''});
+          });
+          apprNote = apprHistN
+            ? ('后端无待审读端 ⇒ 可拍 0；下为历史待授权 ' + apprHistN + '（只读）')
+            : '后端无待审读端 ⇒ 可拍 0';
+        }
+      }
+      if(!runsOk){
+        runState = 'error';
+      } else {
+        var rr = (window.paWinLiveRuns && window.paWinLiveRuns()) || [];
+        runN = rr.length;
+        runRows = rr.map(function(x){
+          var st = String(x.state || '');
+          var sub = (st === 'done' ? '已完成' : (st === 'stopped' ? '已停' : (x.pct + '%')))
+            + (x.cost && x.cost !== '—' ? (' · ' + x.cost) : '');
+          return row(x.name, sub, {focus:x.id, title:x.name});
+        });
+        var deg = window.paWinLiveDeg ? window.paWinLiveDeg('runs') : '';
+        if(deg) runNote = '降级：' + deg;
+      }
+    }
+
+    /* 要拍卡之体：可拍 0 显「无待拍」＋ 历史另列（⛔ 混） */
+    function apprBody(){
+      if(apprState === 'loading') return skeleton();
+      if(apprState === 'error') return errorBody('today');
+      var out = '<div class="pa-card-empty"><span class="pa-card-dash" aria-hidden="true">—</span>'
+              + '<span class="pa-card-say">无待拍</span></div>';
+      if(apprHistN){
+        out += '<div class="pa-card-hist"><div class="pa-card-hist-h">历史待授权 ' + apprHistN + '（只读）</div>'
+             + '<ul class="pa-card-list">' + apprHist.slice(0, 3).join('') + '</ul>'
+             + (apprHistN > 3 ? '<div class="pa-card-more">还有 ' + (apprHistN - 3) + ' 件</div>' : '')
+             + '</div>';
+      }
+      return out;
+    }
+
+    function bodyOf(items, say, state, key){
+      if(state === 'loading') return skeleton();
+      if(state === 'error') return errorBody(key);
+      return rowsBody(items, say);
+    }
+
+    var html = card('todo', '该办', todoState === 'ok' ? todoN : null,
+                    bodyOf(todo, todoSay, todoState, 'today'), todoState, todoNote)
+             + card('waiting', '在等', waitState === 'ok' ? waitN : null,
+                    bodyOf(wait, waitSay, waitState, 'today'), waitState, waitNote)
+             + card('running', '在跑', runState === 'ok' ? runN : null,
+                    bodyOf(runRows, runSay, runState, 'runs'), runState, runNote)
+             + card('approve', '要你拍板', apprState === 'ok' ? apprN : null,
+                    apprBody(), apprState, apprNote);
+
+    return {html: html, counts: {todo: todoN, waiting: waitN, running: runN, approve: apprN}};
+  };
 })();

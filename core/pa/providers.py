@@ -50,7 +50,7 @@ PROVIDERS = {
 #   ⇒ 旧值 `local:ollama` 之 7B 于净机**不可达**（演示首屏之默认错）。
 #   ⚠ 模型名**唯自注册表**（`default_model_of` · ⛔ 硬编 —— 免与 `models[].id` 二处漂）；
 #     可用者优先 ＋ 显形 ⇒ 见 `default_route()`。
-DEFAULT_PROVIDER = "remote:deepseek"
+DEFAULT_PROVIDER = "local:ollama"
 
 # route label: LLMClient provider => local / remote (PM 034 Sec-3 b)
 PROVIDER_KIND = {"ollama": "local", "deepseek": "remote", "glm": "remote", "anthropic": "remote"}

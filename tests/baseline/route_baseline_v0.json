@@ -1,0 +1,532 @@
+{
+ "version": 1,
+ "source": "pa_routes_*",
+ "count": 105,
+ "routes": [
+  {
+   "method": "POST",
+   "path": "/v9/pa/act",
+   "func": "pa_act"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/agent/invoke",
+   "func": "pa_agent_invoke"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/archive",
+   "func": "pa_archive_post"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/archive/<archive_id>",
+   "func": "pa_archive_get"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/artifact/thumbs",
+   "func": "pa_artifact_thumbs_post"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/ask",
+   "func": "pa_ask"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/attach",
+   "func": "pa_attach"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/audit/postcheck",
+   "func": "pa_audit_postcheck"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/audit/preflight",
+   "func": "pa_audit_preflight"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/build",
+   "func": "pa_build_get"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/caliber",
+   "func": "pa_caliber"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/caliber/change",
+   "func": "pa_caliber_change"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/caliber/check",
+   "func": "pa_caliber_check"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/context",
+   "func": "pa_context"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/cost",
+   "func": "pa_cost"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/decision",
+   "func": "pa_decision"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/decision/log",
+   "func": "pa_decision_log"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/deliver/authz",
+   "func": "pa_deliver_authz"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/deliver/mail",
+   "func": "pa_deliver_mail_face"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/deliver/mail",
+   "func": "pa_deliver_mail"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/deliver/stop",
+   "func": "pa_deliver_stop"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/diagnostics",
+   "func": "pa_diagnostics_build"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/dialog",
+   "func": "pa_dialog_history"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/dialog",
+   "func": "pa_dialog"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/dispatch",
+   "func": "pa_dispatch"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/dispatch/chase",
+   "func": "pa_dispatch_chase"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/dispatch/history",
+   "func": "pa_dispatch_history"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/dispatch/receipt",
+   "func": "pa_dispatch_receipt_get"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/dispatch/receipt",
+   "func": "pa_dispatch_receipt"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/env",
+   "func": "pa_env"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/env/note",
+   "func": "pa_env_note"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/env/research",
+   "func": "pa_env_research"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/feedback",
+   "func": "pa_feedback_list"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/feedback",
+   "func": "pa_feedback_submit"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/feedback/<fid>",
+   "func": "pa_feedback_item"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/feedback/<fid>/reply",
+   "func": "pa_feedback_reply"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/feedback/target",
+   "func": "pa_feedback_target"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/first_run",
+   "func": "pa_first_run"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/grants",
+   "func": "pa_grants_get"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/kb_mapping",
+   "func": "pa_kb_mapping"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/ledger",
+   "func": "pa_ledger"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/ledger/add",
+   "func": "pa_ledger_add"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/ledger/done",
+   "func": "pa_ledger_done"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/ledger/revoke",
+   "func": "pa_ledger_revoke"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/lines",
+   "func": "pa_lines"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/lines/upsert",
+   "func": "pa_lines_upsert"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/local_client/start",
+   "func": "pa_local_client_start"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/local_client/status",
+   "func": "pa_local_client_status"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/notes",
+   "func": "pa_notes_list"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/notes",
+   "func": "pa_notes_create"
+  },
+  {
+   "method": "DELETE",
+   "path": "/v9/pa/notes/<note_id>",
+   "func": "pa_notes_delete"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/notes/<note_id>",
+   "func": "pa_notes_get"
+  },
+  {
+   "method": "PATCH",
+   "path": "/v9/pa/notes/<note_id>",
+   "func": "pa_notes_update"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/notes/ask",
+   "func": "pa_notes_ask"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/notes/import",
+   "func": "pa_notes_import"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/notes/reindex",
+   "func": "pa_notes_reindex"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/notes/screen",
+   "func": "pa_notes_screen"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/notes/transcribe",
+   "func": "pa_notes_transcribe"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/notes/voice",
+   "func": "pa_notes_voice"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/permission",
+   "func": "pa_permission_get"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/permission",
+   "func": "pa_permission_post"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/plan",
+   "func": "pa_plan"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/ppt/comments",
+   "func": "pa_ppt_comments_get"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/ppt/comments",
+   "func": "pa_ppt_comments_post"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/profile",
+   "func": "pa_profile"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/profile",
+   "func": "pa_profile_write"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/profile/schema",
+   "func": "pa_profile_schema"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/projects",
+   "func": "pa_projects"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/providers",
+   "func": "pa_providers"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/providers/key",
+   "func": "pa_provider_key"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/providers/key/token",
+   "func": "pa_provider_key_token"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/proxy",
+   "func": "pa_proxy"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/proxy/approve",
+   "func": "pa_proxy_approve"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/proxy/gate",
+   "func": "pa_proxy_gate"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/registry",
+   "func": "pa_registry"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/relations/status",
+   "func": "pa_relations_status"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/resume",
+   "func": "pa_resume"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/roster",
+   "func": "pa_roster"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/roster/<agent_id>",
+   "func": "pa_roster_card"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/roster/find",
+   "func": "pa_roster_find"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/roster/probe",
+   "func": "pa_roster_probe"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/roster/scan",
+   "func": "pa_roster_scan"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/roster/upsert",
+   "func": "pa_roster_upsert"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/seats",
+   "func": "pa_seats"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/sediment",
+   "func": "pa_sediment"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/self_intro",
+   "func": "pa_self_intro"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/session_model",
+   "func": "pa_session_model"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/session_model",
+   "func": "pa_session_model"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/sessions",
+   "func": "pa_sessions_list"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/source_faces",
+   "func": "pa_source_faces"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/steer",
+   "func": "pa_steer"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/sys/<panel>",
+   "func": "pa_sys_panel"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/sys/act",
+   "func": "pa_sys_act"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/sys/snapshot",
+   "func": "pa_sys_snapshot"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/threads",
+   "func": "pa_threads_get"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/threads",
+   "func": "pa_threads_post"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/today",
+   "func": "pa_today"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/turn",
+   "func": "pa_turn_record"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/ui_faces",
+   "func": "pa_ui_faces"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/update",
+   "func": "pa_update_run"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/vault/set",
+   "func": "pa_vault_set"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/vault/sync",
+   "func": "pa_vault_sync"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/verify/legacy_7_2",
+   "func": "pa_verify_legacy_7_2"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/version",
+   "func": "pa_version"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/whoami",
+   "func": "pa_whoami"
+  }
+ ]
+}

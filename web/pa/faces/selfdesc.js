@@ -36,7 +36,7 @@ const PA_SELF_PAT = [
   ['plug',  /插件|扩展(能力|包)|面册|有哪些面/],
   ['seat',  /agent|智能体|子代理|子任务|席位|可调用|调你|调我|谁能调|谁在调|谁可以调|指派|派活|派单/],
   ['cmp',   /对比|对照|差距|muse|dots|竞品/],
-  ['can',   /你能做什么|你会做什么|你能干什么|你能做哪些|你有什么能力|你有哪些能力|你的能力|你的功能/]
+  ['can',   /你能做什么|你会做什么|你能干什么|你能做哪些|你具备哪些能力|具备什么能力|具备哪些能力|你有什么能力|你有哪些能力|你的能力|你的功能|你会什么|能帮我做什么/]
 ];
 function paSelfKey(text){
   const s = String(text == null ? '' : text).trim();
@@ -1950,6 +1950,42 @@ function paPermRender(){
   return sf;
 }
 
+async function paSelfIntroTry(text, keys){
+  const inp = document.getElementById('input');
+  addMsg('user', text);
+  if(inp) inp.value = '';
+  try{ if(typeof autoGrow === 'function') autoGrow(); }catch(e){}
+  try{ if(typeof setBusy === 'function') setBusy(true); }catch(e){}
+  try{ if(typeof paSetState === 'function') paSetState('model', '生成能力介绍（本地 qwen）'); }catch(e){}
+  try{
+    const ctrl = new AbortController();
+    const timer = setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, 75000);
+    const resp = await fetch(API + '/v9/pa/self_intro', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id: (typeof curUser === 'function' ? curUser() : ''), text: text}), signal: ctrl.signal});
+    clearTimeout(timer);
+    const d = await resp.json().catch(function(){ return null; });
+    if(!d || !d.ok || !d.intro) return null;
+    const f = d.facts || {};
+    const can = (f.can || []).join(' · ');
+    const cannot = (f.cannot || []).join(' · ');
+    let body = String(d.intro).trim();
+    if(can) body += '\n\n能：' + can;
+    if(cannot) body += '\n边界：' + cannot;
+    if(f.profile) body += '\n画像：' + f.profile;
+    if(f.model && f.model.model) body += '\n模型：' + f.model.model;
+    try{ window.PASelfRouteLast = {label:{text:'src: 本地 qwen（能力事实 → 自然表达）', key:'model', kind:'local', model:(f.model&&f.model.model)||''}, at:String(Date.now()/1000), url:'/v9/pa/self_intro'}; }catch(e){}
+    addMsg('assistant', body);
+    try{ if(typeof paSetState === 'function') paSetState('done', '能力卡已答'); }catch(e){}
+    try{ if(typeof setBusy === 'function') setBusy(false); }catch(e){}
+    try{ if(typeof saveState === 'function') saveState(); }catch(e){}
+    return body;
+  }catch(e){
+    try{ if(typeof setBusy === 'function') setBusy(false); }catch(err){}
+    try{ if(typeof paSetState === 'function') paSetState('failed', '能力介绍失败'); }catch(err){}
+    return null;
+  }
+}
+
 /* ================= 六 · 接线上屏（⛔ 动共用面件 send.js ／ status.js ／ products.js）=================
    拦截点＝paSend 之最外层（自述类须在「有据才答」闸之前 ⇒ 否则先被 /v9/pa/ask 拒答为「查不到」）。
    与 tasks.js 之 paSend 包装共存：非自述类 ⇒ 原链一字不动（⛔ 丢功能）。 */
@@ -1979,6 +2015,10 @@ function paPermRender(){
       return inner.apply(this, arguments);
     }
     const keys = paSelfKeys(text);
+    if((keys.indexOf('who') >= 0 || keys.indexOf('can') >= 0) && typeof paSelfIntroTry === 'function'){
+      const _intro = await paSelfIntroTry(text, keys);
+      if(_intro !== null) return _intro;
+    }
     if(!keys.length){
       /* ⭐ 源之分标（承 pm_1013 §二）：非自述类 ⇒ 问域 `other`（域外 ／ 非知识问）之答走**对话通道**
          （模型生成）⇒ 贴「模型生成（⛔ 非本机素材）」；`local` ／ `world` 由闸定（见 addMsg 之 gateInfo 支）。 */
@@ -4528,7 +4568,7 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     box.style.cssText = 'flex:0 0 auto;border-top:1px solid var(--border);background:rgba(88,166,255,.03);'
       + 'max-height:52%;overflow:auto';
     box.innerHTML =
-      '<summary style="cursor:pointer;padding:5px 14px;font-size:11.5px;color:var(--sub)">'
+      '<summary style="cursor:pointer;padding:5px 14px;font-size:12px;color:var(--sub)">'
       + '🗂 <b style="color:var(--text)" title="工程之据：T1 交付面">交付面</b>（发信 · 由 PA 自己送出）'
       + '\u00b7 \u505c\u624b\u6536\u4ef6\u4eba\uff1a<b id="' + ID.echo + '" style="color:var(--text)">\u672c\u4eba</b>'
       + '\u3000<span style="opacity:.8" id="' + ID.backWrap + '">\u4e0e\u5bf9\u7aef\u4e4b\u901a\uff1a<span id="' + ID.back + '">\u63a2\u6d4b\u4e2d\u2026</span></span></summary>'

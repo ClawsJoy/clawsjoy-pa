@@ -182,8 +182,8 @@ def do_archive(rot, arch, day, tag):
         return 4, zp, bad
     zsha = sha16(zp)
     with io.open(mp, "w", encoding="utf-8", newline="\n") as f:
-        f.write(u"# 备份轮转清单（可撤回）｜ %s ｜ 轮次 %02d ｜ 族 %s ｜ 留 %d（唯转其外）\n"
-                % (time.strftime("%Y-%m-%dT%H:%M:%S"), seq, tag, DEF_KEEP))
+        f.write(u"# 备份轮转清单（可撤回）｜ %s ｜ 轮次 %02d ｜ 族 %s ｜ 留 %d（唯转其外）｜ 归档径 %s（他域之径：_仓 ⇒ ⛔ 本域）\n"
+                % (time.strftime("%Y-%m-%dT%H:%M:%S"), seq, tag, DEF_KEEP, DEF_ARCH))
         f.write(u"# 归档包 %s ｜ %.1f MB ｜ sha16 %s ｜ 件 %d\n"
                 % (os.path.basename(zp), os.path.getsize(zp) / 1048576.0, zsha, len(items)))
         f.write(u"# 件名\t尺B\tsha16\t归档包\t原径\n")
@@ -300,6 +300,15 @@ def _csv_id(line):
         return None
 
 
+def _read_lines(raw):
+    u"""行切（⛔ `splitlines` —— 其以 VT/FF/NEL/U+2028/U+2029 为界 ⇒ 台账内一处 VT
+    （序号 2094 之「动作需求」栏）折行 ⇒ 假行 ＋ 假畸格；承 CEO `2153 §四` ／ PM `2154 §二`）。
+    ⇒ 唯以 LF 切 ＋ 剥 CR（⛔ 枚举 · ⛔ splitlines 族）。"""
+    ls = raw.decode("utf-8-sig", errors="replace").split(u"\n")
+    if ls and ls[-1] == u"":
+        ls.pop()
+    return [x.rstrip(u"\r") for x in ls]
+
 def replica_test(d, pat=DEF_PATS, main_name=None, now=None):
     u"""⭐⭐ **主册复现测试**（承 CEO 席 `1983 §二` 之裁）—— 判 append-only 族之「唯一存底」。
 
@@ -319,7 +328,7 @@ def replica_test(d, pat=DEF_PATS, main_name=None, now=None):
     if not os.path.isfile(mp):
         return {"at": at, "dir": d, "err": u"主册不在：%s" % mp, "real_unique": -1}
     mb = io.open(mp, "rb").read()
-    mlines = [x.rstrip(u"\r") for x in mb.decode("utf-8-sig", errors="replace").splitlines()]
+    mlines = [x.rstrip(u"\r") for x in _read_lines(mb)]
     mset = set(mlines)
     hid = _id_key(_csv_id(mlines[0])) if mlines else None   # ⭐ 主册表头之号（`序号`）⇒ 快照之表头 ⛔ 计「数据行」
     mids = set(x for x in (_id_key(_csv_id(y)) for y in mlines[1:]) if x)
@@ -332,7 +341,7 @@ def replica_test(d, pat=DEF_PATS, main_name=None, now=None):
             v, ev = u"⛔ 前缀", u"逐字节 ＝ 主册前 %d B" % len(b)
             n["prefix"] += 1
         else:
-            ls = [x.rstrip(u"\r") for x in b.decode("utf-8-sig", errors="replace").splitlines()]
+            ls = [x.rstrip(u"\r") for x in _read_lines(b)]
             diff = [x for x in ls if x not in mset]
             if not diff:
                 v, ev = u"⛔ 行集", u"行皆在主册（剥 BOM）"

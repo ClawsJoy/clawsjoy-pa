@@ -25,6 +25,8 @@ u"""pm_1635 五令 ＋ pm_1641 §二 之齿（CW b2a5182 · 2026-10-07）—— 
       更新「失败」＋ 反馈 ⇒ 更新（⛔ 凌于更新）。
   F14 页之骨 ＋ 面册：`pa.html` 有 `#paFeedback` ∧ feedback.js 所读之**凡 id 皆在页** ∧ 载脚本 ∧
       「一步可达」之入口在顶栏（`#paFbBtn` → `paFbOpen()`）∧ `faces.json` 有本面之条（file ／ dom）。
+  F15 正控（二改之一 · 承 PM `2908 §一.3⒜`）：横幅有时限 ∧ **结果之痕 ⛔ 灭** ∧ 投入仍唯 1 处。
+  F16 正控（二改之二 · 承 PM `2908 §一.3⒝`）：时戳人读形 ∧ **⛔ ISO 形** 上屏 ∧ 件号须并书人话。
 
 以何形调用（判通／断须附）：
   python -X utf8 -B -m pytest tests/unit/test_pa_feedback_1635.py -q
@@ -108,7 +110,8 @@ def _harness() -> str:
         _block(s, u"const PA_FB_BUS = {", u"};"),
         _fn(s, u"paFbBusLabel"), _fn(s, u"paFbTarget"),
         _fn(s, u"paFbHumanLine"), _fn(s, u"paFbNoticeText"), _fn(s, u"paFbNoticeRaw"),
-        _fn(s, u"paFbGate"), _fn(s, u"paFbBusTags"), _fn(s, u"paFbItemsText"),
+        _fn(s, u"paFbGate"), _fn(s, u"paFbBusTags"), _fn(s, u"paFbWhen"),
+        _fn(s, u"paFbItemsText"),
         _fn(s, u"paFbReplyText"), _fn(s, u"paFbSendText"), _fn(s, u"paFbBannerView"),
         _fn(s, u"paFbFeedBanner"),
         _decl(su, u"const PA_UPD_BUSY"), _fn(su, u"paPrepMerge"),
@@ -265,6 +268,8 @@ def test_F7_发之三态():
     assert u"D:/" not in ok, u"落点之绝对径 ⛔ 上屏（pm_2061 §二.2 之界）：" + ok
     assert u"fb_x1" in ok, ok
     assert u"已存本机；内测期不联网发送" in ok, ok
+    assert u"编号 fb_x1" in ok, u"件号须并书人话（PM 2908 §一.3⒝）：" + ok
+    assert u"T13:00" not in ok, u"成功行之时戳须人读形（⛔ ISO）：" + ok
     fail = v["s"]["fail"]
     assert u"请填「题目」" in fail and u"去处" in fail, fail
 
@@ -275,12 +280,17 @@ def test_F8_我之收件之痕():
     assert u"点「打开落点目录」可见其径" in v["i"]["zero"], v["i"]["zero"]
     assert u"D:/" not in v["i"]["zero"], u"落点之绝对径 ⛔ 上屏"
     two = v["i"]["two"]
-    assert u"我之收件：2 条" in two and u"最近 2026-10-07T13:00:00+0800" in two, two
+    assert u"我之收件：2 条" in two, two
+    assert u"最近" in two and u"13:00" in two and u"T13:00" not in two, \
+        u"最近之刻须人读形（PM 2908 §一.3⒝ · ⛔ ISO 上屏）：" + two
+    assert u"D:/" not in two
 
 
 def test_F9_回话唯取后端reply():
     v = _v()
     assert CS in v["r"]["has"] and u"已收到，正在看" in v["r"]["has"], v["r"]["has"]
+    assert u"T14:00" not in v["r"]["has"], \
+        u"回话之时戳须人读形（PM 2908 §一.3⒝）：" + v["r"]["has"]
     assert v["r"]["none"] == "", u"无 reply ⇒ 黄框 ⛔ 显（⛔ 自造辞）"
     assert v["r"]["empty"] == "", u"reply 空 ⇒ ⛔ 显"
 
@@ -349,3 +359,34 @@ def test_F14_页之骨与面册与一步可达():
     # pm_1657 §二.2：壳之桥之页内侧（开「落点目录」）⇒ 其钮 ＋ 其态行亦归本面之 dom（⛔ 则关面时 ⛔ 收起）。
     assert fb[0]["dom"] == ["#paFeedback", "#paFbOpenDir", "#paFbDirState"], fb[0]
     assert fb[0].get("open") is True, fb[0]
+
+
+# ---------- F15 ／ F16：二改（承 PM 2908 §一.3） ----------
+
+def test_F15_横幅有时限而结果之痕须留():
+    u"""⭐⭐ 二改之一（承 PM `2908 §一.3⒜`）：**横幅**（已成之通知）有时限 ∧
+    **⛔ 灭结果之痕** —— 旧器于 TTL 之末书 `paFbRun.send = null` ⇒ 而题 ／ 文已清空 ⇒ 再渲 ⇒
+    屏上反显门提示「题必填」＝**恰反**「已成者 ⛔ 占屏 ∧ 未生效者须留到人做」之律。"""
+    s = _read(FB)
+    fb = _fn(s, u"paFbFeedBanner")
+    assert u"paFbRun.send = null" not in fb, u"横幅之限 ⛔ 灭结果之痕（须留到人做）：" + fb
+    assert u"bannerOff" in fb, u"横幅之显须可独关（⛔ 与结果之存混一）：" + fb
+    assert s.count(u"paPrepFeedFeedback(") == 1, u"投入仍须唯 1 处（一处定形）"
+    boot = _fn(s, u"paFbBoot")
+    assert u"paFbRun.send = null" in boot, u"再输入 ⇒ 上次之痕清（「常驻至下次输入」之界）：" + boot
+    sendfn = _fn(s, u"paFbSend")
+    assert u"bannerOff = false" in sendfn, u"新发 ⇒ 横幅复显（⛔ 恒关）：" + sendfn
+
+
+def test_F16_时戳人读形而ISO不上屏():
+    u"""⭐⭐ 二改之二（承 PM `2908 §一.3⒝`）：时戳**人读形**（今天 ／ 昨天 ／ MM-DD HH:MM）∧
+    **⛔ ISO 形**上屏；**件号可留**但须并书人话（「编号 <id>」）。"""
+    s = _read(FB)
+    assert u"function paFbWhen(" in s, u"人读形须一处定形（`paFbWhen`）"
+    for fn in (u"paFbItemsText", u"paFbReplyText", u"paFbSendText"):
+        body = _fn(s, fn)
+        assert u"paFbWhen(" in body, fn + u" 之时戳须经 paFbWhen（⛔ 裸 ISO）：" + body
+    w = _fn(s, u"paFbWhen")
+    assert u"今天 " in w and u"昨天 " in w, u"人读形须有「今天 ／ 昨天」：" + w
+    assert u"document" not in w, u"人读形须纯函（⛔ DOM）：" + w
+    assert u"编号 " in _fn(s, u"paFbSendText"), u"成功行须并书人话（「编号 <id>」）"

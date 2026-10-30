@@ -1,0 +1,890 @@
+{
+  "generated_at": "2026-10-27T18:36:34",
+  "base": "http://127.0.0.1:5102/web/pa.html",
+  "widths": {
+    "1120": {
+      "errors": [
+        "console.error: Failed to load resource: the server responded with a status of 400 (BAD REQUEST)",
+        "console.error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+      ],
+      "shell": {
+        "flag_on": true,
+        "body_pa_win_on": true,
+        "win_hidden": false,
+        "legacy_visible": true,
+        "route": "today"
+      },
+      "rail": [
+        {
+          "r": "today",
+          "label": "今天",
+          "btn": {
+            "x": 0,
+            "y": 56,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 62.8,
+            "b": 80.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 84.8,
+            "b": 99.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        },
+        {
+          "r": "agents",
+          "label": "席",
+          "btn": {
+            "x": 0,
+            "y": 110,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 116.8,
+            "b": 134.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 138.8,
+            "b": 153.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        },
+        {
+          "r": "ledger",
+          "label": "账",
+          "btn": {
+            "x": 0,
+            "y": 164,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 170.8,
+            "b": 188.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 192.8,
+            "b": 207.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        },
+        {
+          "r": "vault",
+          "label": "库",
+          "btn": {
+            "x": 0,
+            "y": 218,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 224.8,
+            "b": 242.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 246.8,
+            "b": 261.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        },
+        {
+          "r": "doors",
+          "label": "门",
+          "btn": {
+            "x": 0,
+            "y": 272,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 278.8,
+            "b": 296.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 300.8,
+            "b": 315.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        }
+      ],
+      "today": {
+        "cards": [
+          {
+            "card": "todo",
+            "state": "ok",
+            "n": "0",
+            "rows": 0,
+            "hist": false,
+            "hist_head": null,
+            "hist_rows": 0,
+            "hist_readonly": null,
+            "note": ""
+          },
+          {
+            "card": "waiting",
+            "state": "ok",
+            "n": "0",
+            "rows": 0,
+            "hist": false,
+            "hist_head": null,
+            "hist_rows": 0,
+            "hist_readonly": null,
+            "note": ""
+          },
+          {
+            "card": "running",
+            "state": "ok",
+            "n": "0",
+            "rows": 0,
+            "hist": false,
+            "hist_head": null,
+            "hist_rows": 0,
+            "hist_readonly": null,
+            "note": "降级：运行记录尚无落盘 ⇒ 没有可显示的在跑"
+          },
+          {
+            "card": "approve",
+            "state": "ok",
+            "n": "0",
+            "rows": 3,
+            "hist": true,
+            "hist_head": "历史待授权 3（只读）",
+            "hist_rows": 3,
+            "hist_readonly": true,
+            "note": "后端无待审读端 ⇒ 可拍 0；下为历史待授权 3（只读）"
+          }
+        ],
+        "approve": {
+          "card": "approve",
+          "state": "ok",
+          "n": "0",
+          "rows": 3,
+          "hist": true,
+          "hist_head": "历史待授权 3（只读）",
+          "hist_rows": 3,
+          "hist_readonly": true,
+          "note": "后端无待审读端 ⇒ 可拍 0；下为历史待授权 3（只读）"
+        },
+        "nCards": 4,
+        "body_focus": false,
+        "route": "today"
+      },
+      "today_shot": "D:\\clawsjoy_v9\\web\\pa\\faces\\_evidence\\v11_1120_today.png",
+      "agents": {
+        "cards": 20,
+        "cards_detail": [
+          {
+            "id": "pa",
+            "kind": "self",
+            "status": "active",
+            "dispatchable": "1",
+            "text": "老板 PAself在册可派成本 见 /v9/pa/cost边界 无真席；代发以老板名义脆性 low上次 10-27 17:00"
+          },
+          {
+            "id": "seat:5c01a0f",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "发布与回执席本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:67eb10c",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "内容制作席本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:e621c26",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "工作流实验室本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:502535f",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "GEO研究席本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:c94521a",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "法律初审本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:712c54b",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "客服本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:91d7669",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "秘书本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:b2a5182",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "V9工程师·全史席(01a0ae94)本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:f4f4371",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "【②层自唤醒 · 席务首件（源＝席务）】你之「域」未定（`codex/_L3_席域.json` 之「未定」栏）⇒ 席务首本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42前史 ec0b4160"
+          },
+          {
+            "id": "seat:1c89172",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "导演本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:f202f89",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "技术总监本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:d22ea88",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "笔杆子本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:20a688e",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "V9审计师本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42前史 e1355045"
+          },
+          {
+            "id": "seat:440488b",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "总经理CEO本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:b136893",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "项目经理本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42前史 7433a8b8 · v4"
+          },
+          {
+            "id": "cli:codex",
+            "kind": "cli",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "codexCLI待入册不可派成本 unknown边界 非交互；stdin=DEVNULL脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "cli:dsh",
+            "kind": "cli",
+            "status": "active",
+            "dispatchable": "1",
+            "text": "dshCLI在册可派成本 model-dependent；见 /v9/pa/cost边界 单任务打印即退；⛔ 持久会话（除 web/tui profile）；⛔ GUI脆性 model/profile 依赖；headless 无交互；超时须自带上次 10-27 17:00"
+          },
+          {
+            "id": "cli:pi",
+            "kind": "cli",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "piCLI待入册不可派成本 unknown边界 非交互；stdin=DEVNULL脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:4712d4d5",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "V9审计师·v4新席本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 未接前史 b00ac3ee · v4"
+          }
+        ],
+        "active": 2,
+        "pending": 18,
+        "pending_dispatchable": 0,
+        "dispatchable_total": 2,
+        "dispatchable_nonactive": 0,
+        "buttons": [],
+        "nButtons": 0,
+        "approve_like": true,
+        "chips": [
+          "20 卡",
+          "2 在册",
+          "18 待入册",
+          "1 自身",
+          "16 席",
+          "3 CLI",
+          "0 SSH"
+        ],
+        "hints": [
+          "四类逐卡实点 ｜ 缺的显「未接」"
+        ],
+        "state": {
+          "total": 20,
+          "active": 2,
+          "pending": 18,
+          "kinds": {
+            "self": 1,
+            "seat": 16,
+            "cli": 3,
+            "ssh": 0
+          },
+          "dispatchable": 2,
+          "counts": {
+            "active": 2,
+            "pending": 18,
+            "total": 20
+          },
+          "state": "ok",
+          "source": "data/tmp/pa_registry_pilot_v2.json",
+          "generated_at": "2026-10-27T18:01:20+08:00"
+        },
+        "registry_src": {
+          "ok": true,
+          "status": 200,
+          "ms": 233,
+          "at": "2026-10-27 18:36:36",
+          "url": "/v9/pa/registry",
+          "error": ""
+        }
+      },
+      "agents_shot": "D:\\clawsjoy_v9\\web\\pa\\faces\\_evidence\\v11_1120_agents.png",
+      "agents_bottom_shot": "D:\\clawsjoy_v9\\web\\pa\\faces\\_evidence\\v11_1120_agents_bottom.png",
+      "focus": {
+        "pct": "已完成",
+        "stop_text": "已完成",
+        "stop_disabled": true,
+        "has_receipt": true,
+        "goal": "（夹具）一件已做完的事"
+      },
+      "focus_shot": "D:\\clawsjoy_v9\\web\\pa\\faces\\_evidence\\v11_1120_focus100.png",
+      "after_focus_shell": {
+        "route": "agents",
+        "focus": false,
+        "agents_cards": 20
+      }
+    },
+    "1024": {
+      "errors": [
+        "console.error: Failed to load resource: the server responded with a status of 400 (BAD REQUEST)",
+        "console.error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+      ],
+      "shell": {
+        "flag_on": true,
+        "body_pa_win_on": true,
+        "win_hidden": false,
+        "legacy_visible": true,
+        "route": "today"
+      },
+      "rail": [
+        {
+          "r": "today",
+          "label": "今天",
+          "btn": {
+            "x": 0,
+            "y": 56,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 62.8,
+            "b": 80.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 84.8,
+            "b": 99.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        },
+        {
+          "r": "agents",
+          "label": "席",
+          "btn": {
+            "x": 0,
+            "y": 110,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 116.8,
+            "b": 134.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 138.8,
+            "b": 153.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        },
+        {
+          "r": "ledger",
+          "label": "账",
+          "btn": {
+            "x": 0,
+            "y": 164,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 170.8,
+            "b": 188.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 192.8,
+            "b": 207.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        },
+        {
+          "r": "vault",
+          "label": "库",
+          "btn": {
+            "x": 0,
+            "y": 218,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 224.8,
+            "b": 242.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 246.8,
+            "b": 261.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        },
+        {
+          "r": "doors",
+          "label": "门",
+          "btn": {
+            "x": 0,
+            "y": 272,
+            "w": 63,
+            "h": 50
+          },
+          "ic": {
+            "y": 278.8,
+            "b": 296.8,
+            "w": 18,
+            "h": 18
+          },
+          "lb": {
+            "y": 300.8,
+            "b": 315.19,
+            "w": 63,
+            "h": 14.39
+          },
+          "gap_ic_lb": 4,
+          "overlap": false,
+          "line_height": 14.4,
+          "lines": 1,
+          "single_line": true,
+          "lb_scroll_w": 63,
+          "lb_client_w": 63,
+          "lb_wrapped": false
+        }
+      ],
+      "today": {
+        "cards": [
+          {
+            "card": "todo",
+            "state": "ok",
+            "n": "0",
+            "rows": 0,
+            "hist": false,
+            "hist_head": null,
+            "hist_rows": 0,
+            "hist_readonly": null,
+            "note": ""
+          },
+          {
+            "card": "waiting",
+            "state": "ok",
+            "n": "0",
+            "rows": 0,
+            "hist": false,
+            "hist_head": null,
+            "hist_rows": 0,
+            "hist_readonly": null,
+            "note": ""
+          },
+          {
+            "card": "running",
+            "state": "ok",
+            "n": "0",
+            "rows": 0,
+            "hist": false,
+            "hist_head": null,
+            "hist_rows": 0,
+            "hist_readonly": null,
+            "note": "降级：运行记录尚无落盘 ⇒ 没有可显示的在跑"
+          },
+          {
+            "card": "approve",
+            "state": "ok",
+            "n": "0",
+            "rows": 3,
+            "hist": true,
+            "hist_head": "历史待授权 3（只读）",
+            "hist_rows": 3,
+            "hist_readonly": true,
+            "note": "后端无待审读端 ⇒ 可拍 0；下为历史待授权 3（只读）"
+          }
+        ],
+        "approve": {
+          "card": "approve",
+          "state": "ok",
+          "n": "0",
+          "rows": 3,
+          "hist": true,
+          "hist_head": "历史待授权 3（只读）",
+          "hist_rows": 3,
+          "hist_readonly": true,
+          "note": "后端无待审读端 ⇒ 可拍 0；下为历史待授权 3（只读）"
+        },
+        "nCards": 4,
+        "body_focus": false,
+        "route": "today"
+      },
+      "today_shot": "D:\\clawsjoy_v9\\web\\pa\\faces\\_evidence\\v11_1024_today.png",
+      "agents": {
+        "cards": 20,
+        "cards_detail": [
+          {
+            "id": "pa",
+            "kind": "self",
+            "status": "active",
+            "dispatchable": "1",
+            "text": "老板 PAself在册可派成本 见 /v9/pa/cost边界 无真席；代发以老板名义脆性 low上次 10-27 17:00"
+          },
+          {
+            "id": "seat:5c01a0f",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "发布与回执席本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:67eb10c",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "内容制作席本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:e621c26",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "工作流实验室本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:502535f",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "GEO研究席本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:c94521a",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "法律初审本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:712c54b",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "客服本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:91d7669",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "秘书本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:b2a5182",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "V9工程师·全史席(01a0ae94)本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:f4f4371",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "【②层自唤醒 · 席务首件（源＝席务）】你之「域」未定（`codex/_L3_席域.json` 之「未定」栏）⇒ 席务首本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42前史 ec0b4160"
+          },
+          {
+            "id": "seat:1c89172",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "导演本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:f202f89",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "技术总监本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:d22ea88",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "笔杆子本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:20a688e",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "V9审计师本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42前史 e1355045"
+          },
+          {
+            "id": "seat:440488b",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "总经理CEO本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:b136893",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "项目经理本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 10-27 15:42前史 7433a8b8 · v4"
+          },
+          {
+            "id": "cli:codex",
+            "kind": "cli",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "codexCLI待入册不可派成本 unknown边界 非交互；stdin=DEVNULL脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "cli:dsh",
+            "kind": "cli",
+            "status": "active",
+            "dispatchable": "1",
+            "text": "dshCLI在册可派成本 model-dependent；见 /v9/pa/cost边界 单任务打印即退；⛔ 持久会话（除 web/tui profile）；⛔ GUI脆性 model/profile 依赖；headless 无交互；超时须自带上次 10-27 17:00"
+          },
+          {
+            "id": "cli:pi",
+            "kind": "cli",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "piCLI待入册不可派成本 unknown边界 非交互；stdin=DEVNULL脆性 medium上次 10-27 15:42"
+          },
+          {
+            "id": "seat:4712d4d5",
+            "kind": "seat",
+            "status": "pending",
+            "dispatchable": "0",
+            "text": "V9审计师·v4新席本机席待入册不可派成本 unknown边界 provider-dependent脆性 medium上次 未接前史 b00ac3ee · v4"
+          }
+        ],
+        "active": 2,
+        "pending": 18,
+        "pending_dispatchable": 0,
+        "dispatchable_total": 2,
+        "dispatchable_nonactive": 0,
+        "buttons": [],
+        "nButtons": 0,
+        "approve_like": true,
+        "chips": [
+          "20 卡",
+          "2 在册",
+          "18 待入册",
+          "1 自身",
+          "16 席",
+          "3 CLI",
+          "0 SSH"
+        ],
+        "hints": [
+          "四类逐卡实点 ｜ 缺的显「未接」"
+        ],
+        "state": {
+          "total": 20,
+          "active": 2,
+          "pending": 18,
+          "kinds": {
+            "self": 1,
+            "seat": 16,
+            "cli": 3,
+            "ssh": 0
+          },
+          "dispatchable": 2,
+          "counts": {
+            "active": 2,
+            "pending": 18,
+            "total": 20
+          },
+          "state": "ok",
+          "source": "data/tmp/pa_registry_pilot_v2.json",
+          "generated_at": "2026-10-27T18:01:20+08:00"
+        },
+        "registry_src": {
+          "ok": true,
+          "status": 200,
+          "ms": 230,
+          "at": "2026-10-27 18:36:43",
+          "url": "/v9/pa/registry",
+          "error": ""
+        }
+      },
+      "agents_shot": "D:\\clawsjoy_v9\\web\\pa\\faces\\_evidence\\v11_1024_agents.png",
+      "agents_bottom_shot": "D:\\clawsjoy_v9\\web\\pa\\faces\\_evidence\\v11_1024_agents_bottom.png",
+      "focus": {
+        "pct": "已完成",
+        "stop_text": "已完成",
+        "stop_disabled": true,
+        "has_receipt": true,
+        "goal": "（夹具）一件已做完的事"
+      },
+      "focus_shot": "D:\\clawsjoy_v9\\web\\pa\\faces\\_evidence\\v11_1024_focus100.png",
+      "after_focus_shell": {
+        "route": "agents",
+        "focus": false,
+        "agents_cards": 20
+      }
+    }
+  },
+  "fallback_off": {
+    "flag_on": false,
+    "body_pa_win_on": false,
+    "win_hidden": true,
+    "old_faces": true,
+    "old_visible": true
+  },
+  "fallback_var": {
+    "flag_on": true,
+    "body_pa_win_on": true,
+    "win_hidden": false
+  }
+}

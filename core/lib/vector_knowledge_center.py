@@ -15,6 +15,7 @@ from core.lib.config_helper import (
     get_llm_endpoint,
     get_llm_model,
     get_timeout,
+    get_vector_root,
 )
 from core.lib.unified_config import unified_config
 
@@ -73,9 +74,11 @@ class VectorKnowledgeCenter:
 
     def _init(self, session_id=None):
         # 初始化 ChromaDB 客户端（按 session 隔离）
-        _dir = f"{get_data_root()}/vector_kb"
+        # ⭐ 9.0.13 P0：默认库径 ＝ get_vector_root()（env PA_VEC_DIR 优先；缺 ⇒ <data_root>/vector_kb）
+        #   —— 装 Program Files 只读 ⇒ ⛔ 写装根。session 库亦按 data_root 绝对径（⛔ 相对 CWD）。
+        _dir = get_vector_root()
         if session_id and session_id != "default":
-            _dir = f"data/projects/{session_id}/vector_kb"
+            _dir = str(Path(get_data_root()) / "projects" / str(session_id) / "vector_kb")
         self.persist_dir = Path(_dir)
         self.persist_dir.mkdir(parents=True, exist_ok=True)
 
@@ -149,7 +152,7 @@ class VectorKnowledgeCenter:
         import sqlite3 as _sq
 
         _totals = {k: 0 for k in self.collections}
-        _roots = [Path(get_data_root()) / "vector_kb"]  # 默认库
+        _roots = [Path(get_vector_root())]  # 默认库（⭐ 9.0.13 P0：env PA_VEC_DIR 优先）
         _projects = Path(get_data_root()) / "projects"
         if _projects.exists():
             for _d in sorted(_projects.iterdir()):

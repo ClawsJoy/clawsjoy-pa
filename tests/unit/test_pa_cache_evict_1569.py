@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from tests.pa_src import gr_src  # noqa: E402
 
 from core.pa import gateway_routes as GR  # noqa: E402
 
@@ -70,7 +71,7 @@ def test_old_form_rejects_new_when_full():
 # ---------- ⒟ 二路皆过 _lru_put · 上限入常量 ----------
 
 def test_both_caches_use_lru_put_source():
-    src = io.open(GR.__file__, encoding="utf-8").read()
+    src = gr_src()
     assert "_lru_put(_ASK_CACHE" in src, u"`_ASK_CACHE` 须过 `_lru_put`"
     assert "_lru_put(_LINE_CACHE" in src, u"`_LINE_CACHE` 须过 `_lru_put`（同族 · 一并）"
     assert "if len(_ASK_CACHE) < _ASK_CACHE_MAX" not in src, u"旧形须绝（⛔ 满则新键永不入）"

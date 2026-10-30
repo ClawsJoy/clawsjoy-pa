@@ -486,6 +486,27 @@ def plan(dest, desktop=True, shortcuts=True):
     }
 
 
+def ensure_writable_roots(dest, dry=False):
+    r"""装根内三 junction（**一处之器** ＝ scripts/win_pa/ensure_roots.py）。
+    P0-2：gateway 仍向装根写 logs\engine.log ／ data\* ⇒ 以 junction 迁出；装根保持只读。
+    ⛔ dry 时唯报计划；失败 ⛔ 阻装（装已成 · 起服前按日志补做）。"""
+    try:
+        if HERE not in sys.path:
+            sys.path.insert(0, HERE)
+        import ensure_roots as ER
+        if dry:
+            rows = [u"  [dry] %s -> %s" % (it[u"link"], it[u"target"]) for it in ER.plan(root=dest)]
+            return [u"[install_post] 可写根 junction（dry）："] + rows
+        log_path = os.path.join(ER.default_base(), u"logs", ER.LOG_NAME)
+        ok, rows, _lp = ER.ensure(root=dest, log_path=log_path)
+        out = [u"[install_post] 可写根 junction：%s（日志 %s）" % (u"PASS" if ok else u"FAIL", log_path)]
+        out += [u"    " + r for r in rows]
+        return out
+    except Exception as e:                      # noqa: BLE001 -- 照实报因 · ⛔ 阻装
+        return [u"[install_post] 可写根 junction ⛔ 得：%s: %s（装已成 · 起服前补做）"
+                % (type(e).__name__, e)]
+
+
 def render_and_maybe_apply(p, dry, do_shortcuts=True):
     dest = p[u"dest"]
     lines = [u"[install_post] 装根 ＝ %s（**用户级** · ⛔ 须管理员）" % dest]
@@ -496,6 +517,9 @@ def render_and_maybe_apply(p, dry, do_shortcuts=True):
         lines.append(u"[install_post] ⛔ 见自带运行时：%s ⇒ **⛔ 装**" % p[u"runtime"])
         return 2, lines
     lines.append(u"[install_post] 自带运行时：%s（**净机 ⛔ 有 Python** 之要）" % p[u"runtime"])
+    # ⭐ P0-2：先立三 junction（logs/data/vec -> %LOCALAPPDATA%\ClawsJoyPA），再立目录 ⇒
+    #    凡经装根之写（含 gateway 之相对写）皆落用户级目录；装根保持只读。
+    lines += ensure_writable_roots(dest, dry)
     todo = [d for d in p[u"dirs"] if not os.path.isdir(d)]
     lines.append(u"[install_post] 将立目录 %d 件（已在 %d ⇒ no-op）" % (len(todo), len(p[u"dirs"]) - len(todo)))
     if not dry:

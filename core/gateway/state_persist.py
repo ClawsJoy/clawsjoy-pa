@@ -3,7 +3,12 @@
 import logging
 import json
 from pathlib import Path
-from core.gateway.shared_state import _RETRIEVAL_CACHE_FILE, _query_cache, _retry_cache, _search_empty_cache
+from core.gateway.shared_state import (
+    retrieval_cache_file,
+    _query_cache,
+    _retry_cache,
+    _search_empty_cache,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +88,7 @@ def _persist_retrieval_cache():
     try:
         from pathlib import Path as _Path
         import json as _json
-        _cache_file = _Path(_RETRIEVAL_CACHE_FILE)
+        _cache_file = _Path(retrieval_cache_file())
         _cache_file.parent.mkdir(parents=True, exist_ok=True)
         _data = {}
         _all_sids = set(_query_cache) | set(_search_empty_cache) | set(_retry_cache)
@@ -108,7 +113,7 @@ def _load_retrieval_cache():
     try:
         from pathlib import Path as _Path
         import json as _json
-        _cache_file = _Path(_RETRIEVAL_CACHE_FILE)
+        _cache_file = _Path(retrieval_cache_file())
         if not _cache_file.exists():
             logger.info("[RETRIEVAL_CACHE] 无持久化缓存文件，跳过恢复")
             return

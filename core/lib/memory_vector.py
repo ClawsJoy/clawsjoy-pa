@@ -7,12 +7,12 @@
 """
 
 from core.lib.config_helper import (
-    get_data_root,
     get_embedding_model,
     get_gateway_port,
     get_llm_endpoint,
     get_llm_model,
     get_timeout,
+    get_vector_root,
 )
 
 """向量记忆模块 - 修复版"""
@@ -25,14 +25,17 @@ import chromadb
 
 
 class VectorMemory:
-    def __init__(self, persist_dir: str = f"{get_data_root()}/vector_kb"):
+    def __init__(self, persist_dir: str = None):
+        # ⭐ 9.0.13 P0：默认库径 ＝ get_vector_root()（env PA_VEC_DIR 优先；缺 ⇒ <data_root>/vector_kb）
+        #   —— 昔以默认参数求 get_data_root()：import 期定值 ⇒ env/根之变 ⛔ 认。
+        persist_dir = persist_dir or get_vector_root()
         self.persist_dir = Path(persist_dir)
         self.persist_dir.mkdir(parents=True, exist_ok=True)
         # #30 修复: 默认库复用 VectorKnowledgeCenter 的 client(同 settings),
         # 避免同路径不同 settings 触发 "An instance of Chroma already exists"
         from core.lib.vector_knowledge_center import vector_knowledge_center as _vkc
 
-        _default_kb = str(Path(f"{get_data_root()}/vector_kb").resolve())
+        _default_kb = str(Path(get_vector_root()).resolve())
         if str(self.persist_dir.resolve()) == _default_kb:
             self.client = _vkc.get_client()
             # 共享 VKC 的 client: 生命周期归 VKC, 本实例不得关闭它

@@ -6,6 +6,8 @@ import hashlib
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from core.lib.version import __version__
+
 
 class PlatformClient:
     """OS 端平台连接器：密钥管理 + 注册 + 订阅 + 下载"""
@@ -15,7 +17,10 @@ class PlatformClient:
         self.data_dir = Path(data_dir or os.getenv("CLAWSJOY_DATA_DIR", "data"))
         self.key_file = self.data_dir / ".clawsjoy_key.json"
         self.jwt = None
-        self.hostname = os.uname().nodename
+        # 主机名：POSIX 走 os.uname；无 uname（Windows）⇒ env（⛔ 崩于 import）
+        _uname = getattr(os, "uname", None)
+        self.hostname = (_uname().nodename if _uname else
+                         (os.getenv("COMPUTERNAME") or os.getenv("HOSTNAME") or "unknown"))
 
     # ===== 密钥管理 =====
 
@@ -52,7 +57,7 @@ class PlatformClient:
             # 先注册 OS 节点（幂等操作）
             requests.post(f"{self.platform_url}/api/os/register", json={
                 "hostname": self.hostname,
-                "version": "9.0.11",
+                "version": __version__,
                 "capabilities": ["agent_workspace"],
             }, timeout=5)
             # 尝试登录

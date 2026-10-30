@@ -139,7 +139,10 @@ def test_teeth_bump_without_following_bites():
     u"""反控二：真源升而字面未跟 ⇒ 必逮（＝ 9.0.7 ⇒ 9.0.8 注文行漏改之复现）。"""
     got = set((h[0], h[2]) for h in drift(ver=u"9.9.9"))
     assert (u"core/lib/version.py", __version__) in got, got
-    assert (u"core/lib/platform_client.py", __version__) in got, got
+    # R6 G1（task-64 · 2026-10-30）：`core/lib/platform_client.py` 已改引
+    #   `from core.lib.version import __version__`（⛔ 字面）⇒ 升号后**不再**成 drift 源；
+    #   旧反控之二条已不复现（正是 G1 之的），改钉「⛔ 被逮」—— 字面若回潮 ⇒ 本条红。
+    assert (u"core/lib/platform_client.py", __version__) not in got, got
 
 
 def test_teeth_registered_literal_is_exempt():

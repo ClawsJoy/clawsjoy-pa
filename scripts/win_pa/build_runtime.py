@@ -296,6 +296,9 @@ def probe_start(exe, payload, timeout=300):
         #   ⇒ **正控唯二态**：⒜ 门先开 ⇒ 空缓存 ／ 断网下 `/health` 仍**速** 200（本修之证）；
         #      ⒝ 旧序 ⇒ 起服之探必超时 ／ ⛔ 达（闸即红）。
         env[u"USERPROFILE"] = tmp
+        # ⭐ 9.0.13 P0：运行态三根缺省父 ＝ %LOCALAPPDATA%\ClawsJoyPA ⇒ 探亦须落临时根
+        #   （⛔ 污染建机用户目录；⛔ 入载荷 —— 装根只读之新约）。
+        env[u"LOCALAPPDATA"] = tmp
         env[u"HOME"] = tmp
         env[u"XDG_CACHE_HOME"] = os.path.join(tmp, u".cache")
         env[u"HTTP_PROXY"] = u"http://127.0.0.1:9"

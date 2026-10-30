@@ -181,3 +181,6 @@ config/scheduler_config.json
 #   ⚠ **其效与 `dist/` ／ `_tmp/` 相反**：`-i` ＝ 唯列**被忽略**者 ⇒ 本件入 ignore ⇒
 #   **反使其入 `ls-files -o -i` 之列（＋1）** ⇒ 唯去 `git status` 之 `??` 一行（承 pm_1779 §二.2 之族）。
 /version.json
+# ===== PFX 私钥（P0 · T53：移出仓，保留于仓外 _secrets；⛔ 入仓／⛔ 外发）=====
+*.pfx
+ClawsJoy_Internal.pfx

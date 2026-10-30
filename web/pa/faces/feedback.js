@@ -17,6 +17,13 @@
       ⚠ **其取 ⇒ preload 暴露**（⛔ 后端出端）：其能 ＝ 「开**我这一台**之目录」—— 唯「页与落点同机」时成立；
       若由后端开窗 ⇒ 于「局域网内测（他人之浏览器）」会在**服务机**上弹窗（⛔ 用户所要）∧ 增攻击面。
       ⚠ **附件 ⇒ ⛔ 须桥**：`<input type=file>` 于 Electron 渲染器内即调**系统原生对话框** ⇒ 一途通二处。
+   ⭐⭐ **二改（承 PM `2908 §一.3` 之裁 · 用户角度 ＋ 人读形 · 2026-10-11）**：
+     ⒜ **已成之痕须留** —— 旧：成功文案唯活 `8` 秒（横幅之 TTL）⇒ 而题 ／ 文已清空 ⇒ 再渲 ⇒
+        屏上反显门提示「题必填」**恰反**「已成者 ⛔ 占屏 ∧ 未生效者须留到人做」之律 ⇒
+        今改：**横幅**（已成之通知）有时限 · 而**结果之痕** ＝ `paFbRun.send`（⛔ 灭 ⇒ 常驻至下次输入）。
+     ⒝ **时戳人读形** —— 旧：件行 ／ 回话 ／ 成功行皆 ISO 形（`2026-10-11T23:35:54+0800`）⇒
+        今改：`paFbWhen()` 一处定形 ⇒「今天 23:35」／「昨天 22:10」／「10-07 13:00」；
+        **件号可留**（用户回报时有用）⇒ 须并书人话（「编号 <id>」）。
    ⚠ ⛔ 触 `core/**`（TD 之域）∧ ⛔ `localStorage` 之态（承 pm_1617 令五：⛔ 前端缓存之假态）。 */
 const PA_FB_READ = '/health';
 const PA_FB_SEND = '/v9/pa/feedback';
@@ -167,12 +174,34 @@ function paFbBusTags(t, consent){
   return out;
 }
 
+/* ⭐ **一处定形**（时戳之人读形 · 承 PM `2908 §一.3⒝` 之裁：「ISO 时戳 ⛔ 上屏」）。
+   输后端之 `at`（如 `2026-10-11T23:35:54+0800`）⇒ 人读：今天 ／ 昨天 ＋ `HH:MM`；
+   非今日昨 ⇒「MM-DD HH:MM」（跨年 ⇒ 全形）。⚠ **唯按字面取**（⛔ 由 `new Date` 解其串 ⇒ 免时区漂）
+   ∧ ⛔ 正则（免 `{}` 之扰 —— 齿 `test_pa_feedback_1635` 之 `_fn` 以花括号配平取函）。 */
+function paFbWhen(s){
+  const t = String(s == null ? '' : s);
+  const i = t.indexOf('T');
+  if(i < 10) return t;
+  const dp = t.slice(0, 10).split('-'), tp = t.slice(i + 1, i + 6).split(':');
+  if(dp.length !== 3 || tp.length < 2) return t;
+  const y = Number(dp[0]), mo = Number(dp[1]), da = Number(dp[2]);
+  if(!y || !mo || !da) return t;
+  const hhmm = tp[0] + ':' + tp[1];
+  const now = new Date();
+  const day = function(x){ return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); };
+  const diff = Math.round((day(now) - new Date(y, mo - 1, da).getTime()) / 86400000);
+  if(diff === 0) return '今天 ' + hhmm;
+  if(diff === 1) return '昨天 ' + hhmm;
+  if(now.getFullYear() === y) return dp[1] + '-' + dp[2] + ' ' + hhmm;
+  return dp[0] + '-' + dp[1] + '-' + dp[2] + ' ' + hhmm;
+}
+
 /* 「我之收件」之痕（唯本机之读数 —— 条数 ／ 最近之刻 ／ 落点之径 · ⛔ 造）。 */
 function paFbItemsText(items, t){
   const its = Array.isArray(items) ? items : [];
   const d = (t && (t.resolved_dir || t.dir)) ? (t.resolved_dir || t.dir) : '';
   let s = '我之收件：' + its.length + ' 条';
-  if(its.length && its[0] && its[0].at) s += '（最近 ' + String(its[0].at) + '）';
+  if(its.length && its[0] && its[0].at) s += '（最近 ' + paFbWhen(its[0].at) + '）';
   s += ' · 落点：点「打开落点目录」可见其径';
   return s;
 }
@@ -182,7 +211,7 @@ function paFbReplyText(item){
   const r = (item && item.reply && typeof item.reply === 'object') ? item.reply : null;
   const tx = r ? String(r.text || '').trim() : '';
   if(!tx) return '';
-  return '客服席回话（' + String(r.by || '客服席') + ' · ' + String(r.at || '') + '）：' + tx;
+  return '客服席回话（' + String(r.by || '客服席') + ' · ' + paFbWhen(r.at) + '）：' + tx;
 }
 
 /* 发之三态（空 ／ 发送中 ／ 已成（落点之径）／ 已败（因 ＋ 去处）—— ⛔ 白屏 ∧ ⛔ 死路）。 */
@@ -191,8 +220,8 @@ function paFbSendText(st, t){
   if(st.state === 'sending') return '发送中…';
   if(st.state === 'ok'){
     const d = (t && (t.resolved_dir || t.dir)) ? (t.resolved_dir || t.dir) : '';
-    let s = '已落本机（其径见「打开落点目录」之悬停）：' + String(st.id);
-    if(st.at) s += '（' + String(st.at) + '）';
+    let s = '已落本机（其径见「打开落点目录」之悬停）：编号 ' + String(st.id);
+    if(st.at) s += '（' + paFbWhen(st.at) + '）';
     if(st.hint) s += ' · ' + String(st.hint);
     return s;
   }
@@ -203,7 +232,7 @@ function paFbSendText(st, t){
 /* ---- 以下：态 ＋ 渲 ＋ 取数（**唯此处**写 `#paFeedback` 之内；幂等：⛔ 加节点 · 唯改文本 ／ 值 ／ 属性） ---- */
 const paFbRun = {started: false, t: null, items: [], sel: null, send: null,
                  agreed: false, consent: {}, files: [], busy: false, poll: null, http: null,
-                 bannerT: null, autoPicked: false, dir: null};
+                 bannerT: null, autoPicked: false, dir: null, bannerOff: false};
 
 function paFbEl(id){ return document.getElementById(id); }
 
@@ -295,7 +324,7 @@ function paFbRender(){
     for(let i = 0; i < its.length && i < 10; i++){
       const x = its[i] || {};
       html += '<div class="fb-item" data-fid="' + paFbEsc(String(x.id || '')) + '">' +
-              paFbEsc(String(x.at || '') + ' · ' + String(x.title || '') +
+              paFbEsc(paFbWhen(x.at) + ' · ' + String(x.title || '') +
                       '（' + (x.has_reply ? '有回话' : '无回话') + ' · 附件 ' +
                       ((x.attach_n == null) ? '—' : String(x.attach_n)) + '）') + '</div>';
     }
@@ -360,7 +389,7 @@ async function paFbSend(){
   const elT = paFbEl('paFbTitle'), elB = paFbEl('paFbBody');
   const consent = paFbConsentFromDom();
   paFbRun.consent = consent;
-  paFbRun.busy = true; paFbRun.send = {state: 'sending'}; paFbRender(); paFbFeedBanner();
+  paFbRun.busy = true; paFbRun.bannerOff = false; paFbRun.send = {state: 'sending'}; paFbRender(); paFbFeedBanner();
   let st = 0, j = null;
   try{
     const r = await fetch(((typeof API !== 'undefined') ? API : '') + PA_FB_SEND, {
@@ -410,22 +439,24 @@ function paFbBannerView(st, t){
   if(!st || !st.state) return null;
   if(st.state === 'sending') return {state: 'running', text: '正在发送留言…（落本机 · 不外发）', note: ''};
   if(st.state === 'ok') return {state: 'done',
-      text: '留言已落本机：' + String(st.id),
+      text: '留言已落本机 · 编号 ' + String(st.id),
       note: '内测 · 不外发：我们上门取 ∨ 你自己复给我们'};
   if(st.state === 'fail') return {state: 'failed',
       text: '留言未发出：' + (st.error || '（后端未给因）'), note: PA_FB_OUTLET};
   return null;
 }
 
-/* 投于横幅（**唯一之投入点** · ⛔ 自渲）；已成 ／ 已败 ⇒ 有时限（免恒挂）。 */
+/* 投于横幅（**唯一之投入点** · ⛔ 自渲）；已成 ／ 已败 ⇒ 有时限（免恒挂）。
+   ⭐ **二改（承 PM `2908 §一.3⒜`）**：其时限于**横幅**（已成之通知 ⛔ 占屏）——
+   **⛔ 灭 `paFbRun.send`**（结果之痕须留 ⇒ 屏上「已落本机」一行常驻至下次输入）。 */
 function paFbFeedBanner(){
-  const v = paFbBannerView(paFbRun.send, paFbRun.t);
+  const v = paFbRun.bannerOff ? null : paFbBannerView(paFbRun.send, paFbRun.t);
   if(paFbRun.bannerT){ try{ clearTimeout(paFbRun.bannerT); }catch(e){} paFbRun.bannerT = null; }
   if(typeof paPrepFeedFeedback === 'function') paPrepFeedFeedback(v);
   if(v && (v.state === 'done' || v.state === 'failed')){
     const ms = (v.state === 'done') ? PA_FB_BANNER_TTL_MS : PA_FB_BANNER_FAIL_MS;
     paFbRun.bannerT = setTimeout(function(){
-      paFbRun.bannerT = null; paFbRun.send = null; paFbFeedBanner(); paFbRender();
+      paFbRun.bannerT = null; paFbRun.bannerOff = true; paFbFeedBanner();
     }, ms);
   }
   return v;
@@ -448,8 +479,12 @@ function paFbBoot(){
   paFbRun.started = true;
   const sb = paFbEl('paFbSend'); if(sb) sb.addEventListener('click', paFbSend);
   /* 形之变 ⇒ 重判「可发」（否则「题 ／ 文」输入后按钮恒灰 ⇒ 死路）。 */
+  /* ⭐ 二改（承 PM `2908 §一.3⒜`）：用户再输入 ⇒ 上一次之结果痕清（＝「常驻至下次输入」之界）。 */
   ['paFbTitle', 'paFbBody'].forEach(function(id){
-    const e = paFbEl(id); if(e) e.addEventListener('input', function(){ paFbRender(); });
+    const e = paFbEl(id); if(e) e.addEventListener('input', function(){
+      if(paFbRun.send){ paFbRun.send = null; paFbRun.bannerOff = false; paFbFeedBanner(); }
+      paFbRender();
+    });
   });
   const fi = paFbEl('paFbFiles');
   if(fi) fi.addEventListener('change', function(ev){
@@ -476,6 +511,7 @@ try{
   window.paFbGate = paFbGate; window.paFbBusTags = paFbBusTags;
   window.paFbItemsText = paFbItemsText; window.paFbReplyText = paFbReplyText;
   window.paFbSendText = paFbSendText; window.paFbBusLabel = paFbBusLabel;
+  window.paFbWhen = paFbWhen;
   window.paFbRender = paFbRender; window.paFbFetch = paFbFetch; window.paFbSend = paFbSend;
   window.paFbOpenItem = paFbOpenItem; window.paFbBoot = paFbBoot; window.paFbRun = paFbRun;
   window.paFbBannerView = paFbBannerView; window.paFbFeedBanner = paFbFeedBanner;
