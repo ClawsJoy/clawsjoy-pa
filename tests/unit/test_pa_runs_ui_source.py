@@ -11,8 +11,13 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+PAGE = ROOT / "web" / "pa.html"
 SEND = ROOT / "web" / "pa" / "faces" / "send.js"
 STATUS = ROOT / "web" / "pa" / "faces" / "status.js"
+
+
+def _page():
+    return PAGE.read_text(encoding="utf-8")
 
 
 def _send():
@@ -158,6 +163,17 @@ def test_runs_context_recent8_exclude_current_truncate_task():
     assert "【当前任务】" in src
     assert "（对话说明：老板即用户本人）" in src, "本地模型称谓提示"
     assert "task:_paRunsContextTask(t,userText)" in src, "runs task 必须带上下文"
+
+
+def test_composer_multi_seat_hint_discoverable():
+    page = _page()
+    assert (
+        '<textarea id="input" placeholder="和 PA 说点什么…'
+        '（Enter 发送 / Shift+Enter 换行 · 多席：多席:PM,PD 任务）"></textarea>' in page
+    )
+    assert 'class="pa-seat-hint"' in page
+    assert "多席可写：多席:PM,PD …（最多3席）" in page
+    assert "font-size:11px" in page and "color:var(--sub)" in page, "低调可读"
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")
