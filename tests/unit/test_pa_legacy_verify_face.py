@@ -37,6 +37,8 @@ def _plan():
 
 # ---------- 真跑（验收 7/0/2） ----------
 
+# 集成测：需真实 vault/活端 5102；CI 门禁以 -m "not integration" 排除（本地默认仍跑）。
+@pytest.mark.integration
 def test_real_run_returns_7_2():
     doc = run_legacy_7_2()
     assert doc["face"] == "legacy_7_2"

@@ -57,6 +57,8 @@ def test_loopback_200_face_7_2(app, monkeypatch):
     assert d["pass"] != 9, u"⛔ 9/9"
 
 
+# 集成测：需真实 vault/活端 5102；CI 门禁以 -m "not integration" 排除（本地默认仍跑）。
+@pytest.mark.integration
 def test_real_route_face_7_2(app):
     u"""真跑（不注入）：face 7/0/2、C2/C10 PASS、C12/C13 N/A、9 条。"""
     r = _get(app)
