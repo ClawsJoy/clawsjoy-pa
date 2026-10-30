@@ -206,9 +206,23 @@ def test_summon_input_has_multi_seat_hint_below():
     assert "font-size:11px" in src and "color:var(--sub)" in src
 
 
+def test_summon_enter_and_foot_send_real():
+    src = WINDOW.read_text(encoding="utf-8")
+    assert 'id="paSummonIn"' in src
+    assert (
+        r'''onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();paWinSummonSend();}"'''
+        in src
+    )
+    assert 'class="pa-summon-send"' in src and 'onclick="paWinSummonSend()"' in src
+    assert "window.paWinSummonSend = function()" in src
+    assert "return window.paWinSendReal(v);" in src, "Enter/发 必须走真发送"
+    assert "发送中…（尚未受理）" in src
+    assert "已发 · 等回…" not in src, "未受理前 ⛔ 写已发"
+
+
 @pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")
 def test_node_check_both_files():
-    for path in (SEND, STATUS):
+    for path in (SEND, STATUS, WINDOW):
         p = subprocess.run(
             ["node", "--check", str(path)],
             capture_output=True,

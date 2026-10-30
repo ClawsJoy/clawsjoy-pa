@@ -165,12 +165,12 @@
   function summonHtml(){
     return '<div class="pa-summon" id="paSummon" hidden>'
       + '<div class="pa-summon-row">'
-      + '<input id="paSummonIn" type="text" placeholder="说一句话，或拖一件东西进来…" autocomplete="off" aria-label="说一句话">'
+      + '<input id="paSummonIn" type="text" placeholder="说一句话，或拖一件东西进来…" autocomplete="off" aria-label="说一句话" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();paWinSummonSend();}">'
       + '<div class="pa-chips"><button type="button" onclick="paWinMode(\'陪\')">陪</button>'
       + '<button type="button" onclick="paWinMode(\'办\')">办</button>'
       + '<button type="button" onclick="paWinMode(\'查\')">查</button></div></div>'
       + '<div class="pa-summon-hint" style="font-size:11px;color:var(--sub);margin-top:4px;line-height:1.4">多席：多席:PM,PD …</div>'
-      + '<div class="pa-summon-foot"><span>⏎ 发 · Esc 收</span><span id="paSummonAtt">附件 0</span></div></div>';
+      + '<div class="pa-summon-foot"><span><span class="pa-summon-send" style="cursor:pointer;text-decoration:underline dotted" onclick="paWinSummonSend()">⏎ 发</span> · Esc 收</span><span id="paSummonAtt">附件 0</span></div></div>';
   }
 
   window.paWinMode = function(m){ window.paWinSummonMode = m; window.paWinSay('这一句按「' + m + '」办'); };
@@ -911,7 +911,7 @@
 
   window.paWinSendReal = async function(text){
     var box = replyBox();
-    box.hidden = false; box.textContent = '已发 · 等回…';
+    box.hidden = false; box.textContent = '发送中…（尚未受理）';
     var oldIn = document.getElementById('input');
     if(!oldIn){ window.paWinSay('旧发送入口 #input 不在'); if(box) box.textContent='旧发送入口不在'; return; }
     if(typeof window.paSend !== 'function'){ window.paWinSay('旧 paSend 未载'); if(box) box.textContent='旧发送链未载'; return; }
@@ -919,7 +919,7 @@
     var _sb = document.getElementById('paWinStop'); if(_sb){ _sb.disabled = false; }
     window.__paWinSendStopped = false;
     window.__paWinStopResolve = null;
-    window.paWinSay('已发 · 等回…');
+    window.paWinSay('发送中…（尚未受理）');
     try{
       var _sendP;
       if(typeof window.sendAgent === 'function' && typeof activeThread === 'function'){
@@ -969,6 +969,18 @@
     box.textContent = (reply || '（旧线程未取到回文）') + '\n\n— ' + (state || '状态未给') + rec;
     window.paWinSay(state === 'done' ? '回已到' : ('状态：' + (state || '未给')));
     try{ if(window.paWinLiveRefresh) window.paWinLiveRefresh(); }catch(e){}
+  };
+
+  /* P2-9：Summon 真发（唯调 paWinSendReal；⛔ 造第二发送体） */
+  window.paWinSummonSend = function(){
+    var inp = document.getElementById('paSummonIn');
+    var v = inp ? String(inp.value || '').trim() : '';
+    if(!v){ if(inp) inp.focus(); return; }
+    if(inp) inp.value = '';
+    var s = document.getElementById('paSummon');
+    if(s){ s.hidden = true; s.classList.remove('on'); }
+    try{ if(typeof window.paWinSummonClose === 'function') window.paWinSummonClose(false); }catch(e){}
+    return window.paWinSendReal(v);
   };
 
   /* 计划卡（⛔ 直接执行 · PRD §8.4）*/
