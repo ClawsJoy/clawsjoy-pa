@@ -2,6 +2,7 @@
 let abortCtrl=null;
 /* P0-3：work/dev 走 /v9/agent/runs（默认开；置 0 ⇒ 旧 /v9/agent/chat SSE fallback） */
 var PA_RUN_API = 1;
+var PA_LAST_RUN_KEY = 'pa.lastRun';
 try{ window.PA_RUN_API = PA_RUN_API; }catch(e){}
 /* ⭐ pm 1184 §一.⒜：canonical 拒答文之**真源 ＝ 后端**（`POST /v9/pa/ask` 之响应键 `refusal_canon`）
    ⇒ 本件**引用**之；本 `var` 退为**回落**（后端未开此键 ／ 无响应对象时用）· ⛔ 二处各写（承「一处口径」）。
@@ -360,6 +361,47 @@ async function _paPollRun(runId,t,userText){
     delay=1000;
   }
 }
+
+/* ===== P0-4b：刷新恢复 lastRun（run_id/session_id/at） ===== */
+function _paThreadForSession(sid){
+  try{ if(typeof activeThread==='function'){ const a=activeThread(); if(a && a.id===sid) return a; } }catch(e){}
+  try{
+    if(typeof state!=='undefined' && state && state.threads){
+      for(let i=0;i<state.threads.length;i++){ if(state.threads[i] && state.threads[i].id===sid) return state.threads[i]; }
+    }
+  }catch(e){}
+  return {id:sid, msgs:[]};
+}
+function _paRestoreRead(){
+  try{
+    const raw=localStorage.getItem(PA_LAST_RUN_KEY);
+    if(!raw) return null;
+    const d=JSON.parse(raw);
+    return (d && d.run_id) ? d : null;
+  }catch(e){ return null; }
+}
+async function paRestoreLastRun(){
+  if(typeof PA_RUN_API!=='undefined' && Number(PA_RUN_API)===0) return;
+  const rec=_paRestoreRead(); if(!rec || !rec.run_id) return;
+  try{
+    const r=await fetch(API+'/v9/agent/runs/'+encodeURIComponent(rec.run_id),{cache:'no-store'});
+    if(r.status===404){
+      try{ localStorage.removeItem(PA_LAST_RUN_KEY); }catch(e){}
+      return;                                  // 未知/404 ⇒ 清 key
+    }
+    const d=await r.json().catch(function(){return null;});
+    if(!r.ok || !d || d.ok===false) return;    // 其他错误：留 key，下次刷新再试
+    paRun.runId=rec.run_id; paRun.afterSeq=0; paRun.threadId=rec.session_id || '';
+    paRunSrc='GET /v9/agent/runs/'+rec.run_id+'（刷新恢复）';
+    _paApplyRunState(d);
+    if(d.state==='queued' || d.state==='running'){
+      const t=_paThreadForSession(rec.session_id);
+      await _paPollRun(rec.run_id,t,'');       // queued/running ⇒ 续 poll
+    }
+    /* done/failed/cancelled：仅状态行显示上次终态，⛔ 重复 addMsg/recordPaTurn */
+  }catch(e){ /* 网络未达：留 key，下次刷新再试 */ }
+}
+
 async function sendAgentViaRuns(t,userText){
   const _cid=_paRunUuid();
   const _body={user_id:curUser(),session_id:t.id,task:(userText||''),client_request_id:_cid};
@@ -376,6 +418,8 @@ async function sendAgentViaRuns(t,userText){
       paSetState('failed',String(_why).slice(0,60)); return;
     }
     paRun.runId=d.run_id;
+    /* P0-4b：lastRun 供刷新恢复（终态/停止后保留，唯 404 清） */
+    try{ localStorage.setItem(PA_LAST_RUN_KEY, JSON.stringify({run_id:d.run_id,session_id:t.id,at:Date.now()})); }catch(e){}
     _paApplyRunState(d);
     await _paPollRun(d.run_id,t,userText);
   }catch(e){
@@ -654,4 +698,16 @@ try{ window.paAttachPick = paAttachPick; window.paAttachOnPick = paAttachOnPick;
     document.addEventListener('DOMContentLoaded', function(){ setTimeout(wrapStop, 0); });
   }else{ setTimeout(wrapStop, 0); }
   try{ window.__paRunsWrapStop = wrapStop; }catch(e){}
+})();
+
+/* P0-4b：页面初始化恢复 lastRun（终端/未知在 paRestoreLastRun 内处理）。 */
+(function(){
+  function init(){
+    if(typeof PA_RUN_API !== 'undefined' && Number(PA_RUN_API)===0) return;
+    if(typeof paRestoreLastRun === 'function'){ setTimeout(paRestoreLastRun, 0); }
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 0); });
+  }else{ setTimeout(init, 0); }
+  try{ window.paRestoreLastRun = paRestoreLastRun; }catch(e){}
 })();

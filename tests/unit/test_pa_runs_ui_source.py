@@ -91,6 +91,35 @@ def test_status_has_queued_and_cancelled():
     assert "paRun.state==='queued'" in src or "paRun.state==='approval' || paRun.state==='queued'" in src
 
 
+def test_lastrun_written_on_submit():
+    src = _send()
+    assert "PA_LAST_RUN_KEY = 'pa.lastRun'" in src
+    assert "localStorage.setItem(PA_LAST_RUN_KEY" in src
+    assert "run_id:d.run_id" in src and "session_id:t.id" in src and "at:Date.now()" in src
+
+
+def test_restore_reads_get_and_continues_poll_or_terminal():
+    src = _send()
+    assert "async function paRestoreLastRun(" in src
+    assert "localStorage.getItem(PA_LAST_RUN_KEY)" in src
+    assert "API+'/v9/agent/runs/'+encodeURIComponent(rec.run_id)" in src
+    assert "d.state==='queued' || d.state==='running'" in src
+    assert "await _paPollRun(rec.run_id,t,'')" in src
+    assert "_paApplyRunState(d)" in src
+    # 终态恢复只显示状态行，⛔ 重复落消息（restore 函数内无 addMsg/recordPaTurn）
+    body = src.split("async function paRestoreLastRun(", 1)[1].split("async function sendAgentViaRuns(", 1)[0]
+    assert "addMsg(" not in body and "recordPaTurn(" not in body
+
+
+def test_restore_clears_only_on_404_and_init_hook():
+    src = _send()
+    assert "if(r.status===404)" in src
+    assert "localStorage.removeItem(PA_LAST_RUN_KEY)" in src
+    assert src.count("removeItem(PA_LAST_RUN_KEY)") == 1, "唯 404 清 lastRun"
+    assert "document.addEventListener('DOMContentLoaded'" in src
+    assert "setTimeout(paRestoreLastRun, 0)" in src
+
+
 @pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")
 def test_node_check_both_files():
     for path in (SEND, STATUS):
