@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
-u"""T125：core/pa/legacy_verify_face 产品化 7+2 之测.
+"""T125：core/pa/legacy_verify_face 产品化 7+2 之测.
 
 判据：
   · run_legacy_7_2() 真跑 ⇒ face='legacy_7_2'、pass=7/fail=0/na=2、9 条齐；
   · C2 读活端 5102 恰 6 全等（dev14 / 端点不可用 ⇒ FAIL）；C10 本包容错 walker 真 PASS；
   · C12/C13 N/A（⛔ 9/9）；⛔ import 顶层 legacy_verify ／ ⛔ WSL ／ ⛔ 建路由。
 """
+
 import sys
 from pathlib import Path
 
@@ -37,6 +37,7 @@ def _plan():
 
 # ---------- 真跑（验收 7/0/2） ----------
 
+
 # 集成测：需真实 vault/活端 5102；CI 门禁以 -m "not integration" 排除（本地默认仍跑）。
 @pytest.mark.integration
 def test_real_run_returns_7_2():
@@ -47,7 +48,7 @@ def test_real_run_returns_7_2():
     st = {r["id"]: r["status"] for r in doc["results"]}
     assert st["C2"] == "PASS" and st["C10"] == "PASS"
     assert st["C12"] == "N/A" and st["C13"] == "N/A"
-    assert doc["pass"] != 9, u"7+2 ⛔ 9/9"
+    assert doc["pass"] != 9, "7+2 ⛔ 9/9"
 
 
 def test_injected_profile_7_2():
@@ -58,9 +59,9 @@ def test_injected_profile_7_2():
 
 # ---------- C2：活端 6 全等 ----------
 
+
 def _live(ids, count=None):
-    return {"ok": True, "count": len(ids) if count is None else count,
-            "rows": [{"id": i} for i in ids]}
+    return {"ok": True, "count": len(ids) if count is None else count, "rows": [{"id": i} for i in ids]}
 
 
 def _defaults():
@@ -68,8 +69,7 @@ def _defaults():
 
 
 def test_c2_live_six_exact_pass(monkeypatch):
-    monkeypatch.setattr(F, "_fetch_live_roster",
-                        lambda url=F.LIVE_ROSTER_URL, timeout=5: (_live(_defaults()), ""))
+    monkeypatch.setattr(F, "_fetch_live_roster", lambda url=F.LIVE_ROSTER_URL, timeout=5: (_live(_defaults()), ""))
     got = F.check_c2()
     assert got["status"] == "PASS", got
     assert got["evidence"]["url"] == "http://127.0.0.1:5102/v9/pa/roster"
@@ -77,18 +77,17 @@ def test_c2_live_six_exact_pass(monkeypatch):
 
 
 def test_c2_dev14_fail(monkeypatch):
-    ids = _defaults() + ["dev_%d" % i for i in range(8)]
-    monkeypatch.setattr(F, "_fetch_live_roster",
-                        lambda url=F.LIVE_ROSTER_URL, timeout=5: (_live(ids), ""))
+    ids = _defaults() + [f"dev_{i}" for i in range(8)]
+    monkeypatch.setattr(F, "_fetch_live_roster", lambda url=F.LIVE_ROSTER_URL, timeout=5: (_live(ids), ""))
     got = F.check_c2()
     assert got["status"] == "FAIL" and got["evidence"]["count"] == 14
     assert got["evidence"]["exact_eq"] is False
 
 
 def test_c2_unavailable_fail(monkeypatch):
-    monkeypatch.setattr(F, "_fetch_live_roster",
-                        lambda url=F.LIVE_ROSTER_URL, timeout=5:
-                        (None, "活端不可用：URLError（%s）" % url))
+    monkeypatch.setattr(
+        F, "_fetch_live_roster", lambda url=F.LIVE_ROSTER_URL, timeout=5: (None, f"活端不可用：URLError（{url}）")
+    )
     got = F.check_c2()
     assert got["status"] == "FAIL"
     assert "活端不可用" in got["evidence"]["error"]
@@ -96,12 +95,12 @@ def test_c2_unavailable_fail(monkeypatch):
 
 def test_c2_subset_not_equal_fail(monkeypatch):
     ids = _defaults()[:5] + ["extra"]
-    monkeypatch.setattr(F, "_fetch_live_roster",
-                        lambda url=F.LIVE_ROSTER_URL, timeout=5: (_live(ids), ""))
+    monkeypatch.setattr(F, "_fetch_live_roster", lambda url=F.LIVE_ROSTER_URL, timeout=5: (_live(ids), ""))
     assert F.check_c2()["status"] == "FAIL"
 
 
 # ---------- C7 / C5 / C6 / C9 ----------
+
 
 def test_c7_cases_pass():
     got = F.check_c7()
@@ -114,9 +113,11 @@ def test_c7_cases_pass():
 def test_c5_sandbox_rel_schema(monkeypatch, tmp_path):
     p = tmp_path / "a.md"
     p.write_text("x", encoding="utf-8")
-    monkeypatch.setattr(F, "_knowledge_files_ok",
-                        lambda: {"K": {"schema": ["sandbox_rel"], "path": str(p),
-                                       "exists": True, "resolve_error": ""}})
+    monkeypatch.setattr(
+        F,
+        "_knowledge_files_ok",
+        lambda: {"K": {"schema": ["sandbox_rel"], "path": str(p), "exists": True, "resolve_error": ""}},
+    )
     got = F.check_c5()
     assert got["status"] == "PASS" and got["evidence"]["schema_compatible"] is True
 
@@ -153,6 +154,7 @@ def test_c9_fail_unhealthy(monkeypatch):
 
 
 # ---------- C10：本包 walker ----------
+
 
 def test_c10_uses_own_walker(tmp_path, monkeypatch):
     (tmp_path / "a.md").write_text("a", encoding="utf-8")
@@ -222,6 +224,7 @@ def test_walker_scandir_error_keeps_siblings(tmp_path, monkeypatch):
 
 # ---------- C12/C13 N/A ----------
 
+
 def test_c12_c13_na_not_pass():
     for cid, fn in (("C12", F.check_c12), ("C13", F.check_c13)):
         got = fn()
@@ -231,12 +234,14 @@ def test_c12_c13_na_not_pass():
 
 # ---------- 边界：⛔ import 顶层 legacy_verify / ⛔ WSL / ⛔ 建路由 ----------
 
+
 def _pkg_sources():
     return sorted(PKG.glob("*.py"))
 
 
 def test_no_top_level_legacy_verify_import():
     import re
+
     pat = re.compile(r"^\s*(?:from|import)\s+legacy_verify\b", re.MULTILINE)
     for p in _pkg_sources():
         src = p.read_text(encoding="utf-8")

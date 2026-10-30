@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
-u"""T128：GET /v9/pa/verify/legacy_7_2 只读路由之测.
+"""T128：GET /v9/pa/verify/legacy_7_2 只读路由之测.
 
 判据：
   · 环回 ⇒ 200，{ok,version,face='legacy_7_2',pass:7,fail:0,na:2,results[]}；
   · 非环回 ⇒ 403 owner_required（⛔ token · ⛔ 调 run）；唯 GET（POST 405）；
   · 旧 /v9/pa/verify 仍 404；⛔ 9/9 ／ ⛔ 14/14（face 漂移 ⇒ 200 但 ok=false）。
 """
+
 import sys
 from pathlib import Path
 
@@ -33,14 +33,17 @@ def app(tmp_path, monkeypatch):
 
 
 def _get(app, remote="127.0.0.1", headers=None):
-    return app.test_client().get(URL, environ_overrides={"REMOTE_ADDR": remote},
-                                 headers=headers or {})
+    return app.test_client().get(URL, environ_overrides={"REMOTE_ADDR": remote}, headers=headers or {})
 
 
 def _doc(face="legacy_7_2", npass=7, nfail=0, nna=2):
-    return {"face": face, "pass": npass, "fail": nfail, "na": nna,
-            "results": [{"id": "C1", "status": "PASS", "evidence": {}},
-                        {"id": "C12", "status": "N/A", "evidence": {}}]}
+    return {
+        "face": face,
+        "pass": npass,
+        "fail": nfail,
+        "na": nna,
+        "results": [{"id": "C1", "status": "PASS", "evidence": {}}, {"id": "C12", "status": "N/A", "evidence": {}}],
+    }
 
 
 def test_loopback_200_face_7_2(app, monkeypatch):
@@ -54,13 +57,13 @@ def test_loopback_200_face_7_2(app, monkeypatch):
     assert (d["pass"], d["fail"], d["na"]) == (7, 0, 2)
     assert d["version"] == __version__
     assert d["results"] == _doc()["results"]
-    assert d["pass"] != 9, u"⛔ 9/9"
+    assert d["pass"] != 9, "⛔ 9/9"
 
 
 # 集成测：需真实 vault/活端 5102；CI 门禁以 -m "not integration" 排除（本地默认仍跑）。
 @pytest.mark.integration
 def test_real_route_face_7_2(app):
-    u"""真跑（不注入）：face 7/0/2、C2/C10 PASS、C12/C13 N/A、9 条。"""
+    """真跑（不注入）：face 7/0/2、C2/C10 PASS、C12/C13 N/A、9 条。"""
     r = _get(app)
     assert r.status_code == 200, r.get_data(as_text=True)
     d = r.get_json()
@@ -87,7 +90,7 @@ def test_non_loopback_403_owner_required(app, monkeypatch):
     assert r.status_code == 403, r.get_data(as_text=True)
     d = r.get_json()
     assert d["ok"] is False and d["error"] == "owner_required", d
-    assert calls == [], u"非环回 ⛔ 调 run"
+    assert calls == [], "非环回 ⛔ 调 run"
 
 
 def test_non_loopback_with_token_still_403(app):
@@ -99,27 +102,28 @@ def test_non_loopback_with_token_still_403(app):
 def test_post_405(app, monkeypatch):
     calls = []
     monkeypatch.setattr(LV, "run_legacy_7_2", lambda: calls.append(1) or _doc())
-    r = app.test_client().post(URL, environ_overrides={"REMOTE_ADDR": "127.0.0.1"},
-                               json={})
+    r = app.test_client().post(URL, environ_overrides={"REMOTE_ADDR": "127.0.0.1"}, json={})
     assert r.status_code == 405, r.get_data(as_text=True)
-    assert calls == [], u"POST 405 ⇒ ⛔ 调 run"
+    assert calls == [], "POST 405 ⇒ ⛔ 调 run"
 
 
 def test_old_verify_path_still_404(app):
     r = app.test_client().get(OLD, environ_overrides={"REMOTE_ADDR": "127.0.0.1"})
     assert r.status_code == 404, r.get_data(as_text=True)
     rules = [str(r.rule) for r in app.url_map.iter_rules()]
-    assert OLD not in rules, u"⛔ 占旧 /v9/pa/verify"
+    assert OLD not in rules, "⛔ 占旧 /v9/pa/verify"
 
 
-@pytest.mark.parametrize("face,npass,nfail,nna", [
-    ("legacy_9_9", 9, 0, 0),
-    ("legacy_14_14", 14, 0, 0),
-])
+@pytest.mark.parametrize(
+    "face,npass,nfail,nna",
+    [
+        ("legacy_9_9", 9, 0, 0),
+        ("legacy_14_14", 14, 0, 0),
+    ],
+)
 def test_drift_face_ok_false(app, monkeypatch, face, npass, nfail, nna):
-    u"""⛔ 9/9 ／ ⛔ 14/14：face 漂移 ⇒ HTTP 200 但 ok=false（⛔ 冒成功）。"""
-    monkeypatch.setattr(LV, "run_legacy_7_2",
-                        lambda: _doc(face=face, npass=npass, nfail=nfail, nna=nna))
+    """⛔ 9/9 ／ ⛔ 14/14：face 漂移 ⇒ HTTP 200 但 ok=false（⛔ 冒成功）。"""
+    monkeypatch.setattr(LV, "run_legacy_7_2", lambda: _doc(face=face, npass=npass, nfail=nfail, nna=nna))
     r = _get(app)
     assert r.status_code == 200
     d = r.get_json()
