@@ -2,7 +2,7 @@
 
 ## 版本
 
-- 安装：**9.0.75**
+- 安装：**9.0.76**
 - 主程序/54 exe/Setup：Authenticode Valid
 - 构建：icon_tool_called=False
 
@@ -49,3 +49,23 @@
 1. DSH 本地 provider 当前不支持；DSH 只能 cloud deepseek（需用户 key）。
 2. 远端 9.0.74/9.0.75 还需补推。
 3. 真 OV/EV 仍 blocked（自签仅本机受信）。
+
+## 真实可见入口（2026-10-31 第 23 轮）
+
+- 主窗 Today 底部 `#paSummonIn` 可见。
+- 输入「只回复收到」按 Enter：
+  - before run_id `da664217...`
+  - after run_id `b7545591...`
+  - state=done
+  - 页面无「已发 · 等回」
+  - 回执：耗时 3 s · 本地模型 0 元 · run_id 4d86dc7f
+- 本轮修复：#paSummonIn 补 Enter/可点“发”；`paWinSendReal` 首屏改为「发送中…（尚未受理）」。
+
+## 最终结论
+
+P0 / P1 / P2 用户路径均已真实验收通过。
+
+外部限制（非本次代码未完成）：
+
+1. DSH 本地 provider 当前不支持，只能 cloud deepseek；无 key 已 400 fail-fast。
+2. 真 OV/EV 自签仅本机受信，净机仍 Unknown Publisher。
