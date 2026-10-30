@@ -60,12 +60,21 @@ class _LocalOllamaAdapter:
         _out = _ollama_execute_with_tools(
             messages=messages, tools=tools, model=self.model, temperature=temperature, max_tokens=max_tokens
         )
-        # 本地小模型 tool-call JSON 偶发不闭合 ⇒ 去掉 tools 再试一次（保留纯聊天能力）。
-        _err = str((_out or {}).get("error") or "")
-        if tools and not _out.get("success") and "Value looks like object" in _err:
+        if not (_out or {}).get("success"):
+            # T141：首次（带 tools）失败后**无条件** tools=[] 重试 —— ⛔ 再要求 tools truthy /
+            # ⛔ 以特定错误串（小模型 tool-call JSON 偶发不闭合之 400）为门；仍失败给明确人话错误。
+            _first_err = str((_out or {}).get("error") or "")[:240]
             _out = _ollama_execute_with_tools(
                 messages=messages, tools=[], model=self.model, temperature=temperature, max_tokens=max_tokens
             )
+            if not (_out or {}).get("success"):
+                _retry_err = str((_out or {}).get("error") or "")[:240]
+                _failed = dict(_out or {})
+                _failed["success"] = False
+                _failed["error"] = "本地 Ollama 调用失败（带 tools 与 tools=[] 均败）：首次={}；重试={}".format(
+                    _first_err or "未知", _retry_err or "未知"
+                )
+                return _failed
         return _out
 
 

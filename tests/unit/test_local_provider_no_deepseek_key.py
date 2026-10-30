@@ -132,6 +132,92 @@ def test_local_adapter_delegates_to_ollama(monkeypatch):
     assert captured["temperature"] == 0.2
 
 
+def _tool_defs():
+    return [
+        {
+            "type": "function",
+            "function": {"name": "noop", "description": "noop", "parameters": {"type": "object", "properties": {}}},
+        }
+    ]
+
+
+def _fake_ollama(monkeypatch, results):
+    calls = []
+
+    def _fake(messages, tools, model="", temperature=0.7, max_tokens=2000):
+        calls.append(
+            {"messages": messages, "tools": tools, "model": model, "temperature": temperature, "max_tokens": max_tokens}
+        )
+        return results[min(len(calls) - 1, len(results) - 1)]
+
+    import core.gateway.execute_agent_task as eat
+
+    monkeypatch.setattr(eat, "_ollama_execute_with_tools", _fake)
+    return calls
+
+
+def test_local_adapter_retries_tools_empty_on_any_error(monkeypatch):
+    """T141：首败后**无条件** tools=[] 重试（错误串不命中旧判据也重试）。"""
+    calls = _fake_ollama(
+        monkeypatch,
+        [
+            {"success": False, "error": "400 tool-call JSON 不闭合"},
+            {"success": True, "data": {"choices": [{"message": {"content": "收到"}}]}, "tokens": 1},
+        ],
+    )
+    a = entry._LocalOllamaAdapter("ollama")
+    out = a.execute_with_tools(messages=[{"role": "user", "content": "hi"}], tools=_tool_defs(), max_tokens=32)
+    assert out.get("success") is True, out
+    assert len(calls) == 2, calls
+    assert calls[0]["tools"] == _tool_defs()
+    assert calls[1]["tools"] == [], "重试必须 tools=[]"
+
+
+def test_local_adapter_retries_even_when_tools_empty(monkeypatch):
+    """无条件：即便首呼 tools=[] 失败亦重试一次（不要求 tools truthy）。"""
+    calls = _fake_ollama(
+        monkeypatch,
+        [
+            {"success": False, "error": "transient"},
+            {"success": True, "data": {"choices": [{"message": {"content": "ok"}}]}},
+        ],
+    )
+    a = entry._LocalOllamaAdapter("ollama")
+    out = a.execute_with_tools(messages=[{"role": "user", "content": "hi"}], tools=[])
+    assert out.get("success") is True
+    assert len(calls) == 2
+
+
+def test_local_adapter_retry_also_fails_explicit_error(monkeypatch):
+    """带 tools 与 tools=[] 均败 ⇒ success=false ＋ 明确人话（含两因）。"""
+    calls = _fake_ollama(
+        monkeypatch,
+        [
+            {"success": False, "error": "400 tool-call JSON 不闭合"},
+            {"success": False, "error": "Ollama 连接被拒"},
+        ],
+    )
+    a = entry._LocalOllamaAdapter("ollama")
+    out = a.execute_with_tools(messages=[{"role": "user", "content": "hi"}], tools=_tool_defs())
+    assert out.get("success") is False, out
+    assert len(calls) == 2
+    assert "本地 Ollama 调用失败" in out["error"], out
+    assert "首次=" in out["error"] and "重试=" in out["error"], out
+    assert "400 tool-call JSON" in out["error"] and "连接被拒" in out["error"], out
+
+
+def test_local_adapter_success_first_no_retry(monkeypatch):
+    calls = _fake_ollama(
+        monkeypatch,
+        [
+            {"success": True, "data": {"choices": [{"message": {"content": "ok"}}]}},
+        ],
+    )
+    a = entry._LocalOllamaAdapter("ollama")
+    out = a.execute_with_tools(messages=[{"role": "user", "content": "hi"}], tools=_tool_defs())
+    assert out.get("success") is True and len(calls) == 1
+
+
 def test_no_key_local_real_ollama_reply(monkeypatch):
     """无 key ＋ local ⇒ 本地 Ollama 真回话（需本机 11434；本地默认可跑）。"""
     _no_key(monkeypatch)
@@ -142,3 +228,16 @@ def test_no_key_local_real_ollama_reply(monkeypatch):
     assert out.get("success") is True, out
     content = ((out.get("data") or {}).get("choices") or [{}])[0].get("message", {}).get("content") or ""
     assert str(content).strip(), out
+
+
+def test_no_key_local_real_ollama_reply_with_tools(monkeypatch):
+    """真实本地无 key ＋ 带 tools ⇒ success=true（失败则走 tools=[] 重试）。"""
+    _no_key(monkeypatch)
+    a = entry._make_model_adapter("ollama", "")
+    out = a.execute_with_tools(
+        messages=[{"role": "user", "content": "用一句话说明你在"}],
+        tools=_tool_defs(),
+        temperature=0.0,
+        max_tokens=48,
+    )
+    assert out.get("success") is True, out
