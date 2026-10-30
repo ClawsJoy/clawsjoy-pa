@@ -223,3 +223,60 @@ def test_old_chat_route_kept(env_factory):
     rules = {str(r.rule) for r in client.application.url_map.iter_rules()}
     assert "/v9/agent/chat" in rules
     assert "/v9/agent/runs" in rules and "/v9/agent/runs/<run_id>" in rules
+
+
+# ---------- P2-4：seats 前缀（不改 queue schema） ----------
+
+
+def test_post_seats_prefixes_task_dedup_max3(env_factory):
+    client, svc, _closed = env_factory(_ok_runner, auto_start=False)
+    r = _post(client, "原任务", seats=["PM", "PD", "PM", "TD", "CW"])
+    assert r.status_code == 202, r.get_data(as_text=True)
+    task = svc.queue.list_runs()[0]["task"]
+    assert task == "【多席编排】seats=PM,PD,TD\n原任务", "去重/限 3/仅前缀承载，不改 schema"
+
+
+def test_post_empty_or_invalid_seats_keeps_task(env_factory):
+    client, svc, _closed = env_factory(_ok_runner, auto_start=False)
+    r = _post(client, "原任务", seats=["XX", "PM"])
+    assert r.status_code == 202
+    assert svc.queue.list_runs()[0]["task"] == "【多席编排】seats=PM\n原任务"
+    client2, svc2, _closed2 = env_factory(_ok_runner, auto_start=False)
+    r2 = _post(client2, "原任务", seats=[])
+    assert r2.status_code == 202
+    assert svc2.queue.list_runs()[0]["task"] == "原任务"
+
+
+# ---------- P2-2：DSH 无 key fail-fast ----------
+
+
+def test_dsh_without_key_400_not_enqueued(env_factory, monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    client, svc, _closed = env_factory(_ok_runner, auto_start=False)
+    r = _post(client, model="dsh")
+    assert r.status_code == 400, r.get_data(as_text=True)
+    d = r.get_json()
+    assert d["ok"] is False
+    assert d["error"] == "dsh_requires_key" and d["code"] == "dsh_requires_key"
+    assert "run_id" not in d
+    assert svc.queue.list_runs() == [], "无 key ⛔ 建 run / ⛔ 入队"
+    assert svc.snapshot()["queue_depth"] == 0
+
+
+def test_dsh_headless_without_key_400(env_factory, monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    client, svc, _closed = env_factory(_ok_runner, auto_start=False)
+    r = _post(client, model="dsh-headless")
+    assert r.status_code == 400
+    assert r.get_json()["code"] == "dsh_requires_key"
+    assert svc.queue.list_runs() == []
+
+
+def test_dsh_with_key_not_blocked(env_factory, monkeypatch):
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+    client, svc, _closed = env_factory(_ok_runner, auto_start=False)
+    r = _post(client, model="dsh")
+    assert r.status_code == 202, r.get_data(as_text=True)
+    d = r.get_json()
+    assert d["ok"] is True and d["state"] == "queued" and d["run_id"]
+    assert len(svc.queue.list_runs()) == 1, "有 key ⇒ 正常入队（fake runner，不跑真 dsh）"

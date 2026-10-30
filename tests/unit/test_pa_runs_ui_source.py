@@ -11,13 +11,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-PAGE = ROOT / "web" / "pa.html"
 SEND = ROOT / "web" / "pa" / "faces" / "send.js"
 STATUS = ROOT / "web" / "pa" / "faces" / "status.js"
-
-
-def _page():
-    return PAGE.read_text(encoding="utf-8")
 
 
 def _send():
@@ -39,7 +34,7 @@ def test_work_dev_route_uses_runs_with_flag():
 def test_submit_contract_has_client_request_id_and_model():
     src = _send()
     assert "client_request_id" in src
-    assert "task:_paRunsContextTask(t,userText)" in src
+    assert "task:_paRunsContextTask(t,_taskBase)" in src
     assert "paModelSel()" in src
     assert "API+'/v9/agent/runs'" in src
     assert "r.status===429" in src and "queue_full" in src
@@ -162,18 +157,42 @@ def test_runs_context_recent8_exclude_current_truncate_task():
     assert "'老板：'" in src and "'PA：'" in src
     assert "【当前任务】" in src
     assert "（对话说明：老板即用户本人）" in src, "本地模型称谓提示"
-    assert "task:_paRunsContextTask(t,userText)" in src, "runs task 必须带上下文"
+    assert "task:_paRunsContextTask(t,_taskBase)" in src, "runs task 必须带上下文"
 
 
-def test_composer_multi_seat_hint_discoverable():
-    page = _page()
-    assert (
-        '<textarea id="input" placeholder="和 PA 说点什么…'
-        '（Enter 发送 / Shift+Enter 换行 · 多席：多席:PM,PD 任务）"></textarea>' in page
-    )
-    assert 'class="pa-seat-hint"' in page
-    assert "多席可写：多席:PM,PD …（最多3席）" in page
-    assert "font-size:11px" in page and "color:var(--sub)" in page, "低调可读"
+def test_runs_done_receipt_duration_cost_runid_tail():
+    src = _send()
+    assert "function _paRunReceiptLine(runId,secs)" in src
+    assert ".slice(-8)" in src, "run_id 尾 8"
+    assert "'耗时 '+secs+' s · 本地模型 0 元 · run_id '" in src
+    body = src.split("async function _paPollRun(", 1)[1].split("/* ===== P0-4b", 1)[0]
+    assert body.count("recordPaTurn(") == 1, "done 只落盘一次"
+    assert "origin:'local'" in body and "run_id:_rid" in body
+    assert "_receiptRunId!==_rid" in body, "重复 poll ⛔ 重复落盘"
+    assert "run_id 尾 '+_tail" in body, "失败/取消附 run_id 尾"
+
+
+def test_ui_multi_seat_parse_body_and_render():
+    src = _send()
+    assert "function _paRunsParseSeats(text)" in src
+    assert "(?:多席|seats)" in src and "[:：]" in src
+    assert "if(!seats.length) return {seats:[], task:s};" in src
+    assert "if(_parsed.seats.length) _body.seats=_parsed.seats;" in src, "无前缀 ⛔ 传 seats"
+    assert "_body={user_id:curUser(),session_id:t.id,task:_paRunsContextTask(t,_taskBase)" in src
+    assert "各席结论：" in src
+    assert ".slice(0,300)" in src
+    body = src.split("async function _paPollRun(", 1)[1].split("/* ===== P0-4b", 1)[0]
+    i_seats = body.find("各席结论：")
+    i_synth = body.find("addMsg('assistant',content")
+    assert i_seats > 0 and i_synth > i_seats, "先各席结论，再综合 content"
+
+
+def test_multi_seat_prefix_skips_ask_gate():
+    src = _send()
+    assert "function _paRunsIsMultiSeat(text)" in src
+    assert r"return /^\s*(?:多席|seats)\s*[:：]/i.test(String(text||''));" in src
+    assert "paLooksLikeKnowledgeQuestion(text) && !_paRunsIsMultiSeat(text)" in src, "多席前缀须跳过 ask 闸"
+    assert "paAskGate(text)" in src, "普通问句仍走有据才答"
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")

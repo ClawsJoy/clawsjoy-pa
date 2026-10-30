@@ -5,6 +5,7 @@
 runner 先接现有 run_chat_entry；本文件不 import DSH/不建第二 worker。
 """
 
+import os
 import threading
 import uuid
 
@@ -12,6 +13,16 @@ from flask import Blueprint, Response, jsonify, request, stream_with_context
 
 bp = Blueprint("v9_chat_routes", __name__)
 _deps = {}
+
+# P2-4：多席顺序编排（task 前缀承载 seats；⛔ 改 queue schema）
+MULTI_SEAT_PREFIX = "【多席编排】seats="
+MAX_SEATS = 3
+SEAT_ROLES = {
+    "PM": "你是 PM（产品）。负责产品方向、用户价值、范围与优先级裁决；给出明确的取舍理由与验收边界。",
+    "PD": "你是 PD（技术）。负责技术方案、架构、依赖与可行性验证；指出风险、替代方案与落地步骤。",
+    "CW": "你是 CW（文案/内容）。负责文案、表达、信息结构与交付物质量；输出可直接使用的成稿建议。",
+    "TD": "你是 TD（测试/质量）。负责测试策略、质量门槛、回归范围与风险；给出可执行的验证清单。",
+}
 
 _run_service = None
 _run_service_lock = threading.Lock()
@@ -82,6 +93,100 @@ def _get_run_service():
 
         _run_service = RunService(queue=AsyncRunQueue(), runner=_chat_entry_runner, auto_start=True)
         return _run_service
+
+
+def _normalize_seats(raw):
+    """去重/大写/限 3 席，仅 PM/PD/CW/TD。"""
+    out = []
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            seat = str(item or "").strip().upper()
+            if seat in SEAT_ROLES and seat not in out:
+                out.append(seat)
+                if len(out) >= MAX_SEATS:
+                    break
+    return out
+
+
+def _split_multi_task(task):
+    """解析 task 前缀；返回 (seats, 原 task)，非多席 ⇒ ([], task)。"""
+    text = str(task or "")
+    if not text.startswith(MULTI_SEAT_PREFIX):
+        return [], text
+    head, sep, body = text.partition("\n")
+    if not sep:
+        return [], text
+    seats = _normalize_seats(head[len(MULTI_SEAT_PREFIX) :].split(","))
+    return seats, body
+
+
+def _ollama_content(got):
+    try:
+        return str(((got.get("data") or {}).get("choices") or [{}])[0].get("message", {}).get("content") or "")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _run_multi_seats(ollama, model, seats, task):
+    """顺序每席本地 Ollama（角色 system prompt）→ 一次综合 prompt。"""
+    seat_results = []
+    for seat in seats:
+        messages = [{"role": "system", "content": SEAT_ROLES[seat]}, {"role": "user", "content": task}]
+        try:
+            got = ollama(messages=messages, tools=[], model=model, temperature=0.7, max_tokens=1500)
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "status": "failed",
+                "error": f"multi-seat {seat}: {type(exc).__name__}: {str(exc)[:300]}",
+                "reason": "runner_multi_seat_failed",
+            }
+        if not isinstance(got, dict) or got.get("success") is not True:
+            err = got.get("error") if isinstance(got, dict) else "non-dict result"
+            return {
+                "status": "failed",
+                "error": f"multi-seat {seat}: {str(err or 'seat failed')[:300]}",
+                "reason": "runner_multi_seat_failed",
+            }
+        seat_results.append({"seat": seat, "content": _ollama_content(got)})
+    blocks = "\n\n".join(f"【{r['seat']}】{r['content']}" for r in seat_results)
+    synth = (
+        "你是多席编排的综合者。以下是各席对同一任务的意见；请消解冲突、保留关键理由，"
+        "输出一份可直接执行的最终答复（不要逐席复述）。\n\n【原始任务】" + task + "\n\n【各席意见】\n" + blocks
+    )
+    try:
+        got = ollama(
+            messages=[
+                {"role": "system", "content": "你是多席编排的综合者，负责给出最终统一答复。"},
+                {"role": "user", "content": synth},
+            ],
+            tools=[],
+            model=model,
+            temperature=0.7,
+            max_tokens=1500,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "status": "failed",
+            "error": f"multi-seat synthesis: {type(exc).__name__}: {str(exc)[:300]}",
+            "reason": "runner_multi_seat_synthesis",
+        }
+    if not isinstance(got, dict) or got.get("success") is not True:
+        err = got.get("error") if isinstance(got, dict) else "non-dict result"
+        return {
+            "status": "failed",
+            "error": f"multi-seat synthesis: {str(err or 'synthesis failed')[:300]}",
+            "reason": "runner_multi_seat_synthesis",
+        }
+    return {
+        "status": "done",
+        "output": {
+            "ok": True,
+            "content": _ollama_content(got),
+            "seats": seat_results,
+            "model": "multi-seat",
+        },
+        "error": "",
+    }
 
 
 def _dsh_run(task, timeout):
@@ -170,7 +275,12 @@ def _chat_entry_runner(record):
             "output": {"route": route, "kind": kind},
         }
     model = str(route.get("model") or model_in)
-    messages = [{"role": "user", "content": str(record.get("task") or "")}]
+    seats, base_task = _split_multi_task(str(record.get("task") or ""))
+    if len(seats) >= 2:
+        return _run_multi_seats(_ollama_execute_with_tools, model, seats, base_task)
+    # 单席/无 seats ⇒ 原单次路（单席仅剥前缀，不触发多席综合）
+    single_task = base_task if seats else str(record.get("task") or "")
+    messages = [{"role": "user", "content": single_task}]
     try:
         got = _ollama_execute_with_tools(messages=messages, tools=[], model=model, temperature=0.7, max_tokens=2000)
     except Exception as exc:  # noqa: BLE001
@@ -216,6 +326,14 @@ def v9_agent_runs_post():
                 break
     if not task:
         return jsonify({"ok": False, "error": "task_required", "code": "bad_request"}), 400
+    seats = _normalize_seats(p.get("seats"))
+    if seats:
+        # 多席编排：仅以 task 前缀承载，queue schema 不变
+        task = MULTI_SEAT_PREFIX + ",".join(seats) + "\n" + task
+    model_in = str(p.get("model") or "").strip()
+    # P2-2：DSH 无 DEEPSEEK_API_KEY ⇒ fail-fast 400（⛔ 不入队、⛔ 不跑必然失败）
+    if model_in.lower().startswith("dsh") and not os.environ.get("DEEPSEEK_API_KEY"):
+        return jsonify({"ok": False, "error": "dsh_requires_key", "code": "dsh_requires_key"}), 400
     cid = str(p.get("client_request_id") or "").strip() or uuid.uuid4().hex
     svc = _get_run_service()
     try:

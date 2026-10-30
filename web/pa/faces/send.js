@@ -41,7 +41,8 @@ async function paSend(){
     /* P9 · BUG-2：知识/事实问句先过「有据才答」闸（先检索、后作答）；
        库里无据 ⇒ **当场拒答**且⛔不进模型、⛔不进执行循环（没有据，就没有可编的空间）。 */
     let _askMeta = null;   /* ⭐ pm 1184 §一.⒝：本轮答之**源标**（知其实方传 · ⛔ 冒） */
-    if(paLooksLikeKnowledgeQuestion(text)){
+    /* P2-6：多席/seats 前缀 ⇒ 跳过有据才答闸，直接执行（work/dev ⇒ runs） */
+    if(paLooksLikeKnowledgeQuestion(text) && !_paRunsIsMultiSeat(text)){
       const g = await paAskGate(text);
       /* ⭐⭐ pm_1617 §二.3 ＝ pm_1614 §二.1（合办 · **一处定形**）：`gate.decision = not_applicable`
          （库根未接 ∨ 检索面为空）—— 闸判「拒答与否皆不成立」⇒ **显后端之 canon** ∧ **⛔ 落模型**。
@@ -306,6 +307,12 @@ function _paRunUuid(){
   try{ if(window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID(); }catch(e){}
   return 'pa-'+Date.now()+'-'+Math.random().toString(16).slice(2);
 }
+function _paRunTail(runId){
+  return String(runId||'').slice(-8);
+}
+function _paRunReceiptLine(runId,secs){
+  return '耗时 '+secs+' s · 本地模型 0 元 · run_id '+_paRunTail(runId);
+}
 function _paApplyRunState(d){
   const s=String((d&&d.state)||'');
   if(s==='queued') paSetState('queued','排队第'+(Number((d&&d.position)||1)||1));
@@ -338,22 +345,39 @@ async function _paPollRun(runId,t,userText){
       const out=d.output||{};
       if(out && typeof out==='object') content=String(out.content||'');
       else if(typeof out==='string') content=out;
-      if(content){
-        addMsg('assistant',content,false,null,paRunTid());
-        try{ detectOutputs(content).forEach(renderOutputCard); }catch(e){}
-        paRun.receipt=await recordPaTurn(t.id,userText,content,{origin:'model',answer_source:'model'});
-      }else{
-        addMsg('assistant','✅ 执行完成（后端无文本输出）');
+      const _rid=String(d.run_id||runId);
+      const _secs=Math.max(0,Math.round((Date.now()-(paRun.startedAt||Date.now()))/1000));
+      const _rcpt=_paRunReceiptLine(_rid,_secs);
+      let _seatsOut=[];
+      if(out && Array.isArray(out.seats)) _seatsOut=out.seats;
+      if(_seatsOut.length){
+        addMsg('assistant','各席结论：\n'+_seatsOut.map(function(s){
+          return '· '+String((s&&s.seat)||'')+'：'+String((s&&s.content)||'').slice(0,300);
+        }).join('\n'),false,null,paRunTid());
       }
-      paSetState('done'); paRun.runId=null; paRun.afterSeq=0; return;
+      if(content){
+        addMsg('assistant',content+'\n\n—— '+_rcpt,false,null,paRunTid());
+        try{ detectOutputs(content).forEach(renderOutputCard); }catch(e){}
+        /* 回执：每 run 仅落一次（刷新恢复的终态不进来；此处 guard 防重复） */
+        if(paRun._receiptRunId!==_rid){
+          paRun.receipt=await recordPaTurn(t.id,userText,content,{origin:'local',run_id:_rid});
+          paRun._receiptRunId=_rid;
+        }
+      }else{
+        addMsg('assistant','✅ 执行完成（后端无文本输出）\n—— '+_rcpt);
+      }
+      paSetState('done','耗时 '+_secs+'s · 本地 0 元 · run_id '+_paRunTail(_rid));
+      paRun.runId=null; paRun.afterSeq=0; return;
     }
     if(st==='failed'){
       const _why=String(d.error||''), _code=String(d.code||'');
-      addMsg('assistant','❌ 执行失败'+(_code?('（'+_code+'）'):'')+'：'+(_why||'（后端未给原因）'));
+      const _tail=_paRunTail(d.run_id||runId);
+      addMsg('assistant','❌ 执行失败'+(_code?('（'+_code+'）'):'')+'：'+(_why||'（后端未给原因）')+'\n（run_id 尾 '+_tail+'）');
       paSetState('failed',(_why||'执行失败').slice(0,60)); paRun.runId=null; return;
     }
     if(st==='cancelled'){
-      addMsg('assistant','⏹ 执行已取消：'+String(d.reason||'用户停止'));
+      const _tail=_paRunTail(d.run_id||runId);
+      addMsg('assistant','⏹ 执行已取消：'+String(d.reason||'用户停止')+'\n（run_id 尾 '+_tail+'）');
       paSetState('cancelled','已取消'); paRun.runId=null; paRun.afterSeq=0; return;
     }
     await new Promise(function(res){ setTimeout(res,delay); });
@@ -395,6 +419,7 @@ async function paRestoreLastRun(){
     _paApplyRunState(d);
     if(d.state==='queued' || d.state==='running'){
       const t=_paThreadForSession(rec.session_id);
+      if(!paRun.startedAt) paRun.startedAt=Date.now();
       await _paPollRun(rec.run_id,t,'');       // queued/running ⇒ 续 poll
     }
     /* done/failed/cancelled：仅状态行显示上次终态，⛔ 重复 addMsg/recordPaTurn */
@@ -421,11 +446,31 @@ function _paRunsContextTask(t,userText){
   const hint=lines.length ? '\n（对话说明：老板即用户本人）' : '';
   return lines.length ? ('【最近对话（上下文）】\n'+lines.join('\n')+'\n'+tail+hint) : tail;
 }
+function _paRunsIsMultiSeat(text){
+  return /^\s*(?:多席|seats)\s*[:：]/i.test(String(text||''));
+}
+function _paRunsParseSeats(text){
+  /* P2-5：用户输入前缀「多席:PM,PD 」/「多席：PM,PD 」/「seats:PM,PD 」⇒ seats，task 去前缀。 */
+  const s=String(text||'');
+  const m=s.match(/^\s*(?:多席|seats)\s*[:：]\s*([A-Za-z,\s，]+?)(?:\s+|$)([\s\S]*)$/i);
+  if(!m) return {seats:[], task:s};
+  const allowed={PM:1,PD:1,CW:1,TD:1}, seats=[];
+  m[1].split(/[,，\s]+/).forEach(function(x){
+    const seat=String(x||'').trim().toUpperCase();
+    if(allowed[seat] && seats.indexOf(seat)<0 && seats.length<3) seats.push(seat);
+  });
+  if(!seats.length) return {seats:[], task:s};
+  return {seats:seats, task:String(m[2]||'').trim()};
+}
 async function sendAgentViaRuns(t,userText){
   const _cid=_paRunUuid();
-  const _body={user_id:curUser(),session_id:t.id,task:_paRunsContextTask(t,userText),client_request_id:_cid};
+  const _parsed=_paRunsParseSeats(userText);
+  const _taskBase=_parsed.task;
+  const _body={user_id:curUser(),session_id:t.id,task:_paRunsContextTask(t,_taskBase),client_request_id:_cid};
+  if(_parsed.seats.length) _body.seats=_parsed.seats;
   const _mdl=paModelSel(); if(_mdl) _body.model=_mdl;
-  paRun.runId=null; paRun.afterSeq=0; paRunSrc='POST /v9/agent/runs';
+  paRun.runId=null; paRun.afterSeq=0; paRun.startedAt=Date.now(); paRun._receiptRunId=null;
+  paRunSrc='POST /v9/agent/runs';
   paSetState('running','提交执行中…');
   try{
     const r=await fetch(API+'/v9/agent/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_body)});
@@ -440,7 +485,7 @@ async function sendAgentViaRuns(t,userText){
     /* P0-4b：lastRun 供刷新恢复（终态/停止后保留，唯 404 清） */
     try{ localStorage.setItem(PA_LAST_RUN_KEY, JSON.stringify({run_id:d.run_id,session_id:t.id,at:Date.now()})); }catch(e){}
     _paApplyRunState(d);
-    await _paPollRun(d.run_id,t,userText);
+    await _paPollRun(d.run_id,t,_taskBase);
   }catch(e){
     addMsg('assistant','⚠ 提交执行失败：'+((e&&e.message)||e));
     paSetState('failed','提交失败');
