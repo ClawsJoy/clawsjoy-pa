@@ -3821,12 +3821,22 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   /* ---------- 7.7 A1：执行通道 ⇒ 停手卡（唯「出手」路 · 承 pm_1115 §二.4）---------- */
   var origSendAgent = window.sendAgent;
   var agentGrant = null;   /* null = \u672a\u6279 \uff0f 'once' \uff0f 'session' */
+  /* P0-3：授权通过后必须进 runs；origSendAgent 可能仍是旧聊天闭包，⛔ 再落旧路 */
+  function _runOrOrig(self, args){
+    try{
+      if(Number(window.PA_RUN_API) !== 0 && (state.mode === 'work' || state.mode === 'dev')
+         && typeof window.sendAgentViaRuns === 'function'){
+        return window.sendAgentViaRuns.apply(self, args);
+      }
+    }catch(e){}
+    return origSendAgent.apply(self, args);
+  }
   if(typeof origSendAgent === 'function'){
     var w = function(){
       var mdl = modeName();
-      if(mdl.chan !== 'agent') return origSendAgent.apply(this, arguments);
-      if(agentGrant === 'session') return origSendAgent.apply(this, arguments);
-      if(agentGrant === 'once'){ agentGrant = null; return origSendAgent.apply(this, arguments); }
+      if(mdl.chan !== 'agent') return _runOrOrig(this, arguments);
+      if(agentGrant === 'session') return _runOrOrig(this, arguments);
+      if(agentGrant === 'once'){ agentGrant = null; return _runOrOrig(this, arguments); }
       var self = this, args = arguments;
       return new Promise(function(resolve, reject){
         stopAsk({
@@ -3842,8 +3852,8 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
           okLabel: '\u2705 \u672c\u6b21\u6267\u884c',
           alwaysLabel: '\u267e\ufe0f \u672c\u4f1a\u8bdd\u4e00\u76f4\u5141\u8bb8',
           cancelLabel: '\u274c \u53d6\u6d88',
-          onOk: function(){ agentGrant = 'once'; try{ resolve(origSendAgent.apply(self, args)); }catch(e){ reject(e); } },
-          onAlways: function(){ agentGrant = 'session'; try{ resolve(origSendAgent.apply(self, args)); }catch(e){ reject(e); } },
+          onOk: function(){ agentGrant = 'once'; try{ resolve(_runOrOrig(self, args)); }catch(e){ reject(e); } },
+          onAlways: function(){ agentGrant = 'session'; try{ resolve(_runOrOrig(self, args)); }catch(e){ reject(e); } },
           onCancel: function(){
             try{ if(typeof setBusy === 'function') setBusy(false);
                  if(typeof paSetState === 'function') paSetState('stopped', '\u8001\u677f\u53d6\u6d88\uff08\u505c\u624b\u5361 \u00b7 \u26d4 \u672a\u51fa\u624b\uff09'); }catch(e){}
