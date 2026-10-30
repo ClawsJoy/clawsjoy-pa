@@ -1,13 +1,17 @@
-"""task-152：_chat_entry_runner 直调本地 Ollama 之测（fake，不真跑模型）.
+"""task-164：_chat_entry_runner 本地 Ollama ＋ DSH headless 之测（fake，不真跑模型）.
 
-覆盖：local success→done、failure→failed、remote→runner_remote_not_wired、
-异常→failed；/v9/agent/runs 202→done/cancel→cancelled（fake ollama）。
+覆盖：local success→done、failure→failed、remote→runner_remote_not_wired、异常→failed；
+DSH fake 成功/失败/超时、model=dsh POST 202→done、真实 dsh 一句话（integration）；
+/v9/agent/runs 202→done/cancel→cancelled。
 """
 
+import shutil
+import subprocess
 import sys
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from flask import Flask
@@ -120,6 +124,100 @@ def test_runs_202_to_done(tmp_path, monkeypatch):
         d = client.get("/v9/agent/runs/" + rid).get_json()
         assert d["state"] == "done" and d["ok"] is True
         assert d["output"]["content"] == "runs done"
+    finally:
+        svc.stop(cancel_queued=False)
+        API.reset_run_service()
+
+
+def test_runner_dsh_done(monkeypatch):
+    calls = []
+
+    def _fake(task, timeout):
+        calls.append((task, timeout))
+        return SimpleNamespace(returncode=0, stdout="dsh ok\n", stderr="")
+
+    monkeypatch.setattr(API, "_dsh_run", _fake)
+    got = API._chat_entry_runner(_record(model="dsh", task="一句话", timeout=10))
+    assert got["status"] == "done" and got["error"] == ""
+    assert got["output"]["content"] == "dsh ok\n"
+    assert got["output"]["model"] == "dsh-headless"
+    assert calls == [("一句话", 10.0)]
+
+
+def test_runner_dsh_failed(monkeypatch):
+    monkeypatch.setattr(
+        API,
+        "_dsh_run",
+        lambda task, timeout: SimpleNamespace(returncode=2, stdout="", stderr="bad dsh"),
+    )
+    got = API._chat_entry_runner(_record(model="dsh-headless"))
+    assert got["status"] == "failed"
+    assert got["reason"] == "runner_dsh_failed" and "bad dsh" in got["error"]
+
+
+def test_runner_dsh_timeout(monkeypatch):
+    def _timeout(task, timeout):
+        raise subprocess.TimeoutExpired(["dsh"], timeout)
+
+    monkeypatch.setattr(API, "_dsh_run", _timeout)
+    got = API._chat_entry_runner(_record(model="dsh", timeout=1))
+    assert got["status"] == "failed"
+    assert got["reason"] == "runner_dsh_timeout" and "timeout" in got["error"]
+
+
+def test_runs_api_dsh_202_to_done(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        API,
+        "_dsh_run",
+        lambda task, timeout: SimpleNamespace(returncode=0, stdout="dsh api ok\n", stderr=""),
+    )
+    client, svc = _api(tmp_path, monkeypatch)
+    try:
+        r = client.post(
+            "/v9/agent/runs",
+            json={"user_id": "u", "session_id": "s", "task": "一句话", "timeout": 10, "model": "dsh"},
+        )
+        assert r.status_code == 202, r.get_data(as_text=True)
+        rid = r.get_json()["run_id"]
+        assert _wait(lambda: (client.get("/v9/agent/runs/" + rid).get_json() or {}).get("state") == "done")
+        d = client.get("/v9/agent/runs/" + rid).get_json()
+        assert d["state"] == "done" and d["ok"] is True
+        assert d["output"]["content"] == "dsh api ok\n"
+        assert d["output"]["model"] == "dsh-headless"
+    finally:
+        svc.stop(cancel_queued=False)
+        API.reset_run_service()
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(shutil.which("dsh") is None, reason="dsh 不在 PATH")
+def test_runner_dsh_real_one_sentence():
+    """真实 dsh --profile headless：一句话返回非空。"""
+    got = API._chat_entry_runner(_record(model="dsh", task="只回复：收到", timeout=180))
+    assert got["status"] == "done", got
+    assert str((got.get("output") or {}).get("content") or "").strip(), got
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(shutil.which("dsh") is None, reason="dsh 不在 PATH")
+def test_runs_api_dsh_real_202_to_done(tmp_path, monkeypatch):
+    """真实 dsh：POST /v9/agent/runs（model=dsh）202→done，content 非空。"""
+    client, svc = _api(tmp_path, monkeypatch)
+    try:
+        r = client.post(
+            "/v9/agent/runs",
+            json={"user_id": "u", "session_id": "s", "task": "只回复：收到", "timeout": 180, "model": "dsh"},
+        )
+        assert r.status_code == 202, r.get_data(as_text=True)
+        rid = r.get_json()["run_id"]
+        assert _wait(
+            lambda: (client.get("/v9/agent/runs/" + rid).get_json() or {}).get("state") in ("done", "failed"),
+            timeout=180,
+            interval=0.2,
+        )
+        d = client.get("/v9/agent/runs/" + rid).get_json()
+        assert d["state"] == "done", d
+        assert str((d.get("output") or {}).get("content") or "").strip(), d
     finally:
         svc.stop(cancel_queued=False)
         API.reset_run_service()

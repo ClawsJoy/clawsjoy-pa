@@ -84,8 +84,24 @@ def _get_run_service():
         return _run_service
 
 
+def _dsh_run(task, timeout):
+    """runs 之 DSH headless 分支：subprocess 调 dsh --profile headless（独立进程，⛔ Flask）。"""
+    import shutil
+    import subprocess
+
+    exe = shutil.which("dsh") or "dsh"
+    return subprocess.run(
+        [exe, "--profile", "headless", str(task)],
+        timeout=timeout,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+
 def _chat_entry_runner(record):
-    """runner：进程内直调本地 Ollama（⛔ /v9/agent/chat、⛔ subprocess、⛔ Flask request）。
+    """runner：本地 Ollama 直调 ＋ DSH headless 子进程（⛔ /v9/agent/chat、⛔ Flask request）。
 
     病：subprocess/HTTP 回调同进程 Flask 仍会自阻塞，run 卡 running。
     修：RunService worker 直接调 execute_agent_task._ollama_execute_with_tools（tools=[]）；
@@ -103,6 +119,39 @@ def _chat_entry_runner(record):
             "reason": "runner_import",
         }
     model_in = str(record.get("model") or "").strip()
+    # P2-1：model=dsh/dsh-headless ⇒ 独立 DSH headless 子进程（本地 model 仍走 Ollama）
+    if model_in.lower().startswith("dsh"):
+        import subprocess as _sp
+
+        timeout = float(record.get("timeout") or 180.0)
+        try:
+            proc = _dsh_run(str(record.get("task") or ""), timeout)
+        except _sp.TimeoutExpired:
+            return {
+                "status": "failed",
+                "error": f"dsh timeout after {timeout}s",
+                "reason": "runner_dsh_timeout",
+            }
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "status": "failed",
+                "error": f"dsh spawn: {type(exc).__name__}: {str(exc)[:300]}",
+                "reason": "runner_dsh_spawn",
+            }
+        stdout = str(proc.stdout or "")
+        stderr = str(proc.stderr or "")
+        if proc.returncode == 0:
+            return {
+                "status": "done",
+                "output": {"ok": True, "content": stdout, "model": "dsh-headless"},
+                "error": "",
+            }
+        return {
+            "status": "failed",
+            "error": f"dsh rc={proc.returncode}: {(stderr or stdout)[:300]}",
+            "reason": "runner_dsh_failed",
+            "output": {"returncode": proc.returncode, "stdout": stdout[:1000], "stderr": stderr[:1000]},
+        }
     try:
         route, _note = route_for_model(model_in)
         kind = _prov.route_kind(route)
