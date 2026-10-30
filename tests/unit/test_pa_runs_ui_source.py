@@ -13,6 +13,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SEND = ROOT / "web" / "pa" / "faces" / "send.js"
 STATUS = ROOT / "web" / "pa" / "faces" / "status.js"
+WINDOW = ROOT / "web" / "pa" / "faces" / "window.js"
 
 
 def _send():
@@ -193,6 +194,16 @@ def test_multi_seat_prefix_skips_ask_gate():
     assert r"return /^\s*(?:多席|seats)\s*[:：]/i.test(String(text||''));" in src
     assert "paLooksLikeKnowledgeQuestion(text) && !_paRunsIsMultiSeat(text)" in src, "多席前缀须跳过 ask 闸"
     assert "paAskGate(text)" in src, "普通问句仍走有据才答"
+
+
+def test_summon_input_has_multi_seat_hint_below():
+    src = WINDOW.read_text(encoding="utf-8")
+    i_in = src.find('id="paSummonIn"')
+    i_hint = src.find('class="pa-summon-hint"')
+    i_foot = src.find('class="pa-summon-foot"')
+    assert i_in > 0 and i_hint > i_in and i_foot > i_hint, "hint 须在 summon 输入下方"
+    assert "多席：多席:PM,PD …" in src
+    assert "font-size:11px" in src and "color:var(--sub)" in src
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")

@@ -484,10 +484,11 @@
              缺省 ⛔ 出机 —— 要随本轮发给模型，须**逐件勾**（且类为「文」）。 -->
         <input type="file" id="paAttachFiles" multiple style="display:none" onchange="paAttachOnPick(this)">
         <button type="button" id="paAttachBtn" class="chip" onclick="paAttachPick()" title="附件：唯存你这台机器上 · 缺省 ⛔ 出机 —— 要随本轮发给模型，须逐件勾">📎 附件</button>
-        <textarea id="input" placeholder="和 PA 说点什么…（Enter 发送 / Shift+Enter 换行）"></textarea>
+        <textarea id="input" placeholder="和 PA 说点什么…（Enter 发送 / Shift+Enter 换行 · 多席：多席:PM,PD 任务）"></textarea>
         <button id="sendBtn" onclick="paSend()">发送</button>
         <button class="stop" id="stopBtn" style="display:none" onclick="paStop()">■ 停止</button>
       </div>
+      <div class="pa-seat-hint" style="font-size:11px;color:var(--sub);margin-top:4px;line-height:1.4">多席可写：多席:PM,PD …（最多3席）</div>
       <!-- ⭐ pm_1801 §一（并办 · 聊天面之可点入口）：聊天 ＝ **只商量、不出手**（`web/pa/core.js:4` 之界）
            ⇒ 老板「要真跑」时须有**可点之去处** ⇒ 此行给之。守：**静态真话**（⛔ 猜意图 ／ ⛔ 造「要动作」
            之判）∧ ⛔ 动提示词（`core/**` 归 TD · 承 pm_1801 §一）⇒ 唯前端之便。其钮走与顶栏**同一函数**
