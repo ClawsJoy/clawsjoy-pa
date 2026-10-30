@@ -1,0 +1,35 @@
+{
+  "captured_at": "2026-10-30T19:45:00+08:00",
+  "commit": "d91f9f6",
+  "ruff": {
+    "errors": 32437,
+    "fixable": 26068,
+    "top_rules": {
+      "W293": 1009,
+      "UP035": 941,
+      "UP009": 675,
+      "I001": 542,
+      "UP020": 480,
+      "UP045": 407,
+      "UP015": 339,
+      "F841": 264,
+      "F811": 146,
+      "F821": 119
+    },
+    "exclude": "tools/archive,old,models,data"
+  },
+  "black": {
+    "would_reformat": 1321,
+    "exclude": "(tools/archive|old|models|data|.pytest_cache|_tmp|dist|build|node_modules|legacy_verify|.git)"
+  },
+  "pytest": {
+    "status": "not_full_run",
+    "note": "full legacy suite advisory/manual; gate runs 51 environment-independent PA tests"
+  },
+  "gate": {
+    "changed_lint": "ruff/black only on changed Python files",
+    "pa_tests": "51 passed / 2 integration deselected",
+    "windows": "win_pa static",
+    "docker": "Docker Build workflow"
+  }
+}
