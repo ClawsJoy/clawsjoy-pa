@@ -1,8 +1,33 @@
 {
  "version": 1,
- "source": "pa_routes_*",
- "count": 105,
+ "source": "pa_routes_* + routes/v9_chat.py",
+ "count": 110,
  "routes": [
+  {
+   "method": "POST",
+   "path": "/v9/agent/chat",
+   "func": "v9_agent_chat"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/agent/runs",
+   "func": "v9_agent_runs_list"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/agent/runs",
+   "func": "v9_agent_runs_post"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/agent/runs/<run_id>",
+   "func": "v9_agent_run_get"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/agent/runs/<run_id>/cancel",
+   "func": "v9_agent_run_cancel"
+  },
   {
    "method": "POST",
    "path": "/v9/pa/act",

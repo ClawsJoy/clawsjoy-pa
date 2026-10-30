@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""split_audit.py — ②v1 拆件验收器（只读 · **适配 13 件架构**）。
+"""split_audit.py — ②v1 拆件验收器（只读 · **适配 14 件架构**）。
 
 判据（当前架构 · ②v1 拆件后 · 2026-10-30 T49）：
   1. 源面 ＝ `core/pa/pa_routes_*.py`（**12 件**，含公共件 `pa_routes_common.py`）
-     ＋ `core/pa/gateway_routes.py`（**兼容门面**）⇒ 共 **13 件**；
+     ＋ `core/pa/gateway_routes.py`（**兼容门面**）＋ `routes/v9_chat.py`（**agent 面**）⇒ 共 **14 件**；
   2. 公共件唯建蓝图（`bp = Blueprint`）＋ `def register_pa_routes(`；
      11 个簇件各有 `def register(`（导入即挂 · endpoint 名不变）；
   3. 每件 ≤800 行；
-  4. 路由集（method+path+func）≡ 基线（现 103 条）；missing／extra／func 变／dupe ⇒ rc=2；
+  4. 路由集（method+path+func）≡ 基线（现 110 条，含旧 /v9/agent/chat）；missing／extra／func 变／dupe ⇒ rc=2；
      基线若带 `count` 字段，须等于 `len(routes)`（⛔ 陈数）；
   5. 退出码：0 全绿 ／ 2 有红 ／ 4 未拆（NOT_SPLIT）。
 
@@ -33,10 +33,13 @@ from route_diff import parse  # noqa: E402
 ROOT = "core/pa"
 BASE = "tests/baseline/route_baseline_v0.json"
 
+#: P0-2c：/v9/agent 路由面（agent 面第 14 件）
+AGENT_SOURCE = "routes/v9_chat.py"
+
 #: 期望之簇件数（pa_routes_*.py，含公共件 pa_routes_common.py）
 EXPECT_CLUSTER_FILES = 12
-#: 期望总件数（簇件 ＋ gateway_routes.py）
-EXPECT_TOTAL_FILES = EXPECT_CLUSTER_FILES + 1
+#: 期望总件数（簇件 ＋ gateway_routes.py ＋ agent 面）
+EXPECT_TOTAL_FILES = EXPECT_CLUSTER_FILES + 2
 GATEWAY_NAME = "gateway_routes.py"
 SHARED_NAME = "pa_routes_common.py"
 MAX_LINES = 800
@@ -50,7 +53,7 @@ def _line_count(path):
     return sum(1 for _ in io.open(path, encoding="utf-8", errors="replace"))
 
 
-def _row(path, role):
+def _row(path, role, name=None):
     """单件之读数：行数／路由数／角色／违例旗。"""
     txt = _read(path)
     lines = _line_count(path)
@@ -65,8 +68,13 @@ def _row(path, role):
     elif role == "cluster":
         if "def register(" not in txt:
             flags.append("no-register")
+    elif role == "agent":
+        if "app.add_url_rule(" not in txt:
+            flags.append("no-add-url-rule")
+        if "def register(" not in txt:
+            flags.append("no-register")
     # facade：兼容门面 ⛔ 另有形状要求（唯须在件；其路由计入比对）
-    return {"name": os.path.basename(path), "lines": lines,
+    return {"name": name or os.path.basename(path), "path": path, "lines": lines,
             "routes": len(parse(path)), "role": role, "flags": flags}
 
 
@@ -94,15 +102,28 @@ def audit(root, base, quiet=False, expect_files=EXPECT_CLUSTER_FILES):
         rows.append(row)
     else:
         bad += 1
-        rows.append({"name": GATEWAY_NAME, "lines": 0, "routes": 0,
-                     "role": "facade", "flags": ["missing"]})
+        rows.append({"name": GATEWAY_NAME, "path": gateway, "lines": 0,
+                     "routes": 0, "role": "facade", "flags": ["missing"]})
+    # P0-2c：默认核心树须含 agent 面（routes/v9_chat.py）；自测临时树不强制
+    agent_expected = os.path.abspath(root) == os.path.abspath(ROOT)
+    if agent_expected:
+        if os.path.exists(AGENT_SOURCE):
+            row = _row(AGENT_SOURCE, "agent", name=AGENT_SOURCE)
+            if row["flags"]:
+                bad += 1
+            rows.append(row)
+        else:
+            bad += 1
+            rows.append({"name": AGENT_SOURCE, "path": AGENT_SOURCE, "lines": 0,
+                         "routes": 0, "role": "agent", "flags": ["missing"]})
     if len(clusters) != expect_files:
         bad += 1
+    expected_total = expect_files + 1 + (1 if agent_expected else 0)
 
-    # 路由集：全源面（簇件 ＋ 门面）逐件 parse；同 method+path 二次 ⇒ dupe
+    # 路由集：全源面（簇件 ＋ 门面 ＋ agent）逐件 parse；同 method+path 二次 ⇒ dupe
     got, dupes = {}, []
     for row in rows:
-        path = os.path.join(root, row["name"])
+        path = row.get("path") or os.path.join(root, row["name"])
         if not os.path.exists(path):
             continue
         for r in parse(path):
@@ -126,8 +147,9 @@ def audit(root, base, quiet=False, expect_files=EXPECT_CLUSTER_FILES):
         bad += 1
 
     if not quiet:
-        print("[files] %d（期望 %d = %d 个 pa_routes_*.py ＋ %s）｜shared=%s"
-              % (len(rows), expect_files + 1, expect_files, GATEWAY_NAME, SHARED_NAME))
+        print("[files] %d（期望 %d = %d 个 pa_routes_*.py ＋ %s ＋ %s）｜shared=%s"
+              % (len(rows), expected_total, expect_files, GATEWAY_NAME,
+                 AGENT_SOURCE, SHARED_NAME))
         for row in rows:
             print("  %-34s %5d 行  %3d 路由  %-7s %s"
                   % (row["name"], row["lines"], row["routes"], row["role"],
@@ -147,9 +169,9 @@ def audit(root, base, quiet=False, expect_files=EXPECT_CLUSTER_FILES):
             print("  [DUP]     %s %s" % k)
 
     ok = (bad == 0 and not missing and not extra and not changed
-          and not dupes and not count_stale and len(rows) == expect_files + 1)
+          and not dupes and not count_stale and len(rows) == expected_total)
     if not quiet:
-        print("[verdict] %s" % ("PASS（13 件 · diff=0）" if ok else
+        print("[verdict] %s" % ("PASS（%d 件 · diff=0）" % len(rows) if ok else
                                  "FAIL（files=%d bad=%d missing=%d extra=%d func=%d dupes=%d）"
                                  % (len(rows), bad, len(missing), len(extra),
                                     len(changed), len(dupes))))

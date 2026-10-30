@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import glob
 import json
 import os
@@ -23,14 +24,71 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 DEFAULT = "core/pa/gateway_routes.py"
 SPLIT_GLOB = "core/pa/pa_routes_*.py"
+#: P0-2c：/v9/agent 端点用 app.add_url_rule 注册，须纳入同一路由集（⛔ 漏扫）
+AGENT_SOURCE = "routes/v9_chat.py"
 ROUTE = re.compile(r'@bp\.route\(\s*"([^"]+)"\s*(?:,\s*methods=\[([^\]]*)\])?\s*\)')
 DEF = re.compile(r"^\s*def\s+([A-Za-z0-9_]+)\s*\(")
+
+
+def _name_of(node):
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    return ""
+
+
+def _const_str(node):
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    return ""
+
+
+def _str_list(node):
+    if isinstance(node, (ast.List, ast.Tuple)):
+        return [e.value for e in node.elts
+                if isinstance(e, ast.Constant) and isinstance(e.value, str)]
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return [node.value]
+    return []
+
+
+def _kw(call, name):
+    for kw in call.keywords:
+        if kw.arg == name:
+            return kw.value
+    return None
+
+
+def _add_url_rule_rows(src):
+    u"""解析 app.add_url_rule(...)（含多行）：path/methods/view_func⇒func。"""
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return []
+    rows = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_url_rule"):
+            continue
+        rule = _const_str(node.args[0]) if node.args else ""
+        if not rule:
+            rule = _const_str(_kw(node, "rule"))
+        if not rule:
+            continue
+        methods = _str_list(_kw(node, "methods")) or ["GET"]
+        func = _name_of(_kw(node, "view_func")) or _const_str(_kw(node, "endpoint"))
+        for meth in methods:
+            rows.append({"method": str(meth).upper(), "path": rule, "func": func})
+    return rows
 
 
 def parse(path: str):
     rows = []
     with open(path, encoding="utf-8") as fh:
-        lines = fh.read().splitlines()
+        src = fh.read()
+        lines = src.splitlines()
     for i, ln in enumerate(lines):
         m = ROUTE.search(ln)
         if not m:
@@ -44,6 +102,12 @@ def parse(path: str):
                 break
         for meth in methods:
             rows.append({"method": meth.upper(), "path": m.group(1), "func": func})
+    rows.extend(_add_url_rule_rows(src))
+    # 同 method+path 只留一条（装饰器优先；app.add_url_rule 作补充）
+    uniq = {}
+    for row in rows:
+        uniq.setdefault((row["method"], row["path"]), row)
+    rows = list(uniq.values())
     rows.sort(key=lambda r: (r["path"], r["method"]))
     return rows
 
@@ -56,6 +120,8 @@ def default_sources():
     out = [q for q in sorted(glob.glob(SPLIT_GLOB)) if not q.endswith(".py.new")]
     if os.path.exists(DEFAULT):
         out.insert(0, DEFAULT)
+    if os.path.exists(AGENT_SOURCE) and AGENT_SOURCE not in out:
+        out.append(AGENT_SOURCE)          # P0-2c：/v9/agent 路由同入一集
     return out
 
 
@@ -90,7 +156,8 @@ def dump(src, out: str) -> int:
         for p, k, f in dupes:
             print("[DUP]     %s %s (func=%s) @ %s" % (k[0], k[1], f, os.path.basename(p)))
         return 2
-    doc = {"version": 1, "source": (os.path.basename(src) if isinstance(src, str) and src else "pa_routes_*"),
+    doc = {"version": 1, "source": (os.path.basename(src) if isinstance(src, str) and src
+                                     else "pa_routes_* + routes/v9_chat.py"),
            "count": len(rows), "routes": rows}
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(doc, fh, ensure_ascii=False, indent=1)
