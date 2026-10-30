@@ -1,7 +1,7 @@
 {
  "version": 1,
  "source": "pa_routes_* + routes/v9_chat.py",
- "count": 110,
+ "count": 112,
  "routes": [
   {
    "method": "POST",
@@ -442,6 +442,16 @@
    "method": "POST",
    "path": "/v9/pa/roster/upsert",
    "func": "pa_roster_upsert"
+  },
+  {
+   "method": "GET",
+   "path": "/v9/pa/runtimes/dsh",
+   "func": "pa_dsh_runtime_get"
+  },
+  {
+   "method": "POST",
+   "path": "/v9/pa/runtimes/dsh/path",
+   "func": "pa_dsh_runtime_path_post"
   },
   {
    "method": "GET",

@@ -284,6 +284,79 @@ async function paKeySend(clearing){
   return j;
 }
 
+/* ---- P3-2：外部运行时 · DSH 向导（只读检测 ＋ 路径保存；本地不支持明书） ---- */
+function paDshEl(id){ return document.getElementById(id); }
+function paDshEsc(v){
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function paDshSetStatus(t){ var el=paDshEl('paDshStatus'); if(el) el.textContent=String(t == null ? '' : t); }
+function paDshLoad(force){
+  paDshSetStatus('读数中…（GET /v9/pa/runtimes/dsh）');
+  return fetch(API + '/v9/pa/runtimes/dsh', {cache: 'no-store'})
+    .then(function(r){ return r.json().then(function(j){ return {status: r.status, j: j}; }); })
+    .then(function(x){
+      var d = x.j || {};
+      if(x.status !== 200 || d.ok !== true){
+        paDshSetStatus('检测失败（' + x.status + '）：' + (d.error || '后端未给因'));
+        return d;
+      }
+      var found = d.found === true;
+      var src = {env:'环境变量 PA_DSH_PATH', saved:'已保存路径', which:'PATH 中 dsh', none:'—'}[d.source] || (d.source || '—');
+      paDshSetStatus(found
+        ? ('已找到 DSH：' + (d.path || '—') + '（' + (d.version || '版本未给') + '）· 来源：' + src)
+        : '未找到 DSH 可执行文件 —— 可安装后重新检测，或填其路径；本地 provider 当前不支持。');
+      var body = paDshEl('paDshBody');
+      if(body){
+        body.innerHTML =
+          '<div class="pa-dsh-row">路径：' + paDshEsc(d.path || '—') + '</div>'
+          + '<div class="pa-dsh-row">版本：' + paDshEsc(d.version || '—') + ' · 来源：' + paDshEsc(src) + '</div>'
+          + '<div class="pa-dsh-row">云端 API：' + (d.cloud_supported === true ? '支持' : '不支持') + '（需 provider key）· key：' + (d.key_present === true ? '已配' : '未配') + '</div>'
+          + '<div class="pa-dsh-row">本地模型：<b>当前不支持</b>（DSH 本地 provider 未支持；PA 本地 Ollama 已可用' + (d.local_supported === true ? ' · 后端 local_supported=true 与向导口径冲突' : '') + '）</div>'
+          + '<div class="pa-dsh-row">Node：' + (d.node_present === true ? '已安装' : '未安装（装 DSH 需 Node）') + '</div>'
+          + (found
+            ? ('<div class="pa-dsh-choice"><b>云端 API（需 key）</b> <button class="ks-btn" type="button" onclick="paDshCloud()">配置云端</button></div>'
+               + '<div class="pa-dsh-choice"><b>本地模型（当前不支持）</b> <button class="ks-btn" type="button" onclick="paDshLocal()">使用本地</button></div>')
+            : '');
+      }
+      var steps = paDshEl('paDshSteps');
+      if(steps){
+        var arr = Array.isArray(d.install_steps) ? d.install_steps : [];
+        steps.innerHTML = arr.map(function(s){ return '<li>' + paDshEsc(s) + '</li>'; }).join('');
+      }
+      return d;
+    })
+    .catch(function(e){
+      paDshSetStatus('检测失败（未达本机服务）：' + ((e && e.message) || e));
+    });
+}
+function paDshRetry(){ return paDshLoad(true); }
+function paDshPath(){
+  var p = window.prompt('填写 dsh 可执行文件的绝对路径（本机）：');
+  if(p == null || !String(p).trim()) return;
+  paDshSetStatus('保存路径并探测中…');
+  return fetch(API + '/v9/pa/runtimes/dsh/path', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({path: String(p).trim()})
+  }).then(function(r){ return r.json().then(function(j){ return {status: r.status, j: j}; }); })
+    .then(function(x){
+      if(x.status !== 200 || !x.j || x.j.ok !== true){
+        paDshSetStatus('路径未保存（' + x.status + '）：' + ((x.j && (x.j.error || x.j.code)) || '后端未给因'));
+        return;
+      }
+      return paDshLoad(true);
+    })
+    .catch(function(e){ paDshSetStatus('路径未保存（未达本机服务）：' + ((e && e.message) || e)); });
+}
+function paDshCloud(){
+  paDshSetStatus('云端 API：需 provider key（DEEPSEEK_API_KEY 等）—— 打开密钥面填写；⛔ 值不上屏。');
+  try{ if(typeof paKeyOpen === 'function') paKeyOpen(); }catch(e){}
+}
+function paDshLocal(){
+  paDshSetStatus('本地模型：DSH 本地 provider 当前未支持（不假装可用）；PA 本地 Ollama 已可用，可在「模型配置」使用。');
+}
+
 function paKeyOpen(){
   if(typeof paMore === 'function'){ try{ paMore(true); }catch(e){} }
   const g = paKeyEl('paMoreGrpSet'); if(g) g.setAttribute('open', '');
@@ -292,6 +365,7 @@ function paKeyOpen(){
     if(s && s.scrollIntoView){ try{ s.scrollIntoView({block: 'start'}); }catch(e){} }
     const v = paKeyEl('paKeyVal'); if(v && v.focus){ try{ v.focus(); }catch(e){} }
   }, 60);
+  try{ if(typeof paDshLoad === 'function') paDshLoad(); }catch(e){}
   return paKeyEl('paKeys');
 }
 

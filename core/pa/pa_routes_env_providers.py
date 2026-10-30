@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""PA 路由 · env_providers 簇（②v1 拆件 · 由 gateway_routes.py 机械切出 · 13 条路由）。
+"""PA 路由 · env_providers 簇（②v1 拆件 · 由 gateway_routes.py 机械切出 · 15 条路由＋DSH 运行时 2）。
 
 共享面唯 `pa_routes_common`（`bp` 唯彼处建）；本件 ⛔ 复建蓝图。
 ⭐ 导入即挂：件末 `register(bp)`；endpoint 名仍 `pa_routes.<func>`（⛔ 变）。
@@ -323,6 +323,99 @@ def register(bp):
         # ⚠ 用 `器印`（⛔ `印`）—— 顶层之 `印` 是**预案之印**（绑 token）· ⛔ 覆。
         out["器印"] = _code_sha16(pa_sys_act, _sa)
         return ok(out)
+
+    # P3-1：DSH 外部运行时检测（设置向导之真状态；⛔ 读/打印 key）
+    def _dsh_runtime_state():
+        import json as _json
+        import shutil as _shutil
+        import subprocess as _sp
+
+        data_dir = _data_dir()
+        saved_path = ""
+        try:
+            _sf = os.path.join(data_dir, "dsh_path.json")
+            with open(_sf, encoding="utf-8") as fh:
+                _doc = _json.load(fh)
+            saved_path = str((_doc or {}).get("path") or "").strip()
+        except Exception:  # noqa: BLE001
+            saved_path = ""
+        candidates = []
+        env_path = str(os.environ.get("PA_DSH_PATH") or "").strip()
+        if env_path:
+            candidates.append((env_path, "env"))
+        if saved_path:
+            candidates.append((saved_path, "saved"))
+        which_path = _shutil.which("dsh")
+        if which_path:
+            candidates.append((which_path, "which"))
+        path = ""
+        source = "none"
+        for cand, src in candidates:
+            try:
+                if cand and os.path.isfile(cand):
+                    path = os.path.abspath(cand)
+                    source = src
+                    break
+            except Exception:  # noqa: BLE001
+                continue
+        found = bool(path)
+        version = None
+        if found:
+            try:
+                proc = _sp.run([path, "--version"], timeout=5, capture_output=True,
+                               text=True, encoding="utf-8", errors="replace")
+                raw = (proc.stdout or proc.stderr or "").strip()
+                version = raw.splitlines()[0].strip() if raw else None
+            except Exception:  # noqa: BLE001
+                version = None
+        return {
+            "found": found,
+            "path": path or None,
+            "version": version,
+            "source": source,
+            "key_present": bool(os.environ.get("DEEPSEEK_API_KEY")),
+            "cloud_supported": True,
+            "local_supported": False,
+            "install_steps": [
+                "安装 Node.js（≥18）",
+                "npm install -g @deepseek-ai/dsh",
+                "dsh --version 验证",
+                "在设置页填入 dsh 路径（或设 PA_DSH_PATH）",
+            ],
+            "node_present": bool(_shutil.which("node")),
+        }
+
+    @bp.route("/v9/pa/runtimes/dsh", methods=["GET"])
+    def pa_dsh_runtime_get():
+        """DSH 运行时之探测：env PA_DSH_PATH → 保存 → which；找不到 found:false（⛔ 抛）。"""
+        return ok(_dsh_runtime_state())
+
+    @bp.route("/v9/pa/runtimes/dsh/path", methods=["POST"])
+    def pa_dsh_runtime_path_post():
+        """保存用户指定的 dsh 路径（原子写）；坏路径 400；保存后立即 probe。"""
+        import json as _json
+
+        body = request.get_json(silent=True) or {}
+        raw = str(body.get("path") or "").strip()
+        if not raw or not os.path.isfile(raw):
+            return err("dsh_path_not_found", 400)
+        if os.name != "nt":
+            try:
+                if not os.access(raw, os.X_OK):
+                    return err("dsh_path_not_executable", 400)
+            except Exception:  # noqa: BLE001
+                return err("dsh_path_not_executable", 400)
+        path = os.path.abspath(raw)
+        try:
+            os.makedirs(_data_dir(), exist_ok=True)
+            dst = os.path.join(_data_dir(), "dsh_path.json")
+            tmp = dst + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as fh:
+                _json.dump({"path": path}, fh, ensure_ascii=False)
+            os.replace(tmp, dst)
+        except Exception as exc:  # noqa: BLE001
+            return err("dsh_path_save_failed: " + type(exc).__name__, 500)
+        return ok(_dsh_runtime_state())
 
     return bp
 

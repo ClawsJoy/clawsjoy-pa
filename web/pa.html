@@ -254,6 +254,20 @@
         </div>
       </section>
 
+      <!-- ⭐ P3-2：外部运行时 · DSH 向导（只读检测 ＋ 路径保存；本地不支持明书） -->
+      <section class="msec" id="paDshWizard" style="font-size:12px">
+        <h6>外部运行时 · DSH</h6>
+        <p class="mnote" id="paDshStatus" role="status" aria-live="polite">读数中…（GET /v9/pa/runtimes/dsh）</p>
+        <div id="paDshBody"></div>
+        <ol id="paDshSteps" style="margin:6px 0 8px 18px;color:var(--sub);line-height:1.6"></ol>
+        <div class="ks-row" style="flex-wrap:wrap;gap:6px">
+          <button class="ks-btn" type="button" onclick="paDshRetry()" title="重新探测 DSH 运行时">重新检测</button>
+          <button class="ks-btn" type="button" onclick="paDshPath()" title="填写 dsh 可执行文件路径（本机）">填写 dsh 路径</button>
+          <button class="ks-btn" type="button" onclick="paDshCloud()" title="云端 API 需 provider key">配置云端</button>
+          <button class="ks-btn" type="button" onclick="paDshLocal()" title="DSH 本地 provider 当前未支持">使用本地</button>
+        </div>
+      </section>
+
       <section class="msec" id="paMoreAbout"><h6>关于 PA（自述 · 九问九答 · 逐条带源）</h6>
         <p class="mnote" title="真源：面册 GET /web/pa/faces.json ｜ 工具流水 GET /v9/metrics/tool_flow ｜ 画像 GET /v9/pa/context ｜ 权限 GET /v9/pa/permission ｜ 快照 web/pa/ui_state.json ⇒ 不走 /v9/pa/ask（该闸只看「知识库 ＋ 收件箱」⇒ 退化成知识库机器人）">来源：面册 ｜ 工具流水 ｜ 画像 ｜ 权限 ｜ 快照，皆取自本机。<br>
           ⚠ 身份类为「<b>口径 · 本页常量</b>」；读数类为<b>本机读数</b> ⇒ 逐条末行标源 · 不冒充。</p>
