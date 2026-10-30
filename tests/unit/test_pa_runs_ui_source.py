@@ -26,7 +26,6 @@ def _status():
 def test_work_dev_route_uses_runs_with_flag():
     src = _send()
     assert "var PA_RUN_API = 1;" in src
-    assert "Number(PA_RUN_API) !== 0" in src
     assert "(state.mode==='work' || state.mode==='dev')" in src
     assert "return await sendAgentViaRuns(t, _utext);" in src
     assert "async function sendAgentViaRuns(" in src
@@ -118,6 +117,34 @@ def test_restore_clears_only_on_404_and_init_hook():
     assert src.count("removeItem(PA_LAST_RUN_KEY)") == 1, "唯 404 清 lastRun"
     assert "document.addEventListener('DOMContentLoaded'" in src
     assert "setTimeout(paRestoreLastRun, 0)" in src
+
+
+def test_single_send_chain_work_dev_no_silent_fallback():
+    src = _send()
+    body = src.split("async function sendAgent(t, userText){", 1)[1].split("/* ===== P0-3", 1)[0]
+    assert "if(state.mode==='work' || state.mode==='dev'){" in body
+    assert "return await sendAgentViaRuns(t, _utext);" in body
+    assert "Number(PA_RUN_API) !== 0" not in body, "work/dev 禁止按 flag 落旧 SSE"
+
+
+def test_selfdesc_bypasses_stop_card_for_runs_only():
+    path = ROOT / "web" / "pa" / "faces" / "selfdesc.js"
+    src = path.read_text(encoding="utf-8")
+    assert "function _paWorkDevRunsDirect()" in src
+    assert "if(_paWorkDevRunsDirect()) return _runOrOrig(this, arguments);" in src
+    assert "stopAsk({" in src
+    i_direct = src.find("if(_paWorkDevRunsDirect()) return _runOrOrig(this, arguments);")
+    i_card = src.find("stopAsk({", i_direct)
+    assert i_direct > 0 and i_card > i_direct
+
+
+def test_stopping_copy_and_terminal_states():
+    src = _send()
+    assert "paSetState('stopping','停止中…')" in src
+    st = _status()
+    for key, label in (("stopping:", "停止中"), ("stopped:", "已停止"), ("cancelled:", "已取消")):
+        assert key in st and label in st
+    assert "PA_TERMINAL = {idle:1, done:1, failed:1, stopped:1, cancelled:1}" in st
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")

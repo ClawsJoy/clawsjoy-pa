@@ -3822,10 +3822,16 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
   var origSendAgent = window.sendAgent;
   var agentGrant = null;   /* null = \u672a\u6279 \uff0f 'once' \uff0f 'session' */
   /* P0-3：授权通过后必须进 runs；origSendAgent 可能仍是旧聊天闭包，⛔ 再落旧路 */
+  function _paWorkDevRunsDirect(){
+    try{
+      return Number(window.PA_RUN_API) !== 0
+        && (state.mode === 'work' || state.mode === 'dev')
+        && typeof window.sendAgentViaRuns === 'function';
+    }catch(e){ return false; }
+  }
   function _runOrOrig(self, args){
     try{
-      if(Number(window.PA_RUN_API) !== 0 && (state.mode === 'work' || state.mode === 'dev')
-         && typeof window.sendAgentViaRuns === 'function'){
+      if(_paWorkDevRunsDirect()){
         return window.sendAgentViaRuns.apply(self, args);
       }
     }catch(e){}
@@ -3835,6 +3841,9 @@ try{ window.paSelfWaitBoundSet = paSelfWaitBoundSet; }catch(e){}
     var w = function(){
       var mdl = modeName();
       if(mdl.chan !== 'agent') return _runOrOrig(this, arguments);
+      /* P1-1：work/dev + runs API ⇒ 直接进 runs，**不弹停手卡**（本地纯聊天非不可逆；
+         审批只留给未来 DSH 工具/出机/破坏性/旧路径）。 */
+      if(_paWorkDevRunsDirect()) return _runOrOrig(this, arguments);
       if(agentGrant === 'session') return _runOrOrig(this, arguments);
       if(agentGrant === 'once'){ agentGrant = null; return _runOrOrig(this, arguments); }
       var self = this, args = arguments;

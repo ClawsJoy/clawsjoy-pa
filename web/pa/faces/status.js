@@ -5,6 +5,7 @@ const PA_STATE_DEF = {
   idle:      {ic:'○',  label:'就绪',     cls:'st-idle'},
   queued:    {ic:'⏳', label:'排队中',   cls:'st-wait'},
   running:   {ic:'▶',  label:'正在执行', cls:'st-run'},
+  stopping:  {ic:'⏳', label:'停止中',   cls:'st-wait'},
   model:     {ic:'⏳', label:'等待模型', cls:'st-wait'},
   tool:      {ic:'🔧', label:'等待工具', cls:'st-wait'},
   approval:  {ic:'✋', label:'等待审批', cls:'st-appr'},

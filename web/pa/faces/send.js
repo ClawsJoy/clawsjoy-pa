@@ -1,6 +1,6 @@
 /* ---- 发送 ---- */
 let abortCtrl=null;
-/* P0-3：work/dev 走 /v9/agent/runs（默认开；置 0 ⇒ 旧 /v9/agent/chat SSE fallback） */
+/* P1-1：PA_RUN_API 固定 1；work/dev 单链只走 /v9/agent/runs（⛔ 旧 SSE 静默 fallback） */
 var PA_RUN_API = 1;
 var PA_LAST_RUN_KEY = 'pa.lastRun';
 try{ window.PA_RUN_API = PA_RUN_API; }catch(e){}
@@ -228,15 +228,14 @@ function paRespKind(d){
   return why ? 'rejected' : 'noreceipt';
 }
 
-/* 工作/开发：执行通道（复用现有 /v9/agent/chat 循环） */
+/* 工作/开发：执行通道（P1-1 单链 ⇒ /v9/agent/runs；旧 SSE 代码仅留非 work/dev 兼容，⛔ 静默回退） */
 async function sendAgent(t, userText){
   /* P9 BUG-1 修 (2026-10-03): 本函数原本【没有】text 形参, 而出口回执那行引用了 text
      => ReferenceError: text is not defined => 被 catch 归成「连不上后端（网络不可达）」(归因错),
      且该轮【永不落盘】(/v9/pa/turn 未被调用). 修法: 显式收下 user_text; 续跑无新话时给空串. */
   const _utext = (typeof userText === 'string') ? userText : '';
-  /* P0-3：work/dev ⇒ 异步 runs（对话/排队/停止可查）；置 PA_RUN_API=0 回旧 SSE fallback */
-  if((state.mode==='work' || state.mode==='dev')
-     && (typeof PA_RUN_API === 'undefined' || Number(PA_RUN_API) !== 0)){
+  /* P1-1：单发送链 —— work/dev **只走 runs**；⛔ 旧 /v9/agent/chat SSE 静默 fallback（失败须明报） */
+  if(state.mode==='work' || state.mode==='dev'){
     return await sendAgentViaRuns(t, _utext);
   }
   const cfg = MODES[state.mode];
@@ -310,7 +309,7 @@ function _paRunUuid(){
 function _paApplyRunState(d){
   const s=String((d&&d.state)||'');
   if(s==='queued') paSetState('queued','排队第'+(Number((d&&d.position)||1)||1));
-  else if(s==='running') paSetState('running',(d&&d.cancel_requested)?'停止中…':'执行中');
+  else if(s==='running') paSetState((d&&d.cancel_requested)?'stopping':'running',(d&&d.cancel_requested)?'停止中…':'执行中');
   else if(s==='done') paSetState('done');
   else if(s==='failed') paSetState('failed',String((d&&d.error)||'失败').slice(0,60));
   else if(s==='cancelled') paSetState('cancelled','已取消');
@@ -435,7 +434,7 @@ async function paCancelRun(runId){
     if(!r.ok || !d || d.ok===false){
       addMsg('assistant','⚠ 停止请求失败：'+(((d&&(d.error||d.code))||('HTTP '+r.status)))); return;
     }
-    paSetState('running','停止中…');
+    paSetState('stopping','停止中…');
     addMsg('sys','⏹ 已发送停止请求：'+(d.cancel_requested?'等待执行收口…':'已取消'));
   }catch(e){
     addMsg('assistant','⚠ 停止请求失败：'+((e&&e.message)||e));
