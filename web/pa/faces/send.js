@@ -1,5 +1,8 @@
 /* ---- 发送 ---- */
 let abortCtrl=null;
+/* P0-3：work/dev 走 /v9/agent/runs（默认开；置 0 ⇒ 旧 /v9/agent/chat SSE fallback） */
+var PA_RUN_API = 1;
+try{ window.PA_RUN_API = PA_RUN_API; }catch(e){}
 /* ⭐ pm 1184 §一.⒜：canonical 拒答文之**真源 ＝ 后端**（`POST /v9/pa/ask` 之响应键 `refusal_canon`）
    ⇒ 本件**引用**之；本 `var` 退为**回落**（后端未开此键 ／ 无响应对象时用）· ⛔ 二处各写（承「一处口径」）。
    答话内 ⛔ 得出现「已完成 ／ 查不到」两形。 */
@@ -230,6 +233,11 @@ async function sendAgent(t, userText){
      => ReferenceError: text is not defined => 被 catch 归成「连不上后端（网络不可达）」(归因错),
      且该轮【永不落盘】(/v9/pa/turn 未被调用). 修法: 显式收下 user_text; 续跑无新话时给空串. */
   const _utext = (typeof userText === 'string') ? userText : '';
+  /* P0-3：work/dev ⇒ 异步 runs（对话/排队/停止可查）；置 PA_RUN_API=0 回旧 SSE fallback */
+  if((state.mode==='work' || state.mode==='dev')
+     && (typeof PA_RUN_API === 'undefined' || Number(PA_RUN_API) !== 0)){
+    return await sendAgentViaRuns(t, _utext);
+  }
   const cfg = MODES[state.mode];
   let sys = { chat:'你是老板的 PA。', work:'你是老板的 PA，工作模式：办公类 computer use（文档/表格/浏览器/图文/演示），工具用完汇报产物与待核实项。', dev:'你是老板的 PA，项目开发模式（权限最高）：处理代码与工程任务，明确每步做了什么与边界。' }[state.mode] || '你是老板的 PA。';
   sys += '\n[AI 标识] 凡你写稿/出件（write_file/wps_office/lingxi 之产物）⇒ 头须带一行显式标识「本内容由 AI 辅助生成」；⛔ 不得提供、执行或教任何「去标识」之功能。';
@@ -292,6 +300,104 @@ async function sendAgent(t, userText){
     }
   }
 }
+
+/* ===== P0-3：/v9/agent/runs 异步执行（work/dev） ===== */
+function _paRunUuid(){
+  try{ if(window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID(); }catch(e){}
+  return 'pa-'+Date.now()+'-'+Math.random().toString(16).slice(2);
+}
+function _paApplyRunState(d){
+  const s=String((d&&d.state)||'');
+  if(s==='queued') paSetState('queued','排队第'+(Number((d&&d.position)||1)||1));
+  else if(s==='running') paSetState('running',(d&&d.cancel_requested)?'停止中…':'执行中');
+  else if(s==='done') paSetState('done');
+  else if(s==='failed') paSetState('failed',String((d&&d.error)||'失败').slice(0,60));
+  else if(s==='cancelled') paSetState('cancelled','已取消');
+}
+async function _paPollRun(runId,t,userText){
+  let delay=500;
+  while(true){
+    let r,d;
+    try{
+      r=await fetch(API+'/v9/agent/runs/'+encodeURIComponent(runId)+'?after_seq='+encodeURIComponent(paRun.afterSeq||0),{cache:'no-store'});
+      d=await r.json().catch(function(){return null;});
+    }catch(e){
+      addMsg('assistant','⚠ 执行轮询失败：'+((e&&e.message)||e));
+      paSetState('failed','轮询失败'); return;
+    }
+    if(!r.ok || !d || d.ok===false){
+      const _e=(d&&(d.error||d.code))||('HTTP '+r.status);
+      addMsg('assistant','❌ 执行状态查询失败：'+_e);
+      paSetState('failed',String(_e).slice(0,60)); return;
+    }
+    paRun.afterSeq=Number((d.next_after_seq!=null?d.next_after_seq:paRun.afterSeq)||0);
+    _paApplyRunState(d);
+    const st=String(d.state||'');
+    if(st==='done'){
+      let content='';
+      const out=d.output||{};
+      if(out && typeof out==='object') content=String(out.content||'');
+      else if(typeof out==='string') content=out;
+      if(content){
+        addMsg('assistant',content,false,null,paRunTid());
+        try{ detectOutputs(content).forEach(renderOutputCard); }catch(e){}
+        paRun.receipt=await recordPaTurn(t.id,userText,content,{origin:'model',answer_source:'model'});
+      }else{
+        addMsg('assistant','✅ 执行完成（后端无文本输出）');
+      }
+      paSetState('done'); paRun.runId=null; paRun.afterSeq=0; return;
+    }
+    if(st==='failed'){
+      const _why=String(d.error||''), _code=String(d.code||'');
+      addMsg('assistant','❌ 执行失败'+(_code?('（'+_code+'）'):'')+'：'+(_why||'（后端未给原因）'));
+      paSetState('failed',(_why||'执行失败').slice(0,60)); paRun.runId=null; return;
+    }
+    if(st==='cancelled'){
+      addMsg('assistant','⏹ 执行已取消：'+String(d.reason||'用户停止'));
+      paSetState('cancelled','已取消'); paRun.runId=null; paRun.afterSeq=0; return;
+    }
+    await new Promise(function(res){ setTimeout(res,delay); });
+    delay=1000;
+  }
+}
+async function sendAgentViaRuns(t,userText){
+  const _cid=_paRunUuid();
+  const _body={user_id:curUser(),session_id:t.id,task:(userText||''),client_request_id:_cid};
+  const _mdl=paModelSel(); if(_mdl) _body.model=_mdl;
+  paRun.runId=null; paRun.afterSeq=0; paRunSrc='POST /v9/agent/runs';
+  paSetState('running','提交执行中…');
+  try{
+    const r=await fetch(API+'/v9/agent/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_body)});
+    const d=await r.json().catch(function(){return null;});
+    if(r.status===429){ addMsg('assistant','⏳ 执行队列已满（queue_full）：稍后再试'); paSetState('failed','队列已满'); return; }
+    if(!r.ok || !d || !d.ok || !d.run_id){
+      const _why=(d&&(d.error||d.code))||('HTTP '+r.status);
+      addMsg('assistant','❌ 提交执行失败：'+_why);
+      paSetState('failed',String(_why).slice(0,60)); return;
+    }
+    paRun.runId=d.run_id;
+    _paApplyRunState(d);
+    await _paPollRun(d.run_id,t,userText);
+  }catch(e){
+    addMsg('assistant','⚠ 提交执行失败：'+((e&&e.message)||e));
+    paSetState('failed','提交失败');
+  }
+}
+async function paCancelRun(runId){
+  paRunSrc='POST /v9/agent/runs/'+runId+'/cancel';
+  try{
+    const r=await fetch(API+'/v9/agent/runs/'+encodeURIComponent(runId)+'/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:'user_stop'})});
+    const d=await r.json().catch(function(){return null;});
+    if(!r.ok || !d || d.ok===false){
+      addMsg('assistant','⚠ 停止请求失败：'+(((d&&(d.error||d.code))||('HTTP '+r.status)))); return;
+    }
+    paSetState('running','停止中…');
+    addMsg('sys','⏹ 已发送停止请求：'+(d.cancel_requested?'等待执行收口…':'已取消'));
+  }catch(e){
+    addMsg('assistant','⚠ 停止请求失败：'+((e&&e.message)||e));
+  }
+}
+
 async function readSSE(resp){
   const reader=resp.body.getReader(); const dec=new TextDecoder(); let buf=''; let payload={success:true};
   const seen=new Set(); let sawDone=false; let _sawError=null; let _errShown=false; let _errMeta='';   // 批172：错误定位信息
@@ -528,3 +634,24 @@ function paAttachRender(){
 }
 try{ window.paAttachPick = paAttachPick; window.paAttachOnPick = paAttachOnPick;
      window.paAttachIds = paAttachIds; window.paAttachOutIds = paAttachOutIds; }catch(e){}
+
+/* P0-3：paStop 在 runs 路径必须 POST /v9/agent/runs/{id}/cancel（不能只 abort）；
+   cards.js 之后加载，故在 DOMContentLoaded 后包装（旧 SSE 路径无 runId ⇒ 仍走原 paStop）。 */
+(function(){
+  function wrapStop(){
+    if(typeof window.paStop === 'function' && !window.paStop.__paRunsWrapped){
+      var _orig = window.paStop;
+      window.paStop = function(){
+        var _rid = (typeof paRun !== 'undefined' && paRun && paRun.runId) ? String(paRun.runId) : '';
+        var _flag = (typeof PA_RUN_API === 'undefined') ? 1 : Number(PA_RUN_API);
+        if(_rid && _flag !== 0){ paCancelRun(_rid); return; }
+        return _orig.apply(this, arguments);
+      };
+      window.paStop.__paRunsWrapped = true;
+    }
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(wrapStop, 0); });
+  }else{ setTimeout(wrapStop, 0); }
+  try{ window.__paRunsWrapStop = wrapStop; }catch(e){}
+})();

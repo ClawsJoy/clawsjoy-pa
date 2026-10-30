@@ -3,6 +3,7 @@
    「无事件时长」超过阈值必须变成可见提示（30s 提醒 / 90s 疑似卡住），避免「发了没反应」（HSR）。 */
 const PA_STATE_DEF = {
   idle:      {ic:'○',  label:'就绪',     cls:'st-idle'},
+  queued:    {ic:'⏳', label:'排队中',   cls:'st-wait'},
   running:   {ic:'▶',  label:'正在执行', cls:'st-run'},
   model:     {ic:'⏳', label:'等待模型', cls:'st-wait'},
   tool:      {ic:'🔧', label:'等待工具', cls:'st-wait'},
@@ -11,11 +12,12 @@ const PA_STATE_DEF = {
   done:      {ic:'✅', label:'已完成',   cls:'st-ok'},
   failed:    {ic:'❌', label:'已失败',   cls:'st-err'},
   stopped:   {ic:'⏹', label:'已停止',   cls:'st-err'},
+  cancelled: {ic:'⏹', label:'已取消',   cls:'st-err'},
   /* M2-A · Step 3.1：**只增键** —— 阻断不再借 tool 态显示（既有 9 键一字未改） */
   blocked:   {ic:'⛔', label:'已阻断',   cls:'st-block'}
 };
 // 终态不再计时：已失败/已停止/已完成/就绪若继续累加「Ns」会误导成"还在跑"（自检发现：failed 态秒数一直跳）
-const PA_TERMINAL = {idle:1, done:1, failed:1, stopped:1};
+const PA_TERMINAL = {idle:1, done:1, failed:1, stopped:1, cancelled:1};
 const PA_T_WARN_S = 30;    // 30s 无任何后端事件 ⇒ 显式提示
 const PA_T_STALE_S = 90;   // 90s ⇒ 疑似卡住（提示可点停止）
 let paRun = {state:'idle', t0:Date.now(), lastEvent:Date.now(), timer:null, note:'', threadId:null, busy:false, receipt:null, evidence:null};
@@ -81,7 +83,7 @@ function paRenderState(){
   // 批175：等待审批/请示要把「在等什么」显示在药丸上 ——
   // 此前 note 只进 title（鼠标悬停才看得到），老板从药丸上看不出「等的是确认」。
   // 只对 approval 生效（其余状态 note 仍只进 title，避免药丸变长）。
-  if(paRun.state==='approval' && paRun.note){ txt += ' · ' + String(paRun.note).slice(0,28); }
+  if((paRun.state==='approval' || paRun.state==='queued') && paRun.note){ txt += ' · ' + String(paRun.note).slice(0,28); }
   if(!PA_TERMINAL[paRun.state]){   // 批159：仅"进行中"的态才显示已耗时/无进展
     const secs=Math.round((Date.now()-paRun.t0)/1000);
     const quiet=Math.round((Date.now()-paRun.lastEvent)/1000);

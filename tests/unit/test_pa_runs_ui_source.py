@@ -1,0 +1,105 @@
+"""task-154：PA 前端 send/status 接 /v9/agent/runs 之静态断言（node --check + 源断言）.
+
+不执行 DOM；只读两件源，防端点/轮询/取消/fallback 被回退。
+"""
+
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+SEND = ROOT / "web" / "pa" / "faces" / "send.js"
+STATUS = ROOT / "web" / "pa" / "faces" / "status.js"
+
+
+def _send():
+    return SEND.read_text(encoding="utf-8")
+
+
+def _status():
+    return STATUS.read_text(encoding="utf-8")
+
+
+def test_work_dev_route_uses_runs_with_flag():
+    src = _send()
+    assert "var PA_RUN_API = 1;" in src
+    assert "Number(PA_RUN_API) !== 0" in src
+    assert "(state.mode==='work' || state.mode==='dev')" in src
+    assert "return await sendAgentViaRuns(t, _utext);" in src
+    assert "async function sendAgentViaRuns(" in src
+
+
+def test_submit_contract_has_client_request_id_and_model():
+    src = _send()
+    assert "client_request_id" in src
+    assert "task:(userText||'')" in src
+    assert "paModelSel()" in src
+    assert "API+'/v9/agent/runs'" in src
+    assert "r.status===429" in src and "queue_full" in src
+
+
+def test_polling_after_seq_and_backoff():
+    src = _send()
+    assert "?after_seq=" in src
+    assert "next_after_seq" in src
+    assert "let delay=500;" in src
+    assert "delay=1000;" in src
+    assert "setTimeout(res,delay);" in src
+    assert "async function _paPollRun(" in src
+
+
+def test_done_extracts_output_content_and_records_turn():
+    src = _send()
+    assert "out.content" in src
+    assert "addMsg('assistant',content" in src
+    assert "recordPaTurn(t.id,userText,content" in src
+    assert "paSetState('done')" in src
+
+
+def test_failed_and_cancelled_visible():
+    src = _send()
+    assert "d.state==='failed'" in src or "st==='failed'" in src
+    assert "_why" in src and "d.code" in src
+    assert "st==='cancelled'" in src
+    assert "paSetState('cancelled','已取消')" in src
+
+
+def test_cancel_uses_runs_cancel_not_only_abort():
+    src = _send()
+    assert "async function paCancelRun(runId)" in src
+    assert "API+'/v9/agent/runs/'+encodeURIComponent(runId)+'/cancel'" in src
+    assert "paCancelRun(_rid)" in src, "paStop 必须接 runs cancel"
+    assert "window.paStop.__paRunsWrapped" in src
+
+
+def test_old_sse_fallback_preserved():
+    src = _send()
+    assert "API+'/v9/agent/chat'" in src
+    assert "readSSE(resp)" in src
+    assert "PA_RUN_API" in src
+    assert "fallback" in src.lower()
+
+
+def test_status_has_queued_and_cancelled():
+    src = _status()
+    assert "queued:" in src
+    assert "cancelled:" in src
+    assert "PA_TERMINAL = {idle:1, done:1, failed:1, stopped:1, cancelled:1}" in src
+    assert "paRun.state==='queued'" in src or "paRun.state==='approval' || paRun.state==='queued'" in src
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")
+def test_node_check_both_files():
+    for path in (SEND, STATUS):
+        p = subprocess.run(
+            ["node", "--check", str(path)],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=30,
+        )
+        assert p.returncode == 0, (path.name, p.stdout, p.stderr)
