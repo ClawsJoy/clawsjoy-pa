@@ -75,6 +75,7 @@ def test_organize_all_api(tmp_path, monkeypatch):
         "topic": "客户", "model_ok": True, "why": ""})
     started = c.post("/v9/pa/notes/organize_all", json={}).get_json()
     assert started["total"] == 2
+    assert started["ok"] is True and "succeeded" in started
     for _ in range(30):
         st = c.get("/v9/pa/notes/organize_status").get_json()
         if not st["running"]:

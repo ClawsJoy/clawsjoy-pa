@@ -169,12 +169,26 @@
     paNbModal('来源标签',
       '<div class="pa-hint">标签是来源的分组；一个来源一个标签。可自动整理，也可手动建标签、把来源移到别的标签。</div>'
       + '<div class="pa-nb-row" style="margin:10px 0;flex-direction:column">'
-      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbOrganizeOpen()">重新整理（自动标签）</button>'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbReorganizeNow()">一键整理全部（自动标签）</button>'
       + '<button class="pa-btn" type="button" onclick="paNbAddLabelDialog()">添加新标签</button>'
       + '<button class="pa-btn" type="button" onclick="paNbUnlabelAuto()">撤销自动标签</button>'
       + '<button class="pa-btn" type="button" onclick="paNbToggleView()">' + (NB.view === 'list' ? '返回到标签视图' : '返回到列表视图') + '</button>'
       + '</div>',
       '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>');
+  };
+  window.paNbReorganizeNow = function(){
+    paNbModalClose();
+    paNbModal('整理全部（自动分类归档）',
+      '<div class="pa-hint">正在后台整理全部笔记；可关窗口，完成后标签自动刷新。全部来源视图里能看到所有标签。</div>'
+      + '<div id="paNbOrgProg"><div class="pa-nb-bar"><i id="paNbOrgBar"></i></div>'
+      + '<div id="paNbOrgMsg" class="pa-hint">启动中…</div></div>'
+      + '<div id="paNbOrgCats"></div>',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>');
+    paNbOrganizeAll(false);
+  };
+  window.paNbShowAllSources = function(){
+    paNbModalClose();
+    paNbSelect('', true);
   };
   window.paNbToggleView = function(){
     NB.view = NB.view === 'list' ? 'label' : 'list';
@@ -257,34 +271,33 @@
     }catch(e){ msg('启动整理失败：' + ((e && e.message) || e)); }
   };
   window.paNbOrganizeRun = function(scope){ return paNbOrganizeAll(scope === 'uncat'); };
-  var _orgPolling = false;
   window.paNbOrganizePoll = async function(silent){
-    if(_orgPolling) return;
-    _orgPolling = true;
     try{
-      var d = await req('/v9/pa/notes/organize_status');
+      var rr = await fetch(api('/v9/pa/notes/organize_status?ts=' + Date.now()), {cache:'no-store'});
+      var d = await rr.json();
       var total = Number(d.total) || 0, done = Number(d.done) || 0;
       var running = !!d.running;
       var p = $('paNbOrgProg'); if(p && total) p.hidden = false;
       var bar = $('paNbOrgBar'); if(bar && total) bar.style.width = Math.min(100, Math.round(done * 100 / total)) + '%';
       var m = $('paNbOrgMsg');
       if(m){
-        if(running) m.textContent = '正在整理 ' + done + '/' + total + '…（后台本地模型，可关窗，稍后回来看）';
+        if(running) m.textContent = '正在整理 ' + done + '/' + total + '…（后台本地模型）';
         else if(d.error) m.textContent = '出错：' + d.error;
-        else if(total) m.textContent = '已完成 ' + done + '/' + total + '；标签已自动重新关联。';
+        else if(total){
+          m.innerHTML = '已完成 ' + done + '/' + total + '；标签已自动重新关联。'
+            + (NB.cur ? ' <button class="pa-btn pa-btn-mini" type="button" onclick="paNbShowAllSources()">查看全部来源</button>' : '');
+        }
         else if(!silent) m.textContent = '还没有开始整理。';
       }
       var c = $('paNbOrgCount');
       if(c) c.textContent = total ? (done + '/' + total) : '未开始';
       paNbOrgCats(d.categories || {});
       if(running){
-        setTimeout(function(){ _orgPolling = false; paNbOrganizePoll(true); }, 1400);
-      }else{
-        _orgPolling = false;
-        if(total && done){ await paNbOrgRefresh(); }
+        setTimeout(function(){ paNbOrganizePoll(true); }, 1500);
+      }else if(total && done){
+        await paNbOrgRefresh();
       }
     }catch(e){
-      _orgPolling = false;
       if(!silent) msg('读不到整理进度：' + ((e && e.message) || e));
     }
   };

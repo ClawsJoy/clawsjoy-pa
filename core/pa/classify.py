@@ -196,7 +196,7 @@ def classify_many(ids, data_dir=None, limit=8, llm_fn=None):
 
 _JOB_LOCK = threading.Lock()
 _JOB = {"running": False, "total": 0, "done": 0, "current": "", "error": "",
-        "started": "", "finished": "", "categories": {}, "ok": 0, "failed": 0}
+        "started": "", "finished": "", "categories": {}, "succeeded": 0, "failed": 0}
 
 
 def _snapshot():
@@ -293,7 +293,7 @@ def _run_all(ids, data_dir, llm_fn):
                 results.append({"id": nid, "error": "%s: %s" % (type(e).__name__, str(e)[:120])})
             with _JOB_LOCK:
                 _JOB["done"] = i + 1
-                _JOB["ok"] = ok
+                _JOB["succeeded"] = ok
                 _JOB["failed"] = failed
         counts = _apply_categories(results, data_dir=data_dir)
         with _JOB_LOCK:
@@ -321,7 +321,7 @@ def organize_all(data_dir=None, llm_fn=None, only_uncategorized=False):
             ids = [x["id"] for x in rows]
         _JOB = {"running": bool(ids), "total": len(ids), "done": 0, "current": "",
                 "error": "", "started": time.strftime("%Y-%m-%dT%H:%M:%S"), "finished": "",
-                "categories": {}, "ok": 0, "failed": 0,
+                "categories": {}, "succeeded": 0, "failed": 0,
                 "only_uncategorized": bool(only_uncategorized)}
     if ids:
         threading.Thread(target=_run_all, args=(ids, data_dir, llm_fn), daemon=True).start()
