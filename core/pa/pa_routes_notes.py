@@ -141,6 +141,24 @@ def register(bp):
         except Exception as e:
             return err("整理失败：%s" % type(e).__name__, 500)
 
+    @bp.route("/v9/pa/notes/organize_all", methods=["POST"])
+    def pa_notes_organize_all():
+        g = _guard()
+        if g:
+            return g
+        d = _body()
+        try:
+            return ok(C.organize_all(only_uncategorized=bool(d.get("only_uncategorized"))))
+        except Exception as e:
+            return err("启动整理失败：%s" % type(e).__name__, 500)
+
+    @bp.route("/v9/pa/notes/organize_status", methods=["GET"])
+    def pa_notes_organize_status():
+        g = _guard()
+        if g:
+            return g
+        return ok(C.organize_status())
+
     @bp.route("/v9/pa/notes/organize", methods=["POST"])
     def pa_notes_organize():
         g = _guard()
@@ -175,7 +193,8 @@ def register(bp):
         d = _body()
         try:
             n = N.update(note_id, title=d.get("title"), body=d.get("body"), tags=d.get("tags"),
-                         notebook_id=d.get("notebook_id"))
+                         notebook_id=d.get("notebook_id"),
+                         category=d.get("category") if "category" in d else None)
             return ok({"note": n})
         except N.NoteError as e:
             return err(str(e), 404 if "不存在" in str(e) else 400)

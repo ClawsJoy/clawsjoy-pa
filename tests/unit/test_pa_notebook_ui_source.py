@@ -40,6 +40,9 @@ def test_notebook_three_columns_and_actions():
         assert fn in src, fn
     assert "paNbPickNotebook('add')" in src
     assert "paNbPickNotebook('note')" in src
+    for fn in ("paNbOrganizeAll", "paNbOrganizePoll", "paNbToggleCat", "paNbToggleCatOpen"):
+        assert fn in src, fn
+    assert "organize_all" in src and "organize_status" in src
     assert "summary" in src and "keywords" in src
     assert "pa-nb-drop" in src
     assert "window.prompt" not in src

@@ -157,57 +157,69 @@
     paNbRenderSources(); paNbRenderHeader();
   };
 
-  /* ---------- 整理：摘要＋关键词＋归类建议 ---------- */
+  /* ---------- 整理：一键自动分类归档（标签下多篇关联） ---------- */
   window.paNbOrganizeOpen = function(){
-    NB.org = [];
-    paNbModal('整理笔记',
-      '<div class="pa-hint">用本地模型为笔记生成摘要与关键词，并按关键词／摘要建议笔记本。不会自动搬动，需你逐条确认。</div>'
-      + '<div class="pa-nb-cfg-grid"><div><div class="pa-nb-cfg-l">范围</div><div class="pa-nb-chip">已勾选 ' + paNbSelectedIds().length + ' 条</div></div>'
-      + '<div><div class="pa-nb-cfg-l">全部</div><div class="pa-nb-chip">' + NB.sources.length + ' 条</div></div></div>'
+    paNbModal('整理笔记（自动分类归档）',
+      '<div class="pa-hint">一键分析全部笔记：生成摘要 → 抽关键词 → 自动归到标签；同一标签下会关联多篇来源。可重复运行，重新关联归档。</div>'
+      + '<div class="pa-nb-cfg-grid"><div><div class="pa-nb-cfg-l">全部</div><div class="pa-nb-chip">' + NB.sources.length + ' 条</div></div>'
+      + '<div><div class="pa-nb-cfg-l">进度</div><div class="pa-nb-chip" id="paNbOrgCount">未开始</div></div></div>'
       + '<div class="pa-nb-row" style="margin:10px 0">'
-      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbOrganizeRun(\'sel\')">整理勾选（≤5 条）</button>'
-      + '<button class="pa-btn" type="button" onclick="paNbOrganizeRun(\'all\')">整理全部（≤5 条）</button></div>'
-      + '<div id="paNbOrgMsg" class="pa-hint"></div><div id="paNbOrgList"></div>',
+      + '<button class="pa-btn pa-btn-main" type="button" id="paNbOrgStart" onclick="paNbOrganizeAll(false)">一键整理全部</button>'
+      + '<button class="pa-btn" type="button" onclick="paNbOrganizeAll(true)">只补未分类</button></div>'
+      + '<div id="paNbOrgProg" hidden><div class="pa-nb-bar"><i id="paNbOrgBar"></i></div>'
+      + '<div id="paNbOrgMsg" class="pa-hint"></div></div>'
+      + '<div id="paNbOrgCats"></div>',
       '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>');
+    paNbOrganizePoll(true);
   };
-  window.paNbOrganizeRun = async function(scope){
-    var ids = scope === 'sel' ? paNbSelectedIds() : NB.sources.map(function(x){ return x.id; });
-    ids = ids.slice(0, 5);
-    if(!ids.length){ msg('没有可整理的笔记'); return; }
-    NB.org = [];
-    var m = $('paNbOrgMsg'), list = $('paNbOrgList');
-    if(list) list.innerHTML = '';
-    for(var i=0;i<ids.length;i++){
-      if(m) m.textContent = '整理中 ' + (i + 1) + '/' + ids.length + '…（本地模型）';
-      try{
-        var r = await req('/v9/pa/notes/' + encodeURIComponent(ids[i]) + '/classify', {method:'POST'});
-        NB.org.push(r);
-      }catch(e){
-        NB.org.push({id:ids[i], title:'（读取失败）', error:(e && e.message) || String(e)});
+  window.paNbOrganizeAll = async function(only){
+    try{
+      var d = await req('/v9/pa/notes/organize_all', {method:'POST', body:{only_uncategorized:!!only}});
+      if(!d.running && !d.total){ msg('没有可整理的笔记'); return; }
+      var p = $('paNbOrgProg'); if(p) p.hidden = false;
+      paNbOrganizePoll();
+    }catch(e){ msg('启动整理失败：' + ((e && e.message) || e)); }
+  };
+  window.paNbOrganizeRun = function(scope){ return paNbOrganizeAll(scope === 'uncat'); };
+  var _orgPolling = false;
+  window.paNbOrganizePoll = async function(silent){
+    if(_orgPolling) return;
+    _orgPolling = true;
+    try{
+      var d = await req('/v9/pa/notes/organize_status');
+      var total = Number(d.total) || 0, done = Number(d.done) || 0;
+      var running = !!d.running;
+      var p = $('paNbOrgProg'); if(p && total) p.hidden = false;
+      var bar = $('paNbOrgBar'); if(bar && total) bar.style.width = Math.min(100, Math.round(done * 100 / total)) + '%';
+      var m = $('paNbOrgMsg');
+      if(m){
+        if(running) m.textContent = '正在整理 ' + done + '/' + total + '…（后台本地模型，可关窗，稍后回来看）';
+        else if(d.error) m.textContent = '出错：' + d.error;
+        else if(total) m.textContent = '已完成 ' + done + '/' + total + '；标签已自动重新关联。';
+        else if(!silent) m.textContent = '还没有开始整理。';
       }
-      paNbOrgRender();
+      var c = $('paNbOrgCount');
+      if(c) c.textContent = total ? (done + '/' + total) : '未开始';
+      paNbOrgCats(d.categories || {});
+      if(running){
+        setTimeout(function(){ _orgPolling = false; paNbOrganizePoll(true); }, 1400);
+      }else{
+        _orgPolling = false;
+        if(total && done){ await paNbOrgRefresh(); }
+      }
+    }catch(e){
+      _orgPolling = false;
+      if(!silent) msg('读不到整理进度：' + ((e && e.message) || e));
     }
-    if(m) m.textContent = '完成 ' + NB.org.filter(function(x){ return !x.error; }).length + ' 条；确认建议后再加入笔记本。';
   };
-  function paNbOrgRender(){
-    var box = $('paNbOrgList'); if(!box) return;
-    box.innerHTML = (NB.org || []).map(function(r){
-      if(r.error) return '<div class="pa-nb-org"><b>' + esc(r.title || r.id) + '</b><div class="pa-hint">' + esc(r.error) + '</div></div>';
-      var kws = (r.keywords || []).map(function(k){ return '<span class="pa-nb-chip">' + esc(k) + '</span>'; }).join(' ');
-      var s = r.suggestion || {};
-      var act = '';
-      if(r.applied){
-        act = '<span class="pa-hint">已加入</span>';
-      }else if(s.notebook_id){
-        act = '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbOrgApply(\'' + esc(r.id) + '\',\'' + esc(s.notebook_id) + '\')">加入「' + esc(s.title) + '」</button>';
-      }else if(s.new){
-        act = '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbOrgNew(\'' + esc(r.id) + '\',\'' + esc(s.title) + '\')">建「' + esc(s.title) + '」并加入</button>';
-      }
-      return '<div class="pa-nb-org"><b>' + esc(r.title || r.id) + '</b>'
-        + '<div class="pa-hint" style="margin:3px 0">' + esc(r.summary || '') + '</div>'
-        + '<div style="margin:4px 0">' + kws + '</div>'
-        + '<div class="pa-nb-org-foot"><span class="pa-hint">' + (r.model_ok ? '模型整理' : '抽取式（模型不可用）') + '</span>' + act + '</div></div>';
-    }).join('');
+  function paNbOrgRender(){}
+  function paNbOrgCats(counts){
+    var box = $('paNbOrgCats'); if(!box) return;
+    var names = Object.keys(counts || {});
+    if(!names.length){ box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="pa-nb-cfg-l">自动标签（多篇关联）</div><div>'
+      + names.map(function(k){ return '<span class="pa-nb-chip">' + esc(k) + ' ×' + counts[k] + '</span>'; }).join(' ')
+      + '</div>';
   }
   window.paNbOrgApply = async function(id, nbId){
     try{
@@ -271,6 +283,20 @@
     if($('paNbAskBtn')) $('paNbAskBtn').disabled = (!seln || NB.busy);
   }
 
+  function paNbGroupSources(){
+    var map = {}, order = [];
+    NB.sources.forEach(function(n){
+      var cat = String(n.category || '').trim() || '未分类';
+      if(!map[cat]){ map[cat] = {name:cat, items:[]}; order.push(cat); }
+      map[cat].items.push(n);
+    });
+    order.sort(function(a, b){
+      if(a === '未分类') return 1;
+      if(b === '未分类') return -1;
+      return (map[b].items.length - map[a].items.length) || a.localeCompare(b, 'zh');
+    });
+    return order.map(function(k){ return map[k]; });
+  }
   function paNbRenderSources(){
     var box = $('paNbSources'); if(!box) return;
     if($('paNbSrcCount')) $('paNbSrcCount').textContent = '· ' + NB.sources.length;
@@ -281,17 +307,47 @@
       return;
     }
     var sel = NB.sel[NB.cur] || [];
-    box.innerHTML = NB.sources.map(function(n){
-      var on = sel.indexOf(n.id) >= 0;
-      return '<div class="pa-nb-src' + (on ? '' : ' off') + '" onclick="paNbOpenSource(\'' + esc(n.id) + '\')" title="' + esc(n.title) + '">'
-        + '<input class="ck" type="checkbox" ' + (on ? 'checked' : '') + ' aria-label="选中来源" onclick="event.stopPropagation();paNbToggleSel(\'' + esc(n.id) + '\')">'
-        + '<span class="ic">' + iconOf(n.source) + '</span>'
-        + '<span class="bd"><span class="nm">' + esc(n.title || '未命名') + '</span>'
-        + '<span class="mt">' + esc(fmtDate(n.updated)) + '</span></span>'
-        + '<button class="x" type="button" title="删除来源" onclick="event.stopPropagation();paNbDeleteSource(\'' + esc(n.id) + '\')">×</button>'
-        + '</div>';
+    var groups = paNbGroupSources();
+    NB.groups = groups;
+    box.innerHTML = groups.map(function(g, gi){
+      var on = g.items.every(function(n){ return sel.indexOf(n.id) >= 0; });
+      var closed = !!(NB.closedCats && NB.closedCats[g.name]);
+      var rows = g.items.map(function(n){
+        var ons = sel.indexOf(n.id) >= 0;
+        return '<div class="pa-nb-src child' + (ons ? '' : ' off') + '" onclick="paNbOpenSource(\'' + esc(n.id) + '\')" title="' + esc(n.title) + '">'
+          + '<input class="ck" type="checkbox" ' + (ons ? 'checked' : '') + ' aria-label="选中来源" onclick="event.stopPropagation();paNbToggleSel(\'' + esc(n.id) + '\')">'
+          + '<span class="ic">' + iconOf(n.source) + '</span>'
+          + '<span class="bd"><span class="nm">' + esc(n.title || '未命名') + '</span>'
+          + '<span class="mt">' + esc(fmtDate(n.updated)) + '</span></span>'
+          + '<button class="x" type="button" title="删除来源" onclick="event.stopPropagation();paNbDeleteSource(\'' + esc(n.id) + '\')">×</button>'
+          + '</div>';
+      }).join('');
+      return '<div class="pa-nb-cat">'
+        + '<button class="ar" type="button" onclick="paNbToggleCatOpen(' + gi + ')">' + (closed ? '▶' : '▼') + '</button>'
+        + '<input class="ck" type="checkbox" ' + (on ? 'checked' : '') + ' title="选中整个标签" onclick="event.stopPropagation();paNbToggleCat(' + gi + ')">'
+        + '<span class="nm" onclick="paNbToggleCatOpen(' + gi + ')">' + esc(g.name) + '</span>'
+        + '<span class="ct">' + g.items.length + '</span></div>'
+        + '<div class="pa-nb-cat-items"' + (closed ? ' hidden' : '') + '>' + rows + '</div>';
     }).join('');
   }
+  window.paNbToggleCatOpen = function(gi){
+    var g = (NB.groups || [])[gi]; if(!g) return;
+    NB.closedCats = NB.closedCats || {};
+    NB.closedCats[g.name] = !NB.closedCats[g.name];
+    paNbRenderSources();
+  };
+  window.paNbToggleCat = function(gi){
+    var g = (NB.groups || [])[gi]; if(!g) return;
+    var sel = (NB.sel[NB.cur] || []).slice();
+    var all = g.items.every(function(n){ return sel.indexOf(n.id) >= 0; });
+    g.items.forEach(function(n){
+      var i = sel.indexOf(n.id);
+      if(all && i >= 0) sel.splice(i, 1);
+      else if(!all && i < 0) sel.push(n.id);
+    });
+    NB.sel[NB.cur] = sel;
+    paNbRenderSources(); paNbRenderHeader();
+  };
 
   /* ---------- 选笔记本 / 加载 ---------- */
   window.paNbSelect = async function(id, keep){
@@ -594,6 +650,9 @@
       else if(!NB.cur)
         foot = '<button class="pa-btn pa-btn-ghost" type="button" onclick="paNbAddToNotebook(\'' + esc(id) + '\')">加入笔记本</button>' + foot;
       var enrich = '';
+      if(n.category){
+        enrich += '<div class="pa-nb-cfg-l">标签</div><div style="margin-bottom:8px"><span class="pa-nb-chip">' + esc(n.category) + '</span></div>';
+      }
       if(n.summary){
         enrich += '<div class="pa-nb-enrich"><div class="pa-nb-cfg-l">摘要</div><div>' + esc(n.summary) + '</div></div>';
       }

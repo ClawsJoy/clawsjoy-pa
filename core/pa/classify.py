@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import re
+import threading
+import time
 
 from core.pa import notes as N
 from core.pa import notebooks as NB
@@ -134,7 +136,8 @@ def classify_note(nid, data_dir=None, llm_fn=None):
         parsed = {"summary": _fallback_summary(title, body),
                   "keywords": fallback_keywords(title, body, tags),
                   "topic": _clean(title, 16) or "未分类"}
-    N.update(nid, data_dir=data_dir, summary=parsed["summary"], keywords=parsed["keywords"])
+    N.update(nid, data_dir=data_dir, summary=parsed["summary"], keywords=parsed["keywords"],
+             category=parsed["topic"])
     return {"id": nid, "title": title, "summary": parsed["summary"],
             "keywords": parsed["keywords"], "topic": parsed["topic"],
             "model_ok": model_ok, "why": why}
@@ -181,3 +184,140 @@ def classify_many(ids, data_dir=None, limit=8, llm_fn=None):
             r["suggestion"] = suggest_notebook(r, data_dir=data_dir)
         out.append(r)
     return out
+
+
+# ---------- 一键整理全部：后台任务 + 自动标签聚类 ----------
+
+_JOB_LOCK = threading.Lock()
+_JOB = {"running": False, "total": 0, "done": 0, "current": "", "error": "",
+        "started": "", "finished": "", "categories": {}, "ok": 0, "failed": 0}
+
+
+def _snapshot():
+    with _JOB_LOCK:
+        return dict(_JOB)
+
+
+def organize_status():
+    return _snapshot()
+
+
+def _jaccard(a, b):
+    A, B = set(a or []), set(b or [])
+    if not A or not B:
+        return 0.0
+    return len(A & B) / float(len(A | B))
+
+
+def _cluster(results):
+    """按关键词重叠把笔记聚成标签；单个笔记的簇最后并入「其他」。"""
+    clusters = []
+    for r in results:
+        if r.get("error"):
+            continue
+        kws = list(r.get("keywords") or [])
+        topic = str(r.get("topic") or "").strip()
+        best, best_score = None, 0.0
+        for c in clusters:
+            sc = _jaccard(kws, c["keywords"])
+            if topic and c["name"] and (topic in c["name"] or c["name"] in topic):
+                sc += 0.25
+            if sc > best_score:
+                best, best_score = c, sc
+        if best is not None and best_score >= 0.18:
+            best["items"].append(r)
+            best["keywords"] = list(set(best["keywords"]) | set(kws))[:40]
+            best["topics"][topic] = best["topics"].get(topic, 0) + 1
+        else:
+            clusters.append({"name": topic or (kws[0] if kws else "其他"),
+                             "keywords": kws, "items": [r],
+                             "topics": {topic: 1} if topic else {}})
+    for c in clusters:
+        if c["topics"]:
+            c["name"] = max(c["topics"].items(), key=lambda kv: kv[1])[0]
+        c["name"] = _clean(c["name"], 24) or "其他"
+    # 单篇簇并入「其他」，保证标签下有多篇关联文件
+    final = {}
+    for c in clusters:
+        name = c["name"] if len(c["items"]) >= 2 else "其他"
+        final.setdefault(name, {"name": name, "items": []})
+        final[name]["items"].extend(c["items"])
+    return list(final.values())
+
+
+def _apply_categories(results, data_dir=None):
+    groups = _cluster(results)
+    counts = {}
+    for g in groups:
+        name = g["name"]
+        for r in g["items"]:
+            try:
+                N.update(r["id"], data_dir=data_dir, category=name)
+                r["category"] = name
+            except Exception:
+                r["category"] = ""
+        counts[name] = len(g["items"])
+    return counts
+
+
+def organize_sync(ids, data_dir=None, llm_fn=None):
+    """同步版（测试/CLI）：逐条整理后再聚类写回 category。"""
+    results = []
+    for nid in list(ids or []):
+        try:
+            results.append(classify_note(nid, data_dir=data_dir, llm_fn=llm_fn))
+        except Exception as e:
+            results.append({"id": nid, "error": "%s: %s" % (type(e).__name__, str(e)[:120])})
+    counts = _apply_categories(results, data_dir=data_dir)
+    return {"results": results, "categories": counts}
+
+
+def _run_all(ids, data_dir, llm_fn):
+    results, ok, failed = [], 0, 0
+    try:
+        for i, nid in enumerate(ids):
+            with _JOB_LOCK:
+                _JOB["current"] = nid
+            try:
+                r = classify_note(nid, data_dir=data_dir, llm_fn=llm_fn)
+                results.append(r)
+                ok += 1
+            except Exception as e:
+                failed += 1
+                results.append({"id": nid, "error": "%s: %s" % (type(e).__name__, str(e)[:120])})
+            with _JOB_LOCK:
+                _JOB["done"] = i + 1
+                _JOB["ok"] = ok
+                _JOB["failed"] = failed
+        counts = _apply_categories(results, data_dir=data_dir)
+        with _JOB_LOCK:
+            _JOB["categories"] = counts
+            _JOB["running"] = False
+            _JOB["current"] = ""
+            _JOB["finished"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+    except Exception as e:
+        with _JOB_LOCK:
+            _JOB["running"] = False
+            _JOB["error"] = "%s: %s" % (type(e).__name__, str(e)[:200])
+            _JOB["finished"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+
+
+def organize_all(data_dir=None, llm_fn=None, only_uncategorized=False):
+    """启动一键整理全部；已有一个在跑时直接返回其状态。"""
+    global _JOB
+    with _JOB_LOCK:
+        if _JOB.get("running"):
+            return dict(_JOB)
+        rows = N.list_notes(data_dir=data_dir, limit=200)
+        if only_uncategorized:
+            ids = [x["id"] for x in rows if not (x.get("category") or "").strip()]
+        else:
+            ids = [x["id"] for x in rows]
+        _JOB = {"running": bool(ids), "total": len(ids), "done": 0, "current": "",
+                "error": "", "started": time.strftime("%Y-%m-%dT%H:%M:%S"), "finished": "",
+                "categories": {}, "ok": 0, "failed": 0,
+                "only_uncategorized": bool(only_uncategorized)}
+    if ids:
+        threading.Thread(target=_run_all, args=(ids, data_dir, llm_fn), daemon=True).start()
+    return _snapshot()
+
