@@ -72,6 +72,10 @@ function paErrBlockHtml(meta, errText){
 }
 function paCopyText(t){ try{ if(navigator.clipboard) navigator.clipboard.writeText(String(t)); }catch(e){} }
 function addMsg(role, content, skipStore, html, tid){
+  /* 身份兜底：本地模型偶发按预训练身份自称 Qwen；⛔ 让它上屏。 */
+  if(role==='assistant' && content && /我是\s*Qwen|由阿里云开发|通义千问|PA\s*是\s*Assistant/i.test(String(content))){
+    content = '我是 PA（Personal Assistant，私人助理）。Qwen 只是本机推理引擎，不是我的身份。';
+  }
   const t = $('thread');
   if (tid && tid !== activeThread().id){
     const _th = state.threads.find(function(x){return x.id===tid;});

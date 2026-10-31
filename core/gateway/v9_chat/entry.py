@@ -40,6 +40,24 @@ from core.lib.util import _get_skeletons_by_type
 # ⛔ 整文件 cp —— 本段为 live 真源之函数/类级定点新增。
 _LOCAL_MODEL_ALIASES = ("ollama", "local", "local_vlm", "local_api", "llama.cpp", "lmstudio", "mock")
 
+_AGENT_IDENTITY = (
+    "身份铁律（⛔ 违反即错）：你是 ClawsJoy 的 PA（Personal Assistant，私人助理），"
+    "不是 Qwen、通义千问、阿里云或任何通用模型；Qwen 只是本机推理引擎，"
+    "⛔ 不是你的名字，⛔ 不是另一个 agent；被问「你是谁／什么模型」时只答 PA。"
+)
+
+
+def _ensure_agent_identity(messages):
+    """在 agent 通道最前补一条硬身份 system；已有则不动（幂等）。"""
+    try:
+        for m in messages or []:
+            if m.get("role") == "system" and "不是 Qwen" in str(m.get("content") or ""):
+                return messages
+        messages.insert(0, {"role": "system", "content": _AGENT_IDENTITY})
+    except Exception:
+        pass
+    return messages
+
 
 class _LocalOllamaAdapter:
     """本地 Ollama adapter：与 DeepSeekAdapter.execute_with_tools 同形返回。
@@ -111,7 +129,7 @@ def run_chat_entry(*, data, deps):
             _clc0(_arch["session_id"])
         except Exception:
             pass
-        messages = _arch["messages"]
+        messages = _ensure_agent_identity(_arch["messages"])
         model = _arch["model"]
         user_id = _arch["user_id"]
         session_id = _arch["session_id"]
