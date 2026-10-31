@@ -1249,6 +1249,32 @@ async function selfTest() {
 }
 
 // ---------------------------------------------------------------- 启
+/* IPC sender 验证（一处定形）：只认本壳页面（http://127.0.0.1:<PORT>）与
+   壳内 summon/record 两个本地页；浏览器视图里的远端页没有 preload ⇒ 无桥。
+   ⛔ 不以「有调用」当可信：无 preload 的远程页也必被此闸拦。 */
+function ipcSenderUrl(event) {
+  try { if (event && event.senderFrame && event.senderFrame.url) { return String(event.senderFrame.url); } } catch (e) { /* 照退 */ }
+  try { return String((event && event.sender && event.sender.getURL()) || ''); } catch (e) { return ''; }
+}
+function ipcSenderTrusted(event) {
+  const u = ipcSenderUrl(event);
+  if (!u) { return false; }
+  if (PORT && u.indexOf('http://127.0.0.1:' + PORT + '/') === 0) { return true; }
+  if (u.indexOf('file://') === 0 && /(?:summon|record)\.html(?:[?#]|$)/.test(u)) { return true; }
+  return false;
+}
+const _ipcHandle = ipcMain.handle.bind(ipcMain);
+ipcMain.handle = function (channel, fn) {
+  return _ipcHandle(channel, function (event) {
+    const args = Array.prototype.slice.call(arguments, 1);
+    if (!ipcSenderTrusted(event)) {
+      log('IPC ⛔ 拒：' + channel + ' ｜ sender=' + ipcSenderUrl(event).slice(0, 160));
+      return { ok: false, code: 'E_SENDER', error: 'untrusted ipc sender' };
+    }
+    return fn.apply(this, [event].concat(args));
+  });
+};
+
 ipcMain.handle('pa:open-feedback-dir', function () { return openFeedbackDir(); });
 // 召出之「发」：唯纳 summonWin 之 IPC（⛔ 他窗冒充）⇒ 交主窗出计划卡（一处）
 ipcMain.handle('pa:summon-send', function (event, text) {
