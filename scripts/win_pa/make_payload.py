@@ -389,7 +389,35 @@ def plan(ref, out, root, runtime_src, wheel, runtime):
     return rows
 
 
-def apply(root, ref, out, runtime_src, wheel=True, runtime=True, gate=False, log=None):
+def set_gateway_port(out, port, log):
+    u"""装根专用端口：只改载荷内 config（⛔ 改仓内真源）。安装版与开发版错峰。"""
+    if not port:
+        return True
+    p = os.path.join(out, u"config", u"system", u"system_unified.yaml")
+    try:
+        lines = io.open(p, encoding=u"utf-8").read().splitlines(True)
+    except Exception as e:
+        log(u"[载荷] 端口写入 ⛔ 读：%s（%s）" % (p, e))
+        return False
+    inside = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s == u"gateway:" and line.startswith(u"  "):
+            inside = True
+            continue
+        if inside and s.startswith(u"port:"):
+            indent = line[:len(line) - len(line.lstrip())]
+            lines[i] = indent + u"port: %d\n" % int(port)
+            io.open(p, u"w", encoding=u"utf-8", newline=u"").write(u"".join(lines))
+            log(u"[载荷] 装根端口：%d（仅载荷 config）" % int(port))
+            return True
+        if inside and s and not line.startswith(u"    "):
+            inside = False
+    log(u"[载荷] 端口写入 ⛔ 见 services.gateway.port：%s" % p)
+    return False
+
+
+def apply(root, ref, out, runtime_src, wheel=True, runtime=True, gate=False, log=None, gateway_port=0):
     rows = []
     log = log or (lambda s: None)
     parent = os.path.dirname(os.path.abspath(out))
@@ -427,11 +455,12 @@ def apply(root, ref, out, runtime_src, wheel=True, runtime=True, gate=False, log
         return None, why2, rows
     okv = single_source(out, log)
     pay = write_root_version_json(root, out, ref, log)
+    okp = set_gateway_port(out, gateway_port, log)
     vj = os.path.join(out, u"version.json")
     okj = (pay.get(u"version") == read_version(out)[0])
     log(u"[闸·零b] 装根 version.json ≡ 载荷之版：%s（%s ⟷ %s）"
         % (u"OK" if okj else u"**FAIL**", pay.get(u"version"), read_version(out)[0]))
-    okv = okv and okj
+    okv = okv and okj and okp
     log(u"[载荷] 5 版（**唯源** ＝ 载荷内 core/lib/version.py）：%s ／ 印 %s"
         % (ver, sha16f(os.path.join(out, u"core", u"lib", u"version.py"))))
     tot_n, tot_b = dir_stats(out)
@@ -674,6 +703,8 @@ def main(argv):
     ap.add_argument(u"--json", action=u"store_true")
     ap.add_argument(u"--stamp", default=u"")
     ap.add_argument(u"--force", action=u"store_true")
+    ap.add_argument(u"--gateway-port", type=int, default=0,
+                    help=u"只改载荷 config 之端口（安装版专用；0＝不改）")
     ap.add_argument(u"--allow-strays", action=u"store_true",
                     help=u"核已跑过之根（其 `__pycache__` 唯报 ⛔ 判红）")
     ap.add_argument(u"--self-test", action=u"store_true")
@@ -708,7 +739,7 @@ def main(argv):
         rmtree_checked(out)
     os.makedirs(out, exist_ok=True)
     res, why, rows = apply(root, a.ref, out, rtsrc, wheel=use_wh, runtime=use_rt,
-                           gate=a.gate, log=log)
+                           gate=a.gate, log=log, gateway_port=a.gateway_port)
     if res is None:
         print(u"[载荷] **FAIL** %s" % why)
         return 2
