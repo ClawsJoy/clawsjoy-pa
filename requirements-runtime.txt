@@ -23,3 +23,4 @@ tiktoken>=0.14.0
 chromadb>=1.5.9
 faster-whisper>=1.2.1   # 本地语音转写（只读/本地）
 jieba>=0.42.1           # 中文关键词抽取（本地整理，模型不可用时的兜底）
+psycopg2-binary>=2.9.12  # 可选本机 PostgreSQL（16）registry/SAG
