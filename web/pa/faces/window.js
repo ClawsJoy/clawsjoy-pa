@@ -244,9 +244,13 @@
     }
 
     var r = st.route;
+    document.body.setAttribute('data-pa-route', r);
     if(r !== 'browser' && window.paBrowserHide) window.paBrowserHide();
     if(r === 'today') stage.innerHTML = todayHtml();
-    else if(r === 'brain'){ stage.innerHTML = brainHtml(); paBrainLoad(''); }
+    else if(r === 'brain'){
+      stage.innerHTML = (window.paBrainHtml ? window.paBrainHtml() : brainHtml());
+      if(window.paBrainMount) window.paBrainMount(); else paBrainLoad('');
+    }
     else if(r === 'browser'){ stage.innerHTML = browserHtml(); paBrowserMount(); }
     else if(r === 'ledger') stage.innerHTML = ledgerHtml();
     else if(r === 'agents') stage.innerHTML = agentsHtml();

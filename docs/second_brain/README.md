@@ -27,3 +27,4 @@
 （完 —— 本件末行 · LF 终 · 悬）
 - [19_CI门禁与Docker维护_v1.md](19_CI门禁与Docker维护_v1.md) — P0/P1/P2 维护、CI 门禁、legacy 基线、Docker 3.12
 - [20_PA全新定义与可行性_v2.md](20_PA全新定义与可行性_v2.md) — PA 定义 v2、PA+DSH、技术栈可行性与缺口
+- [21_笔记本_对标NotebookLM.md](21_笔记本_对标NotebookLM.md) — P1 笔记本层：多本/来源/限定问答/Studio 与差距

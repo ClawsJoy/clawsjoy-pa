@@ -65,7 +65,7 @@ def _safe_id(note_id):
 
 def _render(meta, body):
     lines = ["---"]
-    for k in ("id", "title", "tags", "created", "updated", "source", "source_path"):
+    for k in ("id", "title", "tags", "created", "updated", "source", "source_path", "notebook_id"):
         if k not in meta:
             continue
         v = meta.get(k)
@@ -130,7 +130,11 @@ def _conn(root):
     c.execute("PRAGMA journal_mode=WAL")
     c.execute("""CREATE TABLE IF NOT EXISTS notes(
         id TEXT PRIMARY KEY, title TEXT, path TEXT, tags TEXT,
-        created TEXT, updated TEXT, body TEXT, source TEXT, source_path TEXT)""")
+        created TEXT, updated TEXT, body TEXT, source TEXT, source_path TEXT,
+        notebook_id TEXT DEFAULT '')""")
+    _cols = [r[1] for r in c.execute("PRAGMA table_info(notes)").fetchall()]
+    if "notebook_id" not in _cols:
+        c.execute("ALTER TABLE notes ADD COLUMN notebook_id TEXT DEFAULT ''")
     try:
         c.execute("""CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
             id UNINDEXED, title, body, tags)""")
@@ -143,12 +147,13 @@ def _conn(root):
 def _upsert(c, meta):
     nid = meta["id"]
     c.execute("""INSERT OR REPLACE INTO notes
-        (id,title,path,tags,created,updated,body,source,source_path)
-        VALUES(?,?,?,?,?,?,?,?,?)""",
+        (id,title,path,tags,created,updated,body,source,source_path,notebook_id)
+        VALUES(?,?,?,?,?,?,?,?,?,?)""",
               (nid, meta.get("title", ""), meta.get("path", ""),
                json.dumps(meta.get("tags") or [], ensure_ascii=False),
                meta.get("created", ""), meta.get("updated", ""),
-               meta.get("body", ""), meta.get("source", ""), meta.get("source_path", "")))
+               meta.get("body", ""), meta.get("source", ""), meta.get("source_path", ""),
+               meta.get("notebook_id") or ""))
     try:
         c.execute("DELETE FROM notes_fts WHERE id=?", (nid,))
         c.execute("INSERT INTO notes_fts(id,title,body,tags) VALUES(?,?,?,?)",
@@ -162,13 +167,15 @@ def _upsert(c, meta):
 def _row_to_note(r, with_body=False):
     d = {"id": r["id"], "title": r["title"] or "", "tags": json.loads(r["tags"] or "[]"),
          "created": r["created"] or "", "updated": r["updated"] or "",
-         "source": r["source"] or "", "path": r["path"] or ""}
+         "source": r["source"] or "", "path": r["path"] or "",
+         "notebook_id": (r["notebook_id"] if "notebook_id" in r.keys() else "") or ""}
     if with_body:
         d["body"] = r["body"] or ""
     return d
 
 
-def create(title, body="", tags=None, data_dir=None, source="manual", source_path=""):
+def create(title, body="", tags=None, data_dir=None, source="manual", source_path="",
+           notebook_id=""):
     root = workspace_root(data_dir)
     title = _clip((title or "").strip() or "未命名", MAX_TITLE)
     body = _clip(body or "", MAX_BODY)
@@ -176,7 +183,8 @@ def create(title, body="", tags=None, data_dir=None, source="manual", source_pat
     nid = _new_id()
     now = _now()
     meta = {"id": nid, "title": title, "tags": tags, "created": now, "updated": now,
-            "source": source or "manual", "source_path": source_path or ""}
+            "source": source or "manual", "source_path": source_path or "",
+            "notebook_id": notebook_id or ""}
     p = _write_file(root, nid, meta, body)
     meta["path"] = str(p)
     meta["body"] = body
@@ -186,7 +194,7 @@ def create(title, body="", tags=None, data_dir=None, source="manual", source_pat
     finally:
         c.close()
     return {"id": nid, "title": title, "tags": tags, "created": now, "updated": now,
-            "source": meta["source"], "path": str(p)}
+            "source": meta["source"], "path": str(p), "notebook_id": notebook_id or ""}
 
 
 def _read(root, nid, with_body=True):
@@ -209,31 +217,47 @@ def get(nid, data_dir=None):
     return {"id": nid, "title": m.get("title", ""), "tags": m.get("tags") or [],
             "created": m.get("created", ""), "updated": m.get("updated", ""),
             "source": m.get("source", ""), "path": m.get("path", ""),
-            "source_path": m.get("source_path", ""), "body": m.get("body", "")}
+            "source_path": m.get("source_path", ""), "body": m.get("body", ""),
+            "notebook_id": m.get("notebook_id", "") or ""}
 
 
-def list_notes(q="", data_dir=None, limit=DEFAULT_LIMIT):
+def list_notes(q="", data_dir=None, limit=DEFAULT_LIMIT, notebook_id=None):
     root = workspace_root(data_dir)
     limit = max(1, min(int(limit or DEFAULT_LIMIT), MAX_LIMIT))
+    nb = None if notebook_id is None else str(notebook_id or "")
     c = _conn(root)
     try:
         q = (q or "").strip()
         if not q:
-            rows = c.execute("SELECT * FROM notes ORDER BY updated DESC LIMIT ?", (limit,)).fetchall()
+            if nb is None:
+                rows = c.execute("SELECT * FROM notes ORDER BY updated DESC LIMIT ?", (limit,)).fetchall()
+            else:
+                rows = c.execute("SELECT * FROM notes WHERE notebook_id=? ORDER BY updated DESC LIMIT ?",
+                                 (nb, limit)).fetchall()
             return [_row_to_note(r) for r in rows]
         rows = []
         try:
             terms = [t for t in re.split(r"\s+", q) if t]
             fts_q = " ".join('"' + t.replace('"', '') + '"' for t in terms)
-            rows = c.execute("""SELECT n.* FROM notes_fts f JOIN notes n ON n.id=f.id
-                                WHERE notes_fts MATCH ? ORDER BY rank LIMIT ?""",
-                             (fts_q, limit)).fetchall()
+            if nb is None:
+                rows = c.execute("""SELECT n.* FROM notes_fts f JOIN notes n ON n.id=f.id
+                                    WHERE notes_fts MATCH ? ORDER BY rank LIMIT ?""",
+                                 (fts_q, limit)).fetchall()
+            else:
+                rows = c.execute("""SELECT n.* FROM notes_fts f JOIN notes n ON n.id=f.id
+                                    WHERE notes_fts MATCH ? AND n.notebook_id=? ORDER BY rank LIMIT ?""",
+                                 (fts_q, nb, limit)).fetchall()
         except sqlite3.OperationalError:
             rows = []
         if not rows:
             like = "%" + q + "%"
-            rows = c.execute("""SELECT * FROM notes WHERE title LIKE ? OR body LIKE ? OR tags LIKE ?
-                                ORDER BY updated DESC LIMIT ?""", (like, like, like, limit)).fetchall()
+            if nb is None:
+                rows = c.execute("""SELECT * FROM notes WHERE title LIKE ? OR body LIKE ? OR tags LIKE ?
+                                    ORDER BY updated DESC LIMIT ?""", (like, like, like, limit)).fetchall()
+            else:
+                rows = c.execute("""SELECT * FROM notes WHERE (title LIKE ? OR body LIKE ? OR tags LIKE ?)
+                                    AND notebook_id=? ORDER BY updated DESC LIMIT ?""",
+                                 (like, like, like, nb, limit)).fetchall()
         if not rows and len(q) > 3:
             # 中文自然问句无空格：用 2 字片段召回，再按命中数排序。
             grams = []
@@ -246,8 +270,13 @@ def list_notes(q="", data_dir=None, limit=DEFAULT_LIMIT):
             scored = {}
             for g in grams[:8]:
                 like = "%" + g + "%"
-                for r in c.execute("""SELECT * FROM notes WHERE title LIKE ? OR body LIKE ? OR tags LIKE ?
-                                     LIMIT 200""", (like, like, like)).fetchall():
+                sql = "SELECT * FROM notes WHERE (title LIKE ? OR body LIKE ? OR tags LIKE ?)"
+                params = [like, like, like]
+                if nb is not None:
+                    sql += " AND notebook_id=?"
+                    params.append(nb)
+                sql += " LIMIT 200"
+                for r in c.execute(sql, params).fetchall():
                     scored[r["id"]] = scored.get(r["id"], 0) + 1
             if scored:
                 rows = c.execute("SELECT * FROM notes WHERE id IN (%s)" % ",".join("?" * len(scored)),
@@ -258,7 +287,17 @@ def list_notes(q="", data_dir=None, limit=DEFAULT_LIMIT):
         c.close()
 
 
-def update(nid, title=None, body=None, tags=None, data_dir=None):
+def count_by_notebook(data_dir=None):
+    root = workspace_root(data_dir)
+    c = _conn(root)
+    try:
+        rows = c.execute("SELECT notebook_id, COUNT(*) AS n FROM notes GROUP BY notebook_id").fetchall()
+        return {str(r["notebook_id"] or ""): int(r["n"]) for r in rows}
+    finally:
+        c.close()
+
+
+def update(nid, title=None, body=None, tags=None, data_dir=None, notebook_id=None):
     root = workspace_root(data_dir)
     nid = _safe_id(nid)
     m = _read(root, nid)
@@ -268,6 +307,8 @@ def update(nid, title=None, body=None, tags=None, data_dir=None):
         m["body"] = _clip(body or "", MAX_BODY)
     if tags is not None:
         m["tags"] = [str(t).strip()[:40] for t in (tags or []) if str(t).strip()][:20]
+    if notebook_id is not None:
+        m["notebook_id"] = str(notebook_id or "")
     m["updated"] = _now()
     p = _write_file(root, nid, m, m.get("body", ""))
     m["path"] = str(p)
@@ -277,7 +318,8 @@ def update(nid, title=None, body=None, tags=None, data_dir=None):
     finally:
         c.close()
     return {"id": nid, "title": m.get("title", ""), "tags": m.get("tags") or [],
-            "created": m.get("created", ""), "updated": m["updated"], "path": str(p)}
+            "created": m.get("created", ""), "updated": m["updated"], "path": str(p),
+            "notebook_id": m.get("notebook_id", "") or ""}
 
 
 def delete(nid, data_dir=None):
@@ -299,7 +341,7 @@ def delete(nid, data_dir=None):
     return {"id": nid, "deleted": True}
 
 
-def import_dir(path, data_dir=None):
+def import_dir(path, data_dir=None, notebook_id=""):
     src = Path(path).expanduser()
     if not src.exists() or not src.is_dir():
         raise NoteError("导入目录不存在")
@@ -320,14 +362,16 @@ def import_dir(path, data_dir=None):
                 nid = _new_id()
                 now = _now()
                 nm = {"id": nid, "title": title, "tags": tags[:20], "created": now,
-                      "updated": now, "source": "import", "source_path": key}
+                      "updated": now, "source": "import", "source_path": key,
+                      "notebook_id": notebook_id or ""}
                 fp = _write_file(root, nid, nm, body)
                 nm["path"] = str(fp); nm["body"] = body
                 _upsert(c, nm)
                 imported += 1
             except Exception:
                 skipped += 1
-        return {"ok": True, "imported": imported, "skipped": skipped, "source": str(src)}
+        return {"ok": True, "imported": imported, "skipped": skipped, "source": str(src),
+                "notebook_id": notebook_id or ""}
     finally:
         c.close()
 
@@ -359,20 +403,30 @@ def reindex(data_dir=None):
         c.close()
 
 
-def _llm_answer(prompt):
+def llm_generate(prompt, system_prompt=None, max_tokens=1200, timeout=90):
+    """一处出口：走 provider 默认路由；异常上抛，由调用方照实回落（⛔ 假装模型可用）。"""
     from core.pa.providers import default_route
     from core.lib.llm_client import LLMClient
     route, _ = default_route()
-    return LLMClient().generate(prompt, model=route.get("model"), max_tokens=900, timeout=60,
-                                system_prompt="你是 PA 的第二大脑问答。只依据给定笔记回答，不编造。")
+    return LLMClient().generate(prompt, model=route.get("model"), max_tokens=max_tokens, timeout=timeout,
+                                system_prompt=system_prompt or "你是 PA 的第二大脑。只依据给定资料，不编造。")
 
 
-def ask(question, data_dir=None, limit=6, llm_fn=None):
-    """带出处的第二大脑问答：检索 note → 模型总结 → 返回 citations。"""
+def _llm_answer(prompt):
+    return llm_generate(prompt, system_prompt="你是 PA 的第二大脑问答。只依据给定笔记回答，不编造。",
+                        max_tokens=900, timeout=60)
+
+
+def ask(question, data_dir=None, limit=6, llm_fn=None, notebook_id=None):
+    """带出处的第二大脑问答：检索 note → 模型总结 → 返回 citations。
+
+    notebook_id 非 None 时只检索该笔记本（⛔ 越界引用别本）。
+    """
     q = (question or "").strip()
     if not q:
         raise NoteError("问题为空")
-    rows = list_notes(q=q, data_dir=data_dir, limit=max(1, min(int(limit or 6), 10)))
+    rows = list_notes(q=q, data_dir=data_dir, limit=max(1, min(int(limit or 6), 10)),
+                      notebook_id=notebook_id)
     if not rows:
         return {"answer": "没有找到相关笔记。先记一笔，或换一个关键词。", "citations": [], "notes": []}
     citations, chunks = [], []
@@ -381,7 +435,7 @@ def ask(question, data_dir=None, limit=6, llm_fn=None):
         body = (full.get("body") or "").strip()
         snippet = body[:1200]
         citations.append({"id": n["id"], "title": n.get("title", ""), "snippet": snippet[:240],
-                          "updated": n.get("updated", "")})
+                          "updated": n.get("updated", ""), "notebook_id": n.get("notebook_id", "")})
         chunks.append("[note:%s] %s\n%s" % (n["id"], n.get("title", ""), snippet))
     prompt = ("你是 PA 的第二大脑。只根据下面笔记回答，不要编造；"
               "每条结论后用 [note:<id>] 标出处；没有依据就说没有依据。\n\n"

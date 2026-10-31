@@ -789,6 +789,7 @@ def register_pa_routes(app, brain=None):
     from core.pa import pa_routes_content_caliber # noqa: F401
     from core.pa import pa_routes_registry        # noqa: F401
     from core.pa import pa_routes_notes           # noqa: F401
+    from core.pa import pa_routes_notebooks       # noqa: F401
     try:
         app._pa_brain = brain
     except Exception:
