@@ -33,6 +33,11 @@ STUDIO_KINDS = {
     "faq": "常见问题",
     "study": "学习指南",
     "mindmap": "思维导图",
+    "report": "报告",
+    "flashcards": "闪卡",
+    "quiz": "测验",
+    "slides": "演示文稿",
+    "datatable": "数据表格",
 }
 
 
@@ -328,15 +333,25 @@ def add_pdf(nb_id, filename, data, data_dir=None):
     return {"note": note, "chars": len(text), "path": str(dst)}
 
 
-def ask(nb_id, question, limit=6, data_dir=None, llm_fn=None):
+def ask(nb_id, question, limit=6, data_dir=None, llm_fn=None, note_ids=None):
     get(nb_id, data_dir=data_dir)
-    return N.ask(question, data_dir=data_dir, limit=limit, llm_fn=llm_fn, notebook_id=_safe_id(nb_id))
+    ids = None
+    if note_ids is not None:
+        allowed = {x["id"] for x in sources(nb_id, data_dir=data_dir)}
+        ids = [str(x) for x in note_ids if str(x) in allowed]
+        if not ids:
+            raise NotebookError("没有勾选本笔记本的来源")
+    return N.ask(question, data_dir=data_dir, limit=limit, llm_fn=llm_fn,
+                 notebook_id=_safe_id(nb_id), note_ids=ids)
 
 
 # ---------- Studio ----------
 
-def _snippets(nb_id, data_dir=None, cap=2400):
+def _snippets(nb_id, data_dir=None, cap=2400, note_ids=None):
     rows = sources(nb_id, data_dir=data_dir)
+    if note_ids is not None:
+        allowed = {str(x) for x in note_ids}
+        rows = [x for x in rows if str(x.get("id")) in allowed]
     out = []
     for i, n in enumerate(rows, 1):
         full = N.get(n["id"], data_dir=data_dir)
@@ -359,15 +374,31 @@ def _fallback(kind, nb, items):
         lines = ["- %s" % nb.get("title", "笔记本")]
         lines += ["  - [%d] %s" % (x["n"], x["title"]) for x in items]
         return head + "\n".join(lines)
+    if kind == "flashcards":
+        lines = ["### 卡 %d" % x["n"] + "\n问：" + x["title"] + "\n答：" + re.sub(r"\s+", " ", x["body"])[:180] + " [%d]" % x["n"]
+                 for x in items]
+        return head + "\n\n".join(lines)
+    if kind == "quiz":
+        lines = ["%d. %s\nA. 是\nB. 否\n答案：A\n解析：见来源 [%d]" % (i, x["title"], x["n"])
+                 for i, x in enumerate(items, 1)]
+        return head + "\n\n".join(lines)
+    if kind == "slides":
+        lines = ["## 第 %d 页 %s\n- %s [%d]" % (i, x["title"], re.sub(r"\s+", " ", x["body"])[:120], x["n"])
+                 for i, x in enumerate(items, 1)]
+        return head + "\n\n".join(lines)
+    if kind == "datatable":
+        lines = ["| 主题 | 要点 | 出处 |", "|---|---|---|"]
+        lines += ["| %s | %s | [%d] |" % (x["title"], re.sub(r"\s+", " ", x["body"])[:80], x["n"]) for x in items]
+        return head + "\n".join(lines)
     return head + "模型不可用，未生成内容。来源：" + "、".join("[%d] %s" % (x["n"], x["title"]) for x in items)
 
 
-def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12):
+def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12, note_ids=None):
     nb = get(nb_id, data_dir=data_dir)
     kind = str(kind or "summary")
     if kind not in STUDIO_KINDS:
         raise NotebookError("不支持的 Studio 类型")
-    items = _snippets(nb_id, data_dir=data_dir)[:max_sources]
+    items = _snippets(nb_id, data_dir=data_dir, note_ids=note_ids)[:max_sources]
     if not items:
         raise NotebookError("先加来源，再生成")
     chunks = "\n\n---\n\n".join("[note:%s] %s\n%s" % (x["id"], x["title"], x["body"]) for x in items)
@@ -376,6 +407,11 @@ def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12):
         "faq": "生成 8 组常见问题与答案（Q:/A:）；答案只用来源内容，末尾用 [note:<id>] 标出处（必须保留 note: 前缀）。",
         "study": "生成学习指南：核心概念、3 个易错点、5 个复习问题；用 [note:<id>] 标出处（必须保留 note: 前缀）。",
         "mindmap": "生成层级思维导图（Markdown 嵌套列表，根为笔记本名，二层为来源主题）；不要编造来源外内容；需要标来源时用 [note:<id>]。",
+        "report": "生成一份结构化报告：背景／关键发现（5-8 条）／证据／风险与建议；每条发现后用 [note:<id>] 标出处。",
+        "flashcards": "生成 12 张闪卡；每张严格三行：第一行 ### 卡 N，第二行 问：…，第三行 答：…；答末尾用 [note:<id>] 标出处。",
+        "quiz": "生成 8 道单选题；每题 4 个选项、正确答案、一句解析，末尾用 [note:<id>] 标出处。",
+        "slides": "生成 8 页演示文稿大纲；每页：## 第 N 页 标题，下接 3-5 条要点；关键事实用 [note:<id>] 标出处。",
+        "datatable": "用 Markdown 表格总结来源中的事实：列＝主题｜要点｜出处；只写来源里有的内容，出处列用 [note:<id>]。",
     }[kind]
     prompt = ("你是 PA 第二大脑的 Studio。只依据下面来源，不要编造；%s\n\n笔记本：%s\n\n来源：\n%s\n"
               % (instr, nb.get("title", ""), chunks))
@@ -392,6 +428,20 @@ def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12):
     return {"kind": kind, "title": "%s · %s" % (nb.get("title", "笔记本"), STUDIO_KINDS[kind]),
             "markdown": md[:12000], "model_ok": model_ok, "why": why,
             "citations": _cite_list(items), "notebook_id": nb_id}
+
+
+def recent_outputs(nb_id, data_dir=None, limit=6):
+    """最近 Studio 产出（落在本笔记本的 note，标签含 Studio）。"""
+    get(nb_id, data_dir=data_dir)
+    out = []
+    for n in sources(nb_id, data_dir=data_dir):
+        tags = [str(t) for t in (n.get("tags") or [])]
+        if "Studio" not in tags and str(n.get("source") or "") != "ai":
+            continue
+        out.append({"id": n["id"], "title": n.get("title", ""), "updated": n.get("updated", ""),
+                    "kind": next((t for t in tags if t != "Studio"), "Studio")})
+    out.sort(key=lambda x: str(x.get("updated") or ""), reverse=True)
+    return out[:limit]
 
 
 def save_output(nb_id, title, body, kind="summary", data_dir=None):

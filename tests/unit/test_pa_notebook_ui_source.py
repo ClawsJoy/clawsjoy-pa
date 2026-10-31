@@ -28,8 +28,12 @@ def test_notebook_three_columns_and_actions():
     for cls in ('pa-nb-left', 'pa-nb-main', 'pa-nb-right'):
         assert cls in src, cls
     for fn in ('paNbCreateSave', 'paNbAddTextSave', 'paNbAddUrlSave', 'paNbAddPdf',
-               'paNbAsk', 'paNbStudioGen', 'paNbSaveStudio', 'paNbDeleteNotebook'):
+               'paNbAsk', 'paNbStudioGen', 'paNbSaveStudio', 'paNbDeleteNotebook',
+               'paNbToggleSel', 'paNbSelAll', 'paNbNewNoteOpen'):
         assert 'window.' + fn + ' =' in src, fn
+    assert "note_ids" in src
+    assert "pa-nb-tile" in src
+    assert "/outputs" in src
     assert "window.prompt" not in src
     for ep in ('/v9/pa/notebooks', '/sources/text', '/sources/url', '/sources/pdf', '/ask', '/studio'):
         assert ep in src, ep
@@ -40,7 +44,7 @@ def test_notebook_scoped_ask_and_citations():
     assert "paNbCiteChips" in src
     assert "[note:" in src
     assert "NB.chat" in src
-    assert "答案只引用本笔记本来源" in src
+    assert "答案只引用勾选来源" in src
 
 
 def test_studio_kinds_and_honest_fallback():

@@ -39,6 +39,30 @@ def test_ask_is_scoped_to_notebook(tmp_path):
     assert ids == [na["id"]], ids
 
 
+def test_ask_note_ids_only_selected_sources(tmp_path):
+    nb = NB.create("选源", data_dir=str(tmp_path))
+    a = NB.add_text(nb["id"], "对外", "客户预算 12 万。", data_dir=str(tmp_path))
+    NB.add_text(nb["id"], "内部", "内部上限 20 万。", data_dir=str(tmp_path))
+    out = NB.ask(nb["id"], "预算多少", data_dir=str(tmp_path),
+                 note_ids=[a["id"]], llm_fn=lambda p: "12 万 [note:%s]" % a["id"])
+    assert [c["id"] for c in out["citations"]] == [a["id"]]
+    with pytest.raises(NB.NotebookError):
+        NB.ask(nb["id"], "预算", data_dir=str(tmp_path), note_ids=["20261031-000000-000000"])
+
+
+def test_studio_note_ids_and_recent_outputs(tmp_path):
+    nb = NB.create("产出", data_dir=str(tmp_path))
+    a = NB.add_text(nb["id"], "一", "事实一。", data_dir=str(tmp_path))
+    NB.add_text(nb["id"], "二", "事实二。", data_dir=str(tmp_path))
+    out = NB.studio(nb["id"], "summary", data_dir=str(tmp_path), note_ids=[a["id"]],
+                    llm_fn=lambda p: "摘要 [note:%s]" % a["id"])
+    assert out["model_ok"] is True
+    saved = NB.save_output(nb["id"], "摘要笔记", out["markdown"], kind="summary", data_dir=str(tmp_path))
+    rows = NB.recent_outputs(nb["id"], data_dir=str(tmp_path))
+    assert rows and rows[0]["id"] == saved["id"]
+    assert rows[0]["kind"] == "摘要"
+
+
 def test_studio_model_ok_and_fallback(tmp_path):
     nb = NB.create("学习", data_dir=str(tmp_path))
     NB.add_text(nb["id"], "第一章", "核心概念是检索增强。", data_dir=str(tmp_path))
@@ -79,7 +103,7 @@ def test_api_notebook_roundtrip(tmp_path, monkeypatch):
         "notes": [{"id": src["id"], "title": "来源一"}]})
     r = c.post("/v9/pa/notebooks/%s/ask" % nb["id"], json={"q": "何时"})
     assert r.status_code == 200 and r.get_json()["citations"][0]["id"] == src["id"]
-    monkeypatch.setattr(NB, "studio", lambda nb_id, kind="summary": {
+    monkeypatch.setattr(NB, "studio", lambda nb_id, kind="summary", **kw: {
         "kind": kind, "title": "t", "markdown": "## 摘要", "model_ok": True,
         "citations": [], "notebook_id": nb_id})
     st = c.post("/v9/pa/notebooks/%s/studio" % nb["id"], json={"kind": "summary"}).get_json()

@@ -417,16 +417,29 @@ def _llm_answer(prompt):
                         max_tokens=900, timeout=60)
 
 
-def ask(question, data_dir=None, limit=6, llm_fn=None, notebook_id=None):
+def ask(question, data_dir=None, limit=6, llm_fn=None, notebook_id=None, note_ids=None):
     """带出处的第二大脑问答：检索 note → 模型总结 → 返回 citations。
 
-    notebook_id 非 None 时只检索该笔记本（⛔ 越界引用别本）。
+    notebook_id 非 None 时只检索该笔记本；note_ids 非 None 时只在这些来源内（越界 id 忽略）。
     """
     q = (question or "").strip()
     if not q:
         raise NoteError("问题为空")
-    rows = list_notes(q=q, data_dir=data_dir, limit=max(1, min(int(limit or 6), 10)),
-                      notebook_id=notebook_id)
+    lim = max(1, min(int(limit or 6), 10))
+    if note_ids is not None:
+        rows = []
+        for nid in list(note_ids or [])[:lim]:
+            try:
+                m = get(str(nid), data_dir=data_dir)
+            except Exception:
+                continue
+            if notebook_id is not None and str(m.get("notebook_id") or "") != str(notebook_id or ""):
+                continue
+            rows.append({"id": m["id"], "title": m.get("title", ""),
+                         "updated": m.get("updated", ""),
+                         "notebook_id": m.get("notebook_id", "")})
+    else:
+        rows = list_notes(q=q, data_dir=data_dir, limit=lim, notebook_id=notebook_id)
     if not rows:
         return {"answer": "没有找到相关笔记。先记一笔，或换一个关键词。", "citations": [], "notes": []}
     citations, chunks = [], []

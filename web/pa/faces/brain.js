@@ -5,7 +5,7 @@
   'use strict';
   var API_BASE = (typeof API !== 'undefined') ? API : '';
   var NB = window.PA_NB = {
-    notebooks: [], cur: '', total: 0, sources: [], chat: {}, studio: {},
+    notebooks: [], cur: '', total: 0, sources: [], sel: {}, chat: {}, studio: {},
     studioKind: 'summary', busy: false
   };
 
@@ -63,7 +63,12 @@
       +   '</div>'
       +   '<div id="paNbList" class="pa-nb-list"></div>'
       +   '<div class="pa-nb-src-h"><b>来源</b><span id="paNbSrcCount"></span>'
+      +     '<button id="paNbSelAllBtn" class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbSelAll()" title="全选/取消全选">全选</button>'
       +     '<button class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbAddOpen()" title="添加来源">＋</button></div>'
+      +   '<div class="pa-nb-src-actions">'
+      +     '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbAddOpen()">＋ 添加来源</button>'
+      +     '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbNewNoteOpen()">＋ 创建笔记</button>'
+      +   '</div>'
       +   '<div id="paNbAddMenu" class="pa-nb-add" hidden>'
       +     '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbAddTextOpen()">📝 文本</button>'
       +     '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbAddUrlOpen()">🔗 网址</button>'
@@ -83,19 +88,26 @@
       +   '<div id="paNbChat" class="pa-nb-chat"></div>'
       +   '<div class="pa-nb-composer"><textarea id="paNbQ" placeholder="问本笔记本：核心结论？有哪些数字和日期？有哪些风险？" aria-label="问本笔记本"></textarea>'
       +     '<button id="paNbAskBtn" class="pa-btn pa-btn-main" type="button" onclick="paNbAsk()">问</button></div>'
-      +   '<div class="pa-nb-foot">答案只引用本笔记本来源；[n] 点开原文。模型不可用时会照实说。</div>'
+      +   '<div class="pa-nb-foot"><span id="paNbQCount">0 个来源</span> · 答案只引用勾选来源；[n] 点开原文。模型不可用时会照实说。</div>'
       + '</main>'
       + '<aside class="pa-nb-col pa-nb-right">'
       +   '<div class="pa-nb-h"><b>Studio</b><span style="font-size:10.5px">由本笔记本生成</span></div>'
-      +   '<div id="paNbTabs" class="pa-nb-tabs">'
-      +     '<button class="pa-nb-tab on" type="button" data-kind="summary" onclick="paNbStudioTab(\'summary\')">摘要</button>'
-      +     '<button class="pa-nb-tab" type="button" data-kind="faq" onclick="paNbStudioTab(\'faq\')">常见问题</button>'
-      +     '<button class="pa-nb-tab" type="button" data-kind="study" onclick="paNbStudioTab(\'study\')">学习指南</button>'
-      +     '<button class="pa-nb-tab" type="button" data-kind="mindmap" onclick="paNbStudioTab(\'mindmap\')">思维导图</button>'
+      +   '<div id="paNbTabs" class="pa-nb-grid">'
+      +     '<button class="pa-nb-tile on" type="button" data-kind="summary" onclick="paNbStudioTab(\'summary\')"><span>📝</span>摘要</button>'
+      +     '<button class="pa-nb-tile" type="button" data-kind="report" onclick="paNbStudioTab(\'report\')"><span>📊</span>报告</button>'
+      +     '<button class="pa-nb-tile" type="button" data-kind="flashcards" onclick="paNbStudioTab(\'flashcards\')"><span>🃏</span>闪卡</button>'
+      +     '<button class="pa-nb-tile" type="button" data-kind="quiz" onclick="paNbStudioTab(\'quiz\')"><span>❓</span>测验</button>'
+      +     '<button class="pa-nb-tile" type="button" data-kind="mindmap" onclick="paNbStudioTab(\'mindmap\')"><span>🧠</span>思维导图</button>'
+      +     '<button class="pa-nb-tile" type="button" data-kind="slides" onclick="paNbStudioTab(\'slides\')"><span>📑</span>演示文稿</button>'
+      +     '<button class="pa-nb-tile" type="button" data-kind="datatable" onclick="paNbStudioTab(\'datatable\')"><span>📋</span>数据表格</button>'
+      +     '<button class="pa-nb-tile off" type="button" disabled title="未实现：需要本机 TTS"><span>🎧</span>音频概览</button>'
+      +     '<button class="pa-nb-tile off" type="button" disabled title="未实现：需要视频渲染"><span>🎬</span>视频概览</button>'
+      +     '<button class="pa-nb-tile off" type="button" disabled title="未实现：需要图形生成"><span>📈</span>信息图</button>'
       +   '</div>'
       +   '<div class="pa-nb-gen"><button id="paNbGenBtn" class="pa-btn pa-btn-main" type="button" onclick="paNbStudioGen()">生成摘要</button></div>'
       +   '<div id="paNbOut" class="pa-nb-out"><div class="pa-nb-empty">选一个类型，点「生成」。产出可存回本笔记本。</div></div>'
       +   '<div class="pa-nb-msg" style="border-top:1px solid var(--border)"><button id="paNbSaveOut" class="pa-btn pa-btn-mini" type="button" onclick="paNbSaveStudio()" hidden>存为笔记</button></div>'
+      +   '<div class="pa-nb-recent"><div class="pa-nb-h" style="padding:7px 10px"><b>最近产出</b></div><div id="paNbOutputs"></div></div>'
       + '</aside>'
       + '</div>';
   };
@@ -121,7 +133,28 @@
       var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources');
       NB.sources = d.sources || [];
     }
+    var ids = NB.sources.map(function(x){ return x.id; });
+    var sel = NB.sel[NB.cur];
+    NB.sel[NB.cur] = Array.isArray(sel) ? sel.filter(function(id){ return ids.indexOf(id) >= 0; }) : ids.slice();
   }
+  function paNbSelectedIds(){
+    var ids = NB.sources.map(function(x){ return x.id; });
+    var sel = NB.sel[NB.cur] || [];
+    return sel.filter(function(id){ return ids.indexOf(id) >= 0; });
+  }
+  window.paNbToggleSel = function(id){
+    var sel = (NB.sel[NB.cur] || []).slice();
+    var i = sel.indexOf(id);
+    if(i >= 0) sel.splice(i, 1); else sel.push(id);
+    NB.sel[NB.cur] = sel;
+    paNbRenderSources(); paNbRenderHeader();
+  };
+  window.paNbSelAll = function(){
+    var ids = NB.sources.map(function(x){ return x.id; });
+    var sel = paNbSelectedIds();
+    NB.sel[NB.cur] = (ids.length && sel.length === ids.length) ? [] : ids.slice();
+    paNbRenderSources(); paNbRenderHeader();
+  };
   function paNbCurrent(){
     for(var i=0;i<NB.notebooks.length;i++) if(NB.notebooks[i].id === NB.cur) return NB.notebooks[i];
     return null;
@@ -151,11 +184,16 @@
   }
 
   function paNbRenderHeader(){
-    var nb = paNbCurrent();
+    var nb = paNbCurrent(), seln = paNbSelectedIds().length, total = NB.sources.length;
     if($('paNbEmoji')) $('paNbEmoji').textContent = NB.cur ? (nb && nb.emoji || '📘') : '🗂';
     if($('paNbTitle')) $('paNbTitle').textContent = NB.cur ? ((nb && nb.title) || '未命名') : '全部来源';
-    if($('paNbSub')) $('paNbSub').textContent = (NB.cur ? (NB.sources.length + ' 个来源 · 问答只引本笔记本') : (NB.total + ' 条笔记 · 跨全部笔记'));
+    if($('paNbSub')) $('paNbSub').textContent = NB.cur
+      ? (seln + '/' + total + ' 个来源 · 问答只引勾选')
+      : (NB.total + ' 条笔记 · 跨全部笔记');
+    if($('paNbQCount')) $('paNbQCount').textContent = seln + ' 个来源';
     if($('paNbEditBtn')) $('paNbEditBtn').hidden = !NB.cur;
+    if($('paNbSelAllBtn')) $('paNbSelAllBtn').textContent = (total && seln === total) ? '取消全选' : '全选';
+    if($('paNbAskBtn')) $('paNbAskBtn').disabled = (!seln || NB.busy);
   }
 
   function paNbRenderSources(){
@@ -167,8 +205,11 @@
         : '还没有笔记。新建一个笔记本，再添加来源。') + '</div>';
       return;
     }
+    var sel = NB.sel[NB.cur] || [];
     box.innerHTML = NB.sources.map(function(n){
-      return '<div class="pa-nb-src" onclick="paNbOpenSource(\'' + esc(n.id) + '\')" title="' + esc(n.title) + '">'
+      var on = sel.indexOf(n.id) >= 0;
+      return '<div class="pa-nb-src' + (on ? '' : ' off') + '" onclick="paNbOpenSource(\'' + esc(n.id) + '\')" title="' + esc(n.title) + '">'
+        + '<input class="ck" type="checkbox" ' + (on ? 'checked' : '') + ' aria-label="选中来源" onclick="event.stopPropagation();paNbToggleSel(\'' + esc(n.id) + '\')">'
         + '<span class="ic">' + iconOf(n.source) + '</span>'
         + '<span class="bd"><span class="nm">' + esc(n.title || '未命名') + '</span>'
         + '<span class="mt">' + esc(fmtDate(n.updated)) + '</span></span>'
@@ -189,6 +230,7 @@
       paNbRenderSources();
       paNbRenderChat();
       paNbRenderStudio();
+      paNbLoadOutputs();
       msg(NB.cur ? ('已选「' + ((paNbCurrent() || {}).title || '') + '」') : '全部来源视图');
     }catch(e){ msg('读不到来源：' + ((e && e.message) || e)); }
   };
@@ -308,11 +350,44 @@
       f.value = ''; await paNbAfterAdd('已加 PDF（' + (d.chars || 0) + ' 字）');
     }catch(e){ msg('PDF 读不了：' + ((e && e.message) || e)); }
   };
+  window.paNbNewNoteOpen = function(){
+    if(!NB.cur){ msg('先选/新建一个笔记本，再创建笔记'); return; }
+    paNbCloseAdd();
+    paNbModal('创建笔记',
+      '<div style="font-size:11px;color:var(--sub)">标题</div><input id="paNbNoteTitle" placeholder="笔记标题">'
+      + '<div style="font-size:11px;color:var(--sub)">正文</div><textarea id="paNbNoteBody" placeholder="写点什么…"></textarea>',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">取消</button>'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbNewNoteSave()">创建</button>');
+  };
+  window.paNbNewNoteSave = async function(){
+    var t = $('paNbNoteTitle'), b = $('paNbNoteBody');
+    var body = b ? b.value.trim() : '';
+    if(!body){ msg('正文为空'); return; }
+    try{
+      await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/text', {method:'POST', body:{
+        title: (t && t.value.trim()) || body.slice(0, 30), body: body, tags:['笔记']}});
+      paNbModalClose(); await paNbAfterAdd('已创建笔记');
+    }catch(e){ msg('建不了：' + ((e && e.message) || e)); }
+  };
   window.paNbVoice = function(){ paNbCloseAdd(); if(window.paBrainVoiceToggle) window.paBrainVoiceToggle(); };
   window.paNbScreen = function(){ paNbCloseAdd(); if(window.paScreenPick) window.paScreenPick(); };
   window.paNbImport = function(){ paNbCloseAdd(); if(window.paBrainImport) window.paBrainImport(); };
+  async function paNbLoadOutputs(){
+    var box = $('paNbOutputs'); if(!box) return;
+    if(!NB.cur){ box.innerHTML = '<div class="pa-nb-empty" style="padding:8px 10px">选一个笔记本</div>'; return; }
+    try{
+      var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/outputs');
+      var arr = d.outputs || [];
+      box.innerHTML = arr.length ? arr.map(function(o){
+        return '<div class="pa-nb-out-item" onclick="paNbOpenSource(\'' + esc(o.id) + '\')">'
+          + '<div class="nm">' + esc(o.title || '未命名') + '</div>'
+          + '<div class="mt">' + esc(o.kind || 'Studio') + ' · ' + esc(fmtDate(o.updated)) + '</div></div>';
+      }).join('') : '<div class="pa-nb-empty" style="padding:8px 10px">还没有产出</div>';
+    }catch(e){ box.innerHTML = '<div class="pa-nb-empty" style="padding:8px 10px">读不到产出</div>'; }
+  }
   async function paNbAfterAdd(text){
     await paNbLoadNotebooks(); await paNbLoadAllCount(); paNbRenderList();
+    NB.sel[NB.cur] = null;
     await paNbSelect(NB.cur, true); msg(text);
   }
   window.paBrainLoad = function(){ return paNbRefresh(); };
@@ -455,13 +530,15 @@
     if(NB.busy) return;
     var q = String((($('paNbQ') || {}).value) || '').trim();
     if(!q){ if($('paNbQ')) $('paNbQ').focus(); return; }
+    var selIds = paNbSelectedIds();
+    if(!selIds.length){ msg('先勾选至少一个来源'); return; }
     var list = paNbChatOf(), ph = {role:'a', text:'检索本笔记本…', pending:true};
     list.push({role:'u', text:q}); list.push(ph);
     if($('paNbQ')) $('paNbQ').value = '';
     paNbRenderChat(); NB.busy = true; if($('paNbAskBtn')) $('paNbAskBtn').disabled = true;
     try{
       var path = NB.cur ? ('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/ask') : '/v9/pa/notes/ask';
-      var d = await req(path, {method:'POST', body:{q:q, limit:6}});
+      var d = await req(path, {method:'POST', body:{q:q, limit:6, note_ids:selIds}});
       list.splice(list.indexOf(ph), 1, {role:'a', text:d.answer || '（无回答）', citations:d.citations || []});
       msg('已答 · 引用 ' + ((d.citations || []).length) + ' 条');
     }catch(e){
@@ -471,12 +548,16 @@
       NB.busy = false; if($('paNbAskBtn')) $('paNbAskBtn').disabled = false; paNbRenderChat();
     }
   };
-  var KIND_LABEL = {summary:'摘要', faq:'常见问题', study:'学习指南', mindmap:'思维导图'};
+  var KIND_LABEL = {summary:'摘要', report:'报告', flashcards:'闪卡', quiz:'测验',
+    mindmap:'思维导图', slides:'演示文稿', datatable:'数据表格', faq:'常见问题', study:'学习指南'};
   function paNbRenderStudio(){
-    var tabs = document.querySelectorAll('#paNbTabs .pa-nb-tab');
-    for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle('on', tabs[i].getAttribute('data-kind') === NB.studioKind);
+    var tabs = document.querySelectorAll('#paNbTabs .pa-nb-tile');
+    for(var i=0;i<tabs.length;i++){
+      if(tabs[i].disabled) continue;
+      tabs[i].classList.toggle('on', tabs[i].getAttribute('data-kind') === NB.studioKind);
+    }
     var b = $('paNbGenBtn');
-    if(b){ b.textContent = '生成' + (KIND_LABEL[NB.studioKind] || ''); b.disabled = (!NB.cur || !NB.sources.length); }
+    if(b){ b.textContent = '生成' + (KIND_LABEL[NB.studioKind] || ''); b.disabled = (!NB.cur || !paNbSelectedIds().length); }
     var box = $('paNbOut'); if(!box) return;
     var s = (NB.studio[NB.cur] || {})[NB.studioKind];
     if(!s){
@@ -487,13 +568,17 @@
       + (s.model_ok === false ? '<div class="pa-hint" style="color:var(--amber)">模型暂不可用：以上为摘录，不是模型生成。</div>' : '');
     if($('paNbSaveOut')) $('paNbSaveOut').hidden = false;
   }
-  window.paNbStudioTab = function(kind){ NB.studioKind = kind; paNbRenderStudio(); };
+  window.paNbStudioTab = function(kind){
+    if(!KIND_LABEL[kind]) return;
+    NB.studioKind = kind; paNbRenderStudio();
+  };
   window.paNbStudioGen = async function(){
     if(!NB.cur){ msg('Studio 需先选一个笔记本'); return; }
-    if(!NB.sources.length){ msg('先加来源，再生成'); return; }
+    var selIds = paNbSelectedIds();
+    if(!selIds.length){ msg('先勾选来源，再生成'); return; }
     var b = $('paNbGenBtn'); if(b) b.disabled = true; msg('生成中…（本地模型）');
     try{
-      var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/studio', {method:'POST', body:{kind:NB.studioKind}});
+      var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/studio', {method:'POST', body:{kind:NB.studioKind, note_ids:selIds}});
       if(!NB.studio[NB.cur]) NB.studio[NB.cur] = {};
       NB.studio[NB.cur][NB.studioKind] = d; paNbRenderStudio();
       msg(d.model_ok ? ('已生成' + (KIND_LABEL[NB.studioKind] || '')) : '模型不可用，已照实回落为摘录');

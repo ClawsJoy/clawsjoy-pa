@@ -154,7 +154,8 @@ def register(bp):
             return g
         d = _body()
         try:
-            return ok(NB.ask(nb_id, d.get("q", ""), limit=d.get("limit", 6)))
+            return ok(NB.ask(nb_id, d.get("q", ""), limit=d.get("limit", 6),
+                              note_ids=d.get("note_ids")))
         except NB.NotebookError as e:
             return err(str(e), 404 if "不存在" in str(e) else 400)
         except Exception as e:
@@ -167,11 +168,23 @@ def register(bp):
             return g
         d = _body()
         try:
-            return ok(NB.studio(nb_id, d.get("kind") or "summary"))
+            return ok(NB.studio(nb_id, d.get("kind") or "summary", note_ids=d.get("note_ids")))
         except NB.NotebookError as e:
             return err(str(e), 400)
         except Exception as e:
             return err("生成失败：%s" % type(e).__name__, 500)
+
+    @bp.route("/v9/pa/notebooks/<nb_id>/outputs", methods=["GET"])
+    def pa_nb_outputs(nb_id):
+        g = _guard()
+        if g:
+            return g
+        try:
+            return ok({"outputs": NB.recent_outputs(nb_id)})
+        except NB.NotebookError as e:
+            return err(str(e), 404)
+        except Exception as e:
+            return err("取产出失败：%s" % type(e).__name__, 500)
 
     @bp.route("/v9/pa/notebooks/<nb_id>/notes", methods=["POST"])
     def pa_nb_save_output(nb_id):
