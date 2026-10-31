@@ -119,10 +119,16 @@ def classify_note(nid, data_dir=None, llm_fn=None):
     title = note.get("title", "")
     body = (note.get("body") or "")[:MAX_TEXT]
     tags = note.get("tags") or []
+    try:
+        existing = N.distinct_categories(data_dir=data_dir)[:12]
+    except Exception:
+        existing = []
     prompt = ("只输出一行 JSON（不要 markdown、不要解释）："
               '{"summary":"1-2 句摘要","keywords":["5-8 个关键词"],"topic":"一个归类名"}\n'
               "要求：摘要与关键词只依据来源；关键词用名词短语；归类名不超过 12 字。\n"
-              "标题：%s\n标签：%s\n正文：\n%s" % (title, "、".join(tags), body))
+              "已有标签（优先复用，别为同义概念另造新名）：%s\n"
+              "标题：%s\n标签：%s\n正文：\n%s"
+              % ("、".join(existing) or "（暂无）", title, "、".join(tags), body))
     model_ok, why, parsed = False, "", None
     try:
         raw = (llm_fn or N.llm_generate)(prompt)
@@ -137,7 +143,7 @@ def classify_note(nid, data_dir=None, llm_fn=None):
                   "keywords": fallback_keywords(title, body, tags),
                   "topic": _clean(title, 16) or "未分类"}
     N.update(nid, data_dir=data_dir, summary=parsed["summary"], keywords=parsed["keywords"],
-             category=parsed["topic"])
+             category=parsed["topic"], category_auto=True)
     return {"id": nid, "title": title, "summary": parsed["summary"],
             "keywords": parsed["keywords"], "topic": parsed["topic"],
             "model_ok": model_ok, "why": why}
@@ -252,7 +258,7 @@ def _apply_categories(results, data_dir=None):
         name = g["name"]
         for r in g["items"]:
             try:
-                N.update(r["id"], data_dir=data_dir, category=name)
+                N.update(r["id"], data_dir=data_dir, category=name, category_auto=True)
                 r["category"] = name
             except Exception:
                 r["category"] = ""

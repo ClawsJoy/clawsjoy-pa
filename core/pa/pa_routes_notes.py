@@ -10,6 +10,7 @@ from flask import jsonify, request
 from core.pa.pa_routes_common import bp, err, ok, _loopback
 from core.pa import notes as N
 from core.pa import classify as C
+from core.pa import labels as L
 from core.pa import voice as V
 from core.pa import screen as S
 
@@ -126,6 +127,51 @@ def register(bp):
             return err(str(e), 400)
         except Exception as e:
             return err("问答失败：%s" % type(e).__name__, 500)
+
+    @bp.route("/v9/pa/labels", methods=["GET", "POST"])
+    def pa_labels():
+        g = _guard()
+        if g:
+            return g
+        if request.method == "GET":
+            return ok({"labels": L.list_labels()})
+        d = _body()
+        try:
+            return ok({"label": L.add(d.get("name"))})
+        except ValueError as e:
+            return err(str(e), 400)
+
+    @bp.route("/v9/pa/labels/<path:name>", methods=["PATCH", "DELETE"])
+    def pa_label_item(name):
+        g = _guard()
+        if g:
+            return g
+        if request.method == "DELETE":
+            return ok(L.delete(name))
+        d = _body()
+        try:
+            return ok(L.rename(name, d.get("name")))
+        except ValueError as e:
+            return err(str(e), 400)
+
+    @bp.route("/v9/pa/notes/<note_id>/label", methods=["POST"])
+    def pa_note_label(note_id):
+        g = _guard()
+        if g:
+            return g
+        d = _body()
+        try:
+            n = N.update(note_id, category=d.get("category") or "", category_auto=False)
+            return ok({"note": n})
+        except N.NoteError as e:
+            return err(str(e), 404 if "不存在" in str(e) else 400)
+
+    @bp.route("/v9/pa/notes/unlabel_auto", methods=["POST"])
+    def pa_notes_unlabel_auto():
+        g = _guard()
+        if g:
+            return g
+        return ok({"cleared": N.clear_auto_labels()})
 
     @bp.route("/v9/pa/notes/<note_id>/classify", methods=["POST"])
     def pa_notes_classify(note_id):

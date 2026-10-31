@@ -6,8 +6,9 @@
   var API_BASE = (typeof API !== 'undefined') ? API : '';
   var NB = window.PA_NB = {
     notebooks: [], cur: '', total: 0, sources: [], sel: {}, chat: {}, studio: {},
-    studioKind: 'summary', studioOpts: {}, busy: false
+    labels: [], view: 'label', studioKind: 'summary', studioOpts: {}, busy: false
   };
+  try{ var _v = localStorage.getItem('pa_nb_src_view_v1'); if(_v === 'list' || _v === 'label') NB.view = _v; }catch(e){}
 
   function $(id){ return document.getElementById(id); }
   function esc(s){
@@ -64,7 +65,7 @@
       +   '<div id="paNbList" class="pa-nb-list"></div>'
       +   '<div class="pa-nb-src-h"><b>来源</b><span id="paNbSrcCount"></span>'
       +     '<button id="paNbSelAllBtn" class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbSelAll()" title="全选/取消全选">全选</button>'
-      +     '<button class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbOrganizeOpen()" title="自动摘要、关键词与归类建议">整理</button>'
+      +     '<button class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbLabelMenuOpen()" title="标签视图 / 自动整理 / 添加标签">整理</button>'
       +     '<button class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbAddOpen()" title="添加来源">＋</button></div>'
       +   '<div class="pa-nb-src-actions">'
       +     '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbAddOpen()">＋ 添加来源</button>'
@@ -126,6 +127,12 @@
     var d = await req('/v9/pa/notes?limit=200');
     NB.total = (d.notes || []).length;
   }
+  async function paNbLoadLabels(){
+    try{
+      var d = await req('/v9/pa/labels');
+      NB.labels = d.labels || [];
+    }catch(e){ NB.labels = []; }
+  }
   async function paNbLoadSources(){
     if(!NB.cur){
       var a = await req('/v9/pa/notes?limit=200');
@@ -157,8 +164,77 @@
     paNbRenderSources(); paNbRenderHeader();
   };
 
+  /* ---------- 标签视图 / 管理（对标 Gemini Notebook 的 label 菜单） ---------- */
+  window.paNbLabelMenuOpen = function(){
+    paNbModal('来源标签',
+      '<div class="pa-hint">标签是来源的分组；一个来源一个标签。可自动整理，也可手动建标签、把来源移到别的标签。</div>'
+      + '<div class="pa-nb-row" style="margin:10px 0;flex-direction:column">'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbOrganizeOpen()">重新整理（自动标签）</button>'
+      + '<button class="pa-btn" type="button" onclick="paNbAddLabelDialog()">添加新标签</button>'
+      + '<button class="pa-btn" type="button" onclick="paNbUnlabelAuto()">撤销自动标签</button>'
+      + '<button class="pa-btn" type="button" onclick="paNbToggleView()">' + (NB.view === 'list' ? '返回到标签视图' : '返回到列表视图') + '</button>'
+      + '</div>',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>');
+  };
+  window.paNbToggleView = function(){
+    NB.view = NB.view === 'list' ? 'label' : 'list';
+    try{ localStorage.setItem('pa_nb_src_view_v1', NB.view); }catch(e){}
+    paNbModalClose(); paNbRenderSources();
+    msg(NB.view === 'list' ? '列表视图' : '标签视图');
+  };
+  window.paNbAddLabelDialog = function(){
+    paNbModalClose();
+    paNbModal('添加新标签',
+      '<div class="pa-hint">空标签也可以先建；之后把来源「移至」它。</div>'
+      + '<input id="paNbNewLabel" placeholder="标签名：合规与认证标准 / 渠道打法…">',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">取消</button>'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbAddLabelSave()">建立</button>');
+    setTimeout(function(){ var e=$('paNbNewLabel'); if(e) e.focus(); }, 50);
+  };
+  window.paNbAddLabelSave = async function(){
+    var e = $('paNbNewLabel'), name = e ? e.value.trim() : '';
+    if(!name){ msg('先填标签名'); return; }
+    try{
+      await req('/v9/pa/labels', {method:'POST', body:{name:name}});
+      paNbModalClose(); await paNbLoadLabels(); paNbRenderSources();
+      msg('已建标签「' + name + '」');
+    }catch(err){ msg('建不了：' + ((err && err.message) || err)); }
+  };
+  window.paNbUnlabelAuto = async function(){
+    if(!window.confirm('撤销所有「自动整理」打上的标签？手动指定的标签会保留。')) return;
+    try{
+      var d = await req('/v9/pa/notes/unlabel_auto', {method:'POST'});
+      paNbModalClose(); await paNbOrgRefresh();
+      msg('已撤销自动标签（' + (d.cleared || 0) + ' 条）');
+    }catch(e){ msg('撤销失败：' + ((e && e.message) || e)); }
+  };
+  window.paNbMoveLabel = function(id){
+    paNbModalClose();
+    var names = {};
+    (NB.labels || []).forEach(function(l){ if(l.name) names[l.name] = 1; });
+    (NB.sources || []).forEach(function(n){ if(n.category) names[n.category] = 1; });
+    var options = [{v:'', t:'未分类'}].concat(Object.keys(names).map(function(k){ return {v:k, t:k}; }));
+    var seen = {};
+    options = options.filter(function(o){ if(seen[o.v]) return false; seen[o.v]=1; return true; });
+    var btns = options.map(function(o){
+      return '<button class="pa-btn" type="button" style="width:100%;justify-content:flex-start" onclick="paNbMoveLabelSave(\'' + esc(id) + '\',\'' + esc(o.v) + '\')">' + esc(o.t) + '</button>';
+    }).join('');
+    paNbModal('移至标签',
+      '<div class="pa-hint">把这条来源移到哪个标签？</div><div class="pa-nb-row" style="flex-direction:column;margin-top:8px">' + btns + '</div>'
+      + '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbAddLabelDialog()" style="margin-top:8px">＋ 新建标签</button>',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">取消</button>');
+  };
+  window.paNbMoveLabelSave = async function(id, label){
+    try{
+      await req('/v9/pa/notes/' + encodeURIComponent(id) + '/label', {method:'POST', body:{category:label || ''}});
+      paNbModalClose(); await paNbOrgRefresh();
+      msg(label ? ('已移到「' + label + '」') : '已移到未分类');
+    }catch(e){ msg('移动失败：' + ((e && e.message) || e)); }
+  };
+
   /* ---------- 整理：一键自动分类归档（标签下多篇关联） ---------- */
   window.paNbOrganizeOpen = function(){
+    paNbModalClose();
     paNbModal('整理笔记（自动分类归档）',
       '<div class="pa-hint">一键分析全部笔记：生成摘要 → 抽关键词 → 自动归到标签；同一标签下会关联多篇来源。可重复运行，重新关联归档。</div>'
       + '<div class="pa-nb-cfg-grid"><div><div class="pa-nb-cfg-l">全部</div><div class="pa-nb-chip">' + NB.sources.length + ' 条</div></div>'
@@ -239,7 +315,7 @@
     }catch(e){ msg('建本/加入失败：' + ((e && e.message) || e)); }
   };
   async function paNbOrgRefresh(){
-    await paNbLoadNotebooks(); await paNbLoadAllCount(); paNbRenderList();
+    await paNbLoadNotebooks(); await paNbLoadAllCount(); await paNbLoadLabels(); paNbRenderList();
     await paNbSelect(NB.cur, true);
   }
   function paNbCurrent(){
@@ -285,9 +361,13 @@
 
   function paNbGroupSources(){
     var map = {}, order = [];
+    function ensure(name){
+      if(!map[name]){ map[name] = {name:name, items:[]}; order.push(name); }
+    }
+    (NB.labels || []).forEach(function(l){ ensure(String(l.name || '').trim()); });
     NB.sources.forEach(function(n){
       var cat = String(n.category || '').trim() || '未分类';
-      if(!map[cat]){ map[cat] = {name:cat, items:[]}; order.push(cat); }
+      ensure(cat);
       map[cat].items.push(n);
     });
     order.sort(function(a, b){
@@ -295,7 +375,17 @@
       if(b === '未分类') return -1;
       return (map[b].items.length - map[a].items.length) || a.localeCompare(b, 'zh');
     });
-    return order.map(function(k){ return map[k]; });
+    return order.filter(function(k){ return k; }).map(function(k){ return map[k]; });
+  }
+  function paNbSourceRow(n, sel, child){
+    var on = sel.indexOf(n.id) >= 0;
+    return '<div class="pa-nb-src' + (child ? ' child' : '') + (on ? '' : ' off') + '" onclick="paNbOpenSource(\'' + esc(n.id) + '\')" title="' + esc(n.title) + '">'
+      + '<input class="ck" type="checkbox" ' + (on ? 'checked' : '') + ' aria-label="选中来源" onclick="event.stopPropagation();paNbToggleSel(\'' + esc(n.id) + '\')">'
+      + '<span class="ic">' + iconOf(n.source) + '</span>'
+      + '<span class="bd"><span class="nm">' + esc(n.title || '未命名') + '</span>'
+      + '<span class="mt">' + esc(fmtDate(n.updated)) + '</span></span>'
+      + '<button class="x" type="button" title="删除来源" onclick="event.stopPropagation();paNbDeleteSource(\'' + esc(n.id) + '\')">×</button>'
+      + '</div>';
   }
   function paNbRenderSources(){
     var box = $('paNbSources'); if(!box) return;
@@ -307,21 +397,16 @@
       return;
     }
     var sel = NB.sel[NB.cur] || [];
+    if(NB.view === 'list'){
+      box.innerHTML = NB.sources.map(function(n){ return paNbSourceRow(n, sel, false); }).join('');
+      return;
+    }
     var groups = paNbGroupSources();
     NB.groups = groups;
     box.innerHTML = groups.map(function(g, gi){
-      var on = g.items.every(function(n){ return sel.indexOf(n.id) >= 0; });
+      var on = g.items.length > 0 && g.items.every(function(n){ return sel.indexOf(n.id) >= 0; });
       var closed = !!(NB.closedCats && NB.closedCats[g.name]);
-      var rows = g.items.map(function(n){
-        var ons = sel.indexOf(n.id) >= 0;
-        return '<div class="pa-nb-src child' + (ons ? '' : ' off') + '" onclick="paNbOpenSource(\'' + esc(n.id) + '\')" title="' + esc(n.title) + '">'
-          + '<input class="ck" type="checkbox" ' + (ons ? 'checked' : '') + ' aria-label="选中来源" onclick="event.stopPropagation();paNbToggleSel(\'' + esc(n.id) + '\')">'
-          + '<span class="ic">' + iconOf(n.source) + '</span>'
-          + '<span class="bd"><span class="nm">' + esc(n.title || '未命名') + '</span>'
-          + '<span class="mt">' + esc(fmtDate(n.updated)) + '</span></span>'
-          + '<button class="x" type="button" title="删除来源" onclick="event.stopPropagation();paNbDeleteSource(\'' + esc(n.id) + '\')">×</button>'
-          + '</div>';
-      }).join('');
+      var rows = g.items.map(function(n){ return paNbSourceRow(n, sel, true); }).join('');
       return '<div class="pa-nb-cat">'
         + '<button class="ar" type="button" onclick="paNbToggleCatOpen(' + gi + ')">' + (closed ? '▶' : '▼') + '</button>'
         + '<input class="ck" type="checkbox" ' + (on ? 'checked' : '') + ' title="选中整个标签" onclick="event.stopPropagation();paNbToggleCat(' + gi + ')">'
@@ -357,6 +442,7 @@
     paNbRenderList();
     try{
       await paNbLoadSources();
+      await paNbLoadLabels();
       paNbRenderHeader();
       paNbRenderSources();
       paNbRenderChat();
@@ -537,13 +623,13 @@
       if(low.endsWith('.pdf') || f.type === 'application/pdf'){
         var fd = new FormData(); fd.append('file', f, name);
         var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/pdf', {method:'POST', body:fd, form:true});
-        paNbModalClose(); await paNbAfterAdd('已加 PDF（' + (d.chars || 0) + ' 字）');
+        paNbModalClose(); await paNbAfterAdd('已加 PDF（' + (d.chars || 0) + ' 字）', paNbSourceId(d));
       }else if(low.endsWith('.md') || low.endsWith('.markdown') || low.endsWith('.txt') || f.type.indexOf('text') === 0){
         var text = await f.text();
         if(!text.trim()){ paNbSrcdlgMsg('文件是空的'); return; }
-        await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/text', {method:'POST', body:{
+        var df = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/text', {method:'POST', body:{
           title: name.replace(/\.[^.]+$/, ''), body: text, tags:['文件']}});
-        paNbModalClose(); await paNbAfterAdd('已加文件来源：' + name);
+        paNbModalClose(); await paNbAfterAdd('已加文件来源：' + name, paNbSourceId(df));
       }else{
         paNbSrcdlgMsg('暂支持 PDF / MD / TXT；其它格式先转文本');
       }
@@ -563,9 +649,9 @@
     var body = b ? b.value.trim() : '';
     if(!body){ msg('正文为空'); return; }
     try{
-      await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/text', {method:'POST', body:{
+      var dt = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/text', {method:'POST', body:{
         title: (t && t.value.trim()) || body.slice(0, 30), body: body, tags:['手动']}});
-      paNbModalClose(); await paNbAfterAdd('已加文本来源');
+      paNbModalClose(); await paNbAfterAdd('已加文本来源', paNbSourceId(dt));
     }catch(e){ msg('加不了：' + ((e && e.message) || e)); }
   };
   window.paNbAddUrlOpen = function(){
@@ -581,7 +667,7 @@
     if(!u){ msg('先填网址'); return; } msg('抓取网页…');
     try{
       var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/url', {method:'POST', body:{url:u}});
-      paNbModalClose(); await paNbAfterAdd('已加网址（' + (d.chars || 0) + ' 字）');
+      paNbModalClose(); await paNbAfterAdd('已加网址（' + (d.chars || 0) + ' 字）', paNbSourceId(d));
     }catch(e){ msg('抓不了：' + ((e && e.message) || e)); }
   };
   window.paNbAddPdfPick = function(){
@@ -596,7 +682,7 @@
     try{
       var fd = new FormData(); fd.append('file', file, file.name);
       var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/pdf', {method:'POST', body:fd, form:true});
-      f.value = ''; await paNbAfterAdd('已加 PDF（' + (d.chars || 0) + ' 字）');
+      f.value = ''; await paNbAfterAdd('已加 PDF（' + (d.chars || 0) + ' 字）', paNbSourceId(d));
     }catch(e){ msg('PDF 读不了：' + ((e && e.message) || e)); }
   };
   window.paNbNewNoteOpen = function(){
@@ -613,9 +699,9 @@
     var body = b ? b.value.trim() : '';
     if(!body){ msg('正文为空'); return; }
     try{
-      await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/text', {method:'POST', body:{
+      var dn = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/text', {method:'POST', body:{
         title: (t && t.value.trim()) || body.slice(0, 30), body: body, tags:['笔记']}});
-      paNbModalClose(); await paNbAfterAdd('已创建笔记');
+      paNbModalClose(); await paNbAfterAdd('已创建笔记', paNbSourceId(dn));
     }catch(e){ msg('建不了：' + ((e && e.message) || e)); }
   };
   window.paNbVoice = function(){ paNbCloseAdd(); if(window.paBrainVoiceToggle) window.paBrainVoiceToggle(); };
@@ -634,16 +720,33 @@
       }).join('') : '<div class="pa-nb-empty" style="padding:8px 10px">还没有产出</div>';
     }catch(e){ box.innerHTML = '<div class="pa-nb-empty" style="padding:8px 10px">读不到产出</div>'; }
   }
-  async function paNbAfterAdd(text){
-    await paNbLoadNotebooks(); await paNbLoadAllCount(); paNbRenderList();
+  function paNbSourceId(d){
+    if(!d) return '';
+    if(d.source && d.source.id) return d.source.id;
+    if(d.note && d.note.id) return d.note.id;
+    return d.id || '';
+  }
+  async function paNbAutoLabel(id){
+    if(!id) return;
+    try{
+      await req('/v9/pa/notes/' + encodeURIComponent(id) + '/classify', {method:'POST'});
+      await paNbLoadLabels();
+      await paNbLoadSources();
+      paNbRenderSources(); paNbRenderHeader();
+    }catch(e){ /* 模型不可用时静默，用户可手动整理 */ }
+  }
+  async function paNbAfterAdd(text, nid){
+    await paNbLoadNotebooks(); await paNbLoadAllCount(); await paNbLoadLabels(); paNbRenderList();
     NB.sel[NB.cur] = null;
     await paNbSelect(NB.cur, true); msg(text);
+    if(nid) paNbAutoLabel(nid);
   }
   window.paBrainLoad = function(){ return paNbRefresh(); };
   window.paNbOpenSource = async function(id){
     try{
       var d = await req('/v9/pa/notes/' + encodeURIComponent(id)), n = d.note || {};
-      var foot = '<button class="pa-btn" type="button" onclick="paNbEditSource(\'' + esc(id) + '\')">编辑</button>'
+      var foot = '<button class="pa-btn" type="button" onclick="paNbMoveLabel(\'' + esc(id) + '\')">移至标签</button>'
+        + '<button class="pa-btn" type="button" onclick="paNbEditSource(\'' + esc(id) + '\')">编辑</button>'
         + '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>';
       if(NB.cur && n.notebook_id === NB.cur)
         foot = '<button class="pa-btn pa-btn-ghost" type="button" onclick="paNbMoveOut(\'' + esc(id) + '\')">移出</button>' + foot;
