@@ -526,8 +526,24 @@
       msg('已删；' + (d.moved_sources || 0) + ' 个来源退回未归档');
     }catch(e){ msg('删不了：' + ((e && e.message) || e)); }
   };
-  window.paNbAddOpen = function(){
-    if(!NB.cur){ paNbPickNotebook('add'); return; }
+  async function paNbEnsureNotebooks(){
+    if(NB.notebooks.length) return;
+    try{ await paNbLoadNotebooks(); paNbRenderList(); }catch(e){}
+  }
+  async function paNbEnsureSink(){
+    if(NB.notebooks.length) return false;
+    try{
+      var d = await req('/v9/pa/notebooks', {method:'POST', body:{title:'未归档', emoji:'📥'}});
+      await paNbLoadNotebooks(); paNbRenderList();
+      await paNbSelect(d.notebook.id, true);
+      return true;
+    }catch(e){ return false; }
+  }
+  window.paNbAddOpen = async function(){
+    var wasAll = !NB.cur;
+    await paNbEnsureNotebooks();
+    var sink = await paNbEnsureSink();
+    if((wasAll && !sink) || !NB.cur){ paNbPickNotebook('add'); return; }
     paNbSourceDialog();
   };
   function paNbPickNotebook(mode){
@@ -698,8 +714,11 @@
       f.value = ''; await paNbAfterAdd('已加 PDF（' + (d.chars || 0) + ' 字）', paNbSourceId(d));
     }catch(e){ msg('PDF 读不了：' + ((e && e.message) || e)); }
   };
-  window.paNbNewNoteOpen = function(){
-    if(!NB.cur){ paNbPickNotebook('note'); return; }
+  window.paNbNewNoteOpen = async function(){
+    var wasAll = !NB.cur;
+    await paNbEnsureNotebooks();
+    var sink = await paNbEnsureSink();
+    if((wasAll && !sink) || !NB.cur){ paNbPickNotebook('note'); return; }
     paNbCloseAdd();
     paNbModal('创建笔记',
       '<div style="font-size:11px;color:var(--sub)">标题</div><input id="paNbNoteTitle" placeholder="笔记标题">'

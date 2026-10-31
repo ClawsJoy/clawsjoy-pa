@@ -42,8 +42,9 @@ def test_notebook_three_columns_and_actions():
     assert "paNbPickNotebook('note')" in src
     for fn in ("paNbOrganizeAll", "paNbOrganizePoll", "paNbToggleCat", "paNbToggleCatOpen",
                "paNbLabelMenuOpen", "paNbToggleView", "paNbAddLabelDialog", "paNbMoveLabel",
-               "paNbUnlabelAuto", "paNbSourceRow"):
+               "paNbUnlabelAuto", "paNbSourceRow", "paNbEnsureSink", "paNbReorganizeNow"):
         assert fn in src, fn
+    assert "未归档" in src
     assert "organize_all" in src and "organize_status" in src
     assert "unlabel_auto" in src and "/v9/pa/labels" in src
     assert "列表视图" in src and "标签视图" in src
