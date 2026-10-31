@@ -1,8 +1,7 @@
-"""task-183：DSH 向导设置页静态断言（容器/GET/四钮/本地不支持/云端 key/install_steps）。"""
+"""task-183：DSH 向导设置页静态断言（容器／GET／单一操作条／内联路径／云端切换／本地不支持）。"""
 
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -25,35 +24,68 @@ def test_page_has_dsh_wizard_after_keys():
     i_keys = page.find('id="paKeys"')
     i_wiz = page.find('id="paDshWizard"')
     assert i_keys > 0 and i_wiz > i_keys, "DSH 向导须在密钥面之后"
-    assert 'id="paDshStatus"' in page
-    assert 'id="paDshBody"' in page
-    assert 'id="paDshSteps"' in page
+    for el in ('id="paDshStatus"', 'id="paDshBody"', 'id="paDshSteps"',
+               'id="paDshPathRow"', 'id="paDshPathIn"', 'id="paDshPathSaveBtn"'):
+        assert el in page, el
     for word in ("重新检测", "填写 dsh 路径", "配置云端", "使用本地"):
-        assert word in page
+        assert word in page, word
     assert "外部运行时 · DSH" in page
 
 
-def test_keys_has_load_retry_path_cloud_local_and_probe():
+def test_action_bar_is_single_row_no_generated_duplicate_buttons():
+    page = _page()
+    # 四个动作各只出现一次（旧版页脚与卡片各有一份 ⇒ 用户看到两排按钮）
+    assert page.count('onclick="paDshCloud()"') == 1
+    assert page.count('onclick="paDshLocal()"') == 1
+    assert page.count('onclick="paDshRetry()"') == 1
+    assert page.count('onclick="paDshPath()"') == 1
+    # 动作钮由 HTML 一处定形 ⇒ JS 不再生成带 onclick 的按钮
+    src = _keys()
+    assert 'onclick="paDshCloud()"' not in src
+    assert 'onclick="paDshLocal()"' not in src
+
+
+def test_keys_has_load_probe_retry_and_busy_guard():
     src = _keys()
     assert "function paDshLoad(force)" in src
     assert "API + '/v9/pa/runtimes/dsh'" in src
     assert "'/v9/pa/runtimes/dsh/path'" in src
     assert "function paDshRetry()" in src
-    assert "function paDshPath()" in src
-    assert "function paDshCloud()" in src
-    assert "function paDshLocal()" in src
+    assert "if(paDshBusy)" in src
+    assert "paDshBusySet" in src
     for field in ("d.path", "d.version", "d.key_present", "d.local_supported", "d.install_steps"):
         assert field in src, field
 
 
-def test_dsh_local_explicitly_unsupported_and_cloud_needs_key():
+def test_path_uses_inline_form_not_window_prompt():
     src = _keys()
-    assert "DSH 本地 provider 未支持" in src
+    assert "window.prompt" not in src
+    assert "paDshPathRow" in src
+    assert "paDshPathSave()" in src
+    assert "paDshPathCancel()" in src
+    assert "function paDshPathSave()" in src
+    assert "function paDshPathCancel()" in src
+
+
+def test_cloud_switches_to_deepseek_and_does_not_execute():
+    src = _keys()
+    assert "async function paDshCloud()" in src
+    assert "DEEPSEEK_API_KEY" in src
+    assert "deepseek" in src
+    assert "paKeyPick(" in src
+    assert "paKeyStateText(" in src
+    # 只切供应商／只开密钥面 ⇒ 不 POST key、不触发运行
+    assert "/v9/pa/runtimes/dsh/path" not in src.split("async function paDshCloud()", 1)[1].split("function paDshLocal()", 1)[0]
+    # 打开密钥面时不得重拉 DSH 状态（否则刚给的用户提示被「读数中…」盖掉）
+    open_block = src.split("function paKeyOpen(){", 1)[1]
+    assert "paDshLoad()" not in open_block[:1200]
+
+
+def test_dsh_local_explicitly_unsupported_and_pa_local_available():
+    src = _keys()
+    assert "DSH 的本地 provider 目前未支持" in src
     assert "不假装可用" in src
-    assert "本地 Ollama 已可用" in src
-    assert "云端 API：需 provider key" in src
-    assert "paKeyOpen()" in src
-    assert "paDshLoad()" in src.split("function paKeyOpen(){", 1)[1][:1200]
+    assert "PA 自己的本地 Ollama 已可用" in src
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node 不在")

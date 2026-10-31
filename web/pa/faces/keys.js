@@ -292,69 +292,144 @@ function paDshEsc(v){
   });
 }
 function paDshSetStatus(t){ var el=paDshEl('paDshStatus'); if(el) el.textContent=String(t == null ? '' : t); }
+let paDshLast = null;
+let paDshBusy = false;
+
+function paDshBtn(id, show){ var b = paDshEl(id); if(b) b.hidden = !show; }
+function paDshBusySet(v){
+  paDshBusy = !!v;
+  var b = paDshEl('paDshBtnRetry'); if(b) b.disabled = !!v;
+  var s = paDshEl('paDshPathSaveBtn'); if(s) s.disabled = !!v;
+}
 function paDshLoad(force){
-  paDshSetStatus('读数中…（GET /v9/pa/runtimes/dsh）');
+  if(paDshBusy) return Promise.resolve(null);
+  paDshBusySet(true);
+  paDshSetStatus(force
+    ? '重新检测中…（只探测 dsh 可执行文件，不安装、不执行任务）'
+    : '读数中…（GET /v9/pa/runtimes/dsh）');
   return fetch(API + '/v9/pa/runtimes/dsh', {cache: 'no-store'})
     .then(function(r){ return r.json().then(function(j){ return {status: r.status, j: j}; }); })
     .then(function(x){
       var d = x.j || {};
       if(x.status !== 200 || d.ok !== true){
         paDshSetStatus('检测失败（' + x.status + '）：' + (d.error || '后端未给因'));
+        paDshBtn('paDshBtnCloud', false);
+        paDshBtn('paDshBtnLocal', false);
+        paDshBusySet(false);
         return d;
       }
+      paDshLast = d;
       var found = d.found === true;
       var src = {env:'环境变量 PA_DSH_PATH', saved:'已保存路径', which:'PATH 中 dsh', none:'—'}[d.source] || (d.source || '—');
       paDshSetStatus(found
-        ? ('已找到 DSH：' + (d.path || '—') + '（' + (d.version || '版本未给') + '）· 来源：' + src)
-        : '未找到 DSH 可执行文件 —— 可安装后重新检测，或填其路径；本地 provider 当前不支持。');
+        ? ('已找到 DSH：' + (d.path || '—') + '（' + (d.version || '版本未给') + '）· 来源：' + src + ' · 只探测到文件，尚未配置')
+        : '未找到 DSH 可执行文件 —— 可装后点「重新检测」，或点「填写 dsh 路径」指到本机 dsh；本地 provider 当前不支持。');
       var body = paDshEl('paDshBody');
       if(body){
         body.innerHTML =
           '<div class="pa-dsh-row">路径：' + paDshEsc(d.path || '—') + '</div>'
           + '<div class="pa-dsh-row">版本：' + paDshEsc(d.version || '—') + ' · 来源：' + paDshEsc(src) + '</div>'
-          + '<div class="pa-dsh-row">云端 API：' + (d.cloud_supported === true ? '支持' : '不支持') + '（需 provider key）· key：' + (d.key_present === true ? '已配' : '未配') + '</div>'
+          + '<div class="pa-dsh-row">云端 API：' + (d.cloud_supported === true ? '支持' : '不支持') + '（需 provider key）· key：'
+          + (d.key_present === true ? '已配' : '未配（此读数只认环境变量；填完若仍显示未配，重启本机服务即刷新）') + '</div>'
           + '<div class="pa-dsh-row">本地模型：<b>当前不支持</b>（DSH 本地 provider 未支持；PA 本地 Ollama 已可用' + (d.local_supported === true ? ' · 后端 local_supported=true 与向导口径冲突' : '') + '）</div>'
           + '<div class="pa-dsh-row">Node：' + (d.node_present === true ? '已安装' : '未安装（装 DSH 需 Node）') + '</div>'
-          + (found
-            ? ('<div class="pa-dsh-choice"><b>云端 API（需 key）</b> <button class="ks-btn" type="button" onclick="paDshCloud()">配置云端</button></div>'
-               + '<div class="pa-dsh-choice"><b>本地模型（当前不支持）</b> <button class="ks-btn" type="button" onclick="paDshLocal()">使用本地</button></div>')
-            : '');
+          + (found ? '<div class="pa-dsh-row" style="color:var(--sub)">下一步：点「配置云端」＝ 切到 DeepSeek 并打开密钥框（只切 ／ 只开，不发送）；点「使用本地」＝ 只看现状说明。</div>' : '');
       }
+      paDshBtn('paDshBtnCloud', found);
+      paDshBtn('paDshBtnLocal', found);
       var steps = paDshEl('paDshSteps');
       if(steps){
         var arr = Array.isArray(d.install_steps) ? d.install_steps : [];
         steps.innerHTML = arr.map(function(s){ return '<li>' + paDshEsc(s) + '</li>'; }).join('');
       }
+      paDshBusySet(false);
       return d;
     })
     .catch(function(e){
       paDshSetStatus('检测失败（未达本机服务）：' + ((e && e.message) || e));
+      paDshBtn('paDshBtnCloud', false);
+      paDshBtn('paDshBtnLocal', false);
+      paDshBusySet(false);
     });
 }
-function paDshRetry(){ return paDshLoad(true); }
+function paDshRetry(){ if(paDshBusy) return; return paDshLoad(true); }
 function paDshPath(){
-  var p = window.prompt('填写 dsh 可执行文件的绝对路径（本机）：');
-  if(p == null || !String(p).trim()) return;
-  paDshSetStatus('保存路径并探测中…');
+  var row = paDshEl('paDshPathRow'); if(!row) return;
+  row.hidden = false;
+  var msg = paDshEl('paDshPathMsg'); if(msg) msg.textContent = '';
+  var inp = paDshEl('paDshPathIn');
+  if(inp){
+    if(!inp.value && paDshLast && paDshLast.path) inp.value = String(paDshLast.path);
+    try{ inp.focus(); if(inp.select) inp.select(); }catch(e){}
+  }
+}
+function paDshPathCancel(){
+  var row = paDshEl('paDshPathRow'); if(row) row.hidden = true;
+  var msg = paDshEl('paDshPathMsg'); if(msg) msg.textContent = '';
+}
+function paDshPathSave(){
+  if(paDshBusy) return;
+  var inp = paDshEl('paDshPathIn');
+  var p = inp ? String(inp.value == null ? '' : inp.value).trim() : '';
+  var msg = paDshEl('paDshPathMsg');
+  if(!p){
+    if(msg) msg.textContent = '请先填 dsh 可执行文件的绝对路径（例：D:\\npm-global\\dsh.CMD）';
+    try{ if(inp) inp.focus(); }catch(e){}
+    return;
+  }
+  paDshBusySet(true);
+  if(msg) msg.textContent = '保存并探测中…';
   return fetch(API + '/v9/pa/runtimes/dsh/path', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({path: String(p).trim()})
+    body: JSON.stringify({path: p})
   }).then(function(r){ return r.json().then(function(j){ return {status: r.status, j: j}; }); })
     .then(function(x){
       if(x.status !== 200 || !x.j || x.j.ok !== true){
-        paDshSetStatus('路径未保存（' + x.status + '）：' + ((x.j && (x.j.error || x.j.code)) || '后端未给因'));
+        var why = (x.j && (x.j.error || x.j.code)) || '后端未给因';
+        if(msg) msg.textContent = '没保存成（' + x.status + '）：' + why + ' —— 路径须为本机真实存在的 dsh 可执行文件';
+        paDshBusySet(false);
         return;
       }
+      if(msg) msg.textContent = '已保存：' + (x.j.path || p);
+      paDshBusySet(false);
+      var row = paDshEl('paDshPathRow'); if(row) row.hidden = true;
       return paDshLoad(true);
     })
-    .catch(function(e){ paDshSetStatus('路径未保存（未达本机服务）：' + ((e && e.message) || e)); });
+    .catch(function(e){
+      if(msg) msg.textContent = '没保存成（连不上本机服务）：' + ((e && e.message) || e);
+      paDshBusySet(false);
+    });
 }
-function paDshCloud(){
-  paDshSetStatus('云端 API：需 provider key（DEEPSEEK_API_KEY 等）—— 打开密钥面填写；⛔ 值不上屏。');
+async function paDshCloud(){
+  try{
+    if(typeof paKeyRun !== 'undefined' && (!paKeyRun.rows || !paKeyRun.rows.length) && typeof paKeyLoad === 'function') await paKeyLoad();
+  }catch(e){}
+  var rows = (typeof paKeyRun !== 'undefined' && Array.isArray(paKeyRun.rows)) ? paKeyRun.rows : [];
+  if(!rows.length){
+    try{ if(typeof paKeyOpen === 'function') paKeyOpen(); }catch(e){}
+    paDshSetStatus('云端：供应商清单还没读到 —— 先点密钥区重读，选 DeepSeek 后填 key（只切 ／ 只开，不发送）。');
+    return;
+  }
+  var hit = null, needKey = null;
+  for(var i = 0; i < rows.length; i++){
+    var r = rows[i] || {};
+    var env = String(r.key_env || '').toUpperCase();
+    var id = String(r.id || '').toLowerCase();
+    if(needKey == null && r.need) needKey = r;
+    if(env === 'DEEPSEEK_API_KEY' || id.indexOf('deepseek') >= 0){ hit = r; break; }
+  }
+  if(!hit) hit = needKey;
+  if(!hit){
+    paDshSetStatus('云端：清单里没有需填 key 的供应商 —— 照实（不猜可用项）。');
+    return;
+  }
+  try{ paKeyPick(hit.id); }catch(e){}
   try{ if(typeof paKeyOpen === 'function') paKeyOpen(); }catch(e){}
+  paDshSetStatus('云端：已切到「' + (hit.label || hit.id) + '」＝ ' + (hit.key_env || '—') + '（'
+    + paKeyStateText(hit.key_state, hit.key_configured) + '）—— 就在上方「密钥」框填值后点「填」；⛔ 值不上屏，只落本机。');
 }
 function paDshLocal(){
-  paDshSetStatus('本地模型：DSH 本地 provider 当前未支持（不假装可用）；PA 本地 Ollama 已可用，可在「模型配置」使用。');
+  paDshSetStatus('本地：PA 自己的本地 Ollama 已可用（在「模型配置」里选它即可）；DSH 的本地 provider 目前未支持 —— 向导不假装可用，也不替你安装。只想本机对话时，不用 DSH。');
 }
 
 function paKeyOpen(){
@@ -365,7 +440,6 @@ function paKeyOpen(){
     if(s && s.scrollIntoView){ try{ s.scrollIntoView({block: 'start'}); }catch(e){} }
     const v = paKeyEl('paKeyVal'); if(v && v.focus){ try{ v.focus(); }catch(e){} }
   }, 60);
-  try{ if(typeof paDshLoad === 'function') paDshLoad(); }catch(e){}
   return paKeyEl('paKeys');
 }
 
