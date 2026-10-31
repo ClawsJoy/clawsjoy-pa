@@ -9,6 +9,7 @@ import tempfile
 from flask import jsonify, request
 from core.pa.pa_routes_common import bp, err, ok, _loopback
 from core.pa import notes as N
+from core.pa import classify as C
 from core.pa import voice as V
 from core.pa import screen as S
 
@@ -125,6 +126,34 @@ def register(bp):
             return err(str(e), 400)
         except Exception as e:
             return err("问答失败：%s" % type(e).__name__, 500)
+
+    @bp.route("/v9/pa/notes/<note_id>/classify", methods=["POST"])
+    def pa_notes_classify(note_id):
+        g = _guard()
+        if g:
+            return g
+        try:
+            r = C.classify_note(note_id)
+            r["suggestion"] = C.suggest_notebook(r)
+            return ok(r)
+        except N.NoteError as e:
+            return err(str(e), 404 if "不存在" in str(e) else 400)
+        except Exception as e:
+            return err("整理失败：%s" % type(e).__name__, 500)
+
+    @bp.route("/v9/pa/notes/organize", methods=["POST"])
+    def pa_notes_organize():
+        g = _guard()
+        if g:
+            return g
+        d = _body()
+        ids = d.get("ids")
+        if not isinstance(ids, list) or not ids:
+            return err("须给 ids（笔记 id 数组）", 400)
+        try:
+            return ok({"results": C.classify_many(ids, limit=d.get("limit", 8))})
+        except Exception as e:
+            return err("批量整理失败：%s" % type(e).__name__, 500)
 
     @bp.route("/v9/pa/notes/<note_id>", methods=["GET"])
     def pa_notes_get(note_id):

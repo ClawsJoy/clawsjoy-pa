@@ -102,6 +102,12 @@ body[data-pa-route="brain"] .pa-now{display:none}
   border:1px dashed var(--border);border-radius:10px;padding:22px 12px;cursor:pointer;text-align:center;color:var(--sub)}
 .pa-nb-drop.on,.pa-nb-drop:hover{border-color:var(--blue);color:var(--text);background:rgba(88,166,255,.05)}
 .pa-nb-src-foot{margin-top:10px;font-size:11px;color:var(--sub);text-align:right}
+.pa-nb-org{border:1px solid var(--border);border-radius:8px;padding:9px 10px;margin:8px 0;background:var(--card2)}
+.pa-nb-org-foot{display:flex;align-items:center;gap:8px;margin-top:6px}
+.pa-nb-org-foot .pa-hint{margin:0}
+.pa-nb-org-foot .pa-btn{margin-left:auto}
+.pa-nb-enrich{background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:8px;
+  padding:8px 10px;margin:0 0 10px;line-height:1.6}
 .pa-nb-cfg-l{font-size:11px;color:var(--sub);margin:8px 0 4px}
 .pa-nb-fmts{display:flex;flex-wrap:wrap;gap:6px}
 .pa-nb-fmt{background:var(--bg);border:1px solid var(--border);color:var(--sub);border-radius:8px;

@@ -65,11 +65,12 @@ def _safe_id(note_id):
 
 def _render(meta, body):
     lines = ["---"]
-    for k in ("id", "title", "tags", "created", "updated", "source", "source_path", "notebook_id"):
+    for k in ("id", "title", "tags", "created", "updated", "source", "source_path",
+              "notebook_id", "summary", "keywords"):
         if k not in meta:
             continue
         v = meta.get(k)
-        if k == "tags":
+        if k in ("tags", "keywords"):
             v = json.dumps(v or [], ensure_ascii=False)
         elif isinstance(v, str):
             v = json.dumps(v, ensure_ascii=False)
@@ -98,7 +99,7 @@ def _parse(text):
                 v = v.strip()
                 if not k:
                     continue
-                if k == "tags":
+                if k in ("tags", "keywords"):
                     try:
                         v = json.loads(v)
                     except Exception:
@@ -131,10 +132,14 @@ def _conn(root):
     c.execute("""CREATE TABLE IF NOT EXISTS notes(
         id TEXT PRIMARY KEY, title TEXT, path TEXT, tags TEXT,
         created TEXT, updated TEXT, body TEXT, source TEXT, source_path TEXT,
-        notebook_id TEXT DEFAULT '')""")
+        notebook_id TEXT DEFAULT '', summary TEXT DEFAULT '', keywords TEXT DEFAULT '[]')""")
     _cols = [r[1] for r in c.execute("PRAGMA table_info(notes)").fetchall()]
     if "notebook_id" not in _cols:
         c.execute("ALTER TABLE notes ADD COLUMN notebook_id TEXT DEFAULT ''")
+    if "summary" not in _cols:
+        c.execute("ALTER TABLE notes ADD COLUMN summary TEXT DEFAULT ''")
+    if "keywords" not in _cols:
+        c.execute("ALTER TABLE notes ADD COLUMN keywords TEXT DEFAULT '[]'")
     try:
         c.execute("""CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
             id UNINDEXED, title, body, tags)""")
@@ -147,13 +152,14 @@ def _conn(root):
 def _upsert(c, meta):
     nid = meta["id"]
     c.execute("""INSERT OR REPLACE INTO notes
-        (id,title,path,tags,created,updated,body,source,source_path,notebook_id)
-        VALUES(?,?,?,?,?,?,?,?,?,?)""",
+        (id,title,path,tags,created,updated,body,source,source_path,notebook_id,summary,keywords)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
               (nid, meta.get("title", ""), meta.get("path", ""),
                json.dumps(meta.get("tags") or [], ensure_ascii=False),
                meta.get("created", ""), meta.get("updated", ""),
                meta.get("body", ""), meta.get("source", ""), meta.get("source_path", ""),
-               meta.get("notebook_id") or ""))
+               meta.get("notebook_id") or "", meta.get("summary", ""),
+               json.dumps(meta.get("keywords") or [], ensure_ascii=False)))
     try:
         c.execute("DELETE FROM notes_fts WHERE id=?", (nid,))
         c.execute("INSERT INTO notes_fts(id,title,body,tags) VALUES(?,?,?,?)",
@@ -168,7 +174,9 @@ def _row_to_note(r, with_body=False):
     d = {"id": r["id"], "title": r["title"] or "", "tags": json.loads(r["tags"] or "[]"),
          "created": r["created"] or "", "updated": r["updated"] or "",
          "source": r["source"] or "", "path": r["path"] or "",
-         "notebook_id": (r["notebook_id"] if "notebook_id" in r.keys() else "") or ""}
+         "notebook_id": (r["notebook_id"] if "notebook_id" in r.keys() else "") or "",
+         "summary": (r["summary"] if "summary" in r.keys() else "") or "",
+         "keywords": json.loads((r["keywords"] if "keywords" in r.keys() else "[]") or "[]")}
     if with_body:
         d["body"] = r["body"] or ""
     return d
@@ -184,7 +192,7 @@ def create(title, body="", tags=None, data_dir=None, source="manual", source_pat
     now = _now()
     meta = {"id": nid, "title": title, "tags": tags, "created": now, "updated": now,
             "source": source or "manual", "source_path": source_path or "",
-            "notebook_id": notebook_id or ""}
+            "notebook_id": notebook_id or "", "summary": "", "keywords": []}
     p = _write_file(root, nid, meta, body)
     meta["path"] = str(p)
     meta["body"] = body
@@ -218,7 +226,8 @@ def get(nid, data_dir=None):
             "created": m.get("created", ""), "updated": m.get("updated", ""),
             "source": m.get("source", ""), "path": m.get("path", ""),
             "source_path": m.get("source_path", ""), "body": m.get("body", ""),
-            "notebook_id": m.get("notebook_id", "") or ""}
+            "notebook_id": m.get("notebook_id", "") or "",
+            "summary": m.get("summary", "") or "", "keywords": m.get("keywords") or []}
 
 
 def list_notes(q="", data_dir=None, limit=DEFAULT_LIMIT, notebook_id=None):
@@ -297,7 +306,8 @@ def count_by_notebook(data_dir=None):
         c.close()
 
 
-def update(nid, title=None, body=None, tags=None, data_dir=None, notebook_id=None):
+def update(nid, title=None, body=None, tags=None, data_dir=None, notebook_id=None,
+           summary=None, keywords=None):
     root = workspace_root(data_dir)
     nid = _safe_id(nid)
     m = _read(root, nid)
@@ -309,6 +319,10 @@ def update(nid, title=None, body=None, tags=None, data_dir=None, notebook_id=Non
         m["tags"] = [str(t).strip()[:40] for t in (tags or []) if str(t).strip()][:20]
     if notebook_id is not None:
         m["notebook_id"] = str(notebook_id or "")
+    if summary is not None:
+        m["summary"] = str(summary or "")[:600]
+    if keywords is not None:
+        m["keywords"] = [str(x).strip()[:40] for x in (keywords or []) if str(x).strip()][:20]
     m["updated"] = _now()
     p = _write_file(root, nid, m, m.get("body", ""))
     m["path"] = str(p)
@@ -319,7 +333,8 @@ def update(nid, title=None, body=None, tags=None, data_dir=None, notebook_id=Non
         c.close()
     return {"id": nid, "title": m.get("title", ""), "tags": m.get("tags") or [],
             "created": m.get("created", ""), "updated": m["updated"], "path": str(p),
-            "notebook_id": m.get("notebook_id", "") or ""}
+            "notebook_id": m.get("notebook_id", "") or "",
+            "summary": m.get("summary", "") or "", "keywords": m.get("keywords") or []}
 
 
 def delete(nid, data_dir=None):

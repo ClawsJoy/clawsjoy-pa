@@ -64,6 +64,7 @@
       +   '<div id="paNbList" class="pa-nb-list"></div>'
       +   '<div class="pa-nb-src-h"><b>来源</b><span id="paNbSrcCount"></span>'
       +     '<button id="paNbSelAllBtn" class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbSelAll()" title="全选/取消全选">全选</button>'
+      +     '<button class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbOrganizeOpen()" title="自动摘要、关键词与归类建议">整理</button>'
       +     '<button class="pa-btn pa-btn-mini pa-btn-ghost" type="button" onclick="paNbAddOpen()" title="添加来源">＋</button></div>'
       +   '<div class="pa-nb-src-actions">'
       +     '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbAddOpen()">＋ 添加来源</button>'
@@ -155,6 +156,80 @@
     NB.sel[NB.cur] = (ids.length && sel.length === ids.length) ? [] : ids.slice();
     paNbRenderSources(); paNbRenderHeader();
   };
+
+  /* ---------- 整理：摘要＋关键词＋归类建议 ---------- */
+  window.paNbOrganizeOpen = function(){
+    NB.org = [];
+    paNbModal('整理笔记',
+      '<div class="pa-hint">用本地模型为笔记生成摘要与关键词，并按关键词／摘要建议笔记本。不会自动搬动，需你逐条确认。</div>'
+      + '<div class="pa-nb-cfg-grid"><div><div class="pa-nb-cfg-l">范围</div><div class="pa-nb-chip">已勾选 ' + paNbSelectedIds().length + ' 条</div></div>'
+      + '<div><div class="pa-nb-cfg-l">全部</div><div class="pa-nb-chip">' + NB.sources.length + ' 条</div></div></div>'
+      + '<div class="pa-nb-row" style="margin:10px 0">'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbOrganizeRun(\'sel\')">整理勾选（≤5 条）</button>'
+      + '<button class="pa-btn" type="button" onclick="paNbOrganizeRun(\'all\')">整理全部（≤5 条）</button></div>'
+      + '<div id="paNbOrgMsg" class="pa-hint"></div><div id="paNbOrgList"></div>',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>');
+  };
+  window.paNbOrganizeRun = async function(scope){
+    var ids = scope === 'sel' ? paNbSelectedIds() : NB.sources.map(function(x){ return x.id; });
+    ids = ids.slice(0, 5);
+    if(!ids.length){ msg('没有可整理的笔记'); return; }
+    NB.org = [];
+    var m = $('paNbOrgMsg'), list = $('paNbOrgList');
+    if(list) list.innerHTML = '';
+    for(var i=0;i<ids.length;i++){
+      if(m) m.textContent = '整理中 ' + (i + 1) + '/' + ids.length + '…（本地模型）';
+      try{
+        var r = await req('/v9/pa/notes/' + encodeURIComponent(ids[i]) + '/classify', {method:'POST'});
+        NB.org.push(r);
+      }catch(e){
+        NB.org.push({id:ids[i], title:'（读取失败）', error:(e && e.message) || String(e)});
+      }
+      paNbOrgRender();
+    }
+    if(m) m.textContent = '完成 ' + NB.org.filter(function(x){ return !x.error; }).length + ' 条；确认建议后再加入笔记本。';
+  };
+  function paNbOrgRender(){
+    var box = $('paNbOrgList'); if(!box) return;
+    box.innerHTML = (NB.org || []).map(function(r){
+      if(r.error) return '<div class="pa-nb-org"><b>' + esc(r.title || r.id) + '</b><div class="pa-hint">' + esc(r.error) + '</div></div>';
+      var kws = (r.keywords || []).map(function(k){ return '<span class="pa-nb-chip">' + esc(k) + '</span>'; }).join(' ');
+      var s = r.suggestion || {};
+      var act = '';
+      if(r.applied){
+        act = '<span class="pa-hint">已加入</span>';
+      }else if(s.notebook_id){
+        act = '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbOrgApply(\'' + esc(r.id) + '\',\'' + esc(s.notebook_id) + '\')">加入「' + esc(s.title) + '」</button>';
+      }else if(s.new){
+        act = '<button class="pa-btn pa-btn-mini" type="button" onclick="paNbOrgNew(\'' + esc(r.id) + '\',\'' + esc(s.title) + '\')">建「' + esc(s.title) + '」并加入</button>';
+      }
+      return '<div class="pa-nb-org"><b>' + esc(r.title || r.id) + '</b>'
+        + '<div class="pa-hint" style="margin:3px 0">' + esc(r.summary || '') + '</div>'
+        + '<div style="margin:4px 0">' + kws + '</div>'
+        + '<div class="pa-nb-org-foot"><span class="pa-hint">' + (r.model_ok ? '模型整理' : '抽取式（模型不可用）') + '</span>' + act + '</div></div>';
+    }).join('');
+  }
+  window.paNbOrgApply = async function(id, nbId){
+    try{
+      await req('/v9/pa/notes/' + encodeURIComponent(id), {method:'PATCH', body:{notebook_id:nbId}});
+      (NB.org || []).forEach(function(x){ if(x.id === id) x.applied = true; });
+      paNbOrgRender();
+      await paNbOrgRefresh();
+    }catch(e){ msg('加入失败：' + ((e && e.message) || e)); }
+  };
+  window.paNbOrgNew = async function(id, title){
+    try{
+      var d = await req('/v9/pa/notebooks', {method:'POST', body:{title:title || '未分类', emoji:'📘'}});
+      await req('/v9/pa/notes/' + encodeURIComponent(id), {method:'PATCH', body:{notebook_id:d.notebook.id}});
+      (NB.org || []).forEach(function(x){ if(x.id === id) x.applied = true; });
+      paNbOrgRender();
+      await paNbOrgRefresh();
+    }catch(e){ msg('建本/加入失败：' + ((e && e.message) || e)); }
+  };
+  async function paNbOrgRefresh(){
+    await paNbLoadNotebooks(); await paNbLoadAllCount(); paNbRenderList();
+    await paNbSelect(NB.cur, true);
+  }
   function paNbCurrent(){
     for(var i=0;i<NB.notebooks.length;i++) if(NB.notebooks[i].id === NB.cur) return NB.notebooks[i];
     return null;
@@ -480,11 +555,32 @@
         foot = '<button class="pa-btn pa-btn-ghost" type="button" onclick="paNbMoveOut(\'' + esc(id) + '\')">移出</button>' + foot;
       else if(!NB.cur)
         foot = '<button class="pa-btn pa-btn-ghost" type="button" onclick="paNbAddToNotebook(\'' + esc(id) + '\')">加入笔记本</button>' + foot;
+      var enrich = '';
+      if(n.summary){
+        enrich += '<div class="pa-nb-enrich"><div class="pa-nb-cfg-l">摘要</div><div>' + esc(n.summary) + '</div></div>';
+      }
+      if(n.keywords && n.keywords.length){
+        enrich += '<div class="pa-nb-cfg-l">关键词</div><div style="margin-bottom:8px">'
+          + n.keywords.map(function(k){ return '<span class="pa-nb-chip">' + esc(k) + '</span>'; }).join(' ') + '</div>';
+      }
+      enrich += '<div style="margin-bottom:10px"><button class="pa-btn pa-btn-mini" type="button" onclick="paNbClassifyOne(\'' + esc(id) + '\')">'
+        + (n.summary ? '重新整理摘要/关键词' : '整理：生成摘要与关键词') + '</button></div>';
       paNbModal(n.title || '来源',
         '<div style="font-size:11px;color:var(--sub);margin-bottom:8px">' + iconOf(n.source) + ' ' + esc(n.source || 'note')
         + ' · ' + esc(fmtDate(n.updated)) + (n.source_path ? ' · ' + esc(n.source_path) : '') + '</div>'
+        + enrich
         + '<div style="white-space:pre-wrap">' + esc(n.body || '') + '</div>', foot);
     }catch(e){ msg('打不开：' + ((e && e.message) || e)); }
+  };
+  window.paNbClassifyOne = async function(id){
+    msg('整理中…（本地模型）');
+    try{
+      var r = await req('/v9/pa/notes/' + encodeURIComponent(id) + '/classify', {method:'POST'});
+      paNbModalClose();
+      msg(r.model_ok ? '已生成摘要与关键词' : '模型不可用，已用抽取式摘要');
+      await paNbOrgRefresh();
+      await paNbOpenSource(id);
+    }catch(e){ msg('整理失败：' + ((e && e.message) || e)); }
   };
   window.paNbEditSource = async function(id){
     try{

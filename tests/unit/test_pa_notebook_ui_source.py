@@ -34,8 +34,10 @@ def test_notebook_three_columns_and_actions():
     assert "note_ids" in src
     assert "pa-nb-tile" in src
     assert "/outputs" in src
-    for fn in ("paNbSourceDialog", "paNbSrcTab", "paNbStudioConfig", "paNbCfgFmt", "paNbEditSource"):
+    for fn in ("paNbSourceDialog", "paNbSrcTab", "paNbStudioConfig", "paNbCfgFmt", "paNbEditSource",
+               "paNbOrganizeOpen", "paNbOrganizeRun", "paNbOrgApply", "paNbClassifyOne"):
         assert fn in src, fn
+    assert "summary" in src and "keywords" in src
     assert "pa-nb-drop" in src
     assert "window.prompt" not in src
     for ep in ('/v9/pa/notebooks', '/sources/text', '/sources/url', '/sources/pdf', '/ask', '/studio'):
