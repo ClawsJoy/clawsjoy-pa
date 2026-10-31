@@ -14,7 +14,7 @@
  *   * **⛔ 出机**：本档 ⛔ 引网络之能（唯 `127.0.0.1` 之探活 + 用户点「检查更新」时之 electron-updater）。
  */
 const { app, BrowserWindow, Tray, Menu, shell, dialog, ipcMain, nativeImage, globalShortcut, screen, WebContentsView, session, desktopCapturer } = require('electron');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -212,6 +212,31 @@ async function serviceIdentity(port) {
   try { j = JSON.parse(h.body); } catch (e) { return { ok: false, why: 'health-⛔-JSON', want: versionJson() }; }
   refreshBackendDirs(j);
   return ID.evaluateHealth(j, versionJson());
+}
+
+/* ⭐ 清掉占着端口的旧/开发 gateway（只清：命令行含 agent_gateway_enhanced.py ∧
+   非本装根 payload 之 runtime）。否则本壳会连到旧服，出现「版本 9.0.11 ／ 9.0.90 双读数」噪声。 */
+async function clearStaleGateway(port) {
+  let h = null;
+  try { h = await serviceIdentity(port); } catch (e) { return null; }
+  if (!h || h.ok) { return h; }
+  try {
+    const devLike = [
+      "$c=Get-NetTCPConnection -LocalPort " + String(port) + " -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1;",
+      "if($c){",
+      "$p=Get-CimInstance Win32_Process -Filter \"ProcessId=$($c.OwningProcess)\";",
+      "if($p -and $p.CommandLine -match 'agent_gateway_enhanced.py' -and $p.CommandLine -notmatch 'resources\\\\payload'){",
+      "Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Output 'killed'",
+      "}else{Write-Output 'skip'}",
+      "}else{Write-Output 'free'}"
+    ].join(" ");
+    const out = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', devLike], { timeout: 15000, encoding: 'utf8' });
+    log('端口 ' + port + ' 旧服清理：' + String(out).trim().slice(0, 80));
+    await sleep(1200);
+  } catch (e) {
+    log('端口 ' + port + ' 旧服清理 ⛔ 得：' + ((e && e.message) || e));
+  }
+  return h;
 }
 
 async function startService() {
@@ -1525,6 +1550,7 @@ if (!gotLock) {
     registerSummonHotkey();   // ⭐ 早注（浮窗未就绪时按 ⇒ 记日志并待就绪再召）· 失败 ⇒ 托盘「召出」兜底
     createSummonWindow();     // ⭐ 浮窗早立于启动（页为本地小件 · 无网无服）⇒ 先按亦近热
     await readPort();
+    await clearStaleGateway(PORT);
     await firstRunCheck();
     await startService();
     IDENTITY = await serviceIdentity();
