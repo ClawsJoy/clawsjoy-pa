@@ -35,8 +35,11 @@ def test_notebook_three_columns_and_actions():
     assert "pa-nb-tile" in src
     assert "/outputs" in src
     for fn in ("paNbSourceDialog", "paNbSrcTab", "paNbStudioConfig", "paNbCfgFmt", "paNbEditSource",
-               "paNbOrganizeOpen", "paNbOrganizeRun", "paNbOrgApply", "paNbClassifyOne"):
+               "paNbOrganizeOpen", "paNbOrganizeRun", "paNbOrgApply", "paNbClassifyOne",
+               "paNbPickNotebook", "paNbPickForSource", "paNbQuickCreate"):
         assert fn in src, fn
+    assert "paNbPickNotebook('add')" in src
+    assert "paNbPickNotebook('note')" in src
     assert "summary" in src and "keywords" in src
     assert "pa-nb-drop" in src
     assert "window.prompt" not in src

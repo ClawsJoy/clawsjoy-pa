@@ -372,8 +372,46 @@
     }catch(e){ msg('删不了：' + ((e && e.message) || e)); }
   };
   window.paNbAddOpen = function(){
-    if(!NB.cur){ msg('先选/新建一个笔记本，再加来源'); return; }
+    if(!NB.cur){ paNbPickNotebook('add'); return; }
     paNbSourceDialog();
+  };
+  function paNbPickNotebook(mode){
+    NB.pickMode = mode || 'add';
+    if(!NB.notebooks.length){ paNbNeedNotebookDialog(); return; }
+    var items = NB.notebooks.map(function(n){
+      return '<div class="pa-nb-item" onclick="paNbPickForSource(\'' + esc(n.id) + '\')">'
+        + '<span class="em">' + esc(n.emoji || '📘') + '</span><span class="tt"><span class="nm">'
+        + esc(n.title || '未命名') + '</span><span class="ct">' + (Number(n.source_count) || 0) + ' 个来源</span></span></div>';
+    }).join('');
+    paNbModal('先选一个笔记本',
+      '<div class="pa-hint">要加到哪一本？选完就打开添加来源。</div><div class="pa-nb-list" style="padding:0">' + items + '</div>',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">取消</button>'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbNeedNotebookDialog()">新建笔记本</button>');
+  }
+  function paNbNeedNotebookDialog(){
+    paNbModal('先建一个笔记本',
+      '<div class="pa-hint">还没有笔记本。建一个，再把它当作资料的容器。</div>'
+      + '<input id="paNbQuickTitle" placeholder="笔记本名称：客户 / 学习 / 项目…">',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">取消</button>'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbQuickCreate()">建立并继续</button>');
+    setTimeout(function(){ var i=$('paNbQuickTitle'); if(i) i.focus(); }, 50);
+  }
+  window.paNbPickForSource = async function(id){
+    paNbModalClose();
+    await paNbSelect(String(id), true);
+    if(NB.pickMode === 'note') paNbNewNoteOpen(); else paNbSourceDialog();
+  };
+  window.paNbQuickCreate = async function(){
+    var i = $('paNbQuickTitle');
+    var title = i ? i.value.trim() : '';
+    if(!title){ msg('先填笔记本名称'); if(i) i.focus(); return; }
+    try{
+      var d = await req('/v9/pa/notebooks', {method:'POST', body:{title:title, emoji:'📘'}});
+      paNbModalClose();
+      await paNbLoadNotebooks(); paNbRenderList();
+      await paNbSelect(d.notebook.id, true);
+      if(NB.pickMode === 'note') paNbNewNoteOpen(); else paNbSourceDialog();
+    }catch(e){ msg('建不了：' + ((e && e.message) || e)); }
   };
   var SRC_TAB = 'file';
   function paNbSourceDialog(){
@@ -506,7 +544,7 @@
     }catch(e){ msg('PDF 读不了：' + ((e && e.message) || e)); }
   };
   window.paNbNewNoteOpen = function(){
-    if(!NB.cur){ msg('先选/新建一个笔记本，再创建笔记'); return; }
+    if(!NB.cur){ paNbPickNotebook('note'); return; }
     paNbCloseAdd();
     paNbModal('创建笔记',
       '<div style="font-size:11px;color:var(--sub)">标题</div><input id="paNbNoteTitle" placeholder="笔记标题">'
