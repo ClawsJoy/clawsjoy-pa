@@ -322,6 +322,8 @@
       var foot = '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>';
       if(NB.cur && n.notebook_id === NB.cur)
         foot = '<button class="pa-btn pa-btn-ghost" type="button" onclick="paNbMoveOut(\'' + esc(id) + '\')">移出</button>' + foot;
+      else if(!NB.cur)
+        foot = '<button class="pa-btn pa-btn-ghost" type="button" onclick="paNbAddToNotebook(\'' + esc(id) + '\')">加入笔记本</button>' + foot;
       paNbModal(n.title || '来源',
         '<div style="font-size:11px;color:var(--sub);margin-bottom:8px">' + iconOf(n.source) + ' ' + esc(n.source || 'note')
         + ' · ' + esc(fmtDate(n.updated)) + (n.source_path ? ' · ' + esc(n.source_path) : '') + '</div>'
@@ -333,6 +335,28 @@
       await req('/v9/pa/notes/' + encodeURIComponent(id), {method:'PATCH', body:{notebook_id:''}});
       paNbModalClose(); await paNbAfterAdd('已移出本笔记本');
     }catch(e){ msg('移不动：' + ((e && e.message) || e)); }
+  };
+  window.paNbAddToNotebook = function(id){
+    if(!NB.notebooks.length){ msg('先建一个笔记本，再把这条笔记放进去'); return; }
+    var opts = NB.notebooks.map(function(n){
+      return '<option value="' + esc(n.id) + '">' + esc(n.emoji || '📘') + ' ' + esc(n.title || '未命名') + '</option>';
+    }).join('');
+    paNbModal('加入笔记本',
+      '<div style="font-size:11px;color:var(--sub)">选一个笔记本；放进去后问答就只引该本来源。</div>'
+      + '<select id="paNbMoveTo">' + opts + '</select>',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">取消</button>'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbMoveTo(\'' + esc(id) + '\')">加入</button>');
+  };
+  window.paNbMoveTo = async function(id){
+    var sel = $('paNbMoveTo'); if(!sel || !sel.value) return;
+    try{
+      await req('/v9/pa/notes/' + encodeURIComponent(id), {method:'PATCH', body:{notebook_id:sel.value}});
+      paNbModalClose();
+      var target = sel.value;
+      await paNbLoadNotebooks(); await paNbLoadAllCount(); paNbRenderList();
+      NB.cur = target; await paNbSelect(target, true);
+      msg('已加入笔记本');
+    }catch(e){ msg('加不了：' + ((e && e.message) || e)); }
   };
   window.paNbDeleteSource = async function(id){
     if(!window.confirm('删除这个来源？对应笔记也会删。')) return;

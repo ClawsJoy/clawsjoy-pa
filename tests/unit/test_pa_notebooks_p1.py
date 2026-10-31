@@ -65,10 +65,14 @@ def test_api_notebook_roundtrip(tmp_path, monkeypatch):
     register_pa_routes(app)
     c = app.test_client()
     nb = c.post("/v9/pa/notebooks", json={"title": "API 本", "emoji": "📗"}).get_json()["notebook"]
+    loose = c.post("/v9/pa/notes", json={"title": "旧笔记", "body": "待迁移"}).get_json()["note"]
+    moved = c.patch("/v9/pa/notes/" + loose["id"], json={"notebook_id": nb["id"]})
+    assert moved.status_code == 200 and moved.get_json()["note"]["notebook_id"] == nb["id"]
     assert c.get("/v9/pa/notebooks").get_json()["notebooks"][0]["id"] == nb["id"]
     src = c.post("/v9/pa/notebooks/%s/sources/text" % nb["id"],
                  json={"title": "来源一", "body": "客户下周三看方案"}).get_json()["source"]
-    assert c.get("/v9/pa/notebooks/%s/sources" % nb["id"]).get_json()["sources"][0]["id"] == src["id"]
+    ids = [x["id"] for x in c.get("/v9/pa/notebooks/%s/sources" % nb["id"]).get_json()["sources"]]
+    assert src["id"] in ids and loose["id"] in ids
     monkeypatch.setattr(N, "ask", lambda q, **kw: {
         "answer": "下周三 [note:%s]" % src["id"],
         "citations": [{"id": src["id"], "title": "来源一", "snippet": "下周三"}],

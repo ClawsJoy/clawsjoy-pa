@@ -145,7 +145,8 @@ def register(bp):
             return g
         d = _body()
         try:
-            n = N.update(note_id, title=d.get("title"), body=d.get("body"), tags=d.get("tags"))
+            n = N.update(note_id, title=d.get("title"), body=d.get("body"), tags=d.get("tags"),
+                         notebook_id=d.get("notebook_id"))
             return ok({"note": n})
         except N.NoteError as e:
             return err(str(e), 404 if "不存在" in str(e) else 400)
