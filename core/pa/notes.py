@@ -511,14 +511,26 @@ def ask(question, data_dir=None, limit=6, llm_fn=None, notebook_id=None, note_id
               "每条结论后用 [note:<id>] 标出处；没有依据就说没有依据。\n\n"
               "问题：%s\n\n笔记：\n%s\n" % (q, "\n\n---\n\n".join(chunks)))
     answer = ""
+    _model = ""
+    _model_ok = False
+    _why = ""
     try:
+        try:
+            from core.pa.providers import default_route as _dr
+            _route, _ = _dr()
+            _model = str(_route.get("model") or "")
+        except Exception:
+            _model = ""
         answer = (llm_fn or _llm_answer)(prompt)
+        _model_ok = bool((answer or "").strip())
     except Exception as e:
         answer = ""
         _why = type(e).__name__
     answer = (answer or "").strip()
     if not answer or answer.startswith("模型不可用") or "LLM_UNAVAILABLE" in answer:
+        _model_ok = False
         answer = "找到 %d 条相关笔记（模型暂不可用，先给摘录）：\n\n" % len(rows)
         answer += "\n\n".join("- [note:%s] %s：%s" % (c["id"], c["title"], c["snippet"]) for c in citations)
     return {"answer": answer[:6000], "citations": citations,
+            "model_ok": bool(_model_ok), "model": _model, "why": _why,
             "notes": [{"id": c["id"], "title": c["title"], "updated": c["updated"]} for c in citations]}

@@ -930,7 +930,10 @@
       if(m.role === 'u') return '<div class="pa-nb-turn u">' + esc(m.text) + '</div>';
       if(m.pending) return '<div class="pa-nb-turn a" style="color:var(--sub)">' + esc(m.text) + '</div>';
       if(m.role === 'e') return '<div class="pa-nb-turn e">' + esc(m.text) + '</div>';
-      return '<div class="pa-nb-turn a">' + paNbMd(m.text, m.citations) + paNbCiteChips(m.citations)
+      var _ai = '';
+      if(m.model_ok === true) _ai = '<div class="pa-hint" style="margin:4px 0 0">AI 生成 · ' + esc(m.model || '本地模型') + '</div>';
+      else if(m.model_ok === false) _ai = '<div class="pa-hint" style="margin:4px 0 0;color:var(--amber)">模型不可用：以上为摘录，不是模型生成</div>';
+      return '<div class="pa-nb-turn a">' + paNbMd(m.text, m.citations) + paNbCiteChips(m.citations) + _ai
         + '<div class="pa-nb-actions"><button class="pa-btn" type="button" onclick="paNbSaveAnswer(' + i + ')">存为笔记</button>'
         + '<button class="pa-btn" type="button" onclick="paNbCopy(' + i + ')">复制</button></div></div>';
     }).join('');
@@ -966,7 +969,8 @@
     try{
       var path = NB.cur ? ('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/ask') : '/v9/pa/notes/ask';
       var d = await req(path, {method:'POST', body:{q:q, limit:6, note_ids:selIds}});
-      list.splice(list.indexOf(ph), 1, {role:'a', text:d.answer || '（无回答）', citations:d.citations || []});
+      list.splice(list.indexOf(ph), 1, {role:'a', text:d.answer || '（无回答）', citations:d.citations || [],
+        model_ok: d.model_ok, model: d.model || ''});
       msg('已答 · 引用 ' + ((d.citations || []).length) + ' 条');
     }catch(e){
       list.splice(list.indexOf(ph), 1, {role:'e', text:'问不到：' + ((e && e.message) || e)});
