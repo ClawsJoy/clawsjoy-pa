@@ -168,7 +168,8 @@ def register(bp):
             return g
         d = _body()
         try:
-            return ok(NB.studio(nb_id, d.get("kind") or "summary", note_ids=d.get("note_ids")))
+            return ok(NB.studio(nb_id, d.get("kind") or "summary", note_ids=d.get("note_ids"),
+                                options=d.get("options")))
         except NB.NotebookError as e:
             return err(str(e), 400)
         except Exception as e:

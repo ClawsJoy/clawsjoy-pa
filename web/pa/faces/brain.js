@@ -6,7 +6,7 @@
   var API_BASE = (typeof API !== 'undefined') ? API : '';
   var NB = window.PA_NB = {
     notebooks: [], cur: '', total: 0, sources: [], sel: {}, chat: {}, studio: {},
-    studioKind: 'summary', busy: false
+    studioKind: 'summary', studioOpts: {}, busy: false
   };
 
   function $(id){ return document.getElementById(id); }
@@ -298,8 +298,88 @@
   };
   window.paNbAddOpen = function(){
     if(!NB.cur){ msg('先选/新建一个笔记本，再加来源'); return; }
-    var m = $('paNbAddMenu'); if(m) m.hidden = !m.hidden;
+    paNbSourceDialog();
   };
+  var SRC_TAB = 'file';
+  function paNbSourceDialog(){
+    var foot = '<button class="pa-btn" type="button" onclick="paNbModalClose()">完成</button>';
+    paNbModal('添加来源',
+      '<div class="pa-nb-src-tabs">'
+      + '<button class="pa-nb-tab" data-t="file" type="button" onclick="paNbSrcTab(\'file\')">上传文件</button>'
+      + '<button class="pa-nb-tab" data-t="url" type="button" onclick="paNbSrcTab(\'url\')">网站</button>'
+      + '<button class="pa-nb-tab" data-t="text" type="button" onclick="paNbSrcTab(\'text\')">复制的文字</button>'
+      + '<button class="pa-nb-tab" data-t="voice" type="button" onclick="paNbSrcTab(\'voice\')">语音</button>'
+      + '<button class="pa-nb-tab" data-t="screen" type="button" onclick="paNbSrcTab(\'screen\')">录屏</button>'
+      + '</div><div id="paNbSrcBody"></div>'
+      + '<div class="pa-nb-src-foot" id="paNbSrcFoot">共 ' + NB.sources.length + ' 个来源（上限 200）</div>',
+      foot);
+    paNbSrcTab(SRC_TAB);
+  }
+  window.paNbSrcTab = function(tab){
+    SRC_TAB = tab || 'file';
+    document.querySelectorAll('.pa-nb-src-tabs .pa-nb-tab').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-t') === SRC_TAB);
+    });
+    var box = $('paNbSrcBody'); if(!box) return;
+    if(SRC_TAB === 'file'){
+      box.innerHTML = '<label class="pa-nb-drop" id="paNbDrop" ondragover="event.preventDefault();this.classList.add(\'on\')"'
+        + ' ondragleave="this.classList.remove(\'on\')" ondrop="paNbSrcDrop(event)">'
+        + '<div style="font-size:22px">⇪</div><div>拖放文件到这里，或点此选择</div>'
+        + '<div class="pa-hint">支持 PDF / Markdown / TXT；PDF 在本机抽文字，单文件 ≤ 50 MB</div>'
+        + '<input id="paNbSrcFile" type="file" accept=".pdf,.md,.markdown,.txt,application/pdf,text/plain,text/markdown" hidden onchange="paNbSrcFile(this)"></label>'
+        + '<div id="paNbSrcMsg" class="pa-hint"></div>';
+      var d = $('paNbDrop'); if(d) d.onclick = function(){ var f=$('paNbSrcFile'); if(f) f.click(); };
+    }else if(SRC_TAB === 'url'){
+      box.innerHTML = '<div class="pa-hint">公开 http/https 网址（不收本机/内网地址）</div>'
+        + '<input id="paNbUrlIn" placeholder="https://…" autocomplete="off">'
+        + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbAddUrlSave()">抓取并添加</button>'
+        + '<div id="paNbSrcMsg" class="pa-hint"></div>';
+    }else if(SRC_TAB === 'text'){
+      box.innerHTML = '<div class="pa-hint">标题</div><input id="paNbTextTitle" placeholder="例如：客户会议纪要">'
+        + '<div class="pa-hint">正文</div><textarea id="paNbTextBody" placeholder="粘贴资料正文…"></textarea>'
+        + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbAddTextSave()">添加</button>'
+        + '<div id="paNbSrcMsg" class="pa-hint"></div>';
+    }else if(SRC_TAB === 'voice'){
+      box.innerHTML = '<div class="pa-hint">本机录音 → 本地转写 → 存入本笔记本。不联网、不上传。</div>'
+        + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbVoice()">开始录音</button>';
+    }else{
+      box.innerHTML = '<div class="pa-hint">本机录屏 → 本地转写/关键帧 → 存入本笔记本。只录你选的窗口。</div>'
+        + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbScreen()">选择窗口/屏幕</button>';
+    }
+  };
+  function paNbSrcdlgMsg(t){ var e=$('paNbSrcMsg'); if(e) e.textContent = String(t == null ? '' : t); }
+  window.paNbSrcFile = function(inp){
+    var f = inp && inp.files && inp.files[0];
+    if(f) paNbSrcOneFile(f);
+  };
+  window.paNbSrcDrop = function(ev){
+    ev.preventDefault();
+    var d = $('paNbDrop'); if(d) d.classList.remove('on');
+    var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+    if(f) paNbSrcOneFile(f);
+  };
+  async function paNbSrcOneFile(f){
+    if(!NB.cur){ paNbSrcdlgMsg('先选一个笔记本'); return; }
+    var name = String(f.name || '');
+    var low = name.toLowerCase();
+    if(f.size > 50 * 1024 * 1024){ paNbSrcdlgMsg('文件太大（上限 50 MB）'); return; }
+    paNbSrcdlgMsg('读取中…');
+    try{
+      if(low.endsWith('.pdf') || f.type === 'application/pdf'){
+        var fd = new FormData(); fd.append('file', f, name);
+        var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/pdf', {method:'POST', body:fd, form:true});
+        paNbModalClose(); await paNbAfterAdd('已加 PDF（' + (d.chars || 0) + ' 字）');
+      }else if(low.endsWith('.md') || low.endsWith('.markdown') || low.endsWith('.txt') || f.type.indexOf('text') === 0){
+        var text = await f.text();
+        if(!text.trim()){ paNbSrcdlgMsg('文件是空的'); return; }
+        await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/sources/text', {method:'POST', body:{
+          title: name.replace(/\.[^.]+$/, ''), body: text, tags:['文件']}});
+        paNbModalClose(); await paNbAfterAdd('已加文件来源：' + name);
+      }else{
+        paNbSrcdlgMsg('暂支持 PDF / MD / TXT；其它格式先转文本');
+      }
+    }catch(e){ paNbSrcdlgMsg('加不了：' + ((e && e.message) || e)); }
+  }
   function paNbCloseAdd(){ var m = $('paNbAddMenu'); if(m) m.hidden = true; }
   window.paNbAddTextOpen = function(){
     if(!NB.cur) return; paNbCloseAdd();
@@ -394,7 +474,8 @@
   window.paNbOpenSource = async function(id){
     try{
       var d = await req('/v9/pa/notes/' + encodeURIComponent(id)), n = d.note || {};
-      var foot = '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>';
+      var foot = '<button class="pa-btn" type="button" onclick="paNbEditSource(\'' + esc(id) + '\')">编辑</button>'
+        + '<button class="pa-btn" type="button" onclick="paNbModalClose()">关闭</button>';
       if(NB.cur && n.notebook_id === NB.cur)
         foot = '<button class="pa-btn pa-btn-ghost" type="button" onclick="paNbMoveOut(\'' + esc(id) + '\')">移出</button>' + foot;
       else if(!NB.cur)
@@ -404,6 +485,24 @@
         + ' · ' + esc(fmtDate(n.updated)) + (n.source_path ? ' · ' + esc(n.source_path) : '') + '</div>'
         + '<div style="white-space:pre-wrap">' + esc(n.body || '') + '</div>', foot);
     }catch(e){ msg('打不开：' + ((e && e.message) || e)); }
+  };
+  window.paNbEditSource = async function(id){
+    try{
+      var d = await req('/v9/pa/notes/' + encodeURIComponent(id)), n = d.note || {};
+      paNbModal('编辑笔记',
+        '<div class="pa-nb-cfg-l">标题</div><input id="paNbEditSrcTitle" value="' + esc(n.title || '') + '">'
+        + '<div class="pa-nb-cfg-l">正文</div><textarea id="paNbEditSrcBody" style="min-height:240px">' + esc(n.body || '') + '</textarea>',
+        '<button class="pa-btn" type="button" onclick="paNbModalClose()">取消</button>'
+        + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbEditSourceSave(\'' + esc(id) + '\')">保存</button>');
+    }catch(e){ msg('打不开：' + ((e && e.message) || e)); }
+  };
+  window.paNbEditSourceSave = async function(id){
+    var t = $('paNbEditSrcTitle'), b = $('paNbEditSrcBody');
+    try{
+      await req('/v9/pa/notes/' + encodeURIComponent(id), {method:'PATCH', body:{
+        title: (t && t.value) || '', body: (b && b.value) || ''}});
+      paNbModalClose(); await paNbAfterAdd('已保存笔记');
+    }catch(e){ msg('保存失败：' + ((e && e.message) || e)); }
   };
   window.paNbMoveOut = async function(id){
     try{
@@ -568,9 +667,51 @@
       + (s.model_ok === false ? '<div class="pa-hint" style="color:var(--amber)">模型暂不可用：以上为摘录，不是模型生成。</div>' : '');
     if($('paNbSaveOut')) $('paNbSaveOut').hidden = false;
   }
+  var FORMAT_OPTS = {
+    summary: [['brief','简洁摘要'],['detailed','详细摘要']],
+    report: [['standard','标准报告'],['executive','一页高管摘要']],
+    flashcards: [['12','12 张'],['24','24 张']],
+    quiz: [['8','8 题'],['12','12 题']],
+    slides: [['detailed','详细演示文稿'],['presenter','演示用幻灯片']],
+    mindmap: [['tree','层级树']],
+    datatable: [['table','事实表']],
+    faq: [['8','8 组问答']],
+    study: [['standard','标准学习指南']]
+  };
   window.paNbStudioTab = function(kind){
     if(!KIND_LABEL[kind]) return;
-    NB.studioKind = kind; paNbRenderStudio();
+    NB.studioKind = kind;
+    paNbStudioConfig(kind);
+  };
+  function paNbStudioConfig(kind){
+    var formats = FORMAT_OPTS[kind] || [['standard','标准']];
+    var cards = formats.map(function(x, i){
+      return '<button class="pa-nb-fmt' + (i === 0 ? ' on' : '') + '" type="button" data-v="' + esc(x[0]) + '"'
+        + ' onclick="paNbCfgFmt(this)"><b>' + esc(x[1]) + '</b></button>';
+    }).join('');
+    var opts = NB.studioOpts[kind] || {};
+    paNbModal('自定义' + (KIND_LABEL[kind] || '产出'),
+      '<div class="pa-nb-cfg"><div class="pa-nb-cfg-l">格式</div><div class="pa-nb-fmts">' + cards + '</div>'
+      + '<div class="pa-nb-cfg-grid"><div><div class="pa-nb-cfg-l">语言</div>'
+      + '<select id="paNbCfgLang"><option>中文（简体）</option><option>English</option></select></div>'
+      + '<div><div class="pa-nb-cfg-l">来源</div><div class="pa-nb-chip">' + paNbSelectedIds().length + ' 个已勾选</div></div></div>'
+      + '<div class="pa-nb-cfg-l">重点／自定义要求</div>'
+      + '<textarea id="paNbCfgFocus" placeholder="例如：面向新手、突出风险与数字…">' + esc(opts.focus || '') + '</textarea>'
+      + '<div class="pa-hint">只使用已勾选来源；模型不可用会照实回落为摘录。</div></div>',
+      '<button class="pa-btn" type="button" onclick="paNbModalClose()">取消</button>'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paNbStudioRun(\'' + esc(kind) + '\')">立即生成</button>');
+  }
+  window.paNbCfgFmt = function(btn){
+    var p = btn.parentNode; if(!p) return;
+    for(var i=0;i<p.children.length;i++) p.children[i].classList.toggle('on', p.children[i] === btn);
+  };
+  window.paNbStudioRun = function(kind){
+    var f = document.querySelector('.pa-nb-fmts .pa-nb-fmt.on');
+    var lang = $('paNbCfgLang'), focus = $('paNbCfgFocus');
+    NB.studioKind = kind;
+    NB.studioOpts[kind] = {format: f ? f.getAttribute('data-v') : '', language: lang ? lang.value : '中文（简体）', focus: focus ? focus.value.trim() : ''};
+    paNbModalClose();
+    paNbStudioGen();
   };
   window.paNbStudioGen = async function(){
     if(!NB.cur){ msg('Studio 需先选一个笔记本'); return; }
@@ -578,7 +719,8 @@
     if(!selIds.length){ msg('先勾选来源，再生成'); return; }
     var b = $('paNbGenBtn'); if(b) b.disabled = true; msg('生成中…（本地模型）');
     try{
-      var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/studio', {method:'POST', body:{kind:NB.studioKind, note_ids:selIds}});
+      var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/studio', {method:'POST', body:{
+        kind:NB.studioKind, note_ids:selIds, options:NB.studioOpts[NB.studioKind] || {}}});
       if(!NB.studio[NB.cur]) NB.studio[NB.cur] = {};
       NB.studio[NB.cur][NB.studioKind] = d; paNbRenderStudio();
       msg(d.model_ok ? ('已生成' + (KIND_LABEL[NB.studioKind] || '')) : '模型不可用，已照实回落为摘录');

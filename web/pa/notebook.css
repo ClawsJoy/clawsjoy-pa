@@ -1,7 +1,7 @@
 /* 第二大脑 · 笔记本（P1）：三栏 —— 笔记本/来源 ｜ 对话 ｜ Studio */
 .pa-nb [hidden]{display:none!important}
 body[data-pa-route="brain"] .pa-now{display:none}
-.pa-nb{display:grid;grid-template-columns:264px minmax(0,1fr) 308px;gap:12px;
+.pa-nb{display:grid;grid-template-columns:264px minmax(0,1fr) 340px;gap:12px;
   height:calc(100vh - 48px - 44px);min-height:520px}
 .pa-nb-col{display:flex;flex-direction:column;min-width:0;min-height:0;
   background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
@@ -96,6 +96,19 @@ body[data-pa-route="brain"] .pa-now{display:none}
 .pa-nb-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
 .pa-nb-actions .pa-btn{padding:2px 8px;font-size:10.5px;border-radius:6px}
 .pa-nb-msg{padding:6px 12px;font-size:10.5px;color:var(--sub);border-top:1px solid var(--border);flex:0 0 auto}
+.pa-nb-src-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.pa-nb-src-tabs .pa-nb-tab{flex:0 0 auto;padding:5px 10px;font-size:11.5px}
+.pa-nb-drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  border:1px dashed var(--border);border-radius:10px;padding:22px 12px;cursor:pointer;text-align:center;color:var(--sub)}
+.pa-nb-drop.on,.pa-nb-drop:hover{border-color:var(--blue);color:var(--text);background:rgba(88,166,255,.05)}
+.pa-nb-src-foot{margin-top:10px;font-size:11px;color:var(--sub);text-align:right}
+.pa-nb-cfg-l{font-size:11px;color:var(--sub);margin:8px 0 4px}
+.pa-nb-fmts{display:flex;flex-wrap:wrap;gap:6px}
+.pa-nb-fmt{background:var(--bg);border:1px solid var(--border);color:var(--sub);border-radius:8px;
+  padding:8px 12px;font:12px inherit;cursor:pointer}
+.pa-nb-fmt.on{background:rgba(88,166,255,.12);border-color:rgba(88,166,255,.42);color:var(--text)}
+.pa-nb-cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pa-nb-cfg textarea{min-height:90px}
 .pa-nb-modal{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:22px}
 .pa-nb-mcard{width:min(760px,96vw);max-height:88vh;display:flex;flex-direction:column;background:var(--card);
   border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45)}
@@ -106,9 +119,9 @@ body[data-pa-route="brain"] .pa-now{display:none}
   background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font:12.5px inherit}
 .pa-nb-mb textarea{min-height:160px;resize:vertical}
 .pa-nb-mf{display:flex;gap:7px;justify-content:flex-end;padding:10px 14px;border-top:1px solid var(--border)}
-.pa-nb-chip{font-size:10.5px;color:var(--sub);border:1px solid var(--border);border-radius:999px;padding:1px 7px}
+.pa-nb-chip{display:inline-block;font-size:10.5px;color:var(--sub);border:1px solid var(--border);border-radius:999px;padding:1px 7px}
 .pa-nb-busy{opacity:.6;pointer-events:none}
-@media (max-width:1180px){.pa-nb{grid-template-columns:230px minmax(0,1fr) 280px}}
+@media (max-width:1180px){.pa-nb{grid-template-columns:230px minmax(0,1fr) 320px}}
 @media (max-width:980px){.pa-nb{grid-template-columns:220px minmax(0,1fr);height:auto;min-height:0}
   .pa-nb-right{grid-column:1/-1;max-height:420px}}
 @media (max-width:720px){.pa-nb{grid-template-columns:1fr;height:auto}

@@ -393,7 +393,8 @@ def _fallback(kind, nb, items):
     return head + "模型不可用，未生成内容。来源：" + "、".join("[%d] %s" % (x["n"], x["title"]) for x in items)
 
 
-def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12, note_ids=None):
+def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12, note_ids=None,
+           options=None):
     nb = get(nb_id, data_dir=data_dir)
     kind = str(kind or "summary")
     if kind not in STUDIO_KINDS:
@@ -413,8 +414,16 @@ def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12, no
         "slides": "生成 8 页演示文稿大纲；每页：## 第 N 页 标题，下接 3-5 条要点；关键事实用 [note:<id>] 标出处。",
         "datatable": "用 Markdown 表格总结来源中的事实：列＝主题｜要点｜出处；只写来源里有的内容，出处列用 [note:<id>]。",
     }[kind]
-    prompt = ("你是 PA 第二大脑的 Studio。只依据下面来源，不要编造；%s\n\n笔记本：%s\n\n来源：\n%s\n"
-              % (instr, nb.get("title", ""), chunks))
+    opt = options if isinstance(options, dict) else {}
+    extra = ""
+    if opt.get("format"):
+        extra += "输出格式：%s。\n" % str(opt.get("format"))[:120]
+    if opt.get("language"):
+        extra += "输出语言：%s。\n" % str(opt.get("language"))[:40]
+    if opt.get("focus"):
+        extra += "请重点：%s。\n" % str(opt.get("focus"))[:600]
+    prompt = ("你是 PA 第二大脑的 Studio。只依据下面来源，不要编造；%s\n%s\n笔记本：%s\n\n来源：\n%s\n"
+              % (instr, extra, nb.get("title", ""), chunks))
     model_ok, why, md = False, "", ""
     try:
         md = (llm_fn or N.llm_generate)(prompt)

@@ -63,6 +63,22 @@ def test_studio_note_ids_and_recent_outputs(tmp_path):
     assert rows[0]["kind"] == "摘要"
 
 
+def test_studio_prompt_includes_options(tmp_path):
+    nb = NB.create("选项", data_dir=str(tmp_path))
+    NB.add_text(nb["id"], "来源", "风险是退货。", data_dir=str(tmp_path))
+    seen = {}
+
+    def _llm(p):
+        seen["p"] = p
+        return "ok"
+
+    NB.studio(nb["id"], "report", data_dir=str(tmp_path), llm_fn=_llm,
+              options={"format": "executive", "language": "English", "focus": "合规风险"})
+    assert "executive" in seen["p"]
+    assert "English" in seen["p"]
+    assert "合规风险" in seen["p"]
+
+
 def test_studio_model_ok_and_fallback(tmp_path):
     nb = NB.create("学习", data_dir=str(tmp_path))
     NB.add_text(nb["id"], "第一章", "核心概念是检索增强。", data_dir=str(tmp_path))
