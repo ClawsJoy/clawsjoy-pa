@@ -7,8 +7,8 @@
 
 ## 版本
 
-- 仓库版本：**9.4.4**（pyproject.toml / core/lib/version.py / shell/package.json）
-- 安装版：**9.4.4**（本机 5103 /health healthy）
+- 仓库版本：**9.4.5**（pyproject.toml / core/lib/version.py / shell/package.json）
+- 安装版：**9.4.5**（本机 5103 /health healthy）
 - 旧文档中的 9.0.36 / 9.0.76 / 9.2.0 均视为历史，不是当前版本
 
 ## 默认运行面
@@ -34,6 +34,9 @@
 - send.js 旧 /v9/agent/chat SSE 分支与 readSSE 已删
 - 审批续跑：cards.js 已改走 /v9/agent/runs/approval；后端保留旧 /v9/agent/chat 兼容，但产品前端不再使用
 - 新窗 live 同时读 /v9/pes/runs 与 /v9/agent/runs；新窗「停」优先取消 RunService run
+- 旧 chat 的本地模型新增 LocaLM adapter（OpenAI tools）：真模型可产生 write_file pending
+- Organic approval E2E：LocaLM tool call → pending → /v9/agent/runs/approval → write_confirmed；文件 data/projects/.../approval_organic.txt
+- GPU：LocaLM 卸载前 5449 MiB → 卸载后 739 MiB；重载后 5456 MiB
 - 取消实测 0.46s：runner 取消事件 + Ollama stream close；不改 runs 对外 running/cancel_requested→cancelled 语义
 - 执行中再聊：不再抢模型；陪伴消息立即排队（实测 1ms 返回 queued），run 终止后自动发
 - 新窗 Today 首屏新增「从笔记开始」：问本周笔记，回带出处；无笔记时提示先记一笔
@@ -41,7 +44,7 @@
 
 ## 已验路径（本机，2026-11-01）
 
-- /health 返回 9.4.4 healthy
+- /health 返回 9.4.5 healthy
 - PA 本地对话走 Ollama；可手动切 localm
 - localm 动态模型：qwen2.5-7b-instruct-q4_0-gpu、qwen2.5vl-7b；已载状态上屏
 - 第二大脑 / Notebook / Studio 跟随所选模型

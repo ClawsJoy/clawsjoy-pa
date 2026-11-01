@@ -14,7 +14,7 @@ u"""⭐ 版本号之「一处定形」（承 pm_1384 §三.5：`/` 报 `6.0.0` �
   ⟷ `pyproject.toml` 之一致由 `tests/unit/test_version_single_source.py` **以器核**（⛔ 人记）。
 """
 
-__version__ = u"9.4.4"
+__version__ = u"9.4.5"
 
 SERVICE_NAME = u"ClawsJoy Gateway"
 

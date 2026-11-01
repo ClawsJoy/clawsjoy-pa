@@ -88,12 +88,66 @@ class _LocalOllamaAdapter:
         return _out
 
 
+class _LocalMAdapter:
+    """本地 LocaLM adapter：OpenAI /v1/chat/completions，带 tools。
+
+    与 _LocalOllamaAdapter 同形返回；仅用于 route provider=local:localm。
+    LocaLM 的 OpenAI 接口支持 tools，因此可用于产生真实 write_file 审批卡。
+    """
+
+    def __init__(self, model=None):
+        _m = str(model or "").strip()
+        if _m.startswith("localm:"):
+            _m = _m.split(":", 1)[1]
+        self.model = _m
+        self.base_url = os.getenv("LOCALM_BASE_URL", "http://127.0.0.1:8642").rstrip("/")
+
+    def execute_with_tools(self, messages, tools, user_id=None, temperature=0.7, max_tokens=2000, thinking=False):
+        import requests as _rq
+
+        body = {
+            "model": self.model,
+            "messages": messages,
+            "tools": tools or [],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        try:
+            resp = _rq.post(self.base_url + "/v1/chat/completions", json=body, timeout=(10, 180))
+        except Exception as exc:  # noqa: BLE001
+            return {"success": False, "error": "LocaLM 调用失败：{}".format(str(exc)[:300])}
+        if resp.status_code != 200:
+            return {
+                "success": False,
+                "error": "LocaLM 错误: {} - {}".format(resp.status_code, resp.text[:300]),
+            }
+        try:
+            data = resp.json()
+        except Exception:  # noqa: BLE001
+            return {"success": False, "error": "LocaLM 返回非 JSON"}
+        choices = data.get("choices") or []
+        for ch in choices:
+            msg = ch.get("message") or {}
+            for tc in (msg.get("tool_calls") or []):
+                fn = tc.get("function") or {}
+                if isinstance(fn.get("arguments"), dict):
+                    fn["arguments"] = json.dumps(fn["arguments"], ensure_ascii=False)
+        usage = data.get("usage") or {}
+        return {
+            "success": True,
+            "data": {"choices": choices},
+            "tokens": (usage.get("total_tokens") or 0),
+        }
+
+
 def _make_model_adapter(model, api_key):
     """B2（provider-aware）：按注册表 route 决定本地/远端，⛔ 以名字猜。"""
     from core.gateway.v9_chat.provider_route import route_for_model as _route_for_model
     from core.pa import providers as _prov
 
     _route, _note = _route_for_model(str(model or "").strip())
+    if _route.get("provider") == "local:localm" or str(model or "").startswith("localm:"):
+        return _LocalMAdapter(_route.get("model") or model)
     if _prov.route_kind(_route) == "local":
         return _LocalOllamaAdapter(_route.get("model") or model)
     from core.lib.v8.adapters.deepseek_adapter import DeepSeekAdapter

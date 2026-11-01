@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clawsjoy"
-version = "9.4.4"
+version = "9.4.5"
 description = "ClawsJoy - AI 劳动力管理平台 + Agent 工作区"
 readme = "README.md"
 requires-python = ">=3.12"   # ⭐ pm_1569 §二：包内 wheel 皆 cp312 ⇒ 锁 CPython 3.12（64 位）
