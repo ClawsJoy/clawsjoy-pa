@@ -107,8 +107,10 @@ function paModelRender(sel, st, d, at, err, prev){
   } else if(hit.via === 'id'){
     paModelNote(sel, crossProv ? ('已选非默认通道 ' + crossProvId + ' ⇒ 本会话走「' + pick + '」；默认仍是 ' + dftProv) : '');
     if(crossProv) paModelPersist(pick);
-  } else {
+  } else if(String(want || '').trim()) {
     paModelNote(sel, '后端之表 ⛔ 含此名「' + want + '」⇒ 已按下之默认「' + pick + '」（⛔ 静默）');
+  } else {
+    paModelNote(sel, '');
   }
   return sel;
 }
