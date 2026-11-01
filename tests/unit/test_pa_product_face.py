@@ -60,3 +60,10 @@ def test_first_win_has_timeout():
     assert "AbortController" in win
     assert "20000" in win
     assert "20 秒内没有回执" in win
+
+def test_first_win_has_folder_and_todo():
+    win = (ROOT / "web" / "pa" / "faces" / "window.js").read_text(encoding="utf-8")
+    assert "paWinFirstPick" in win
+    assert "选文件夹导入" in win
+    assert "/v9/pa/notes/import" in win
+    assert "待办" in win

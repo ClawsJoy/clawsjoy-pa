@@ -882,7 +882,9 @@
       + '<section class="pa-card pa-firstwin" data-card="firstwin" style="margin:10px 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card)">'
       + '<h2 class="pa-card-h" style="margin:0 0 4px">从笔记开始</h2>'
       + '<div style="color:var(--sub);font-size:12px;line-height:1.6">问本周记下的东西，拿回带出处的答案；没有笔记就先在下面记一笔。</div>'
-      + '<div style="margin-top:8px"><button class="pa-btn pa-btn-main" type="button" onclick="paWinFirstWin()">问本周笔记</button></div>'
+      + '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+      + '<button class="pa-btn pa-btn-main" type="button" onclick="paWinFirstWin()">问本周笔记</button>'
+      + '<button class="pa-btn pa-btn-ghost" type="button" onclick="paWinFirstPick()">选文件夹导入</button></div>'
       + '<div id="paWinFirstWinOut" style="margin-top:8px;font-size:13px;line-height:1.65;white-space:pre-wrap"></div>'
       + '</section>'
       + '<div class="pa-cmd">'
@@ -928,6 +930,30 @@
   window.paWinReplyClear = function(){ var b=document.getElementById('paWinReply'); if(b){ b.hidden=true; b.textContent=''; } };
 
   /* P0 五分鐘首勝：從筆記問本週，帶出處；⛔ 假空態 ／ ⛔ 無據作答。 */
+  window.paWinFirstPick = async function(){
+    var out = document.getElementById('paWinFirstWinOut');
+    if(!out) return;
+    if(!window.paShell || typeof window.paShell.pickDirectory !== 'function'){
+      out.textContent = '选文件夹需在桌面 PA 内使用（当前页没有本机目录选择桥）。';
+      return;
+    }
+    var pick = null;
+    try{ pick = await window.paShell.pickDirectory(); }catch(e){ pick = null; }
+    if(!pick || pick.ok !== true || !pick.path){ out.textContent = '未选择文件夹。'; return; }
+    out.textContent = '导入中…（仅本机 Markdown）';
+    try{
+      var r = await fetch((typeof API !== 'undefined' ? API : '') + '/v9/pa/notes/import', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:pick.path}), cache:'no-store'});
+      var d = await r.json().catch(function(){ return null; });
+      if(!r.ok || !d || d.ok === false){
+        out.textContent = '导入失败：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status));
+        return;
+      }
+      var n = d.imported != null ? d.imported : (d.count != null ? d.count : '');
+      out.textContent = '已导入' + (n === '' ? '' : (' ' + n + ' 篇')) + '；现在可以问本周笔记。';
+    }catch(e){ out.textContent = '导入失败：' + String((e && e.message) || e); }
+  };
+
   window.paWinFirstWin = async function(){
     var out = document.getElementById('paWinFirstWinOut');
     if(!out) return;
@@ -955,9 +981,19 @@
         return;
       }
       var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+      var todoLines = [];
+      cits.forEach(function(c){
+        String(c.snippet || '').split(/\n+/).forEach(function(line){
+          var s = line.replace(/^[-*\d.\s]+/, '').trim();
+          if(s && /待办|TODO|下一步|截止|需要跟/.test(s) && todoLines.length < 3) todoLines.push(s);
+        });
+      });
       out.innerHTML = '<div>' + esc(txt) + '</div>'
         + (cits.length ? '<div style="margin-top:6px;color:var(--sub);font-size:12px">出处：'
           + cits.map(function(c){ return esc(c.title || c.id || ''); }).join(' ／ ') + '</div>' : '')
+        + '<div style="margin-top:6px;color:var(--sub);font-size:12px">待办：'
+          + (todoLines.length ? todoLines.map(function(x){ return '· ' + esc(x); }).join('<br>') : '出处中未显式标出（照实）')
+          + '</div>'
         + '<div style="margin-top:4px;color:var(--sub);font-size:11px">模型：' + esc(d.model || '默认') + '</div>';
     }catch(e){
       out.textContent = (e && e.name === 'AbortError')
