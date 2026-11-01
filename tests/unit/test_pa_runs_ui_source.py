@@ -27,7 +27,7 @@ def _status():
 def test_work_dev_route_uses_runs_with_flag():
     src = _send()
     assert "var PA_RUN_API = 1;" in src
-    assert "(state.mode==='work' || state.mode==='dev')" in src
+    assert "return await sendAgentViaRuns(t, _utext);" in src
     assert "return await sendAgentViaRuns(t, _utext);" in src
     assert "async function sendAgentViaRuns(" in src
 
@@ -75,12 +75,12 @@ def test_cancel_uses_runs_cancel_not_only_abort():
     assert "window.paStop.__paRunsWrapped" in src
 
 
-def test_old_sse_fallback_preserved():
+def test_old_sse_fallback_removed():
     src = _send()
-    assert "API+'/v9/agent/chat'" in src
-    assert "readSSE(resp)" in src
+    assert "API+'/v9/agent/chat'" not in src
+    assert "readSSE(resp)" not in src
     assert "PA_RUN_API" in src
-    assert "fallback" in src.lower()
+    assert "旧 /v9/agent/chat SSE 已删" in src
 
 
 def test_status_has_queued_and_cancelled():
@@ -120,12 +120,13 @@ def test_restore_clears_only_on_404_and_init_hook():
     assert "setTimeout(paRestoreLastRun, 0)" in src
 
 
-def test_single_send_chain_work_dev_no_silent_fallback():
+def test_single_send_chain_only_runs():
     src = _send()
     body = src.split("async function sendAgent(t, userText){", 1)[1].split("/* ===== P0-3", 1)[0]
-    assert "if(state.mode==='work' || state.mode==='dev'){" in body
     assert "return await sendAgentViaRuns(t, _utext);" in body
-    assert "Number(PA_RUN_API) !== 0" not in body, "work/dev 禁止按 flag 落旧 SSE"
+    assert "fetch(" not in body
+    assert "Number(PA_RUN_API) !== 0" not in body
+    assert "readSSE(" not in body
 
 
 def test_selfdesc_bypasses_stop_card_for_runs_only():

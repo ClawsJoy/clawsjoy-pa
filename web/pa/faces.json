@@ -1,8 +1,8 @@
 {
  "version": "v1",
- "updated": "2026-10-07",
+ "updated": "2026-11-01",
  "product": "ClawsJoy PA 客户端（Windows 壳 + web 面）",
- "note": "私面（private:true）⇒ open:false ⇒ ① boot.js 里其启动步经 PA_FACES.guard 跳过 ② 其 DOM（dom 选择器）收起。一开关关全体私面＝把 private:true 的面 open 置 false。v3 页为 3 主面（今日上下文／会话／任务）。",
+ "note": "私面（private:true）⇒ open:false ⇒ ① boot.js 里其启动步经 PA_FACES.guard 跳过 ② 其 DOM（dom 选择器）收起。一开关关全体私面＝把 private:true 的面 open 置 false。v3 页为 3 主面（今日上下文／会话／任务）。 2026-11-01：登记 window/summon/live/brain；新窗为产品默认，?ui=legacy 回退。",
  "license": {
   "client": "Apache-2.0",
   "platform": "AGPL-3.0-only",
@@ -346,6 +346,48 @@
     "#paSys",
     "#paSysOpen",
     "#paSysWhen"
+   ],
+   "boot": []
+  },
+  {
+   "id": "window",
+   "title": "新窗（唯一默认产品面）",
+   "file": "faces/window.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paWin"
+   ],
+   "boot": []
+  },
+  {
+   "id": "summon",
+   "title": "Summon 召唤层",
+   "file": "faces/summon.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paWin"
+   ],
+   "boot": []
+  },
+  {
+   "id": "live",
+   "title": "新窗实时数据",
+   "file": "faces/live.js",
+   "open": true,
+   "private": false,
+   "dom": [],
+   "boot": []
+  },
+  {
+   "id": "brain",
+   "title": "第二大脑／笔记本",
+   "file": "faces/brain.js",
+   "open": true,
+   "private": false,
+   "dom": [
+    "#paBrain"
    ],
    "boot": []
   }

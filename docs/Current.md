@@ -25,6 +25,15 @@
 | Postgres | 16，容器 clawsjoy-postgres，本机 5432 |
 | Redis | 7，容器 clawsjoy-redis，6379 |
 
+## 产品面 / 发送链（9.3.0 起）
+
+- **新窗为产品默认**：body.pa-win-on；旧 topbar/main/axisbar 隐藏
+- 回退：?ui=legacy 或 ?paWin=0；回新窗：?ui=window
+- 旧 8 模式 DOM 保留但不可见；回退旗仍可开
+- 陪伴：/v9/pa/dialog；办事：/v9/agent/runs
+- send.js 旧 /v9/agent/chat SSE 分支与 readSSE 已删
+- 残留：cards.js 的写入审批续跑仍用 /v9/agent/chat（后端尚无 runs 审批续跑端），这是当前唯一发送链例外
+
 ## 已验路径（本机，2026-11-01）
 
 - /health 返回 9.2.2 healthy

@@ -25,16 +25,24 @@
     });
   }
 
-  /* ── 开关：地址栏 ?paWin=1|0 ＞ 本机记住 ＞ 默认关 ── */
+  /* ── 开关：?ui=legacy ／ ?paWin=0 回退；默认新窗（P0 产品面） ── */
   window.paWinFlagOn = function(){
     try{
-      var q = new URLSearchParams(location.search).get('paWin');
-      if(q === '1'){ localStorage.setItem('paWinV1','1'); return true; }
-      if(q === '0'){ localStorage.setItem('paWinV1','0'); return false; }
+      var q = new URLSearchParams(location.search);
+      var ui = q.get('ui');
+      var qq = q.get('paWin');
+      if(ui === 'legacy' || qq === '0'){ localStorage.setItem('paWinV1','0'); return false; }
+      if(ui === 'window' || qq === '1'){ localStorage.setItem('paWinV1','1'); return true; }
+      /* 9.2.2 之前每个 boot 都把默认值 false 写进 localStorage；
+         首次升级清除旧默认一次，避免“永远回不到新窗”。 */
+      if(localStorage.getItem('paWinV2Migrated') !== '1'){
+        localStorage.removeItem('paWinV1');
+        localStorage.setItem('paWinV2Migrated','1');
+      }
       if(localStorage.getItem('paWinV1') === '1') return true;
       if(localStorage.getItem('paWinV1') === '0') return false;
     }catch(e){}
-    return window.PA_WIN_V1 === 1 || window.PA_WIN_V1 === '1';
+    return true;   /* 产品默认：新窗唯一默认 */
   };
   window.paWinSetFlag = function(on){
     try{ localStorage.setItem('paWinV1', on ? '1' : '0'); }catch(e){}
@@ -875,7 +883,7 @@
       + '<input id="paCmdIn" type="text" placeholder="说一句话，或拖一件东西进来…" autocomplete="off" aria-label="命令带">'
       + '<button class="pa-btn pa-btn-ghost" id="paWinAttachBtn" type="button" onclick="paWinAttachPick()" title="附件：唯存本机 · 缺省不外发；要随本轮出机须逐件勾">📎</button>'
       + '<button class="pa-btn pa-btn-main" type="button" onclick="paWinCmdSend()">发</button></div>'
-      + '<div class="pa-hint">发送走旧 paSend 真链路：会话落盘 · 错误/模型不可用照实 · 回执可查</div>';
+      + '<div class="pa-hint">本地对话 · 结果与回执来自后端；失败照实 · 出机须授权</div>';
   }
 
   window.paWinAttachPick = function(){
