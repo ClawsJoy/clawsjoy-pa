@@ -1,0 +1,44 @@
+{
+  "notebook": {
+    "id": "7320feb8-9499-4806-82ac-27ab0dc67742",
+    "title": "ClawsJoy",
+    "product": "Gemini Notebook / NotebookLM",
+    "url": "https://notebook.google.com/notebook/7320feb8-9499-4806-82ac-27ab0dc67742",
+    "created": "2026-10-31",
+    "source_count": 7,
+    "category_labels": [
+      "AI营销与工具",
+      "市场与产品策略",
+      "渠道打法与推广",
+      "合规与认证标准"
+    ]
+  },
+  "extraction": {
+    "method": "Windows UI Automation (Chrome accessibility tree)",
+    "collected_at": "2026-11-01T19:00:00+08:00",
+    "account": "authenticated Google account (email redacted)",
+    "limits": [
+      "Only rendered/accessible text; no NotebookLM API export.",
+      "Source panel showed 7 sources but the visible citation list exposed 4 unique filenames.",
+      "Not legal advice; legal/compliance claims need primary-source verification."
+    ]
+  },
+  "summary": "这些来源提供了针对欧美市场的 AI与新媒体营销 全方位实战指南，重点聚焦于圣诞树灯串及节日灯饰品类。内容涵盖了 海关出口数据 、 目标市场与消费者洞察 、 爆款产品拆解 （如智能音乐同步灯串与投影灯）、以及 TikTok Shop与亚马逊等多渠道的运营策略 。此外，文档详细讲解了如何利用 AI工具链 （如文生图、脚本生成、客服自动化）重构营销全链路，并深入剖析了欧美市场严格的 合规认证 （如UL 588、GPSR、EU AI Act）与 知识产权（TRO）风险 。最后，资料给出了具体的 时间管理节点 、 落地SOP 以及 预算分配方案 ，旨在帮助工厂和卖家抢占Q4旺季并规避合规暗雷。",
+  "question": "如何利用AI与新媒体在欧美市场推广圣诞灯串？",
+  "unique_source_files": [
+    "AI + 新媒体营销 详解（圣诞灯串 圣诞树灯 · 欧美市场版）.pdf",
+    "AI+新媒体营销-素材02-AI工具链与AI标识合规（2026-09-18）.pdf",
+    "AI+新媒体营销-素材03-渠道打法与达人报价（2026-09-18）.pdf",
+    "AI+新媒体营销-素材04-欧美合规认证（2026-09-18）.pdf"
+  ],
+  "source_file_count_unique": 4,
+  "key_answer_points": [
+    "核心是抢占时间差、用 AI 放大实拍素材与拦截退货、跨渠道协同收割。",
+    "9–10 月内容种草，11 月黑五网一收割，12 月尾单补货。",
+    "产品向 App 控制、音乐同步、RGBIC、可编程智能款升级。",
+    "美国偏好强视觉/智能/性价比；欧洲偏好安全合规、能效、环保。",
+    "TikTok 爆发 + Amazon 基本盘 + Pinterest 提前埋伏。",
+    "AI 用于实拍打底、场景合成、脚本/多语种、售前客服，不做虚假证言。",
+    "合规重点：UL 588、FCC ID、Reese's Law、CE LVD/EMC/RoHS、RED EN 18031、GPSR、WEEE/EPR、TRO/FTO、AI 标识。"
+  ]
+}
