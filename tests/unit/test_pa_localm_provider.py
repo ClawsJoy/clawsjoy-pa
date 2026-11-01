@@ -48,3 +48,13 @@ def test_llm_client_localm_route_no_ollama_fallback(monkeypatch):
     route = c.get_last_route()
     assert route.get("provider") == "localm"
     assert route.get("fell_back") is False
+
+def test_localm_dynamic_models_enter_registry(monkeypatch):
+    monkeypatch.setattr(P, "_discover_localm_models", lambda: [
+        {"id": "localm:qwen2.5vl-7b", "label": "LocaLM · qwen2.5vl-7b",
+         "isDefault": False, "ctx": 8192, "loaded": False}])
+    monkeypatch.setattr(P, "_LOCALM_CACHE", {"at": 0.0, "models": None})
+    view = P.public_view()
+    rows = [r for r in view["models_table"] if r["provider_id"] == "local:localm"]
+    assert any(r["id"] == "localm:qwen2.5vl-7b" for r in rows)
+    assert P.resolve_model("localm:qwen2.5vl-7b") == "localm:qwen2.5vl-7b"

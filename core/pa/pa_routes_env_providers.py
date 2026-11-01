@@ -192,6 +192,23 @@ def register(bp):
         except Exception as e:
             return err("benchmark 失败：%s" % type(e).__name__, 500)
 
+    @bp.route("/v9/pa/harness/key", methods=["GET", "POST"])
+    def pa_harness_key():
+        u"""DSH 专用云端 key（与 PA provider key 分开；只回布尔）。"""
+        from core.pa import dsh_credentials as _DC
+        if request.method == "GET":
+            return ok(_DC.state())
+        if not _loopback(request):
+            return err("此端唯本机可用（来源 %s）" % (request.remote_addr or "?"), 403)
+        body = request.get_json(silent=True) or {}
+        if body.get("clear"):
+            _ok, _face = _DC.clear_key()
+            return ok(_DC.state())
+        _ok, _face = _DC.set_key(body.get("key"))
+        if not _ok:
+            return err(_face, 400)
+        return ok(_DC.state())
+
     @bp.route("/v9/pa/harness/runs", methods=["GET"])
     def pa_harness_runs():
         u"""DSH 任务卡：canonical RunRecord ＋ task/events sidecar。"""

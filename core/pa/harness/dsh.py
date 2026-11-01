@@ -123,8 +123,22 @@ class DshHarness:
             return ""
 
     def _build_env(self):
-        u"""子进程 env ＝ 本进程 env ＋ 显给叠加（⛔ 断 PATH；⛔ 改本进程 env）。"""
+        u"""子进程 env ＝ 本进程 env（**剥离 PA 的云端 key**）＋ DSH 专用 key／显给叠加。
+
+        P2-2：PA 自己的 DEEPSEEK/OPENAI/… key **不再**漏给 DSH；
+        DSH 只能用自己 credential store，或 PA 单独配置的 PA_DSH_DEEPSEEK_API_KEY。
+        """
         env = dict(os.environ)
+        for _k in ("DEEPSEEK_API_KEY", "OPENAI_API_KEY", "GLM_API_KEY", "ANTHROPIC_API_KEY"):
+            env.pop(_k, None)
+        try:
+            from core.pa import dsh_credentials as _DC
+            _DC.ensure_loaded()
+            _k = _DC.get_key()
+            if _k:
+                env["DEEPSEEK_API_KEY"] = _k
+        except Exception:
+            pass
         env.update(self._env_overrides)
         return env
 

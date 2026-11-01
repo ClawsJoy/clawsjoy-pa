@@ -9,6 +9,7 @@ Rules (PM 034 Sec-6 / credentials-as-boolean):
   * this module is READ-ONLY: it never issues a request (remote calls belong to P2).
 """
 import os
+import time
 
 REGISTRY_VERSION = "2026-11-01.1"   # ⭐ pm_1447 §二.2：deepseek 正名 ⇒ deepseek-flash（旧名 ＝ 别名）；⭐ pm_1380 §一：enabled 自 env 派生（⛔ 硬编）＋ 屏上附源
 
@@ -63,6 +64,66 @@ PROVIDERS = {
 #   ⇒ 旧值 `local:ollama` 之 7B 于净机**不可达**（演示首屏之默认错）。
 #   ⚠ 模型名**唯自注册表**（`default_model_of` · ⛔ 硬编 —— 免与 `models[].id` 二处漂）；
 #     可用者优先 ＋ 显形 ⇒ 见 `default_route()`。
+
+# ---------------------------------------------------------------- P2：LocaLM 模型动态发现
+_LOCALM_FALLBACK = [dict(m) for m in PROVIDERS["local:localm"].get("models") or []]
+_LOCALM_CACHE = {"at": 0.0, "models": None}
+_LOCALM_TTL = 5.0
+
+
+def _discover_localm_models():
+    u"""读 localm /v1/models（短超时）；只收 chat 可用模型，⛔ 把 embedding 塞进聊天选单。"""
+    base = str((PROVIDERS.get("local:localm") or {}).get("base_url") or "").rstrip("/")
+    if not base:
+        return []
+    try:
+        import requests
+        r = requests.get(base + "/v1/models", timeout=0.9)
+        if r.status_code != 200:
+            return []
+        data = (r.json() or {}).get("data") or []
+    except Exception:
+        return []
+    out = []
+    for m in data:
+        mid = str((m or {}).get("id") or "").strip()
+        if not mid:
+            continue
+        low = mid.lower()
+        if "embed" in low:
+            continue
+        out.append({
+            "id": "localm:" + mid,
+            "label": "LocaLM · " + mid,
+            "isDefault": False,
+            "ctx": 8192,
+            "loaded": bool((m or {}).get("loaded") or (m or {}).get("active")),
+            "vision": bool((m or {}).get("vision")),
+        })
+    return out
+
+
+def _localm_models(force=False):
+    u"""动态模型表 ∨ 静态 fallback（5s 缓存；⛔ 网络失败就冒充全表）。"""
+    if (os.getenv("CLAWSJOY_PA_LOCALM_DISCOVERY") or "").strip() in ("0", "false", "off"):
+        return [dict(m) for m in _LOCALM_FALLBACK]
+    now = time.time()
+    if not force and _LOCALM_CACHE["models"] is not None and (now - _LOCALM_CACHE["at"]) < _LOCALM_TTL:
+        return [dict(m) for m in _LOCALM_CACHE["models"]]
+    found = _discover_localm_models()
+    _LOCALM_CACHE["at"] = now
+    if found:
+        _LOCALM_CACHE["models"] = found
+        return [dict(m) for m in found]
+    _LOCALM_CACHE["models"] = [dict(m) for m in _LOCALM_FALLBACK]
+    return [dict(m) for m in _LOCALM_FALLBACK]
+
+
+def _provider_models(pid):
+    if pid == "local:localm":
+        return _localm_models()
+    return list((PROVIDERS.get(pid) or {}).get("models") or [])
+
 DEFAULT_PROVIDER = "local:ollama"
 
 # route label: LLMClient provider => local / remote (PM 034 Sec-3 b)
@@ -138,7 +199,7 @@ def known_models():
     """白名单：注册表之**实名**（一处出 · ⛔ 手拟第二表）。"""
     out = []
     for pid in PROVIDERS:
-        for m in PROVIDERS[pid].get("models") or []:
+        for m in _provider_models(pid):
             if m.get("id") and m["id"] not in out:
                 out.append(m["id"])
     return tuple(out)
@@ -151,7 +212,7 @@ def default_model_of(pid):
     注册表 ⛔ 有此 provider ∨ ⛔ 有 `isDefault` ⇒ `None`（由调用方**明报缺源** · ⛔ 静默字面兜底）。
     """
     pv = PROVIDERS.get(pid) or {}
-    ms = pv.get("models") or []
+    ms = _provider_models(pid)
     for m in ms:
         if m.get("isDefault") and m.get("id"):
             return m["id"]
@@ -169,7 +230,7 @@ def model_aliases():
     """别名 ⇒ 实名（自注册表 `models[].aliases` 出 · 一处定形）。"""
     out = {}
     for pid in PROVIDERS:
-        for m in PROVIDERS[pid].get("models") or []:
+        for m in _provider_models(pid):
             for a in m.get("aliases") or []:
                 out[str(a)] = m.get("id")
     return out
@@ -206,7 +267,7 @@ def label_map():
     """显示名（label）⇒ 实名（id）—— 大小写归一 · 一处定形（pm_1613 令五）。"""
     out = {}
     for pid in PROVIDERS:
-        for m in PROVIDERS[pid].get("models") or []:
+        for m in _provider_models(pid):
             lb = str(m.get("label") or "").strip()
             if lb and m.get("id"):
                 out.setdefault(lb.lower(), m["id"])
@@ -288,7 +349,7 @@ def available_state(pid):
             return AVAIL_STATES[2], u"base_url ⛔ 解 ⇒ 无据判（⛔ 断）"
         if not _tcp_open(_h, _port):
             return AVAIL_STATES[2], u"%s:%s ⛔ 通 ⇒ 此机 ⛔ 有此后端（净机无 Ollama 即此态）" % (_h, _port)
-        _n = len([m for m in (_p.get("models") or []) if m.get("id")])
+        _n = len([m for m in _provider_models(pid) if m.get("id")])
         if _n:
             return AVAIL_STATES[0], u"%s:%s 通 ∧ %d 个模型" % (_h, _port, _n)
         return AVAIL_STATES[1], u"%s:%s 通而 0 模型（空 ≠ 缺）" % (_h, _port)
@@ -357,6 +418,7 @@ def models_table(prov_items):
             out.append({
                 "id": _m["id"], "label": _m.get("label") or _m["id"],
                 "ctx": _m.get("ctx"), "isDefault": bool(_m.get("isDefault")),
+                "loaded": bool(_m.get("loaded")), "vision": bool(_m.get("vision")),
                 "aliases": list(_m.get("aliases") or []),
                 "provider": str(_it.get("id") or "").split(":", 1)[-1],
                 "provider_id": _it.get("id"),
@@ -387,7 +449,7 @@ def public_view():
             "base_url": p.get("base_url", ""), "base_url_env": p.get("base_url_env") or "",
             "key_env": p.get("key_env") or "", "key_state": st,
             "key_configured": (st == "configured"),
-            "models": p["models"], "params": p.get("params", {}),
+            "models": _provider_models(pid), "params": p.get("params", {}),
             "enabled": en,
             "enabled_src": en_src,
             "base_url_wired": bool(p.get("base_url_wired")),

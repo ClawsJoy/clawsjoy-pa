@@ -21,6 +21,7 @@ function paModelOptHtml(m){
   const o = m || {}, id = String(o.id || '');
   let t = paModelKindTxt(o.kind) + ' · ' + String(o.label || id || '—');
   if(o.isDefault) t += ' ★默认';
+  if(o.loaded) t += ' · 已载';
   if(o['可用']) t += '（可用：' + String(o['可用']) + '）';
   return '<option value="' + paEsc(id) + '">' + paEsc(t) + '</option>';
 }

@@ -890,6 +890,11 @@ function paHarnessMount(){
     + '<span class="chip" onclick="paHarnessScan()" title="GET /v9/pa/harness/runs">↻ 刷新</span></div>'
     + '<div class="msrc" id="paHarnessSrc">未扫</div>'
     + '<div style="display:flex;gap:6px;margin:4px 0">'
+    + '<input id="paHDshKey" type="password" placeholder="DSH 的 DeepSeek key（与 PA 密钥分开）" style="flex:1;min-width:0;background:#0d1117;border:1px solid #30363d;color:#d7dde7;border-radius:4px;padding:4px 6px">'
+    + '<button class="chip" onclick="paHarnessKeySave()" title="POST /v9/pa/harness/key（仅 DSH 使用）">存 DSH key</button>'
+    + '<button class="chip" onclick="paHarnessKeyClear()" title="清 DSH key">清</button></div>'
+    + '<div class="msrc" id="paHDshKeyState">DSH 凭据未查</div>'
+    + '<div style="display:flex;gap:6px;margin:4px 0">'
     + '<input id="paHTask" type="text" placeholder="给 DSH 的任务，例如：只回答 OK" style="flex:1;min-width:0;background:#0d1117;border:1px solid #30363d;color:#d7dde7;border-radius:4px;padding:4px 6px">'
     + '<button class="chip" id="paHRunBtn" onclick="paHarnessRun()" title="POST /v9/pa/harness/run（唯本机 · 会真实执行）">运行</button></div>'
     + '<div class="msrc" style="color:#d2991d" title="DSH headless 会执行任务，可能改动文件/跑命令；请只给可信任务">⚠ 会真实执行 DSH headless，请只给可信任务</div>'
@@ -898,11 +903,56 @@ function paHarnessMount(){
   return box;
 }
 function _paHEsc(s){ return (typeof paEsc === 'function') ? paEsc(String(s == null ? '' : s)) : String(s == null ? '' : s); }
+
+async function paHarnessKeyScan(){
+  const el = document.getElementById('paHDshKeyState');
+  if(!el) return null;
+  try{
+    const r = await fetch(API + '/v9/pa/harness/key', {cache:'no-store'});
+    const d = await r.json().catch(function(){ return null; });
+    if(!r.ok || !d){ el.textContent = 'DSH 凭据：状态未应答'; return null; }
+    el.textContent = (d.configured ? '✓ DSH key 已配' : 'DSH key 未配（DSH 自己的云端凭据，非 PA 密钥）')
+      + (d.file ? (' · 件 ' + d.file) : '');
+    return d;
+  }catch(e){ el.textContent = 'DSH 凭据：未应答（' + String((e && e.message) || e) + '）'; return null; }
+}
+async function paHarnessKeySave(){
+  const inp = document.getElementById('paHDshKey');
+  const key = String((inp && inp.value) || '').trim();
+  if(!key){ if(inp) inp.focus(); return null; }
+  try{
+    const r = await fetch(API + '/v9/pa/harness/key', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key: key}), cache:'no-store'});
+    const d = await r.json().catch(function(){ return null; });
+    if(!r.ok || !d || d.ok === false){
+      if(inp) inp.value = '';
+      await paHarnessKeyScan();
+      const el = document.getElementById('paHDshKeyState');
+      if(el) el.textContent = 'DSH key 写入失败：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status));
+      return null;
+    }
+    if(inp) inp.value = '';
+    return await paHarnessKeyScan();
+  }catch(e){
+    const el = document.getElementById('paHDshKeyState');
+    if(el) el.textContent = 'DSH key 写入失败：' + String((e && e.message) || e);
+    return null;
+  }
+}
+async function paHarnessKeyClear(){
+  try{
+    await fetch(API + '/v9/pa/harness/key', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({clear: true}), cache:'no-store'});
+  }catch(e){}
+  return await paHarnessKeyScan();
+}
+
 async function paHarnessScan(){
   const box = paHarnessMount(); if(!box) return null;
   const src = document.getElementById('paHarnessSrc');
   const rows = document.getElementById('paHarnessRows');
   const at = new Date().toLocaleString('zh-CN', {hour12:false});
+  try{ paHarnessKeyScan(); }catch(e){}
   if(src) src.textContent = '来源：PA harness 账 · 扫于 ' + at + ' …';
   try{
     const r = await fetch(API + '/v9/pa/harness/runs?limit=20', {cache:'no-store'});
