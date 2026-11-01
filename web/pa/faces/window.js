@@ -885,7 +885,7 @@
       + '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
       + '<button class="pa-btn pa-btn-main" type="button" onclick="paWinFirstWin()">问本周笔记</button>'
       + '<button class="pa-btn pa-btn-ghost" type="button" onclick="paWinFirstPick()">选文件夹导入</button></div>'
-      + '<div id="paWinFirstWinOut" style="margin-top:8px;font-size:13px;line-height:1.65;white-space:pre-wrap"></div>'
+      + '<div id="paWinFirstWinOut" style="margin-top:8px;font-size:13px;line-height:1.65;white-space:pre-wrap">' + (window.__paFwHtml || '') + '</div>'
       + '</section>'
       + '<div class="pa-cmd">'
       + '<input id="paCmdIn" type="text" placeholder="说一句话，或拖一件东西进来…" autocomplete="off" aria-label="命令带">'
@@ -929,36 +929,38 @@
   }
   window.paWinReplyClear = function(){ var b=document.getElementById('paWinReply'); if(b){ b.hidden=true; b.textContent=''; } };
 
-  /* P0 五分鐘首勝：從筆記問本週，帶出處；⛔ 假空態 ／ ⛔ 無據作答。 */
+  /* P0 五分鐘首勝：從筆記問本週，帶出處；⛔ 假空態 ／ ⛔ 無據作答。
+     結果存 window.__paFwHtml：live 每 5s 重繪 Today 時仍保留，⛔ 只寫舊 DOM。 */
+  window.__paFwHtml = window.__paFwHtml || '';
+  function fwEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function fwSet(html){ window.__paFwHtml = String(html == null ? '' : html); var o = document.getElementById('paWinFirstWinOut'); if(o) o.innerHTML = window.__paFwHtml; }
+  function fwText(t){ fwSet(fwEsc(t)); }
+
   window.paWinFirstPick = async function(){
-    var out = document.getElementById('paWinFirstWinOut');
-    if(!out) return;
     if(!window.paShell || typeof window.paShell.pickDirectory !== 'function'){
-      out.textContent = '选文件夹需在桌面 PA 内使用（当前页没有本机目录选择桥）。';
+      fwText('选文件夹需在桌面 PA 内使用（当前页没有本机目录选择桥）。');
       return;
     }
     var pick = null;
     try{ pick = await window.paShell.pickDirectory(); }catch(e){ pick = null; }
-    if(!pick || pick.ok !== true || !pick.path){ out.textContent = '未选择文件夹。'; return; }
-    out.textContent = '导入中…（仅本机 Markdown）';
+    if(!pick || pick.ok !== true || !pick.path){ fwText('未选择文件夹。'); return; }
+    fwText('导入中…（仅本机 Markdown）');
     try{
       var r = await fetch((typeof API !== 'undefined' ? API : '') + '/v9/pa/notes/import', {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:pick.path}), cache:'no-store'});
       var d = await r.json().catch(function(){ return null; });
       if(!r.ok || !d || d.ok === false){
-        out.textContent = '导入失败：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status));
+        fwText('导入失败：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status)));
         return;
       }
       var n = d.imported != null ? d.imported : (d.count != null ? d.count : '');
-      out.textContent = '已导入' + (n === '' ? '' : (' ' + n + ' 篇')) + '；现在可以问本周笔记。';
-    }catch(e){ out.textContent = '导入失败：' + String((e && e.message) || e); }
+      fwText('已导入' + (n === '' ? '' : (' ' + n + ' 篇')) + '；现在可以问本周笔记。');
+    }catch(e){ fwText('导入失败：' + String((e && e.message) || e)); }
   };
 
   window.paWinFirstWin = async function(){
-    var out = document.getElementById('paWinFirstWinOut');
-    if(!out) return;
-    out.textContent = '正在检索本机笔记…';
-    var body = {q:'这周记了什么？', limit:3};
+    fwText('正在检索本机笔记…');
+    var body = {q:'本周记了什么？', limit:3};
     try{ if(typeof paModelSel === 'function'){ var m=paModelSel(); if(m) body.model=m; } }catch(e){}
     var ctl = null, timer = null;
     try{
@@ -971,16 +973,15 @@
         cache:'no-store', signal: ctl ? ctl.signal : undefined});
       var d = await r.json().catch(function(){ return null; });
       if(!r.ok || !d || d.ok === false){
-        out.textContent = '问不到：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status));
+        fwText('问不到：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status)));
         return;
       }
       var cits = Array.isArray(d.citations) ? d.citations : [];
       var txt = String(d.answer || '').trim();
       if(!txt && !cits.length){
-        out.textContent = '还没有可引用的笔记。先在下面记一笔（例如：今天记：…），再来问。';
+        fwText('还没有可引用的笔记。先点「选文件夹导入」，或在下面记一笔再来问。');
         return;
       }
-      var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
       var todoLines = [];
       cits.forEach(function(c){
         String(c.snippet || '').split(/\n+/).forEach(function(line){
@@ -988,17 +989,17 @@
           if(s && /待办|TODO|下一步|截止|需要跟/.test(s) && todoLines.length < 3) todoLines.push(s);
         });
       });
-      out.innerHTML = '<div>' + esc(txt) + '</div>'
+      fwSet('<div>' + fwEsc(txt) + '</div>'
         + (cits.length ? '<div style="margin-top:6px;color:var(--sub);font-size:12px">出处：'
-          + cits.map(function(c){ return esc(c.title || c.id || ''); }).join(' ／ ') + '</div>' : '')
+          + cits.map(function(c){ return fwEsc(c.title || c.id || ''); }).join(' ／ ') + '</div>' : '')
         + '<div style="margin-top:6px;color:var(--sub);font-size:12px">待办：'
-          + (todoLines.length ? todoLines.map(function(x){ return '· ' + esc(x); }).join('<br>') : '出处中未显式标出（照实）')
+          + (todoLines.length ? todoLines.map(function(x){ return '· ' + fwEsc(x); }).join('<br>') : '出处中未显式标出（照实）')
           + '</div>'
-        + '<div style="margin-top:4px;color:var(--sub);font-size:11px">模型：' + esc(d.model || '默认') + '</div>';
+        + '<div style="margin-top:4px;color:var(--sub);font-size:11px">模型：' + fwEsc(d.model || '默认') + '</div>');
     }catch(e){
-      out.textContent = (e && e.name === 'AbortError')
+      fwText((e && e.name === 'AbortError')
         ? '问不到：20 秒内没有回执（模型可能未就绪／被占）；可稍后重试或换本地 Ollama 模型。'
-        : ('问不到：' + String((e && e.message) || e));
+        : ('问不到：' + String((e && e.message) || e)));
     }finally{
       if(timer) clearTimeout(timer);
     }

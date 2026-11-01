@@ -67,3 +67,9 @@ def test_first_win_has_folder_and_todo():
     assert "选文件夹导入" in win
     assert "/v9/pa/notes/import" in win
     assert "待办" in win
+
+def test_first_win_persists_and_uses_week_query():
+    win = (ROOT / "web" / "pa" / "faces" / "window.js").read_text(encoding="utf-8")
+    assert "__paFwHtml" in win
+    assert "本周记了什么？" in win
+    assert "这周记了什么？" not in win
