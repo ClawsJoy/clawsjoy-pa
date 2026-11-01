@@ -76,3 +76,22 @@ def test_runtime_view_warns_duplicate_loaded(monkeypatch):
                         lambda self: (_ for _ in ()).throw(RuntimeError("no dsh")))
     out = R.runtime_view()
     assert any("同一模型同时载入" in w for w in out["warnings"])
+
+def test_runtime_view_normalizes_colon_vs_hyphen(monkeypatch):
+    def fake_http(url, timeout=1.8):
+        if url.endswith("/api/tags"):
+            return {"ok": True, "status": 200, "error": "", "data": {"models": [{"name": "qwen2.5:7b-instruct-q4_0-gpu"}]}}
+        if url.endswith("/api/ps"):
+            return {"ok": True, "status": 200, "error": "", "data": {"models": [{"name": "qwen2.5:7b-instruct-q4_0-gpu"}]}}
+        if url.endswith("/health"):
+            return {"ok": True, "status": 200, "error": "",
+                    "data": {"model": "qwen2.5-7b-instruct-q4_0-gpu", "loaded": True}}
+        if url.endswith("/v1/models"):
+            return {"ok": True, "status": 200, "error": "",
+                    "data": {"data": [{"id": "qwen2.5-7b-instruct-q4_0-gpu"}]}}
+        return {"ok": False, "status": 0, "data": None, "error": "x"}
+    monkeypatch.setattr(R, "_http_json", fake_http)
+    monkeypatch.setattr("core.pa.harness.dsh.DshHarness.probe",
+                        lambda self: (_ for _ in ()).throw(RuntimeError("no dsh")))
+    out = R.runtime_view()
+    assert any("同一模型同时载入" in w for w in out["warnings"])

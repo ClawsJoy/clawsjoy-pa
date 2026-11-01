@@ -16,6 +16,15 @@ def _now():
     return time.strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
+def _model_key(name):
+    u"""模型名归一键：忽略 localm: 前缀、标点与大小写差异（qwen2.5:… ≡ qwen2.5-…）。"""
+    import re
+    s = str(name or "").strip().lower()
+    if s.startswith("localm:"):
+        s = s[len("localm:"):]
+    return re.sub(r"[^a-z0-9]+", "", s)
+
+
 def _http_json(url, timeout=1.8):
     import requests
     try:
@@ -102,13 +111,13 @@ def runtime_view():
         if _it.get("kind") != "local":
             continue
         for _m in (_it.get("loaded") or []):
-            _key = str(_m).replace("localm:", "").strip()
+            _key = _model_key(_m)
             if not _key:
                 continue
-            if _key in _seen and _seen[_key] != _it.get("id"):
+            if _key in _seen and _seen[_key][0] != _it.get("id"):
                 warnings.append("同一模型同时载入 %s 与 %s：%s（6GB VRAM 可能互抢）"
-                                % (_seen[_key], _it.get("id"), _key))
+                                % (_seen[_key][0], _it.get("id"), _m))
             else:
-                _seen[_key] = _it.get("id")
+                _seen[_key] = (_it.get("id"), str(_m))
     return {"ok": True, "at": _now(), "items": items, "warnings": warnings,
             "source": "core/pa/runtime_status.py（只读探活）"}
