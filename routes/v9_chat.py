@@ -239,6 +239,69 @@ def _runner_cancel(run_id):
     return False
 
 
+def _run_localm(record, cancel_evt):
+    """RunService 的 LocaLM 分支：OpenAI 流式 /v1/chat/completions，可取消。"""
+    import json as _json
+    import os as _os
+    import requests as _rq
+
+    model = str(record.get("model") or "")
+    if model.startswith("localm:"):
+        model = model.split(":", 1)[1]
+    base = _os.getenv("LOCALM_BASE_URL", "http://127.0.0.1:8642").rstrip("/")
+    headers = {}
+    key = _os.getenv("LOCALM_API_KEY", "")
+    if key:
+        headers["Authorization"] = "Bearer " + key
+    body = {
+        "model": model,
+        "messages": [{"role": "user", "content": str(record.get("task") or "")}],
+        "stream": True,
+        "max_tokens": 2000,
+    }
+    try:
+        resp = _rq.post(base + "/v1/chat/completions", json=body, headers=headers, timeout=(10, 180), stream=True)
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "failed", "error": f"localm spawn: {type(exc).__name__}: {str(exc)[:300]}", "reason": "runner_localm_spawn"}
+    if resp.status_code != 200:
+        return {"status": "failed", "error": f"localm HTTP {resp.status_code}: {resp.text[:300]}", "reason": "runner_localm_http"}
+    parts = []
+    try:
+        for raw in resp.iter_lines():
+            if cancel_evt.is_set():
+                try:
+                    resp.close()
+                except Exception:
+                    pass
+                return {"status": "cancelled", "output": {"ok": False, "content": "".join(parts)}, "error": "user_cancel", "reason": "user_cancel"}
+            if not raw:
+                continue
+            line = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else raw
+            if not line.startswith("data: "):
+                continue
+            data = line[6:].strip()
+            if data == "[DONE]":
+                break
+            try:
+                ev = _json.loads(data)
+            except Exception:
+                continue
+            for ch in ev.get("choices") or []:
+                delta = ch.get("delta") or {}
+                if delta.get("content"):
+                    parts.append(str(delta["content"]))
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "failed", "error": f"localm stream: {type(exc).__name__}: {str(exc)[:300]}", "reason": "runner_localm_stream"}
+    finally:
+        try:
+            resp.close()
+        except Exception:
+            pass
+    if cancel_evt.is_set():
+        return {"status": "cancelled", "output": {"ok": False, "content": "".join(parts)}, "error": "user_cancel", "reason": "user_cancel"}
+    return {"status": "done", "output": {"ok": True, "content": "".join(parts), "model": "localm:" + model}, "error": ""}
+
+
 def _chat_entry_runner(record):
     """runner：本地 Ollama 直调 ＋ DSH headless 子进程（⛔ /v9/agent/chat、⛔ Flask request）。
 
@@ -263,6 +326,8 @@ def _chat_entry_runner(record):
         _cancel_evt = _th.Event()
         _RUN_CANCELS[str(record.get("run_id") or "")] = _cancel_evt
     model_in = str(record.get("model") or "").strip()
+    if model_in.startswith("localm:"):
+        return _run_localm(record, _cancel_evt)
     # P2-1：model=dsh/dsh-headless ⇒ 独立 DSH headless 子进程（本地 model 仍走 Ollama）
     if model_in.lower().startswith("dsh"):
         import subprocess as _sp
