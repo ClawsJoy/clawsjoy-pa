@@ -40,3 +40,10 @@ def test_routes_expose_runs_approval():
     src = (ROOT / "routes" / "v9_chat.py").read_text(encoding="utf-8")
     assert '"/v9/agent/runs/approval"' in src
     assert "def v9_agent_runs_approval()" in src
+
+def test_new_window_reads_agent_runs_and_cancels():
+    live = (ROOT / "web" / "pa" / "faces" / "live.js").read_text(encoding="utf-8")
+    win = (ROOT / "web" / "pa" / "faces" / "window.js").read_text(encoding="utf-8")
+    assert "agent_runs:'/v9/agent/runs'" in live
+    assert "LIVE.agent_runs" in live
+    assert "paCancelRun(_rid)" in win

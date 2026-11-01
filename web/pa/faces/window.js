@@ -1026,7 +1026,27 @@
       try{ if(typeof window.paStop === 'function') window.paStop(); }catch(e){}
       return;
     }
-    /* 真任务：先停旧 paRun（/v9/cancel ＋ abort），再走本地演示态。 */
+    /* 产品真任务：先取消 RunService 的 run（/v9/agent/runs/{id}/cancel），⛔ 只 abort 前端。 */
+    var _rid = '';
+    try{
+      if(typeof paRun !== 'undefined' && paRun && paRun.runId) _rid = String(paRun.runId);
+      if(!_rid && window.paWinLiveRuns){
+        var _live = window.paWinLiveRuns() || [];
+        for(var _i=0; _i<_live.length; _i++){
+          var _st = String(_live[_i].state || '');
+          if(_st === 'running' || _st === 'queued'){ _rid = String(_live[_i].id || ''); break; }
+        }
+      }
+    }catch(e){}
+    if(_rid && typeof window.paCancelRun === 'function'){
+      window.paCancelRun(_rid);
+      var _sb1 = document.getElementById('paWinStop'); if(_sb1){ _sb1.disabled = true; }
+      var _rb1 = document.getElementById('paWinReply');
+      if(_rb1){ _rb1.hidden = false; _rb1.textContent = '停止请求已发（run ' + _rid.slice(-8) + '）'; }
+      window.paWinSay('停止请求已发 · 等后端收口');
+      return;
+    }
+    /* 旧链路兜底：先停旧 paRun（/v9/cancel ＋ abort），再走本地演示态。 */
     try{
       if(typeof paRun !== 'undefined' && paRun.busy && typeof window.paStop === 'function'){
         window.paStop();

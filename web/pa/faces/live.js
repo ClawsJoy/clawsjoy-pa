@@ -16,7 +16,8 @@
 
   var T = 5000;
   var EP = {
-    today:'/v9/pa/today', runs:'/v9/pes/runs', threads:'/v9/pa/threads',
+    today:'/v9/pa/today', runs:'/v9/pes/runs', agent_runs:'/v9/agent/runs',
+    threads:'/v9/pa/threads',
     context:'/v9/pa/context', approvals:'/v9/audit/approvals',
     roster:'/v9/pa/roster', seats:'/v9/pa/seats', ledger:'/v9/pa/ledger',
     cost:'/v9/pa/cost', grants:'/v9/pa/grants', permission:'/v9/pa/permission',
@@ -29,7 +30,7 @@
 
   var LIVE = window.PA_WIN_LIVE = {
     at:'', stamp:0, status:'idle', src:{},
-    today:null, runs:null, threads:null, context:null, approvals:null,
+    today:null, runs:null, agent_runs:null, threads:null, context:null, approvals:null,
     roster:null, seats:null, ledger:null, cost:null, grants:null,
     permission:null, build:null, vault:null, stop:null, egress:null,
     registry:null, unwired: UNWIRED
@@ -150,9 +151,18 @@
     };
   }
   window.paWinLiveRuns = function(){
-    var st2 = LIVE.src.runs;
-    if(!st2 || !st2.ok) return null;
-    return ((LIVE.runs && LIVE.runs.runs) || []).map(normRun);
+    var out = [], seen = {};
+    function add(list){
+      (list || []).forEach(function(r){
+        var n = normRun(r);
+        if(!n.id || seen[n.id]) return;
+        seen[n.id] = 1; out.push(n);
+      });
+    }
+    if(LIVE.src.runs && LIVE.src.runs.ok) add((LIVE.runs && LIVE.runs.runs) || []);
+    if(LIVE.src.agent_runs && LIVE.src.agent_runs.ok) add((LIVE.agent_runs && LIVE.agent_runs.runs) || []);
+    if(!out.length && !(LIVE.src.runs && LIVE.src.runs.ok) && !(LIVE.src.agent_runs && LIVE.src.agent_runs.ok)) return null;
+    return out;
   };
   window.paWinLiveTodayRow = function(seq){
     var st2 = LIVE.src.today;
