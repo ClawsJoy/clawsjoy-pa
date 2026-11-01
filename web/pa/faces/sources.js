@@ -27,11 +27,11 @@ const PA_SRC_DECL = [
    note:'⚠ 逐面件数取真源（/v9/pa/ask 之 scope ／ faces ／ searched）：收件箱 ／ 知识库 ／ 文件 ／ 台账 ／ 台账·信通；⭐ 本批新接：出图（检索面名 ＝ 文件·产出）／ 记忆（检索面名 ＝ 梦中月水中花）；' + PA_GAP.off('⛔ 代操作他方平台') + '：平台 ⇒ ⛔ 装成可用；未命中 ⇒ 回落模型'},
   {k:'model', seq:'ⓞ', n:'模型', avail:'按快照',
    by:'对话答（未命中 ／ 域外之答 ⇒ 标「模型生成 · ⛔ 非本机素材」）',
-   src:'/v9/pa/dialog（chan:pa）／ /v9/agent/chat（chan:agent）；可用性源 ＝ pa/ui_state.json 之「本地在」「远端态」「远端因」',
+   src:'/v9/pa/dialog（chan:pa）／ /v9/agent/runs（chan:agent）；可用性源 ＝ pa/ui_state.json 之「本地在」「远端态」「远端因」',
    note:'⚠ 本机小模型算精确值不可靠 ⇒ 涉算术 ／ 精确数字之答带如实标'},
   {k:'tool', seq:'ⓟ', n:'工具', avail:'部分可用',
    by:'执行循环（工作 ／ 开发模式之工具调用）＋ 精确计算（POST /api/tools/calc · 判据主源）',
-   src:'/v9/agent/chat ／ /v9/pa/turn（落盘回执）',
+   src:'/v9/agent/runs ／ /v9/pa/turn（落盘回执）',
    note:'⚠ 已通：精确计算（POST /api/tools/calc ⇒ 算术以工具值为准）；' + PA_GAP.off('', '已转产品线') + '：技能面（13 技能）⇒ ⛔ 装成可用'}
 ];
 function paSourceDecl(){ return PA_SRC_DECL.slice(); }

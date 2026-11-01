@@ -50,6 +50,13 @@ def register(app, *, bridge_loop_fn, allowed_commands, max_context_tokens, deeps
         methods=["POST"],
         endpoint="v9_agent_run_cancel",
     )
+    # P0 产品面：审批续跑也归 runs 面（前端不再打 /v9/agent/chat）
+    app.add_url_rule(
+        "/v9/agent/runs/approval",
+        view_func=v9_agent_runs_approval,
+        methods=["POST"],
+        endpoint="v9_agent_runs_approval",
+    )
 
 
 # ---------------- 旧 chat（语义不变） ----------------
@@ -61,6 +68,20 @@ def v9_agent_chat():
 
     payload, kind = run_chat_entry(data=request.json or {}, deps=_deps)
     if kind == "stream":
+        return Response(stream_with_context(payload), mimetype="text/event-stream")
+    return jsonify(payload)
+
+
+def v9_agent_runs_approval():
+    u"""审批续跑：复用既有 run_chat_entry 的 approve_write 语义，但归 runs 面。
+
+    产品前端只打 /v9/agent/runs/approval；旧 /v9/agent/chat 保留兼容，不再由产品发送链使用。
+    """
+    from core.gateway.v9_chat.entry import run_chat_entry
+
+    payload, kind = run_chat_entry(data=request.json or {}, deps=_deps)
+    if kind == "stream":
+        # 审批结果应为非流；若后端仍返流，按 SSE 交回，前端可照旧读取。
         return Response(stream_with_context(payload), mimetype="text/event-stream")
     return jsonify(payload)
 

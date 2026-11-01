@@ -29,3 +29,14 @@ def test_pa_html_keeps_legacy_dom_and_new_hook():
     assert 'id="paWin"' in src
     assert 'class="main"' in src
     assert 'id="paWin" hidden' in src
+
+def test_cards_use_runs_approval_not_chat():
+    cards = (ROOT / "web" / "pa" / "faces" / "cards.js").read_text(encoding="utf-8")
+    assert "/v9/agent/runs/approval" in cards
+    assert "/v9/agent/chat" not in cards
+
+
+def test_routes_expose_runs_approval():
+    src = (ROOT / "routes" / "v9_chat.py").read_text(encoding="utf-8")
+    assert '"/v9/agent/runs/approval"' in src
+    assert "def v9_agent_runs_approval()" in src

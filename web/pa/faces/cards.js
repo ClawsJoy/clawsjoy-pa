@@ -272,7 +272,7 @@ async function paWriteDecide(id, action, card){
     const _wb={user_id:curUser(),session_id:activeThread().id,
         approve_write:{id:id,action:action},messages:window.__paSendMessages||[]};
     const _wm=paModelSel(); if(_wm) _wb.model=_wm;
-    const r=await fetch(API+'/v9/agent/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch(API+'/v9/agent/runs/approval',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(_wb)});
     const d=await r.json().catch(function(){ return {}; });
     if(d.status==='write_confirmed'){

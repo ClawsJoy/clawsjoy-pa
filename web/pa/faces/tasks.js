@@ -56,7 +56,7 @@ function paTaskAccept(text){
     text: String(text || '').slice(0, 40),
     state: '在办',
     note: '已接件 · 提交中',
-    src: (mode === 'chat') ? 'POST /v9/pa/dialog' : 'POST /v9/agent/chat'
+    src: (mode === 'chat') ? 'POST /v9/pa/dialog' : 'POST /v9/agent/runs'
   });
   if(paLocalTasks.length > 20) paLocalTasks.pop();
   if(paV3Face === 'tasks') paRenderLocalTasks();
@@ -440,7 +440,7 @@ async function paLoadTasks(){
   const dhSrcHuman = '本机派活记录（按「投到席 ∧ 未收口」计）';
   const ENG_dhSrc = '源：GET /v9/pa/dispatch/history（store_exists=' + (dh ? String(dh.store_exists) : '未知') + ' · 表长 ' + (dhTblN === null ? '未知' : dhTblN) + ' 行 ⊃ 池路行 ＋ 已终结行 ⇒ ⛔ 表长 ≠ 待回执数）｜滤：to_seat 非空 ∧ stage ≠ 已收口' + (dhCnt ? '（后端 counts.awaiting_receipt）' : ' ⇒ ⚠ 后端未发 counts ⇒ 面内按同谓词自 rows 派生（⛔ 手搓）');
   /* 屏上唯人话（pm_2091 §一 · #3）：端径 ／ 键名 ／ 符号 ⇒ `ENG_*` ⇒ 入 `title`（悬停可回 · ⛔ 丢）。 */
-  const ENG_accSrc = '源：后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/chat 为写路（⛔ 读源）｜本页计数 ＝ 本页已接（本页口径）';
+  const ENG_accSrc = '源：后端无「受理态」读面 —— POST /v9/pa/dialog ／ POST /v9/agent/runs 为写路（⛔ 读源）｜本页计数 ＝ 本页已接（本页口径）';
   const ENG_apprSrc = '源：GET /v9/audit/approvals · 属会话 ' + paEsc(curSession()) + '（本会话 · ⛔ 全局数）｜无参 ⇒ 400（⛔ 把错误渲染成 0）';
   const ENG_runSrc = '源：GET /v9/pes/runs（按 user_id 取 · ⛔ 会话轴 ⇒ ⛔ 与本会话之数互校）';
   if(stEl) stEl.innerHTML =

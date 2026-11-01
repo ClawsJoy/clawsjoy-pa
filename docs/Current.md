@@ -7,8 +7,8 @@
 
 ## 版本
 
-- 仓库版本：**9.3.0**（pyproject.toml / core/lib/version.py / shell/package.json）
-- 安装版：**9.3.0**（本机 5103 /health healthy）
+- 仓库版本：**9.3.1**（pyproject.toml / core/lib/version.py / shell/package.json）
+- 安装版：**9.3.1**（本机 5103 /health healthy）
 - 旧文档中的 9.0.36 / 9.0.76 / 9.2.0 均视为历史，不是当前版本
 
 ## 默认运行面
@@ -32,11 +32,11 @@
 - 旧 8 模式 DOM 保留但不可见；回退旗仍可开
 - 陪伴：/v9/pa/dialog；办事：/v9/agent/runs
 - send.js 旧 /v9/agent/chat SSE 分支与 readSSE 已删
-- 残留：cards.js 的写入审批续跑仍用 /v9/agent/chat（后端尚无 runs 审批续跑端），这是当前唯一发送链例外
+- 审批续跑：cards.js 已改走 /v9/agent/runs/approval；后端保留旧 /v9/agent/chat 兼容，但产品前端不再使用
 
 ## 已验路径（本机，2026-11-01）
 
-- /health 返回 9.3.0 healthy
+- /health 返回 9.3.1 healthy
 - PA 本地对话走 Ollama；可手动切 localm
 - localm 动态模型：qwen2.5-7b-instruct-q4_0-gpu、qwen2.5vl-7b；已载状态上屏
 - 第二大脑 / Notebook / Studio 跟随所选模型
