@@ -112,8 +112,12 @@ class _LocalMAdapter:
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
+        headers = {}
+        _key = os.getenv("LOCALM_API_KEY", "")
+        if _key:
+            headers["Authorization"] = "Bearer " + _key
         try:
-            resp = _rq.post(self.base_url + "/v1/chat/completions", json=body, timeout=(10, 180))
+            resp = _rq.post(self.base_url + "/v1/chat/completions", json=body, headers=headers, timeout=(10, 180))
         except Exception as exc:  # noqa: BLE001
             return {"success": False, "error": "LocaLM 调用失败：{}".format(str(exc)[:300])}
         if resp.status_code != 200:
