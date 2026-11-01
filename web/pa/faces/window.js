@@ -879,6 +879,12 @@
     var cards = (window.paWinTodayCards ? window.paWinTodayCards() : {html:'', counts:{}});
     return '<h1 class="pa-h1">今天</h1>'
       + '<div class="pa-cards">' + cards.html + '</div>'
+      + '<section class="pa-card pa-firstwin" data-card="firstwin" style="margin:10px 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card)">'
+      + '<h2 class="pa-card-h" style="margin:0 0 4px">从笔记开始</h2>'
+      + '<div style="color:var(--sub);font-size:12px;line-height:1.6">问本周记下的东西，拿回带出处的答案；没有笔记就先在下面记一笔。</div>'
+      + '<div style="margin-top:8px"><button class="pa-btn pa-btn-main" type="button" onclick="paWinFirstWin()">问本周笔记</button></div>'
+      + '<div id="paWinFirstWinOut" style="margin-top:8px;font-size:13px;line-height:1.65;white-space:pre-wrap"></div>'
+      + '</section>'
       + '<div class="pa-cmd">'
       + '<input id="paCmdIn" type="text" placeholder="说一句话，或拖一件东西进来…" autocomplete="off" aria-label="命令带">'
       + '<button class="pa-btn pa-btn-ghost" id="paWinAttachBtn" type="button" onclick="paWinAttachPick()" title="附件：唯存本机 · 缺省不外发；要随本轮出机须逐件勾">📎</button>'
@@ -920,6 +926,35 @@
     return box;
   }
   window.paWinReplyClear = function(){ var b=document.getElementById('paWinReply'); if(b){ b.hidden=true; b.textContent=''; } };
+
+  /* P0 五分鐘首勝：從筆記問本週，帶出處；⛔ 假空態 ／ ⛔ 無據作答。 */
+  window.paWinFirstWin = async function(){
+    var out = document.getElementById('paWinFirstWinOut');
+    if(!out) return;
+    out.textContent = '正在检索本机笔记…';
+    var body = {q:'这周记了什么？', limit:3};
+    try{ if(typeof paModelSel === 'function'){ var m=paModelSel(); if(m) body.model=m; } }catch(e){}
+    try{
+      var r = await fetch((typeof API !== 'undefined' ? API : '') + '/v9/pa/notes/ask', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), cache:'no-store'});
+      var d = await r.json().catch(function(){ return null; });
+      if(!r.ok || !d || d.ok === false){
+        out.textContent = '问不到：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status));
+        return;
+      }
+      var cits = Array.isArray(d.citations) ? d.citations : [];
+      var txt = String(d.answer || '').trim();
+      if(!txt && !cits.length){
+        out.textContent = '还没有可引用的笔记。先在下面记一笔（例如：今天记：…），再来问。';
+        return;
+      }
+      var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+      out.innerHTML = '<div>' + esc(txt) + '</div>'
+        + (cits.length ? '<div style="margin-top:6px;color:var(--sub);font-size:12px">出处：'
+          + cits.map(function(c){ return esc(c.title || c.id || ''); }).join(' ／ ') + '</div>' : '')
+        + '<div style="margin-top:4px;color:var(--sub);font-size:11px">模型：' + esc(d.model || '默认') + '</div>';
+    }catch(e){ out.textContent = '问不到：' + String((e && e.message) || e); }
+  };
 
   window.paWinSendReal = async function(text){
     var box = replyBox();

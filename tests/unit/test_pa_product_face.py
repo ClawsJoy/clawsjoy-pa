@@ -47,3 +47,10 @@ def test_new_window_reads_agent_runs_and_cancels():
     assert "agent_runs:'/v9/agent/runs'" in live
     assert "LIVE.agent_runs" in live
     assert "paCancelRun(_rid)" in win
+
+def test_new_window_has_first_win_notes_card():
+    win = (ROOT / "web" / "pa" / "faces" / "window.js").read_text(encoding="utf-8")
+    assert "从笔记开始" in win
+    assert "paWinFirstWin" in win
+    assert "/v9/pa/notes/ask" in win
+    assert "出处" in win
