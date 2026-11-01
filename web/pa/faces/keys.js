@@ -333,7 +333,7 @@ function paDshLoad(force){
           + (d.key_present === true ? '✓ 已配（DSH 独立）' : '未配（在下方「DSH 云端 key」单独填；PA 供应商密钥不喂 DSH）') + '</div>'
           + '<div class="pa-dsh-row">本地模型：<b>当前不支持</b>（DSH 本地 provider 未支持；PA 本地 Ollama 已可用' + (d.local_supported === true ? ' · 后端 local_supported=true 与向导口径冲突' : '') + '）</div>'
           + '<div class="pa-dsh-row">Node：' + (d.node_present === true ? '已安装' : '未安装（装 DSH 需 Node）') + '</div>'
-          + (found ? '<div class="pa-dsh-row" style="color:var(--sub)">下一步：点「配置云端」＝ 切到 DeepSeek 并打开密钥框（只切 ／ 只开，不发送）；点「使用本地」＝ 只看现状说明。</div>' : '');
+          + (found ? '<div class="pa-dsh-row" style="color:var(--sub)">下一步：点「配置云端」＝ 定位到下方「DSH 云端 key」（DSH 独立，不选 PA 供应商、不发送）；点「使用本地」＝ 只看现状说明。</div>' : '');
       }
       paDshBtn('paDshBtnCloud', found);
       paDshBtn('paDshBtnLocal', found);
