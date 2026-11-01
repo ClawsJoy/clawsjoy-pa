@@ -10,7 +10,7 @@ Rules (PM 034 Sec-6 / credentials-as-boolean):
 """
 import os
 
-REGISTRY_VERSION = "2026-10-06.3"   # ⭐ pm_1447 §二.2：deepseek 正名 ⇒ deepseek-flash（旧名 ＝ 别名）；⭐ pm_1380 §一：enabled 自 env 派生（⛔ 硬编）＋ 屏上附源
+REGISTRY_VERSION = "2026-11-01.1"   # ⭐ pm_1447 §二.2：deepseek 正名 ⇒ deepseek-flash（旧名 ＝ 别名）；⭐ pm_1380 §一：enabled 自 env 派生（⛔ 硬编）＋ 屏上附源
 
 PROVIDERS = {
     "local:ollama": {
@@ -27,6 +27,19 @@ PROVIDERS = {
         "params": {"num_ctx": int(os.getenv("CLAWSJOY_NUM_CTX", "8192")),
                    "max_tokens": int(os.getenv("CLAWSJOY_MAX_TOKENS", "1600"))},
         "enabled": True,   # 默认（⛔ 真源 · 真源 ＝ env CLAWSJOY_PA_PROVIDERS_DISABLED）
+    },
+    "local:localm": {
+        "id": "local:localm", "label": "Local LocaLM", "kind": "local",
+        "base_url": "http://127.0.0.1:8642", "base_url_env": "LOCALM_BASE_URL",
+        "base_url_wired": True,
+        "base_url_note": "OpenAI 兼容 /v1（8642）；模型名以 localm: 前缀与 Ollama 区分",
+        "key_env": None, "command": None,
+        "models": [
+            {"id": "localm:qwen2.5-7b-instruct-q4_0-gpu",
+             "label": "Qwen2.5 7B via LocaLM", "isDefault": False, "ctx": 8192},
+        ],
+        "params": {"max_tokens": int(os.getenv("CLAWSJOY_MAX_TOKENS", "1600"))},
+        "enabled": True,
     },
     "remote:deepseek": {
         "id": "remote:deepseek", "label": "DeepSeek (remote)", "kind": "remote",
@@ -53,7 +66,8 @@ PROVIDERS = {
 DEFAULT_PROVIDER = "local:ollama"
 
 # route label: LLMClient provider => local / remote (PM 034 Sec-3 b)
-PROVIDER_KIND = {"ollama": "local", "deepseek": "remote", "glm": "remote", "anthropic": "remote"}
+PROVIDER_KIND = {"ollama": "local", "localm": "local",
+                 "deepseek": "remote", "glm": "remote", "anthropic": "remote"}
 
 
 DEFAULT_MAX_TOKENS = 1600   # ★ §二.4：临时经验值（无据）⇒ 待以读数定（PM 042）
@@ -103,7 +117,7 @@ def is_enabled(pid):
 #   ⓞ 白名单 ⇒ **唯注册表之实名**（⛔ 自由字串 · 后端验 · pm_1449 §二.1）
 # ⚠ 「名之归源」（V8 ↔ PA 之二源 · `config/v8/**` ／ `core/lib/llm_client.py`）
 #   ⇒ **另案**（pm_1449 §二.2）—— 本块唯治 PA 侧之入参归一。
-MODEL_PREFIXES = ("remote:", "local:", "ollama:", "deepseek:", "glm:", "anthropic:")
+MODEL_PREFIXES = ("remote:", "local:", "ollama:", "localm:", "deepseek:", "glm:", "anthropic:")
 
 
 def split_prefix(name):
@@ -166,10 +180,13 @@ def resolve_model(name):
 
     大小写归一 ⇒ 回**注册表之实名**（⛔ 回入参之原字面 —— 免「名不对表」）。
     """
+    _known = known_models()
+    _raw = str(name or "").strip()
+    if _raw in _known:      # ⭐ 带 provider 前缀之实名（如 localm:qwen…）须原样保留
+        return _raw
     _pre, bare = split_prefix(name)
     if not bare:
         return None
-    _known = known_models()
     if bare in _known:
         return bare
     _al = model_aliases()

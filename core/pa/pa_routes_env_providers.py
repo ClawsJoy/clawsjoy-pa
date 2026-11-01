@@ -159,6 +159,13 @@ def register(bp):
 
         return ok(public_view(), 印=_code_sha16(pa_providers, _PV))
 
+    @bp.route("/v9/pa/runtime/status", methods=["GET"])
+    def pa_runtime_status():
+        u"""引擎真实状态：Ollama / localm / DSH（只读探活 · ⛔ 失败即照实报）。"""
+        from core.pa import runtime_status as _RS
+
+        return ok(_RS.runtime_view(), 印=_code_sha16(pa_runtime_status, _RS))
+
     @bp.route("/v9/pa/providers/key/token", methods=["GET"])
     def pa_provider_key_token():
         """一次性令牌之领（唯本机 · ⛔ 值上屏 —— 唯 Cookie · HttpOnly · SameSite=Strict）。"""

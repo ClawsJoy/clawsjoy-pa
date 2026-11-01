@@ -761,7 +761,67 @@ async function paVendorScan(){
   }
   const el = document.getElementById('paProvBox');
   if(el) el.setAttribute('data-state', out.state);
+  try{ paRuntimeScan(); }catch(e){}
   return out;
+}
+
+
+/* —— 引擎状态（P0 · 只读）：Ollama / LocaLM / DSH 的真实探活 —— */
+function paRuntimeMount(){
+  const host = document.getElementById('pane-cfg');
+  if(!host) return null;
+  let box = document.getElementById('paRuntimeBox');
+  if(box) return box;
+  box = document.createElement('div');
+  box.className = 'duty';
+  box.id = 'paRuntimeBox';
+  box.style.marginTop = '10px';
+  box.style.paddingTop = '8px';
+  box.style.borderTop = '1px dashed rgba(48,54,61,.7)';
+  box.innerHTML = '<div class="sysrow" style="justify-content:space-between">'
+    + '<b>引擎状态（只读 · 真实探活）</b>'
+    + '<span class="chip" onclick="paRuntimeScan()" title="GET /v9/pa/runtime/status（只读）">↻ 重扫</span></div>'
+    + '<div class="msrc" id="paRuntimeSrc">未扫</div>'
+    + '<div id="paRuntimeRows"></div>';
+  host.appendChild(box);
+  return box;
+}
+async function paRuntimeScan(){
+  const box = paRuntimeMount(); if(!box) return null;
+  const srcEl = document.getElementById('paRuntimeSrc');
+  const rowsEl = document.getElementById('paRuntimeRows');
+  const at = new Date().toLocaleString('zh-CN', {hour12: false});
+  if(srcEl) srcEl.textContent = '来源：本机只读探活 · 扫于 ' + at + ' …';
+  let st = 0, d = null, err = null;
+  try{ const r = await fetch(API + '/v9/pa/runtime/status', {cache: 'no-store'}); st = r.status; if(r.ok) d = await r.json(); }
+  catch(e){ err = e; }
+  const esc = (typeof paEsc === 'function') ? paEsc : String;
+  if(err){
+    if(srcEl) srcEl.textContent = '来源：本机只读探活 · 未应答 · 扫于 ' + at;
+    if(rowsEl) rowsEl.innerHTML = '<div class="r"><span class="k">未应答</span><span>'
+      + esc(String((err && err.message) || err)) + ' ⇒ 未应答 ≠ 没有引擎</span></div>';
+    return null;
+  }
+  if(st !== 200 || !d || !Array.isArray(d.items)){
+    if(srcEl) srcEl.textContent = '来源：本机只读探活 · 回体不可解（HTTP ' + st + '）· 扫于 ' + at;
+    if(rowsEl) rowsEl.innerHTML = '<div class="r"><span class="k">坏体</span><span>HTTP ' + st + ' ⇒ 照实报（⛔ 当 0 项）</span></div>';
+    return null;
+  }
+  if(srcEl) srcEl.textContent = '来源：本机只读探活 · ' + d.items.length + ' 项 · 扫于 ' + at;
+  if(rowsEl) rowsEl.innerHTML = d.items.map(function(it){
+    const o = it || {};
+    const state = String(o.state || (o.available ? '在' : '未接'));
+    const models = Array.isArray(o.models) ? o.models : [];
+    const loaded = Array.isArray(o.loaded) ? o.loaded : [];
+    let m = models.length ? ('模型 ' + models.join(' ／ ')) : '模型未给';
+    if(loaded.length) m += ' · 已载 ' + loaded.join(' ／ ');
+    return '<div class="r" data-runtime="' + esc(String(o.id || '')) + '"><span class="k">'
+      + esc(String(o.label || o.id || '—')) + '</span><span>'
+      + esc(state) + (o.version ? (' · ' + esc(String(o.version))) : '')
+      + (o.base_url ? (' · ' + esc(String(o.base_url))) : '')
+      + '<br>' + esc(String(o.detail || '')) + '<br>' + esc(m) + '</span></div>';
+  }).join('') + '<div class="foot" title="GET /v9/pa/runtime/status（只读探活 · 不发模型请求）">只读探活 · 不切换、不载模型｜状态来自本机服务应答｜未载模型会照实显示</div>';
+  return d;
 }
 
 /* —— 面 B · 执行层 agent 名册（只读 · Q0）

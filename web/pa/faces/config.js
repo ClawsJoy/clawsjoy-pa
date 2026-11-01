@@ -89,12 +89,11 @@ function paModelRender(sel, st, d, at, err, prev){
   /* ⭐ 默认通道与模型须同源：旧存底可能是本机 qwen，而今默认通道已 remote:deepseek
      ⇒ 存底之模型若属**另一 provider** ⇒ 不采用（否则 qwen 名被发给 DeepSeek API ⇒ 400）。 */
   const dftProv = String(((d || {}).default || {}).provider || '');
-  let provMismatch = false;
+  let crossProv = false, crossProvId = '';
   if(hit.id && dftProv){
     const hrow = rows.filter(function(m){ return String((m || {}).id) === hit.id; })[0] || {};
     if(hrow.provider_id && String(hrow.provider_id) !== dftProv){
-      hit.id = ''; hit.via = ''; provMismatch = true;
-      paModelNote(sel, '原选「' + want + '」属 ' + hrow.provider_id + '，与默认通道 ' + dftProv + ' 不一 ⇒ 已按默认通道选模');
+      crossProv = true; crossProvId = String(hrow.provider_id || '');
     }
   }
   let hasD = false;
@@ -106,9 +105,8 @@ function paModelRender(sel, st, d, at, err, prev){
     paModelNote(sel, '原选「' + want + '」（别名）⇒ 已归正为「' + pick + '」');
     paModelPersist(pick);
   } else if(hit.via === 'id'){
-    paModelNote(sel, '');
-  } else if(provMismatch){
-    paModelNote(sel, '默认通道已切 ⇒ 已按默认通道选模「' + pick + '」；原存底「' + (want || '—') + '」不在本通道');
+    paModelNote(sel, crossProv ? ('已选非默认通道 ' + crossProvId + ' ⇒ 本会话走「' + pick + '」；默认仍是 ' + dftProv) : '');
+    if(crossProv) paModelPersist(pick);
   } else {
     paModelNote(sel, '后端之表 ⛔ 含此名「' + want + '」⇒ 已按下之默认「' + pick + '」（⛔ 静默）');
   }

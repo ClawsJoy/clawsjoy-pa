@@ -297,7 +297,39 @@ class LLMClient:
         # 由: PA 之路以 model=None 调 ⇒ 若 provider 判在前, 远端支永不入 ⇒
         #     默认名被喂给本机 Ollama ⇒ API_UNAVAILABLE: HTTP 404（实测）。
         # 复查（技总一手 · 2026-10-05）：glm （:311）／ claude（:345）两支位于此定点之**下游** ⇒ 一处 hoist 受益三者（⛔ 三处各改）。
+        self.last_error = ""
         model = model or self.config.default_model
+        # ⭐ 本机 LocaLM（OpenAI 兼容 /v1 8642）：本机、免钥、⛔ 静默回落
+        if model and model.startswith("localm:"):
+            _localm_base = (os.getenv("LOCALM_BASE_URL", "http://127.0.0.1:8642") or "").rstrip("/")
+            self._route_set("localm", model)
+            try:
+                gen = self._call_openai_compatible(
+                    prompt,
+                    model,
+                    temperature or 0.7,
+                    max_tokens,
+                    timeout or 120,
+                    stream,
+                    system_prompt,
+                    endpoint=_localm_base + "/v1",
+                    allow_no_key=True,
+                    provider_label="localm",
+                )
+                if stream:
+                    yield from gen
+                    return
+                try:
+                    while True:
+                        next(gen)
+                except StopIteration as e:
+                    return e.value
+            except Exception as e:
+                self.last_error = "%s: %s" % (type(e).__name__, e)
+                self._route_set("localm", model, fell_back=False, reason="localm_unavailable")
+                logger.warning("[LLM] LocaLM 不可用（不回退 Ollama）：%s", e)
+                return llm_unavailable_text()
+
         # ⭐ DeepSeek 分支：先检查 api_key，无 key 则降级到 Ollama
         if model and model.startswith("deepseek"):
             api_key = api_key or os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
@@ -602,15 +634,17 @@ class LLMClient:
         endpoint: str = None,
         api_key: str = None,
         tools: list = None,
+        allow_no_key: bool = False,
+        provider_label: str = "deepseek",
     ):
         """
-        调用 OpenAI 兼容 API（DeepSeek / OpenAI）
+        调用 OpenAI 兼容 API（DeepSeek / OpenAI / 本机 LocaLM）
         """
         import os
 
         # 从环境变量读取配置
         api_key = api_key or os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
-        if not api_key:
+        if not api_key and not allow_no_key:
             raise ValueError("未设置 DEEPSEEK_API_KEY 或 OPENAI_API_KEY")
 
         if endpoint is None:
@@ -658,14 +692,16 @@ class LLMClient:
 
         # 构建请求
         payload = {
-            "model": model.replace("deepseek:", ""),  # deepseek:deepseek-v4-flash → deepseek-v4-flash
+            "model": model.replace("deepseek:", "").replace("localm:", ""),
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": stream,
         }
 
-        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json"}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
 
         # 重试逻辑
         last_error = None
@@ -711,7 +747,7 @@ class LLMClient:
                         os_action="allowed",
                         command="_call_openai_compatible",
                         detail={
-                            "provider": "deepseek",
+                            "provider": provider_label,
                             "model": model,
                             "tokens": result.get("usage", {}).get("total_tokens", 0),
                             "elapsed": elapsed if "elapsed" in dir() else 0.0,
