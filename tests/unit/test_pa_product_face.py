@@ -54,3 +54,9 @@ def test_new_window_has_first_win_notes_card():
     assert "paWinFirstWin" in win
     assert "/v9/pa/notes/ask" in win
     assert "出处" in win
+
+def test_first_win_has_timeout():
+    win = (ROOT / "web" / "pa" / "faces" / "window.js").read_text(encoding="utf-8")
+    assert "AbortController" in win
+    assert "20000" in win
+    assert "20 秒内没有回执" in win

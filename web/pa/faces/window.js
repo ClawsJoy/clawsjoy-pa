@@ -934,9 +934,15 @@
     out.textContent = '正在检索本机笔记…';
     var body = {q:'这周记了什么？', limit:3};
     try{ if(typeof paModelSel === 'function'){ var m=paModelSel(); if(m) body.model=m; } }catch(e){}
+    var ctl = null, timer = null;
     try{
+      try{
+        ctl = new AbortController();
+        timer = setTimeout(function(){ try{ ctl.abort(); }catch(e){} }, 20000);
+      }catch(e){ ctl = null; }
       var r = await fetch((typeof API !== 'undefined' ? API : '') + '/v9/pa/notes/ask', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), cache:'no-store'});
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body),
+        cache:'no-store', signal: ctl ? ctl.signal : undefined});
       var d = await r.json().catch(function(){ return null; });
       if(!r.ok || !d || d.ok === false){
         out.textContent = '问不到：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status));
@@ -953,7 +959,13 @@
         + (cits.length ? '<div style="margin-top:6px;color:var(--sub);font-size:12px">出处：'
           + cits.map(function(c){ return esc(c.title || c.id || ''); }).join(' ／ ') + '</div>' : '')
         + '<div style="margin-top:4px;color:var(--sub);font-size:11px">模型：' + esc(d.model || '默认') + '</div>';
-    }catch(e){ out.textContent = '问不到：' + String((e && e.message) || e); }
+    }catch(e){
+      out.textContent = (e && e.name === 'AbortError')
+        ? '问不到：20 秒内没有回执（模型可能未就绪／被占）；可稍后重试或换本地 Ollama 模型。'
+        : ('问不到：' + String((e && e.message) || e));
+    }finally{
+      if(timer) clearTimeout(timer);
+    }
   };
 
   window.paWinSendReal = async function(text){
