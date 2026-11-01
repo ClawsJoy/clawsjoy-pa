@@ -71,5 +71,4 @@ def test_first_win_has_folder_and_todo():
 def test_first_win_persists_and_uses_week_query():
     win = (ROOT / "web" / "pa" / "faces" / "window.js").read_text(encoding="utf-8")
     assert "__paFwHtml" in win
-    assert "本周记了什么？" in win
-    assert "这周记了什么？" not in win
+    assert "var body = {q:'本周记了什么？', limit:3}" in win
