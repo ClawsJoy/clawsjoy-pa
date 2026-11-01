@@ -72,38 +72,100 @@ def _classify_exception(e, default="UNKNOWN"):
 _LLM_SEMAPHORE = threading.Semaphore(2)
 
 
-def _ollama_execute_with_tools(messages, tools, model="qwen2.5:7b-instruct-q4_0-gpu", temperature=0.7, max_tokens=2000):
+def _ollama_execute_with_tools(messages, tools, model="qwen2.5:7b-instruct-q4_0-gpu", temperature=0.7, max_tokens=2000, cancel_event=None):
     """V9 Ollama 降级：本地 function calling（无 DEEPSEEK_API_KEY 时走此路径，不依赖外网）。
 
-    - ollama /api/chat with tools，返回格式对齐 DeepSeek（arguments 统一为 JSON 字符串）
-    - 失败/超时返回 {"success": False, "error": ...}，由上层 _save_state("failed") 接管
+    - 普通路径：ollama /api/chat with tools，返回格式对齐 DeepSeek
+    - cancel_event 不为空：走 stream=True，边读边检查取消；置位即 close 连接，
+      让 RunService 的 running 取消能在秒级收口（不改 runs 对外状态语义）。
     """
     import requests as _rq
 
-    _body = {"model": model, "messages": messages, "tools": tools, "temperature": temperature, "stream": False}
+    _base = {"model": model, "messages": messages, "tools": tools, "temperature": temperature, "stream": False}
     if max_tokens:
-        _body["options"] = {"num_predict": max_tokens}
+        _base["options"] = {"num_predict": max_tokens}
+    if cancel_event is None:
+        try:
+            _resp = _rq.post("http://127.0.0.1:11434/api/chat", json=_base, timeout=(10, 120))
+            if _resp.status_code == 200:
+                _data = _resp.json()
+                _msg = _data.get("message", {}) or {}
+                _tc = _msg.get("tool_calls") or []
+                for _c in _tc:
+                    _fn = _c.get("function", {})
+                    if isinstance(_fn.get("arguments"), dict):
+                        _fn["arguments"] = json.dumps(_fn["arguments"], ensure_ascii=False)
+                    _c.setdefault("type", "function")
+                _usage = (_data.get("prompt_eval_count") or 0) + (_data.get("eval_count") or 0)
+                return {
+                    "success": True,
+                    "data": {"choices": [{"message": _msg, "finish_reason": "tool_calls" if _tc else "stop"}]},
+                    "tokens": _usage,
+                }
+            return {"success": False, "error": f"Ollama 错误: {_resp.status_code} - {_resp.text[:300]}"}
+        except Exception as _e:
+            return {"success": False, "error": f"Ollama 调用失败: {_e}"}
+
+    _body = dict(_base)
+    _body["stream"] = True
+    _resp = None
     try:
-        _resp = _rq.post("http://127.0.0.1:11434/api/chat", json=_body, timeout=(10, 120))
-        if _resp.status_code == 200:
-            _data = _resp.json()
-            _msg = _data.get("message", {}) or {}
-            _tc = _msg.get("tool_calls") or []
-            for _c in _tc:
-                # ollama arguments 是对象 → 统一为字符串（与 DeepSeek 一致，上层 json.loads 兼容）
+        _resp = _rq.post("http://127.0.0.1:11434/api/chat", json=_body, timeout=(10, 120), stream=True)
+        if _resp.status_code != 200:
+            return {"success": False, "error": f"Ollama 错误: {_resp.status_code} - {_resp.text[:300]}"}
+        _parts = []
+        _tool_calls = []
+        _usage = 0
+        for _line in _resp.iter_lines():
+            if cancel_event.is_set():
+                try:
+                    _resp.close()
+                except Exception:
+                    pass
+                return {"success": False, "cancelled": True, "error": "cancelled by user"}
+            if not _line:
+                continue
+            try:
+                _j = json.loads(_line.decode("utf-8") if isinstance(_line, bytes) else _line)
+            except Exception:
+                continue
+            _m = _j.get("message") or {}
+            _chunk = _m.get("content") or ""
+            if _chunk:
+                _parts.append(str(_chunk))
+            for _c in (_m.get("tool_calls") or []):
                 _fn = _c.get("function", {})
                 if isinstance(_fn.get("arguments"), dict):
                     _fn["arguments"] = json.dumps(_fn["arguments"], ensure_ascii=False)
                 _c.setdefault("type", "function")
-            _usage = (_data.get("prompt_eval_count") or 0) + (_data.get("eval_count") or 0)
-            return {
-                "success": True,
-                "data": {"choices": [{"message": _msg, "finish_reason": "tool_calls" if _tc else "stop"}]},
-                "tokens": _usage,
-            }
-        return {"success": False, "error": f"Ollama 错误: {_resp.status_code} - {_resp.text[:300]}"}
+                _tool_calls.append(_c)
+            _usage = (_j.get("prompt_eval_count") or 0) + (_j.get("eval_count") or 0) or _usage
+            if _j.get("done"):
+                break
+        if cancel_event.is_set():
+            try:
+                _resp.close()
+            except Exception:
+                pass
+            return {"success": False, "cancelled": True, "error": "cancelled by user"}
+        _msg = {"role": "assistant", "content": "".join(_parts)}
+        if _tool_calls:
+            _msg["tool_calls"] = _tool_calls
+        return {
+            "success": True,
+            "data": {"choices": [{"message": _msg, "finish_reason": "tool_calls" if _tool_calls else "stop"}]},
+            "tokens": _usage,
+        }
     except Exception as _e:
+        if cancel_event.is_set():
+            return {"success": False, "cancelled": True, "error": "cancelled by user"}
         return {"success": False, "error": f"Ollama 调用失败: {_e}"}
+    finally:
+        try:
+            if _resp is not None:
+                _resp.close()
+        except Exception:
+            pass
 
 
 def _notify_done_impl(on_done, task_id, user_id, session_id, sub_task_id, output=""):

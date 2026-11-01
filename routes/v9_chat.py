@@ -227,6 +227,18 @@ def _dsh_run(task, timeout):
     )
 
 
+_RUN_CANCELS = {}
+
+
+def _runner_cancel(run_id):
+    """RunService 调 runner.cancel：置事件，让 Ollama 流式请求秒级收口。"""
+    evt = _RUN_CANCELS.get(str(run_id))
+    if evt is not None:
+        evt.set()
+        return True
+    return False
+
+
 def _chat_entry_runner(record):
     """runner：本地 Ollama 直调 ＋ DSH headless 子进程（⛔ /v9/agent/chat、⛔ Flask request）。
 
@@ -245,6 +257,11 @@ def _chat_entry_runner(record):
             "error": f"runner import: {type(exc).__name__}: {str(exc)[:300]}",
             "reason": "runner_import",
         }
+    import threading as _th
+    _cancel_evt = _RUN_CANCELS.get(str(record.get("run_id") or ""))
+    if _cancel_evt is None:
+        _cancel_evt = _th.Event()
+        _RUN_CANCELS[str(record.get("run_id") or "")] = _cancel_evt
     model_in = str(record.get("model") or "").strip()
     # P2-1：model=dsh/dsh-headless ⇒ 独立 DSH headless 子进程（本地 model 仍走 Ollama）
     if model_in.lower().startswith("dsh"):
@@ -303,7 +320,7 @@ def _chat_entry_runner(record):
     single_task = base_task if seats else str(record.get("task") or "")
     messages = [{"role": "user", "content": single_task}]
     try:
-        got = _ollama_execute_with_tools(messages=messages, tools=[], model=model, temperature=0.7, max_tokens=2000)
+        got = _ollama_execute_with_tools(messages=messages, tools=[], model=model, temperature=0.7, max_tokens=2000, cancel_event=_cancel_evt)
     except Exception as exc:  # noqa: BLE001
         return {
             "status": "failed",
@@ -452,6 +469,9 @@ def v9_agent_run_cancel(run_id):
             "turn_registry_closed": closed,
         }
     )
+
+
+_chat_entry_runner.cancel = _runner_cancel
 
 
 def _close_turn_registry(session_id):

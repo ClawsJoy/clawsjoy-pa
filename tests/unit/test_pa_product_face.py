@@ -72,3 +72,9 @@ def test_first_win_persists_and_uses_week_query():
     win = (ROOT / "web" / "pa" / "faces" / "window.js").read_text(encoding="utf-8")
     assert "__paFwHtml" in win
     assert "var body = {q:'本周记了什么？', limit:3}" in win
+
+def test_chat_queues_while_run_active():
+    src = (ROOT / "web" / "pa" / "faces" / "send.js").read_text(encoding="utf-8")
+    assert "_paHasActiveRun" in src
+    assert "__paQueuedChat" in src
+    assert "setInterval(_paDrainChat, 1000)" in src

@@ -230,7 +230,38 @@ function paRespKind(d){
 }
 
 /* P0 产品面：陪伴 → /v9/pa/dialog；办事 → /v9/agent/runs。
-   旧 /v9/agent/chat SSE 已删；⛔ 复制发送体，唯按模式分流。 */
+   旧 /v9/agent/chat SSE 已删；⛔ 复制发送体，唯按模式分流。
+   执行中再聊：⛔ 与长 run 抢同一模型；落明确排队，等 run 终止再发。 */
+function _paHasActiveRun(){
+  try{
+    if(typeof paRun !== 'undefined' && paRun && paRun.busy) return true;
+    if(window.paWinLiveRuns){
+      var rs = window.paWinLiveRuns() || [];
+      for(var i=0;i<rs.length;i++){
+        var st = String(rs[i].state || '');
+        if(st === 'running' || st === 'queued') return true;
+      }
+    }
+  }catch(e){}
+  return false;
+}
+function _paQueueChat(text, t){
+  window.__paQueuedChat = window.__paQueuedChat || [];
+  window.__paQueuedChat.push({text:String(text || ''), thread:t});
+  try{ if(typeof addMsg === 'function') addMsg('sys', '⏳ 手头任务执行中：这条已排队，等它结束再发；⛔ 不跟长 run 抢模型'); }catch(e){}
+  try{ if(typeof window.paWinSay === 'function') window.paWinSay('执行中 · 已排队，结束后自动发'); }catch(e){}
+}
+function _paDrainChat(){
+  var q = window.__paQueuedChat || [];
+  if(!q.length || _paHasActiveRun()) return;
+  var item = q.shift();
+  try{ if(typeof addMsg === 'function') addMsg('sys', '▶ 手头任务结束，发排队中的话'); }catch(e){}
+  try{
+    if(typeof sendPA === 'function') Promise.resolve(sendPA(item.text, item.thread, {})).catch(function(){});
+  }catch(e){}
+}
+setInterval(_paDrainChat, 1000);
+
 async function sendAgent(t, userText){
   const _utext = (typeof userText === 'string') ? userText : '';
   let _chan = 'agent';
@@ -238,8 +269,9 @@ async function sendAgent(t, userText){
     const _m = (typeof MODES !== 'undefined' && state && MODES[state.mode]) ? MODES[state.mode] : null;
     if(_m && _m.chan) _chan = _m.chan;
   }catch(e){}
-  if(_chan === 'pa' && typeof sendPA === 'function'){
-    return await sendPA(_utext, t, {});
+  if(_chan === 'pa'){
+    if(_paHasActiveRun()){ _paQueueChat(_utext, t); return {queued:true}; }
+    if(typeof sendPA === 'function') return await sendPA(_utext, t, {});
   }
   return await sendAgentViaRuns(t, _utext);
 }
