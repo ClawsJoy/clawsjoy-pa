@@ -18,6 +18,8 @@ from core.pa.gateway_routes import register_pa_routes  # noqa: E402
 @pytest.fixture()
 def client(monkeypatch, tmp_path):
     monkeypatch.setenv("PA_DATA_DIR", str(tmp_path / "pa"))
+    monkeypatch.setenv("PA_DSH_ENV_FILE", str(tmp_path / "dsh.env"))
+    monkeypatch.delenv("PA_DSH_DEEPSEEK_API_KEY", raising=False)
     monkeypatch.delenv("PA_DSH_PATH", raising=False)
     app = Flask(__name__)
     register_pa_routes(app)
@@ -29,8 +31,9 @@ def _body(resp):
 
 
 def test_found_via_env_and_probe(client, monkeypatch):
+    from core.pa import dsh_credentials as DC
     monkeypatch.setenv("PA_DSH_PATH", sys.executable)
-    monkeypatch.setenv("DEEPSEEK_API_KEY", "super-secret-key")
+    assert DC.set_key("super-secret-key")[0] is True
     r = client.get("/v9/pa/runtimes/dsh")
     assert r.status_code == 200
     d = _body(r)
@@ -46,8 +49,10 @@ def test_found_via_env_and_probe(client, monkeypatch):
 
 
 def test_not_found_does_not_throw(client, monkeypatch):
+    from core.pa import dsh_credentials as DC
     monkeypatch.setattr(shutil, "which", lambda name: None)
-    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    DC.clear_key()
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "pa-only-secret")
     r = client.get("/v9/pa/runtimes/dsh")
     assert r.status_code == 200
     d = _body(r)
@@ -80,10 +85,11 @@ def test_post_saves_atomically_and_probe_saved(client, monkeypatch, tmp_path):
 
 
 def test_key_present_only_bool(client, monkeypatch):
-    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    from core.pa import dsh_credentials as DC
+    DC.clear_key()
     d = client.get("/v9/pa/runtimes/dsh").get_json()
     assert d["key_present"] is False
-    monkeypatch.setenv("DEEPSEEK_API_KEY", "x")
+    assert DC.set_key("x")[0] is True
     d2 = client.get("/v9/pa/runtimes/dsh").get_json()
     assert d2["key_present"] is True
     assert "super-secret" not in json.dumps(d2)

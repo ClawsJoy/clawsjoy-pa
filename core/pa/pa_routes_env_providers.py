@@ -449,12 +449,19 @@ def register(bp):
                 version = raw.splitlines()[0].strip() if raw else None
             except Exception:  # noqa: BLE001
                 version = None
+        try:
+            from core.pa import dsh_credentials as _DC
+            _dsh_key = bool(_DC.get_key())
+        except Exception:
+            _dsh_key = False
         return {
             "found": found,
             "path": path or None,
             "version": version,
             "source": source,
-            "key_present": bool(os.environ.get("DEEPSEEK_API_KEY")),
+            "key_present": _dsh_key,
+            "key_scope": "dsh",
+            "key_note": "DSH 独立 key（PA_DSH_DEEPSEEK_API_KEY / data\\dsh.env）；PA 供应商密钥不喂 DSH",
             "cloud_supported": True,
             "local_supported": False,
             "install_steps": [

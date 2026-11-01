@@ -25,7 +25,8 @@ def test_page_has_dsh_wizard_after_keys():
     i_wiz = page.find('id="paDshWizard"')
     assert i_keys > 0 and i_wiz > i_keys, "DSH 向导须在密钥面之后"
     for el in ('id="paDshStatus"', 'id="paDshBody"', 'id="paDshSteps"',
-               'id="paDshPathRow"', 'id="paDshPathIn"', 'id="paDshPathSaveBtn"'):
+               'id="paDshPathRow"', 'id="paDshPathIn"', 'id="paDshPathSaveBtn"',
+               'id="paDshKeyIn"', 'id="paDshKeyRow"'):
         assert el in page, el
     for word in ("重新检测", "填写 dsh 路径", "配置云端", "使用本地"):
         assert word in page, word
@@ -67,15 +68,19 @@ def test_path_uses_inline_form_not_window_prompt():
     assert "function paDshPathCancel()" in src
 
 
-def test_cloud_switches_to_deepseek_and_does_not_execute():
+def test_cloud_points_to_dedicated_dsh_key_not_pa_provider():
     src = _keys()
     assert "async function paDshCloud()" in src
-    assert "DEEPSEEK_API_KEY" in src
-    assert "deepseek" in src
-    assert "paKeyPick(" in src
-    assert "paKeyStateText(" in src
-    # 只切供应商／只开密钥面 ⇒ 不 POST key、不触发运行
-    assert "/v9/pa/runtimes/dsh/path" not in src.split("async function paDshCloud()", 1)[1].split("function paDshLocal()", 1)[0]
+    assert "paDshKeyIn" in src
+    assert "DSH 使用自己的独立 key" in src
+    # 不再把 PA provider 密钥当成 DSH key
+    block = src.split("async function paDshCloud()", 1)[1].split("async function paDshKeySave()", 1)[0]
+    assert "paKeyPick(" not in block
+    assert "paKeyStateText(" not in block
+    assert "paKeyOpen(" not in block
+    # 不 POST key、不触发运行（保存/清除在独立函数）
+    assert "/v9/pa/harness/key" not in block
+    assert "/v9/pa/runtimes/dsh/path" not in block
     # 打开密钥面时不得重拉 DSH 状态（否则刚给的用户提示被「读数中…」盖掉）
     open_block = src.split("function paKeyOpen(){", 1)[1]
     assert "paDshLoad()" not in open_block[:1200]

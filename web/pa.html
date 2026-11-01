@@ -269,6 +269,15 @@
           </div>
           <div id="paDshPathMsg" role="status" aria-live="polite" style="margin-top:5px;color:var(--sub);font-size:11px"></div>
         </div>
+        <div id="paDshKeyRow" style="margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card)">
+          <div style="margin-bottom:5px;color:var(--sub)">DSH 云端 key（独立于 PA 供应商密钥）：</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <input id="paDshKeyIn" type="password" spellcheck="false" placeholder="sk-...（只给 DSH 用）" style="flex:1;min-width:220px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--text);padding:5px 7px;font-size:12px">
+            <button class="ks-btn" type="button" onclick="paDshKeySave()">填 DSH key</button>
+            <button class="ks-btn" type="button" onclick="paDshKeyClear()">清</button>
+          </div>
+          <div id="paDshKeyMsg" role="status" aria-live="polite" style="margin-top:5px;color:var(--sub);font-size:11px"></div>
+        </div>
         <ol id="paDshSteps" style="margin:6px 0 8px 18px;color:var(--sub);line-height:1.6"></ol>
         <div class="ks-row" style="flex-wrap:wrap;gap:6px">
           <button class="ks-btn" type="button" id="paDshBtnRetry" onclick="paDshRetry()" title="只重新探测 dsh 可执行文件，不安装、不执行任务">重新检测</button>

@@ -329,8 +329,8 @@ function paDshLoad(force){
         body.innerHTML =
           '<div class="pa-dsh-row">路径：' + paDshEsc(d.path || '—') + '</div>'
           + '<div class="pa-dsh-row">版本：' + paDshEsc(d.version || '—') + ' · 来源：' + paDshEsc(src) + '</div>'
-          + '<div class="pa-dsh-row">云端 API：' + (d.cloud_supported === true ? '支持' : '不支持') + '（需 provider key）· key：'
-          + (d.key_present === true ? '已配' : '未配（此读数只认环境变量；填完若仍显示未配，重启本机服务即刷新）') + '</div>'
+          + '<div class="pa-dsh-row">云端 API：' + (d.cloud_supported === true ? '支持' : '不支持') + '（DSH 独立 key）· key：'
+          + (d.key_present === true ? '✓ 已配（DSH 独立）' : '未配（在下方「DSH 云端 key」单独填；PA 供应商密钥不喂 DSH）') + '</div>'
           + '<div class="pa-dsh-row">本地模型：<b>当前不支持</b>（DSH 本地 provider 未支持；PA 本地 Ollama 已可用' + (d.local_supported === true ? ' · 后端 local_supported=true 与向导口径冲突' : '') + '）</div>'
           + '<div class="pa-dsh-row">Node：' + (d.node_present === true ? '已安装' : '未安装（装 DSH 需 Node）') + '</div>'
           + (found ? '<div class="pa-dsh-row" style="color:var(--sub)">下一步：点「配置云端」＝ 切到 DeepSeek 并打开密钥框（只切 ／ 只开，不发送）；点「使用本地」＝ 只看现状说明。</div>' : '');
@@ -401,32 +401,39 @@ function paDshPathSave(){
     });
 }
 async function paDshCloud(){
+  var inp = paDshEl('paDshKeyIn');
+  if(inp){
+    try{ inp.scrollIntoView({block:'center'}); inp.focus(); }catch(e){}
+  }
+  paDshSetStatus('云端：DSH 使用自己的独立 key；请在下方的「DSH 云端 key」填写（不是上方 PA 供应商密钥）。填完点「填 DSH key」，PA 会把它写入 dsh.env 并只传给 DSH 子进程。');
+}
+async function paDshKeySave(){
+  var inp = paDshEl('paDshKeyIn');
+  var msg = paDshEl('paDshKeyMsg');
+  var key = inp ? String(inp.value == null ? '' : inp.value).trim() : '';
+  if(!key){ if(inp) inp.focus(); if(msg) msg.textContent = '先粘贴 DSH 的 DeepSeek API key（sk-…）'; return; }
+  if(msg) msg.textContent = '写入 DSH 独立凭据…';
   try{
-    if(typeof paKeyRun !== 'undefined' && (!paKeyRun.rows || !paKeyRun.rows.length) && typeof paKeyLoad === 'function') await paKeyLoad();
-  }catch(e){}
-  var rows = (typeof paKeyRun !== 'undefined' && Array.isArray(paKeyRun.rows)) ? paKeyRun.rows : [];
-  if(!rows.length){
-    try{ if(typeof paKeyOpen === 'function') paKeyOpen(); }catch(e){}
-    paDshSetStatus('云端：供应商清单还没读到 —— 先点密钥区重读，选 DeepSeek 后填 key（只切 ／ 只开，不发送）。');
-    return;
-  }
-  var hit = null, needKey = null;
-  for(var i = 0; i < rows.length; i++){
-    var r = rows[i] || {};
-    var env = String(r.key_env || '').toUpperCase();
-    var id = String(r.id || '').toLowerCase();
-    if(needKey == null && r.need) needKey = r;
-    if(env === 'DEEPSEEK_API_KEY' || id.indexOf('deepseek') >= 0){ hit = r; break; }
-  }
-  if(!hit) hit = needKey;
-  if(!hit){
-    paDshSetStatus('云端：清单里没有需填 key 的供应商 —— 照实（不猜可用项）。');
-    return;
-  }
-  try{ paKeyPick(hit.id); }catch(e){}
-  try{ if(typeof paKeyOpen === 'function') paKeyOpen(); }catch(e){}
-  paDshSetStatus('云端：已切到「' + (hit.label || hit.id) + '」＝ ' + (hit.key_env || '—') + '（'
-    + paKeyStateText(hit.key_state, hit.key_configured) + '）—— 就在上方「密钥」框填值后点「填」；⛔ 值不上屏，只落本机。');
+    var r = await fetch(API + '/v9/pa/harness/key', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key: key})});
+    var d = await r.json().catch(function(){ return null; });
+    if(!r.ok || !d || d.ok === false){
+      if(msg) msg.textContent = '写入失败：' + String((d && (d.message || d.error)) || ('HTTP ' + r.status));
+      return;
+    }
+    if(inp) inp.value = '';
+    if(msg) msg.textContent = '已写入 DSH 独立凭据（不回显）';
+    return paDshLoad(true);
+  }catch(e){ if(msg) msg.textContent = '写入失败：' + String((e && e.message) || e); }
+}
+async function paDshKeyClear(){
+  var msg = paDshEl('paDshKeyMsg');
+  try{
+    await fetch(API + '/v9/pa/harness/key', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({clear: true})});
+    if(msg) msg.textContent = '已清 DSH 独立凭据';
+    return paDshLoad(true);
+  }catch(e){ if(msg) msg.textContent = '清除失败：' + String((e && e.message) || e); }
 }
 function paDshLocal(){
   paDshSetStatus('本地：PA 自己的本地 Ollama 已可用（在「模型配置」里选它即可）；DSH 的本地 provider 目前未支持 —— 向导不假装可用，也不替你安装。只想本机对话时，不用 DSH。');
