@@ -166,6 +166,63 @@ def register(bp):
 
         return ok(_RS.runtime_view(), 印=_code_sha16(pa_runtime_status, _RS))
 
+    @bp.route("/v9/pa/benchmark", methods=["POST"])
+    def pa_benchmark():
+        u"""本机引擎 benchmark：TTFT / tok/s / VRAM（唯本机 · 失败照实报）。"""
+        if not _loopback(request):
+            return err("此端唯本机可用（来源 %s）" % (request.remote_addr or "?"), 403)
+        from core.pa import benchmark as _BM
+        body = request.get_json(silent=True) or {}
+        engine = str(body.get("engine") or "").strip().lower()
+        if engine not in ("ollama", "localm"):
+            return err("engine 须为 ollama 或 localm", 400)
+        model = str(body.get("model") or "").strip() or None
+        if model:
+            from core.pa.providers import resolve_model_ex as _rm
+            _m, _why = _rm(model)
+            if not _m:
+                return err(_why, 400)
+            model = _m
+        try:
+            out = _BM.run(engine, model=model,
+                          prompt=str(body.get("prompt") or "")[:2000] or None,
+                          max_tokens=max(1, min(int(body.get("max_tokens") or 64), 128)),
+                          timeout=max(30, min(int(body.get("timeout") or 180), 600)))
+            return ok(out, 印=_code_sha16(pa_benchmark, _BM))
+        except Exception as e:
+            return err("benchmark 失败：%s" % type(e).__name__, 500)
+
+    @bp.route("/v9/pa/harness/runs", methods=["GET"])
+    def pa_harness_runs():
+        u"""DSH 任务卡：canonical RunRecord ＋ task/events sidecar。"""
+        from core.pa import harness_face as _HF
+        try:
+            return ok(_HF.list_runs(limit=request.args.get("limit") or 20))
+        except Exception as e:
+            return err("取 harness runs 失败：%s" % type(e).__name__, 500)
+
+    @bp.route("/v9/pa/harness/run", methods=["POST"])
+    def pa_harness_run():
+        u"""显式跑一次 DSH headless（唯本机 · 同步等待完成）。"""
+        if not _loopback(request):
+            return err("此端唯本机可用（来源 %s）" % (request.remote_addr or "?"), 403)
+        from core.pa import harness_face as _HF
+        from core.pa.harness.dsh import DshUnavailable
+        body = request.get_json(silent=True) or {}
+        task = str(body.get("task") or "").strip()
+        if not task:
+            return err("task 为空", 400)
+        try:
+            out = _HF.run_dsh(task, cwd=str(body.get("cwd") or ""),
+                              timeout=body.get("timeout") or 120)
+            return ok(out)
+        except DshUnavailable as e:
+            return err("DSH 未接：%s" % e, 503)
+        except ValueError as e:
+            return err(str(e), 400)
+        except Exception as e:
+            return err("harness run 失败：%s" % type(e).__name__, 500)
+
     @bp.route("/v9/pa/providers/key/token", methods=["GET"])
     def pa_provider_key_token():
         """一次性令牌之领（唯本机 · ⛔ 值上屏 —— 唯 Cookie · HttpOnly · SameSite=Strict）。"""

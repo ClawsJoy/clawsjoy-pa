@@ -127,7 +127,8 @@ def register(bp):
             if not _model:
                 return err(_why, 400)
         try:
-            out = N.ask(d.get("q", ""), limit=d.get("limit", 6), model=_model)
+            _kw = {"model": _model} if _model else {}
+            out = N.ask(d.get("q", ""), limit=d.get("limit", 6), **_kw)
             return ok(out)
         except N.NoteError as e:
             return err(str(e), 400)

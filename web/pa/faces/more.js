@@ -762,6 +762,7 @@ async function paVendorScan(){
   const el = document.getElementById('paProvBox');
   if(el) el.setAttribute('data-state', out.state);
   try{ paRuntimeScan(); }catch(e){}
+  try{ paHarnessScan(); }catch(e){}
   return out;
 }
 
@@ -780,9 +781,12 @@ function paRuntimeMount(){
   box.style.borderTop = '1px dashed rgba(48,54,61,.7)';
   box.innerHTML = '<div class="sysrow" style="justify-content:space-between">'
     + '<b>引擎状态（只读 · 真实探活）</b>'
-    + '<span class="chip" onclick="paRuntimeScan()" title="GET /v9/pa/runtime/status（只读）">↻ 重扫</span></div>'
+    + '<span><span class="chip" onclick="paBenchRun(\'localm\')" title="POST /v9/pa/benchmark（localm）">测 localm</span> '
+    + '<span class="chip" onclick="paBenchRun(\'ollama\')" title="POST /v9/pa/benchmark（Ollama）">测 Ollama</span> '
+    + '<span class="chip" onclick="paRuntimeScan()" title="GET /v9/pa/runtime/status（只读）">↻ 重扫</span></span></div>'
     + '<div class="msrc" id="paRuntimeSrc">未扫</div>'
-    + '<div id="paRuntimeRows"></div>';
+    + '<div id="paRuntimeRows"></div>'
+    + '<div class="msrc" id="paBenchRows"></div>';
   host.appendChild(box);
   return box;
 }
@@ -826,6 +830,129 @@ async function paRuntimeScan(){
       : '')
     + '<div class="foot" title="GET /v9/pa/runtime/status（只读探活 · 不发模型请求）">只读探活 · 不切换、不载模型｜状态来自本机服务应答｜未载模型会照实显示</div>';
   return d;
+}
+
+
+let paBenchBusy = false;
+async function paBenchRun(engine){
+  if(paBenchBusy) return null;
+  const out = document.getElementById('paBenchRows');
+  const esc = (typeof paEsc === 'function') ? paEsc : String;
+  paBenchBusy = true;
+  if(out) out.textContent = '跑 ' + engine + ' benchmark…（会真实载入/推理，约数秒）';
+  let body = {engine: engine, max_tokens: 48};
+  try{
+    const c = JSON.parse(localStorage.getItem('pa_cfg') || '{}');
+    const m = String((c && c.model) || '');
+    if(m && ((engine === 'localm') === m.startsWith('localm:'))) body.model = m;
+  }catch(e){}
+  try{
+    const r = await fetch(API + '/v9/pa/benchmark', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body), cache:'no-store'});
+    const d = await r.json().catch(function(){ return null; });
+    if(!r.ok || !d || d.ok === false){
+      if(out) out.innerHTML = '<span style="color:#d2991d">benchmark 失败：' + esc(String((d && (d.message || d.error)) || ('HTTP ' + r.status))) + '</span>';
+      return null;
+    }
+    const vram = (d.vram_before_mib == null) ? 'n/a' : (d.vram_before_mib + ' → ' + d.vram_after_mib + ' MiB');
+    const delta = (d.vram_delta_mib == null) ? '' : ('（Δ ' + (d.vram_delta_mib >= 0 ? '+' : '') + d.vram_delta_mib + '）');
+    if(out) out.innerHTML = '<div class="r"><span class="k">' + esc(String(d.engine || engine)) + '</span><span>'
+      + 'TTFT ' + (d.ttft_ms == null ? 'n/a' : esc(String(d.ttft_ms)) + ' ms')
+      + ' · tok/s ' + (d.tok_s == null ? 'n/a' : esc(String(d.tok_s)))
+      + ' · tokens ' + (d.tokens == null ? 'n/a' : esc(String(d.tokens)))
+      + ' · 耗时 ' + (d.elapsed_ms == null ? 'n/a' : esc(String(d.elapsed_ms)) + ' ms')
+      + '<br>VRAM ' + esc(vram) + esc(delta)
+      + '<br>口径：' + esc(String(d.tok_s_source || ''))
+      + (d.answer ? ('<br>答：' + esc(String(d.answer).slice(0, 240))) : '')
+      + '</span></div>';
+    return d;
+  }catch(e){
+    if(out) out.innerHTML = '<span style="color:#d2991d">benchmark 未完成：' + esc(String((e && e.message) || e)) + '</span>';
+    return null;
+  }finally{ paBenchBusy = false; }
+}
+
+
+/* —— DSH 任务卡 / RunRecord / 轨迹（P1-4） —— */
+function paHarnessMount(){
+  const host = document.getElementById('pane-cfg');
+  if(!host) return null;
+  let box = document.getElementById('paHarnessBox');
+  if(box) return box;
+  box = document.createElement('div');
+  box.className = 'duty';
+  box.id = 'paHarnessBox';
+  box.style.marginTop = '10px';
+  box.style.paddingTop = '8px';
+  box.style.borderTop = '1px dashed rgba(48,54,61,.7)';
+  box.innerHTML = '<div class="sysrow" style="justify-content:space-between">'
+    + '<b>DSH 任务卡（RunRecord / 轨迹）</b>'
+    + '<span class="chip" onclick="paHarnessScan()" title="GET /v9/pa/harness/runs">↻ 刷新</span></div>'
+    + '<div class="msrc" id="paHarnessSrc">未扫</div>'
+    + '<div style="display:flex;gap:6px;margin:4px 0">'
+    + '<input id="paHTask" type="text" placeholder="给 DSH 的任务，例如：只回答 OK" style="flex:1;min-width:0;background:#0d1117;border:1px solid #30363d;color:#d7dde7;border-radius:4px;padding:4px 6px">'
+    + '<button class="chip" id="paHRunBtn" onclick="paHarnessRun()" title="POST /v9/pa/harness/run（唯本机 · 会真实执行）">运行</button></div>'
+    + '<div class="msrc" style="color:#d2991d" title="DSH headless 会执行任务，可能改动文件/跑命令；请只给可信任务">⚠ 会真实执行 DSH headless，请只给可信任务</div>'
+    + '<div id="paHarnessRows"></div>';
+  host.appendChild(box);
+  return box;
+}
+function _paHEsc(s){ return (typeof paEsc === 'function') ? paEsc(String(s == null ? '' : s)) : String(s == null ? '' : s); }
+async function paHarnessScan(){
+  const box = paHarnessMount(); if(!box) return null;
+  const src = document.getElementById('paHarnessSrc');
+  const rows = document.getElementById('paHarnessRows');
+  const at = new Date().toLocaleString('zh-CN', {hour12:false});
+  if(src) src.textContent = '来源：PA harness 账 · 扫于 ' + at + ' …';
+  try{
+    const r = await fetch(API + '/v9/pa/harness/runs?limit=20', {cache:'no-store'});
+    const d = await r.json().catch(function(){ return null; });
+    if(!r.ok || !d) throw new Error('HTTP ' + r.status);
+    const arr = Array.isArray(d.runs) ? d.runs : [];
+    if(src) src.textContent = '来源：PA harness 账 · ' + arr.length + ' 条 · 扫于 ' + at;
+    if(!rows) return d;
+    rows.innerHTML = arr.length ? arr.map(function(x){
+      const ev = Array.isArray(x.events) ? x.events : [];
+      const meta = x.harness_meta || {};
+      const title = x.task || '(旧记录无 task sidecar)';
+      return '<div class="r" data-run="' + _paHEsc(x.run_id) + '"><span class="k">' + _paHEsc(x.status) + '</span><span>'
+        + _paHEsc(title)
+        + '<br>' + _paHEsc(x.run_id) + ' · ' + _paHEsc(x.started_at || '') + ' → ' + _paHEsc(x.ended_at || '')
+        + ' · rc=' + _paHEsc(meta.rc) + ' · receipt ' + _paHEsc(x.receipt_sha16 || '')
+        + (meta.stderr_tail ? ('<br>stderr: ' + _paHEsc(meta.stderr_tail)) : '')
+        + '<br><details><summary>轨迹 ' + ev.length + ' 步</summary>'
+        + (ev.length ? ev.map(function(e){ return '<div style="margin:2px 0"><b>' + _paHEsc(e.kind) + '</b> ' + _paHEsc(e.text || '') + '</div>'; }).join('') : '<div>无轨迹（旧记录未存 events）</div>')
+        + '</details></span></div>';
+    }).join('') : '<div class="r"><span class="k">0 条</span><span>目前没有 DSH run 记录</span></div>';
+    return d;
+  }catch(e){
+    if(src) src.textContent = '来源：PA harness 账 · 未应答 · 扫于 ' + at;
+    if(rows) rows.innerHTML = '<div class="r"><span class="k">未应答</span><span>' + _paHEsc((e && e.message) || e) + ' ⇒ 不等于没有记录</span></div>';
+    return null;
+  }
+}
+async function paHarnessRun(){
+  const inp = document.getElementById('paHTask');
+  const btn = document.getElementById('paHRunBtn');
+  const rows = document.getElementById('paHarnessRows');
+  const task = String((inp && inp.value) || '').trim();
+  if(!task){ if(inp) inp.focus(); return null; }
+  if(btn) btn.disabled = true;
+  if(rows) rows.innerHTML = '<div class="r"><span class="k">运行中</span><span>DSH headless 执行中，完成后刷新任务卡…</span></div>';
+  try{
+    const r = await fetch(API + '/v9/pa/harness/run', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({task: task, timeout: 120}), cache:'no-store'});
+    const d = await r.json().catch(function(){ return null; });
+    if(!r.ok || !d || d.ok === false){
+      if(rows) rows.innerHTML = '<div class="r"><span class="k">失败</span><span>' + _paHEsc(String((d && (d.message || d.error)) || ('HTTP ' + r.status))) + '</span></div>';
+    }
+    if(inp) inp.value = '';
+    await paHarnessScan();
+    return d;
+  }catch(e){
+    if(rows) rows.innerHTML = '<div class="r"><span class="k">失败</span><span>' + _paHEsc((e && e.message) || e) + '</span></div>';
+    return null;
+  }finally{ if(btn) btn.disabled = false; }
 }
 
 /* —— 面 B · 执行层 agent 名册（只读 · Q0）
