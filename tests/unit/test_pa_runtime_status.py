@@ -59,3 +59,20 @@ def test_runtime_status_route(monkeypatch):
     assert r.status_code == 200, r.data
     d = r.get_json()
     assert d["items"][0]["id"] == "local:localm"
+
+def test_runtime_view_warns_duplicate_loaded(monkeypatch):
+    def fake_http(url, timeout=1.8):
+        if url.endswith("/api/tags"):
+            return {"ok": True, "status": 200, "error": "", "data": {"models": [{"name": "qwen"}]}}
+        if url.endswith("/api/ps"):
+            return {"ok": True, "status": 200, "error": "", "data": {"models": [{"name": "qwen"}]}}
+        if url.endswith("/health"):
+            return {"ok": True, "status": 200, "error": "", "data": {"model": "qwen", "loaded": True}}
+        if url.endswith("/v1/models"):
+            return {"ok": True, "status": 200, "error": "", "data": {"data": [{"id": "qwen"}]}}
+        return {"ok": False, "status": 0, "data": None, "error": "x"}
+    monkeypatch.setattr(R, "_http_json", fake_http)
+    monkeypatch.setattr("core.pa.harness.dsh.DshHarness.probe",
+                        lambda self: (_ for _ in ()).throw(RuntimeError("no dsh")))
+    out = R.runtime_view()
+    assert any("同一模型同时载入" in w for w in out["warnings"])

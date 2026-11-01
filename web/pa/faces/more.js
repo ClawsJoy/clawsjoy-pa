@@ -820,7 +820,11 @@ async function paRuntimeScan(){
       + esc(state) + (o.version ? (' · ' + esc(String(o.version))) : '')
       + (o.base_url ? (' · ' + esc(String(o.base_url))) : '')
       + '<br>' + esc(String(o.detail || '')) + '<br>' + esc(m) + '</span></div>';
-  }).join('') + '<div class="foot" title="GET /v9/pa/runtime/status（只读探活 · 不发模型请求）">只读探活 · 不切换、不载模型｜状态来自本机服务应答｜未载模型会照实显示</div>';
+  }).join('')
+    + ((Array.isArray(d.warnings) && d.warnings.length)
+      ? d.warnings.map(function(w){ return '<div class="r" style="color:#d2991d"><span class="k">⚠</span><span>' + esc(String(w)) + '</span></div>'; }).join('')
+      : '')
+    + '<div class="foot" title="GET /v9/pa/runtime/status（只读探活 · 不发模型请求）">只读探活 · 不切换、不载模型｜状态来自本机服务应答｜未载模型会照实显示</div>';
   return d;
 }
 

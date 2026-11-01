@@ -96,5 +96,19 @@ def runtime_view():
             items.append({"id": fn.__name__, "label": fn.__name__, "available": False,
                           "state": "未接", "models": [], "loaded": [],
                           "detail": "%s: %s" % (type(e).__name__, str(e)[:160])})
-    return {"ok": True, "at": _now(), "items": items,
+    warnings = []
+    _seen = {}
+    for _it in items:
+        if _it.get("kind") != "local":
+            continue
+        for _m in (_it.get("loaded") or []):
+            _key = str(_m).replace("localm:", "").strip()
+            if not _key:
+                continue
+            if _key in _seen and _seen[_key] != _it.get("id"):
+                warnings.append("同一模型同时载入 %s 与 %s：%s（6GB VRAM 可能互抢）"
+                                % (_seen[_key], _it.get("id"), _key))
+            else:
+                _seen[_key] = _it.get("id")
+    return {"ok": True, "at": _now(), "items": items, "warnings": warnings,
             "source": "core/pa/runtime_status.py（只读探活）"}
