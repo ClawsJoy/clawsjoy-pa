@@ -11,7 +11,10 @@
       "市场与产品策略",
       "渠道打法与推广",
       "合规与认证标准"
-    ]
+    ],
+    "display_title": "圣诞灯AI新营销打法：神话、真相与Q4实战手册",
+    "display_meta": "7:30 · 详细说明 · 7 个来源 · 1 天前",
+    "source_dir": "C:\\Users\\flybo\\Downloads\\V9 PA"
   },
   "extraction": {
     "method": "Windows UI Automation (Chrome accessibility tree)",
@@ -40,5 +43,31 @@
     "TikTok 爆发 + Amazon 基本盘 + Pinterest 提前埋伏。",
     "AI 用于实拍打底、场景合成、脚本/多语种、售前客服，不做虚假证言。",
     "合规重点：UL 588、FCC ID、Reese's Law、CE LVD/EMC/RoHS、RED EN 18031、GPSR、WEEE/EPR、TRO/FTO、AI 标识。"
+  ],
+  "local_pdf_candidates": [
+    "AI + 新媒体营销 详解（圣诞灯串 圣诞树灯 · 欧美市场版）.pdf",
+    "AI+新媒体营销-素材01-市场与爆款产品（2026-09-18）.pdf",
+    "AI+新媒体营销-素材02-AI工具链与AI标识合规（2026-09-18）.pdf",
+    "AI+新媒体营销-素材03-渠道打法与达人报价（2026-09-18）.pdf",
+    "AI+新媒体营销-素材04-欧美合规认证（2026-09-18）.pdf",
+    "AI+新媒体营销-素材05-品牌与AI营销案例（2026-09-18）.pdf"
+  ],
+  "imported_to_pa_notes": [
+    {
+      "id": "20261101-192147-4265e8",
+      "title": "[NotebookLM] AI + 新媒体营销 详解（圣诞灯串 圣诞树灯 · 欧美市场版）"
+    },
+    {
+      "id": "20261101-192147-e412e8",
+      "title": "[NotebookLM] AI+新媒体营销-素材02-AI工具链与AI标识合规（2026-09-18）"
+    },
+    {
+      "id": "20261101-192148-9879ff",
+      "title": "[NotebookLM] AI+新媒体营销-素材03-渠道打法与达人报价（2026-09-18）"
+    },
+    {
+      "id": "20261101-192149-1cf583",
+      "title": "[NotebookLM] AI+新媒体营销-素材04-欧美合规认证（2026-09-18）"
+    }
   ]
 }
