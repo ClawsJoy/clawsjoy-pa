@@ -120,8 +120,14 @@ def register(bp):
         if g:
             return g
         d = _body()
+        _model = None
+        if str(d.get("model") or "").strip():
+            from core.pa.providers import resolve_model_ex as _rm
+            _model, _why = _rm(d.get("model"))
+            if not _model:
+                return err(_why, 400)
         try:
-            out = N.ask(d.get("q", ""), limit=d.get("limit", 6))
+            out = N.ask(d.get("q", ""), limit=d.get("limit", 6), model=_model)
             return ok(out)
         except N.NoteError as e:
             return err(str(e), 400)

@@ -333,7 +333,7 @@ def add_pdf(nb_id, filename, data, data_dir=None):
     return {"note": note, "chars": len(text), "path": str(dst)}
 
 
-def ask(nb_id, question, limit=6, data_dir=None, llm_fn=None, note_ids=None):
+def ask(nb_id, question, limit=6, data_dir=None, llm_fn=None, note_ids=None, model=None):
     get(nb_id, data_dir=data_dir)
     ids = None
     if note_ids is not None:
@@ -342,7 +342,7 @@ def ask(nb_id, question, limit=6, data_dir=None, llm_fn=None, note_ids=None):
         if not ids:
             raise NotebookError("没有勾选本笔记本的来源")
     return N.ask(question, data_dir=data_dir, limit=limit, llm_fn=llm_fn,
-                 notebook_id=_safe_id(nb_id), note_ids=ids)
+                 notebook_id=_safe_id(nb_id), note_ids=ids, model=model)
 
 
 # ---------- Studio ----------
@@ -394,6 +394,7 @@ def _fallback(kind, nb, items):
 
 
 def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12, note_ids=None,
+           model=None,
            options=None):
     nb = get(nb_id, data_dir=data_dir)
     kind = str(kind or "summary")
@@ -426,7 +427,7 @@ def studio(nb_id, kind="summary", data_dir=None, llm_fn=None, max_sources=12, no
               % (instr, extra, nb.get("title", ""), chunks))
     model_ok, why, md = False, "", ""
     try:
-        md = (llm_fn or N.llm_generate)(prompt)
+        md = (llm_fn or (lambda p: N.llm_generate(p, model=model)))(prompt)
         model_ok = bool(str(md or "").strip())
     except Exception as e:
         why = type(e).__name__

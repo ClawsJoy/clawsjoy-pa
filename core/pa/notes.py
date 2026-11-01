@@ -460,21 +460,22 @@ def reindex(data_dir=None):
         c.close()
 
 
-def llm_generate(prompt, system_prompt=None, max_tokens=1200, timeout=90):
-    """一处出口：走 provider 默认路由；异常上抛，由调用方照实回落（⛔ 假装模型可用）。"""
+def llm_generate(prompt, system_prompt=None, max_tokens=1200, timeout=90, model=None):
+    """一处出口：走 provider 默认路由 ∨ 显式模型；异常上抛，由调用方照实回落（⛔ 假装模型可用）。"""
     from core.pa.providers import default_route
     from core.lib.llm_client import LLMClient
     route, _ = default_route()
-    return LLMClient().generate(prompt, model=route.get("model"), max_tokens=max_tokens, timeout=timeout,
+    _model = model or route.get("model")
+    return LLMClient().generate(prompt, model=_model, max_tokens=max_tokens, timeout=timeout,
                                 system_prompt=system_prompt or "你是 PA 的第二大脑。只依据给定资料，不编造。")
 
 
-def _llm_answer(prompt):
+def _llm_answer(prompt, model=None):
     return llm_generate(prompt, system_prompt="你是 PA 的第二大脑问答。只依据给定笔记回答，不编造。",
-                        max_tokens=900, timeout=60)
+                        max_tokens=900, timeout=60, model=model)
 
 
-def ask(question, data_dir=None, limit=6, llm_fn=None, notebook_id=None, note_ids=None):
+def ask(question, data_dir=None, limit=6, llm_fn=None, notebook_id=None, note_ids=None, model=None):
     """带出处的第二大脑问答：检索 note → 模型总结 → 返回 citations。
 
     notebook_id 非 None 时只检索该笔记本；note_ids 非 None 时只在这些来源内（越界 id 忽略）。
@@ -516,12 +517,15 @@ def ask(question, data_dir=None, limit=6, llm_fn=None, notebook_id=None, note_id
     _why = ""
     try:
         try:
-            from core.pa.providers import default_route as _dr
-            _route, _ = _dr()
-            _model = str(_route.get("model") or "")
+            if model:
+                _model = str(model)
+            else:
+                from core.pa.providers import default_route as _dr
+                _route, _ = _dr()
+                _model = str(_route.get("model") or "")
         except Exception:
-            _model = ""
-        answer = (llm_fn or _llm_answer)(prompt)
+            _model = str(model or "")
+        answer = (llm_fn or (lambda p: _llm_answer(p, model=model)))(prompt)
         _model_ok = bool((answer or "").strip())
     except Exception as e:
         answer = ""

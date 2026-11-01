@@ -153,9 +153,15 @@ def register(bp):
         if g:
             return g
         d = _body()
+        _model = None
+        if str(d.get("model") or "").strip():
+            from core.pa.providers import resolve_model_ex as _rm
+            _model, _why = _rm(d.get("model"))
+            if not _model:
+                return err(_why, 400)
         try:
             return ok(NB.ask(nb_id, d.get("q", ""), limit=d.get("limit", 6),
-                              note_ids=d.get("note_ids")))
+                              note_ids=d.get("note_ids"), model=_model))
         except NB.NotebookError as e:
             return err(str(e), 404 if "不存在" in str(e) else 400)
         except Exception as e:
@@ -167,9 +173,15 @@ def register(bp):
         if g:
             return g
         d = _body()
+        _model = None
+        if str(d.get("model") or "").strip():
+            from core.pa.providers import resolve_model_ex as _rm
+            _model, _why = _rm(d.get("model"))
+            if not _model:
+                return err(_why, 400)
         try:
             return ok(NB.studio(nb_id, d.get("kind") or "summary", note_ids=d.get("note_ids"),
-                                options=d.get("options")))
+                                options=d.get("options"), model=_model))
         except NB.NotebookError as e:
             return err(str(e), 400)
         except Exception as e:

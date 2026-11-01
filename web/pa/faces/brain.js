@@ -956,6 +956,13 @@
       await paNbAfterAdd('已存为笔记');
     }catch(e){ msg('存不了：' + ((e && e.message) || e)); }
   };
+  function paBrainModel(){
+    try{
+      if(typeof paModelSel === 'function'){ var m = paModelSel(); if(m) return m; }
+      var c = JSON.parse(localStorage.getItem('pa_cfg') || '{}');
+      return String((c && c.model) || '');
+    }catch(e){ return ''; }
+  }
   window.paNbAsk = async function(){
     if(NB.busy) return;
     var q = String((($('paNbQ') || {}).value) || '').trim();
@@ -968,7 +975,7 @@
     paNbRenderChat(); NB.busy = true; if($('paNbAskBtn')) $('paNbAskBtn').disabled = true;
     try{
       var path = NB.cur ? ('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/ask') : '/v9/pa/notes/ask';
-      var d = await req(path, {method:'POST', body:{q:q, limit:6, note_ids:selIds}});
+      var d = await req(path, {method:'POST', body:{q:q, limit:6, note_ids:selIds, model:paBrainModel()}});
       list.splice(list.indexOf(ph), 1, {role:'a', text:d.answer || '（无回答）', citations:d.citations || [],
         model_ok: d.model_ok, model: d.model || ''});
       msg('已答 · 引用 ' + ((d.citations || []).length) + ' 条');
@@ -1052,7 +1059,8 @@
     var b = $('paNbGenBtn'); if(b) b.disabled = true; msg('生成中…（本地模型）');
     try{
       var d = await req('/v9/pa/notebooks/' + encodeURIComponent(NB.cur) + '/studio', {method:'POST', body:{
-        kind:NB.studioKind, note_ids:selIds, options:NB.studioOpts[NB.studioKind] || {}}});
+        kind:NB.studioKind, note_ids:selIds, options:NB.studioOpts[NB.studioKind] || {},
+        model:paBrainModel()}});
       if(!NB.studio[NB.cur]) NB.studio[NB.cur] = {};
       NB.studio[NB.cur][NB.studioKind] = d; paNbRenderStudio();
       msg(d.model_ok ? ('已生成' + (KIND_LABEL[NB.studioKind] || '')) : '模型不可用，已照实回落为摘录');
